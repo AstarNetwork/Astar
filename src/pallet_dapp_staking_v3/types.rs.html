@@ -1837,14 +1837,6 @@
 <a href="#1835" id="1835">1835</a>
 <a href="#1836" id="1836">1836</a>
 <a href="#1837" id="1837">1837</a>
-<a href="#1838" id="1838">1838</a>
-<a href="#1839" id="1839">1839</a>
-<a href="#1840" id="1840">1840</a>
-<a href="#1841" id="1841">1841</a>
-<a href="#1842" id="1842">1842</a>
-<a href="#1843" id="1843">1843</a>
-<a href="#1844" id="1844">1844</a>
-<a href="#1845" id="1845">1845</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1904,7 +1896,7 @@
 //!
 //! ## Tier Information
 //!
-//! * `TierThreshold` - an enum describing tier entry thresholds.
+//! * `TierThreshold` - an enum describing tier entry thresholds (as TVL amounts or as percentages of the total issuance).
 //! * `TierParameters` - contains static information about tiers, like init thresholds, reward &amp; slot distribution.
 //! * `TiersConfiguration` - contains dynamic information about tiers, derived from `TierParameters` and onchain data.
 //! * `DAppTier` - a compact struct describing a dApp's tier.
@@ -1917,7 +1909,7 @@
 <span class="kw">use </span>sp_arithmetic::fixed_point::FixedU128;
 <span class="kw">use </span>sp_runtime::{
     traits::{CheckedAdd, UniqueSaturatedInto, Zero},
-    FixedPointNumber, Permill, Saturating,
+    FixedPointNumber, Perbill, Permill, Saturating,
 };
 <span class="kw">pub use </span>sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec::Vec};
 
@@ -3314,32 +3306,26 @@
     Deserialize,
 )]
 </span><span class="kw">pub enum </span>TierThreshold {
-    <span class="doccomment">/// Entry into tier is mandated by minimum amount of staked funds.
-    /// Value is fixed, and is not expected to change in between periods.
-    </span>FixedTvlAmount { amount: Balance },
-    <span class="doccomment">/// Entry into tier is mandated by minimum amount of staked funds.
-    /// Value is expected to dynamically change in-between periods, depending on the system parameters.
-    /// The `amount` should never go below the `minimum_amount`.
-    </span>DynamicTvlAmount {
-        amount: Balance,
-        minimum_amount: Balance,
+    <span class="doccomment">/// Entry into the tier is mandated by a fixed percentage of the total issuance as staked funds.
+    /// This value is constant and does not change between periods.
+    </span>FixedPercentage { required_percentage: Perbill },
+    <span class="doccomment">/// Entry into the tier is mandated by a percentage of the total issuance as staked funds.
+    /// The `percentage` is the amount required, which can change in-between periods, while `minimum_required_percentage`
+    /// is the minimum percentage that should not be reduced below.
+    </span>DynamicPercentage {
+        percentage: Perbill,
+        minimum_required_percentage: Perbill,
     },
 }
 
 <span class="kw">impl </span>TierThreshold {
-    <span class="doccomment">/// Used to check if stake amount satisfies the threshold or not.
-    </span><span class="kw">pub fn </span>is_satisfied(<span class="kw-2">&amp;</span><span class="self">self</span>, stake: Balance) -&gt; bool {
+    <span class="doccomment">/// Return threshold amount for the tier.
+    </span><span class="kw">pub fn </span>threshold(<span class="kw-2">&amp;</span><span class="self">self</span>, total_issuance: Balance) -&gt; Balance {
         <span class="kw">match </span><span class="self">self </span>{
-            <span class="self">Self</span>::FixedTvlAmount { amount } =&gt; stake &gt;= <span class="kw-2">*</span>amount,
-            <span class="self">Self</span>::DynamicTvlAmount { amount, .. } =&gt; stake &gt;= <span class="kw-2">*</span>amount,
-        }
-    }
-
-    <span class="doccomment">/// Return threshold for the tier.
-    </span><span class="kw">pub fn </span>threshold(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Balance {
-        <span class="kw">match </span><span class="self">self </span>{
-            <span class="self">Self</span>::FixedTvlAmount { amount } =&gt; <span class="kw-2">*</span>amount,
-            <span class="self">Self</span>::DynamicTvlAmount { amount, .. } =&gt; <span class="kw-2">*</span>amount,
+            <span class="self">Self</span>::DynamicPercentage { percentage, .. } =&gt; <span class="kw-2">*</span>percentage * total_issuance,
+            <span class="self">Self</span>::FixedPercentage {
+                required_percentage,
+            } =&gt; <span class="kw-2">*</span>required_percentage * total_issuance,
         }
     }
 }
@@ -3432,9 +3418,6 @@
 )]
 #[scale_info(skip_type_params(NT, T, P))]
 </span><span class="kw">pub struct </span>TiersConfiguration&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; {
-    <span class="doccomment">/// Total number of slots.
-    </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>number_of_slots: u16,
     <span class="doccomment">/// Number of slots per tier.
     /// First entry refers to the first tier, and so on.
     </span><span class="kw">pub </span>slots_per_tier: BoundedVec&lt;u16, NT&gt;,
@@ -3444,7 +3427,7 @@
     </span><span class="kw">pub </span>reward_portion: BoundedVec&lt;Permill, NT&gt;,
     <span class="doccomment">/// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
-    </span><span class="kw">pub </span>tier_thresholds: BoundedVec&lt;TierThreshold, NT&gt;,
+    </span><span class="kw">pub </span>tier_thresholds: BoundedVec&lt;Balance, NT&gt;,
     <span class="doccomment">/// Phantom data to keep track of the tier slots function.
     </span><span class="attr">#[codec(skip)]
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) _phantom: PhantomData&lt;(T, P)&gt;,
@@ -3453,7 +3436,6 @@
 <span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; Default <span class="kw">for </span>TiersConfiguration&lt;NT, T, P&gt; {
     <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
-            number_of_slots: <span class="number">0</span>,
             slots_per_tier: BoundedVec::default(),
             reward_portion: BoundedVec::default(),
             tier_thresholds: BoundedVec::default(),
@@ -3475,14 +3457,23 @@
             <span class="comment">// All vector length must match number of tiers.
             </span>&amp;&amp; number_of_tiers == <span class="self">self</span>.reward_portion.len()
             &amp;&amp; number_of_tiers == <span class="self">self</span>.tier_thresholds.len()
-            <span class="comment">// Total number of slots must match the sum of slots per tier.
-            </span>&amp;&amp; <span class="self">self</span>.slots_per_tier.iter().fold(<span class="number">0</span>, |acc, x| acc + x) == <span class="self">self</span>.number_of_slots
+    }
+
+    <span class="doccomment">/// Calculate the total number of slots.
+    </span><span class="kw">pub fn </span>total_number_of_slots(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u16 {
+        <span class="self">self</span>.slots_per_tier.iter().copied().sum()
     }
 
     <span class="doccomment">/// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.
-    </span><span class="kw">pub fn </span>calculate_new(<span class="kw-2">&amp;</span><span class="self">self</span>, native_price: FixedU128, params: <span class="kw-2">&amp;</span>TierParameters&lt;NT&gt;) -&gt; <span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>calculate_new(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        params: <span class="kw-2">&amp;</span>TierParameters&lt;NT&gt;,
+        native_price: FixedU128,
+        total_issuance: Balance,
+    ) -&gt; <span class="self">Self </span>{
         <span class="comment">// It must always be at least 1 slot.
-        </span><span class="kw">let </span>new_number_of_slots = T::number_of_slots(native_price).max(<span class="number">1</span>);
+        </span><span class="kw">let </span>base_number_of_slots = T::number_of_slots(P::get()).max(<span class="number">1</span>);
+        <span class="kw">let </span>new_number_of_slots = T::number_of_slots(native_price).max(<span class="number">1</span>);
 
         <span class="comment">// Calculate how much each tier gets slots.
         </span><span class="kw">let </span>new_slots_per_tier: Vec&lt;u16&gt; = params
@@ -3496,11 +3487,25 @@
         <span class="kw">let </span>new_slots_per_tier =
             BoundedVec::&lt;u16, NT&gt;::try_from(new_slots_per_tier).unwrap_or_default();
 
+        <span class="comment">// NOTE: even though we could ignore the situation when the new &amp; base slot numbers are equal, it's necessary to re-calculate it since
+        // other params related to calculation might have changed.
+        </span><span class="kw">let </span>delta_threshold = <span class="kw">if </span>new_number_of_slots &gt;= base_number_of_slots {
+            FixedU128::from_rational(
+                (new_number_of_slots - base_number_of_slots).into(),
+                new_number_of_slots.into(),
+            )
+        } <span class="kw">else </span>{
+            FixedU128::from_rational(
+                (base_number_of_slots - new_number_of_slots).into(),
+                new_number_of_slots.into(),
+            )
+        };
+
         <span class="comment">// Update tier thresholds.
         // In case number of slots increase, we decrease thresholds required to enter the tier.
         // In case number of slots decrease, we increase the threshold required to enter the tier.
         //
-        // According to formula: %_threshold = (100% / (100% - delta_%_slots) - 1) * 100%
+        // According to formula: %delta_threshold = (100% / (100% - delta_%_slots) - 1) * 100%
         //
         // where delta_%_slots is simply: (base_num_slots - new_num_slots) / base_num_slots
         //
@@ -3516,61 +3521,40 @@
         // formulas are adjusted like:
         //
         // 1. Number of slots has increased, threshold is expected to decrease
-        // %_threshold = (new_num_slots - base_num_slots) / new_num_slots
-        // new_threshold = base_threshold * (1 - %_threshold)
+        // %delta_threshold = (new_num_slots - base_num_slots) / new_num_slots
+        // new_threshold = base_threshold * (1 - %delta_threshold)
         //
         // 2. Number of slots has decreased, threshold is expected to increase
-        // %_threshold = (base_num_slots - new_num_slots) / new_num_slots
-        // new_threshold = base_threshold * (1 + %_threshold)
+        // %delta_threshold = (base_num_slots - new_num_slots) / new_num_slots
+        // new_threshold = base_threshold * (1 + %delta_threshold)
         //
-        </span><span class="kw">let </span>base_number_of_slots = T::number_of_slots(P::get()).max(<span class="number">1</span>);
-
-        <span class="comment">// NOTE: even though we could ignore the situation when the new &amp; base slot numbers are equal, it's necessary to re-calculate it since
-        // other params related to calculation might have changed.
-        </span><span class="kw">let </span>new_tier_thresholds = <span class="kw">if </span>new_number_of_slots &gt;= base_number_of_slots {
-            <span class="kw">let </span>delta_threshold_decrease = FixedU128::from_rational(
-                (new_number_of_slots - base_number_of_slots).into(),
-                new_number_of_slots.into(),
-            );
-
-            <span class="kw">let </span><span class="kw-2">mut </span>new_tier_thresholds = params.tier_thresholds.clone();
-            new_tier_thresholds
-                .iter_mut()
-                .for_each(|threshold| <span class="kw">match </span>threshold {
-                    TierThreshold::DynamicTvlAmount {
-                        amount,
-                        minimum_amount,
-                    } =&gt; {
-                        <span class="kw-2">*</span>amount = amount
-                            .saturating_sub(delta_threshold_decrease.saturating_mul_int(<span class="kw-2">*</span>amount));
-                        <span class="kw-2">*</span>amount = <span class="kw-2">*</span>amount.max(minimum_amount);
-                    }
-                    <span class="kw">_ </span>=&gt; (),
-                });
-
-            new_tier_thresholds
-        } <span class="kw">else </span>{
-            <span class="kw">let </span>delta_threshold_increase = FixedU128::from_rational(
-                (base_number_of_slots - new_number_of_slots).into(),
-                new_number_of_slots.into(),
-            );
-
-            <span class="kw">let </span><span class="kw-2">mut </span>new_tier_thresholds = params.tier_thresholds.clone();
-            new_tier_thresholds
-                .iter_mut()
-                .for_each(|threshold| <span class="kw">match </span>threshold {
-                    TierThreshold::DynamicTvlAmount { amount, .. } =&gt; {
-                        <span class="kw-2">*</span>amount = amount
-                            .saturating_add(delta_threshold_increase.saturating_mul_int(<span class="kw-2">*</span>amount));
-                    }
-                    <span class="kw">_ </span>=&gt; (),
-                });
-
-            new_tier_thresholds
-        };
+        </span><span class="kw">let </span>new_tier_thresholds: BoundedVec&lt;Balance, NT&gt; = params
+            .tier_thresholds
+            .clone()
+            .iter()
+            .map(|threshold| <span class="kw">match </span>threshold {
+                TierThreshold::DynamicPercentage {
+                    percentage,
+                    minimum_required_percentage,
+                } =&gt; {
+                    <span class="kw">let </span>amount = <span class="kw-2">*</span>percentage * total_issuance;
+                    <span class="kw">let </span>adjusted_amount = <span class="kw">if </span>new_number_of_slots &gt;= base_number_of_slots {
+                        amount.saturating_sub(delta_threshold.saturating_mul_int(amount))
+                    } <span class="kw">else </span>{
+                        amount.saturating_add(delta_threshold.saturating_mul_int(amount))
+                    };
+                    <span class="kw">let </span>minimum_amount = <span class="kw-2">*</span>minimum_required_percentage * total_issuance;
+                    adjusted_amount.max(minimum_amount)
+                }
+                TierThreshold::FixedPercentage {
+                    required_percentage,
+                } =&gt; <span class="kw-2">*</span>required_percentage * total_issuance,
+            })
+            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+            .try_into()
+            .unwrap_or_default();
 
         <span class="self">Self </span>{
-            number_of_slots: new_number_of_slots,
             slots_per_tier: new_slots_per_tier,
             reward_portion: params.reward_portion.clone(),
             tier_thresholds: new_tier_thresholds,

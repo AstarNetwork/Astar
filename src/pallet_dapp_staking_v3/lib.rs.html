@@ -2236,6 +2236,22 @@
 <a href="#2234" id="2234">2234</a>
 <a href="#2235" id="2235">2235</a>
 <a href="#2236" id="2236">2236</a>
+<a href="#2237" id="2237">2237</a>
+<a href="#2238" id="2238">2238</a>
+<a href="#2239" id="2239">2239</a>
+<a href="#2240" id="2240">2240</a>
+<a href="#2241" id="2241">2241</a>
+<a href="#2242" id="2242">2242</a>
+<a href="#2243" id="2243">2243</a>
+<a href="#2244" id="2244">2244</a>
+<a href="#2245" id="2245">2245</a>
+<a href="#2246" id="2246">2246</a>
+<a href="#2247" id="2247">2247</a>
+<a href="#2248" id="2248">2248</a>
+<a href="#2249" id="2249">2249</a>
+<a href="#2250" id="2250">2250</a>
+<a href="#2251" id="2251">2251</a>
+<a href="#2252" id="2252">2252</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2332,7 +2348,7 @@
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
     <span class="doccomment">/// The current storage version.
-    </span><span class="kw">pub const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">7</span>);
+    </span><span class="kw">pub const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">8</span>);
 
     <span class="attr">#[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -2758,8 +2774,9 @@
                 reward_portion: <span class="macro">vec!</span>[Permill::from_percent(<span class="number">100 </span>/ num_tiers); num_tiers <span class="kw">as </span>usize],
                 slot_distribution: <span class="macro">vec!</span>[Permill::from_percent(<span class="number">100 </span>/ num_tiers); num_tiers <span class="kw">as </span>usize],
                 tier_thresholds: (<span class="number">0</span>..num_tiers)
-                    .map(|i| TierThreshold::FixedTvlAmount {
-                        amount: (<span class="number">10 </span>* i).into(),
+                    .rev()
+                    .map(|i| TierThreshold::FixedPercentage {
+                        required_percentage: Perbill::from_percent(i),
                     })
                     .collect(),
                 slots_per_tier: <span class="macro">vec!</span>[<span class="number">100</span>; num_tiers <span class="kw">as </span>usize],
@@ -2792,23 +2809,27 @@
                 <span class="string">"Invalid tier parameters values provided."
             </span>);
 
-            <span class="comment">// Prepare tier configuration and verify its correctness
-            </span><span class="kw">let </span>number_of_slots = <span class="self">self</span>.slots_per_tier.iter().fold(<span class="number">0_u16</span>, |acc, <span class="kw-2">&amp;</span>slots| {
-                acc.checked_add(slots).expect(<span class="string">"Overflow"</span>)
-            });
+            <span class="kw">let </span>total_issuance = T::Currency::total_issuance();
+            <span class="kw">let </span>tier_thresholds = tier_params
+                .tier_thresholds
+                .iter()
+                .map(|t| t.threshold(total_issuance))
+                .collect::&lt;Vec&lt;Balance&gt;&gt;()
+                .try_into()
+                .expect(<span class="string">"Invalid number of tier thresholds provided."</span>);
+
             <span class="kw">let </span>tier_config =
                 TiersConfiguration::&lt;T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice&gt; {
-                    number_of_slots,
                     slots_per_tier: BoundedVec::&lt;u16, T::NumberOfTiers&gt;::try_from(
                         <span class="self">self</span>.slots_per_tier.clone(),
                     )
                     .expect(<span class="string">"Invalid number of slots per tier entries provided."</span>),
                     reward_portion: tier_params.reward_portion.clone(),
-                    tier_thresholds: tier_params.tier_thresholds.clone(),
+                    tier_thresholds,
                     _phantom: Default::default(),
                 };
             <span class="macro">assert!</span>(
-                tier_params.is_valid(),
+                tier_config.is_valid(),
                 <span class="string">"Invalid tier config values provided."
             </span>);
 
@@ -3955,25 +3976,23 @@
             <span class="kw">let </span><span class="kw-2">mut </span>upper_bound = Balance::zero();
             <span class="kw">let </span><span class="kw-2">mut </span>rank_rewards = Vec::new();
 
-            <span class="kw">for </span>(tier_id, (tier_capacity, tier_threshold)) <span class="kw">in </span>tier_config
+            <span class="kw">for </span>(tier_id, (tier_capacity, lower_bound)) <span class="kw">in </span>tier_config
                 .slots_per_tier
                 .iter()
                 .zip(tier_config.tier_thresholds.iter())
                 .enumerate()
             {
-                <span class="kw">let </span>lower_bound = tier_threshold.threshold();
-
                 <span class="comment">// Iterate over dApps until one of two conditions has been met:
                 // 1. Tier has no more capacity
                 // 2. dApp doesn't satisfy the tier threshold (since they're sorted, none of the following dApps will satisfy the condition either)
                 </span><span class="kw">for </span>(dapp_id, staked_amount) <span class="kw">in </span>dapp_stakes
                     .iter()
                     .skip(dapp_tiers.len())
-                    .take_while(|(<span class="kw">_</span>, amount)| tier_threshold.is_satisfied(<span class="kw-2">*</span>amount))
+                    .take_while(|(<span class="kw">_</span>, amount)| amount.ge(lower_bound))
                     .take(<span class="kw-2">*</span>tier_capacity <span class="kw">as </span>usize)
                 {
                     <span class="kw">let </span>rank = <span class="kw">if </span>T::RankingEnabled::get() {
-                        RankedTier::find_rank(lower_bound, upper_bound, <span class="kw-2">*</span>staked_amount)
+                        RankedTier::find_rank(<span class="kw-2">*</span>lower_bound, upper_bound, <span class="kw-2">*</span>staked_amount)
                     } <span class="kw">else </span>{
                         <span class="number">0
                     </span>};
@@ -4003,7 +4022,7 @@
 
                 rank_rewards.push(reward_per_rank);
                 dapp_tiers.append(<span class="kw-2">&amp;mut </span>tier_slots);
-                upper_bound = lower_bound; <span class="comment">// current threshold becomes upper bound for next tier
+                upper_bound = <span class="kw-2">*</span>lower_bound; <span class="comment">// current threshold becomes upper bound for next tier
             </span>}
 
             <span class="comment">// 5.
@@ -4192,8 +4211,21 @@
             <span class="comment">// Re-calculate tier configuration for the upcoming new era
             </span><span class="kw">let </span>tier_params = StaticTierParams::&lt;T&gt;::get();
             <span class="kw">let </span>average_price = T::NativePriceProvider::average_price();
-            <span class="kw">let </span>new_tier_config = TierConfig::&lt;T&gt;::get().calculate_new(average_price, <span class="kw-2">&amp;</span>tier_params);
-            TierConfig::&lt;T&gt;::put(new_tier_config);
+            <span class="kw">let </span>total_issuance = T::Currency::total_issuance();
+
+            <span class="kw">let </span>new_tier_config =
+                TierConfig::&lt;T&gt;::get().calculate_new(<span class="kw-2">&amp;</span>tier_params, average_price, total_issuance);
+
+            <span class="comment">// Validate new tier configuration
+            </span><span class="kw">if </span>new_tier_config.is_valid() {
+                TierConfig::&lt;T&gt;::put(new_tier_config);
+            } <span class="kw">else </span>{
+                <span class="macro">log::warn!</span>(
+                    target: LOG_TARGET,
+                    <span class="string">"New tier configuration is invalid for era {}, preserving old one."</span>,
+                    next_era
+                );
+            }
 
             <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::NewEra { era: next_era });
             <span class="kw">if let </span><span class="prelude-val">Some</span>(period_event) = maybe_period_event {

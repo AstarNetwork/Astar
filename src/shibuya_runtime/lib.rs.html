@@ -2558,6 +2558,25 @@
 <a href="#2556" id="2556">2556</a>
 <a href="#2557" id="2557">2557</a>
 <a href="#2558" id="2558">2558</a>
+<a href="#2559" id="2559">2559</a>
+<a href="#2560" id="2560">2560</a>
+<a href="#2561" id="2561">2561</a>
+<a href="#2562" id="2562">2562</a>
+<a href="#2563" id="2563">2563</a>
+<a href="#2564" id="2564">2564</a>
+<a href="#2565" id="2565">2565</a>
+<a href="#2566" id="2566">2566</a>
+<a href="#2567" id="2567">2567</a>
+<a href="#2568" id="2568">2568</a>
+<a href="#2569" id="2569">2569</a>
+<a href="#2570" id="2570">2570</a>
+<a href="#2571" id="2571">2571</a>
+<a href="#2572" id="2572">2572</a>
+<a href="#2573" id="2573">2573</a>
+<a href="#2574" id="2574">2574</a>
+<a href="#2575" id="2575">2575</a>
+<a href="#2576" id="2576">2576</a>
+<a href="#2577" id="2577">2577</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -4169,6 +4188,27 @@
     Migrations,
 &gt;;
 
+<span class="macro">parameter_types! </span>{
+    <span class="comment">// percentages below are calulated based on a total issuance at the time when dApp staking v3 was launched (147M)
+    </span><span class="kw">pub const </span>TierThresholds: [TierThreshold; <span class="number">4</span>] = [
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(<span class="number">20_000</span>), <span class="comment">// 0.0020%
+            </span>minimum_required_percentage: Perbill::from_parts(<span class="number">17_000</span>), <span class="comment">// 0.0017%
+        </span>},
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(<span class="number">13_000</span>), <span class="comment">// 0.0013%
+            </span>minimum_required_percentage: Perbill::from_parts(<span class="number">10_000</span>), <span class="comment">// 0.0010%
+        </span>},
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(<span class="number">5_400</span>), <span class="comment">// 0.00054%
+            </span>minimum_required_percentage: Perbill::from_parts(<span class="number">3_400</span>), <span class="comment">// 0.00034%
+        </span>},
+        TierThreshold::FixedPercentage {
+            required_percentage: Perbill::from_parts(<span class="number">1_400</span>), <span class="comment">// 0.00014%
+        </span>},
+    ];
+}
+
 <span class="doccomment">/// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
@@ -4176,10 +4216,8 @@
     cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4&lt;Runtime&gt;,
     <span class="comment">// permanent migration, do not remove
     </span>pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,
-    <span class="comment">// XCM V3 -&gt; V4
-    </span>pallet_xc_asset_config::migrations::versioned::V2ToV3&lt;Runtime&gt;,
-    pallet_identity::migration::versioned::V0ToV1&lt;Runtime, <span class="number">250</span>&gt;,
-    pallet_unified_accounts::migration::ClearCorruptedUnifiedMappings&lt;Runtime&gt;,
+    <span class="comment">// dapp-staking dyn tier threshold migrations
+    </span>pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8&lt;Runtime, TierThresholds&gt;,
 );
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;

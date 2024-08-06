@@ -228,6 +228,8 @@
 <a href="#226" id="226">226</a>
 <a href="#227" id="227">227</a>
 <a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -259,7 +261,7 @@
 <span class="kw">use </span>sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 <span class="kw">use </span>sp_runtime::{
     traits::{AccountIdConversion, IdentifyAccount, Verify},
-    Permill,
+    Perbill, Permill,
 };
 
 <span class="kw">type </span>AccountPublic = &lt;Signature <span class="kw">as </span>Verify&gt;::Signer;
@@ -393,19 +395,21 @@
                 Permill::from_percent(<span class="number">40</span>),
             ],
             tier_thresholds: <span class="macro">vec!</span>[
-                TierThreshold::DynamicTvlAmount {
-                    amount: <span class="number">100 </span>* AST,
-                    minimum_amount: <span class="number">80 </span>* AST,
-                },
-                TierThreshold::DynamicTvlAmount {
-                    amount: <span class="number">50 </span>* AST,
-                    minimum_amount: <span class="number">40 </span>* AST,
-                },
-                TierThreshold::DynamicTvlAmount {
-                    amount: <span class="number">20 </span>* AST,
-                    minimum_amount: <span class="number">20 </span>* AST,
-                },
-                TierThreshold::FixedTvlAmount { amount: <span class="number">10 </span>* AST },
+                TierThreshold::DynamicPercentage {
+                    percentage: Perbill::from_parts(<span class="number">35_700_000</span>), <span class="comment">// 3.57%
+                    </span>minimum_required_percentage: Perbill::from_parts(<span class="number">23_800_000</span>), <span class="comment">// 2.38%
+                </span>},
+                TierThreshold::DynamicPercentage {
+                    percentage: Perbill::from_parts(<span class="number">8_900_000</span>), <span class="comment">// 0.89%
+                    </span>minimum_required_percentage: Perbill::from_parts(<span class="number">6_000_000</span>), <span class="comment">// 0.6%
+                </span>},
+                TierThreshold::DynamicPercentage {
+                    percentage: Perbill::from_parts(<span class="number">23_800_000</span>), <span class="comment">// 2.38%
+                    </span>minimum_required_percentage: Perbill::from_parts(<span class="number">17_900_000</span>), <span class="comment">// 1.79%
+                </span>},
+                TierThreshold::FixedPercentage {
+                    required_percentage: Perbill::from_parts(<span class="number">600_000</span>), <span class="comment">// 0.06%
+                </span>},
             ],
             slots_per_tier: <span class="macro">vec!</span>[<span class="number">10</span>, <span class="number">20</span>, <span class="number">30</span>, <span class="number">40</span>],
             safeguard: <span class="prelude-val">Some</span>(<span class="bool-val">false</span>),
