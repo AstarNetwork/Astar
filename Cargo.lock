@@ -5627,7 +5627,9 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-trie",
+ "staging-xcm",
  "unified-accounts-chain-extension-types",
+ "xcm-fee-payment-runtime-api",
 ]
 
 [[package]]
