@@ -41,7 +41,7 @@ use sp_runtime::traits::{Bounded, Convert, MaybeEquivalence, Zero};
 use sp_std::marker::PhantomData;
 
 // Polkadot imports
-use xcm::latest::{prelude::*, Weight, MAX_ITEMS_IN_ASSETS};
+use xcm::latest::{prelude::*, Weight};
 use xcm_builder::{CreateMatcher, MatchXcm, TakeRevenue};
 use xcm_executor::traits::{MatchesFungibles, Properties, ShouldExecute, WeightTrader};
 
@@ -54,9 +54,7 @@ use pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 mod tests;
 
 pub const XCM_SIZE_LIMIT: u32 = 2u32.pow(16);
-// TODO: fix this - nothing larger than 1 seems to work?
-pub const MAX_ASSETS: usize = MAX_ITEMS_IN_ASSETS;
-// pub const MAX_ASSETS: usize = 1_usize;
+pub const MAX_ASSETS: u32 = 64;
 
 /// Used to convert between cross-chain asset multilocation and local asset Id.
 ///

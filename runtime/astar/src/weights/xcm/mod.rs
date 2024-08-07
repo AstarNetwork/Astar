@@ -45,7 +45,7 @@ impl WeighMultiAssetsFilter for AssetFilter {
                 weight.saturating_mul(assets.inner().into_iter().count() as u64)
             }
             Self::Wild(AllCounted(count) | AllOfCounted { count, .. }) => {
-                weight.saturating_mul(min(MAX_ASSETS, *count as usize) as u64)
+                weight.saturating_mul(min(MAX_ASSETS, *count) as u64)
             }
             Self::Wild(All | AllOf { .. }) => weight.saturating_mul(MAX_ASSETS as u64),
         }
