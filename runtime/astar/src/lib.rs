@@ -2060,6 +2060,7 @@ impl_runtime_apis! {
 
                 // destination location to be used in benchmarks
                 fn valid_destination() -> Result<Location, BenchmarkError> {
+                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v4::VERSION));
                     Ok(Location::parent())
                 }
                 fn worst_case_holding(_depositable_count: u32) -> Assets {
@@ -2084,11 +2085,13 @@ impl_runtime_apis! {
                 }
                 fn transact_origin_and_runtime_call()
                     -> Result<(Location, RuntimeCall), BenchmarkError> {
+                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v4::VERSION));
                     Ok((Location::parent(), frame_system::Call::remark_with_event {
                         remark: vec![]
                     }.into()))
                 }
                 fn subscribe_origin() -> Result<Location, BenchmarkError> {
+                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v4::VERSION));
                     Ok(Location::parent())
                 }
                 fn claimable_asset()
@@ -2111,7 +2114,7 @@ impl_runtime_apis! {
                     Err(BenchmarkError::Skip)
                 }
                 fn fee_asset() -> Result<Asset, BenchmarkError> {
-                    Ok((AssetId(Here.into()), 100).into())
+                    Ok((AssetId(Here.into()), 1_000_000_000_000_000_000u128).into())
                 }
             }
 

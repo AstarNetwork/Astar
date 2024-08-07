@@ -46,8 +46,9 @@ where
     /// Get the worst case holding for xcm benchmarks
     /// Scenario: Max allowed fungible assets (pallet_assets)
     pub fn worst_case_holding() -> Assets {
-        let fungibles = MAX_ASSETS - 1;
-        let fungibles_amount: u128 = 100_000;
+        // Max number of assets - relay asset & native asset
+        let fungibles = MAX_ASSETS - 2;
+        let fungibles_amount: u128 = 1_000_000_000_000_000_000_000_000;
         let assets = (0..fungibles)
             .map(|i| Asset {
                 id: AssetId(GeneralIndex(i as u128).into()),
@@ -56,7 +57,7 @@ where
             // adding relay asset as it is used in buy execution benchmarks
             .chain(core::iter::once(Asset {
                 id: AssetId(Location::parent()),
-                fun: Fungible(u128::MAX),
+                fun: Fungible(fungibles_amount),
             }))
             .collect::<Vec<_>>();
 
@@ -96,6 +97,14 @@ where
             }
         }
 
-        assets.into()
+        // Expand with native asset
+        assets
+            .into_iter()
+            .chain(core::iter::once(Asset {
+                id: AssetId(Location::here()),
+                fun: Fungible(fungibles_amount),
+            }))
+            .collect::<Vec<Asset>>()
+            .into()
     }
 }
