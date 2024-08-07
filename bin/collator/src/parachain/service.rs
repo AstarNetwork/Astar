@@ -1075,8 +1075,6 @@ where
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     let cidp_client = client.clone();
-    let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)
-        .expect("AuraApi slot_duration failed!");
 
     cumulus_client_consensus_aura::equivocation_import_queue::fully_verifying_import_queue::<
         AuraPair,

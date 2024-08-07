@@ -5602,6 +5602,7 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "orml-oracle",
  "pallet-assets",
+ "pallet-aura",
  "pallet-balances",
  "pallet-collator-selection 3.3.2",
  "pallet-collective-proxy",

@@ -489,6 +489,8 @@ type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
     UNINCLUDED_SEGMENT_CAPACITY,
 >;
 
+impl parachain_info::Config for Runtime {}
+
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();

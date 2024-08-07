@@ -27,6 +27,7 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 orml-oracle = { workspace = true }
 pallet-assets = { workspace = true }
+pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-uapi = { workspace = true }
@@ -112,6 +113,7 @@ std = [
 	"pallet-utility/std",
 	"parity-scale-codec/std",
 	"precompile-utils/std",
+	"pallet-aura/std",
 	"sha3/std",
 	"sp-core/std",
 	"sp-io/std",

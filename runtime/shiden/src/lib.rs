@@ -30,7 +30,7 @@ use frame_support::{
     parameter_types,
     traits::{
         fungible::{Balanced, Credit},
-        AsEnsureOriginWithArg, ConstU32, ConstBool, ConstU64, Contains, FindAuthor, Get, Imbalance,
+        AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, Contains, FindAuthor, Get, Imbalance,
         InstanceFilter, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{

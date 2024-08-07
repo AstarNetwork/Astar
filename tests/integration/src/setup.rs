@@ -279,12 +279,11 @@ pub fn run_to_block(n: BlockNumber) {
             b"ParachainSystem",
             b"UnincludedSegment",
         ));
-        if let Some((slot, _authored)) = AuraExt::slot_info() {
-            sp_io::storage::set(
-                &frame_support::storage::storage_prefix(b"AuraExt", b"SlotInfo"),
-                &(slot, 0u32).encode(),
-            );
-        }
+
+        sp_io::storage::set(
+            &frame_support::storage::storage_prefix(b"AuraExt", b"SlotInfo"),
+            &(pallet_aura::CurrentSlot::<Runtime>::get(), 0u32).encode(),
+        );
 
         // initialize block
         System::set_block_number(block_number + 1);

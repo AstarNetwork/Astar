@@ -31,9 +31,9 @@ use frame_support::{
     traits::{
         fungible::{Balanced, Credit, HoldConsideration},
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstBool, ConstU64, Contains, EqualPrivilegeOnly,
-        FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice, Nothing, OnFinalize,
-        OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, Contains,
+        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice,
+        Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
