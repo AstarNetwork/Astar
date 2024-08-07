@@ -208,7 +208,7 @@ At the end of each build&earn subperiod era, dApps are evaluated using a simple 
 Based on this metric, they are sorted, and assigned to tiers.
 
 There is a limited number of tiers, and each tier has a limited capacity of slots.
-Each tier also has a _threshold_ which a dApp must satisfy in order to enter it.
+Each tier also has a _threshold_ which a dApp must satisfy in order to enter it. Thresholds for each tier are dynamically calculated as percentages of the total issuance at the time of the dApp staking v3 launch.
 
 Better tiers bring bigger rewards, so dApps are encouraged to compete for higher tiers and attract staker's support.
 For each tier, the reward pool and capacity are fixed. Each dApp within a tier always gets the same amount of reward.

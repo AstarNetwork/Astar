@@ -22,7 +22,6 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 512.
 #![recursion_limit = "512"]
 
-use cumulus_pallet_parachain_system::AnyRelayNumber;
 use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
     construct_runtime,
@@ -32,7 +31,7 @@ use frame_support::{
     traits::{
         fungible::{Balanced, Credit, HoldConsideration},
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Contains, EqualPrivilegeOnly,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstBool, ConstU64, Contains, EqualPrivilegeOnly,
         FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice, Nothing, OnFinalize,
         OnUnbalanced, WithdrawReasons,
     },
@@ -58,7 +57,7 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
-use sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
+use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
@@ -155,6 +154,15 @@ pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
+
+/// Maximum number of blocks simultaneously accepted by the Runtime, not yet included into the
+/// relay chain.
+pub const UNINCLUDED_SEGMENT_CAPACITY: u32 = 1;
+/// How many parachain blocks are processed by the relay chain per parent. Limits the number of
+/// blocks authored per slot.
+pub const BLOCK_PROCESSING_VELOCITY: u32 = 1;
+/// Relay chain slot duration, in milliseconds.
+pub const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6000;
 
 impl AddressToAssetId<AssetId> for Runtime {
     fn address_to_asset_id(address: H160) -> Option<AssetId> {
@@ -545,9 +553,17 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type XcmpMessageHandler = XcmpQueue;
     type ReservedXcmpWeight = ReservedXcmpWeight;
     // Shibuya is subject to relay changes so we don't enforce increasing relay number
-    type CheckAssociatedRelayNumber = AnyRelayNumber;
+    type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::AnyRelayNumber;
+    type ConsensusHook = ConsensusHook;
     type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
 }
+
+type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
+    Runtime,
+    RELAY_CHAIN_SLOT_DURATION_MILLIS,
+    BLOCK_PROCESSING_VELOCITY,
+    UNINCLUDED_SEGMENT_CAPACITY,
+>;
 
 impl parachain_info::Config for Runtime {}
 
@@ -555,9 +571,9 @@ impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<250>;
+    type SlotDuration = ConstU64<SLOT_DURATION>;
     // Set to `true` once async backing is enabled.
     type AllowMultipleBlocksPerSlot = ConstBool<false>;
-    type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -1601,10 +1617,36 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+parameter_types! {
+    // percentages below are calulated based on a total issuance at the time when dApp staking v3 was launched (147M)
+    pub const TierThresholds: [TierThreshold; 4] = [
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(20_000), // 0.0020%
+            minimum_required_percentage: Perbill::from_parts(17_000), // 0.0017%
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(13_000), // 0.0013%
+            minimum_required_percentage: Perbill::from_parts(10_000), // 0.0010%
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(5_400), // 0.00054%
+            minimum_required_percentage: Perbill::from_parts(3_400), // 0.00034%
+        },
+        TierThreshold::FixedPercentage {
+            required_percentage: Perbill::from_parts(1_400), // 0.00014%
+        },
+    ];
+}
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = ();
+pub type Migrations = (
+    // permanent migration, do not remove
+    pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
+    // dapp-staking dyn tier threshold migrations
+    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime, TierThresholds>,
+);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1729,11 +1771,20 @@ impl_runtime_apis! {
 
     impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
         fn slot_duration() -> sp_consensus_aura::SlotDuration {
-            sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
+            sp_consensus_aura::SlotDuration::from_millis(SLOT_DURATION)
         }
 
         fn authorities() -> Vec<AuraId> {
             pallet_aura::Authorities::<Runtime>::get().into_inner()
+        }
+    }
+
+    impl cumulus_primitives_aura::AuraUnincludedSegmentApi<Block> for Runtime {
+        fn can_build_upon(
+            included_hash: <Block as BlockT>::Hash,
+            slot: cumulus_primitives_aura::Slot,
+        ) -> bool {
+            ConsensusHook::can_build_upon(included_hash, slot)
         }
     }
 
@@ -2668,29 +2719,7 @@ impl_runtime_apis! {
     }
 }
 
-struct CheckInherents;
-
-impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
-    fn check_inherents(
-        block: &Block,
-        relay_state_proof: &cumulus_pallet_parachain_system::RelayChainStateProof,
-    ) -> sp_inherents::CheckInherentsResult {
-        let relay_chain_slot = relay_state_proof
-            .read_slot()
-            .expect("Could not read the relay chain slot from the proof");
-        let inherent_data =
-            cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
-                relay_chain_slot,
-                sp_std::time::Duration::from_secs(6),
-            )
-            .create_inherent_data()
-            .expect("Could not create the timestamp inherent data");
-        inherent_data.check_extrinsics(block)
-    }
-}
-
 cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
-    CheckInherents = CheckInherents,
 }

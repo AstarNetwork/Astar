@@ -265,17 +265,12 @@ impl frame_system::Config for Runtime {
     type PostTransactions = ();
 }
 
-parameter_types! {
-    pub const MaxAuthorities: u32 = 50;
-    pub const AllowMultipleBlocksPerSlot: bool = false;
-}
-
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<50>;
-    type AllowMultipleBlocksPerSlot = AllowMultipleBlocksPerSlot;
     type SlotDuration = pallet_aura::MinimumPeriodTimesTwo<Runtime>;
+    type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 impl pallet_grandpa::Config for Runtime {
@@ -285,7 +280,7 @@ impl pallet_grandpa::Config for Runtime {
     type EquivocationReportSystem = ();
 
     type WeightInfo = ();
-    type MaxAuthorities = MaxAuthorities;
+    type MaxAuthorities = ConstU32<50>;
     type MaxSetIdSessionEntries = ConstU64<0>;
     type MaxNominators = ConstU32<0>;
 }
@@ -1364,7 +1359,7 @@ impl_runtime_apis! {
 
     impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
         fn slot_duration() -> sp_consensus_aura::SlotDuration {
-            sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
+            sp_consensus_aura::SlotDuration::from_millis(SLOT_DURATION)
         }
 
         fn authorities() -> Vec<AuraId> {

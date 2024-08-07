@@ -5,24 +5,32 @@ timeout = 1000
 
 [relaychain]
 default_command = "./polkadot"
-default_args = [ "-l=parachain=debug,xcm=trace" ]
+default_args = ["-l=parachain=debug,xcm=trace"]
 chain = "rococo-local"
 
-  [[relaychain.nodes]]
-  name = "alice"
-  validator = true
+[relaychain.genesis.runtimeGenesis.patch.configuration.config.async_backing_params]
+max_candidate_depth = 3
+allowed_ancestry_len = 2
 
-  [[relaychain.nodes]]
-  name = "bob"
-  validator = true
+[relaychain.genesis.runtimeGenesis.patch.configuration.config.scheduler_params]
+lookahead = 2
 
-  [[relaychain.nodes]]
-  name = "charlie"
-  validator = true
+[[relaychain.nodes]]
+name = "alice"
+validator = true
+ws_port = 9933
 
-  [[relaychain.nodes]]
-  name = "dave"
-  validator = true
+[[relaychain.nodes]]
+name = "bob"
+validator = true
+
+[[relaychain.nodes]]
+name = "charlie"
+validator = true
+
+[[relaychain.nodes]]
+name = "dave"
+validator = true
 
 [[parachains]]
 # Right now this has to be 2000 but soon we might be able to use arbitrary para-id
@@ -31,13 +39,19 @@ id = 2000
 chain = "shibuya-dev"
 cumulus_based = true
 
-  [[parachains.collators]]
-  name = "collator1"
-  command = "./astar-collator"
-  args = [ "-l=xcm=trace", "--enable-evm-rpc" ]
-  
+[[parachains.collators]]
+name = "collator1"
+command = "./astar-collator"
+args = ["-l=xcm=trace,parachain=debug", "--enable-evm-rpc"]
+ws_port = 9944
 
-  [[parachains.collators]]
-  name = "collator2"
-  command = "./astar-collator"
-  args = [ "--enable-evm-rpc" ]
+[[parachains.collators]]
+name = "collator2"
+command = "./astar-collator"
+args = ["--enable-evm-rpc"]
+ws_port = 9945
+
+[[parachains.collators]]
+name = "collator3"
+command = "./astar-collator"
+ws_port = 9946

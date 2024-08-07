@@ -94,7 +94,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(7);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(8);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -520,8 +520,9 @@ pub mod pallet {
                 reward_portion: vec![Permill::from_percent(100 / num_tiers); num_tiers as usize],
                 slot_distribution: vec![Permill::from_percent(100 / num_tiers); num_tiers as usize],
                 tier_thresholds: (0..num_tiers)
-                    .map(|i| TierThreshold::FixedTvlAmount {
-                        amount: (10 * i).into(),
+                    .rev()
+                    .map(|i| TierThreshold::FixedPercentage {
+                        required_percentage: Perbill::from_percent(i),
                     })
                     .collect(),
                 slots_per_tier: vec![100; num_tiers as usize],
@@ -554,23 +555,27 @@ pub mod pallet {
                 "Invalid tier parameters values provided."
             );
 
-            // Prepare tier configuration and verify its correctness
-            let number_of_slots = self.slots_per_tier.iter().fold(0_u16, |acc, &slots| {
-                acc.checked_add(slots).expect("Overflow")
-            });
+            let total_issuance = T::Currency::total_issuance();
+            let tier_thresholds = tier_params
+                .tier_thresholds
+                .iter()
+                .map(|t| t.threshold(total_issuance))
+                .collect::<Vec<Balance>>()
+                .try_into()
+                .expect("Invalid number of tier thresholds provided.");
+
             let tier_config =
                 TiersConfiguration::<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice> {
-                    number_of_slots,
                     slots_per_tier: BoundedVec::<u16, T::NumberOfTiers>::try_from(
                         self.slots_per_tier.clone(),
                     )
                     .expect("Invalid number of slots per tier entries provided."),
                     reward_portion: tier_params.reward_portion.clone(),
-                    tier_thresholds: tier_params.tier_thresholds.clone(),
+                    tier_thresholds,
                     _phantom: Default::default(),
                 };
             assert!(
-                tier_params.is_valid(),
+                tier_config.is_valid(),
                 "Invalid tier config values provided."
             );
 
@@ -1717,25 +1722,23 @@ pub mod pallet {
             let mut upper_bound = Balance::zero();
             let mut rank_rewards = Vec::new();
 
-            for (tier_id, (tier_capacity, tier_threshold)) in tier_config
+            for (tier_id, (tier_capacity, lower_bound)) in tier_config
                 .slots_per_tier
                 .iter()
                 .zip(tier_config.tier_thresholds.iter())
                 .enumerate()
             {
-                let lower_bound = tier_threshold.threshold();
-
                 // Iterate over dApps until one of two conditions has been met:
                 // 1. Tier has no more capacity
                 // 2. dApp doesn't satisfy the tier threshold (since they're sorted, none of the following dApps will satisfy the condition either)
                 for (dapp_id, staked_amount) in dapp_stakes
                     .iter()
                     .skip(dapp_tiers.len())
-                    .take_while(|(_, amount)| tier_threshold.is_satisfied(*amount))
+                    .take_while(|(_, amount)| amount.ge(lower_bound))
                     .take(*tier_capacity as usize)
                 {
                     let rank = if T::RankingEnabled::get() {
-                        RankedTier::find_rank(lower_bound, upper_bound, *staked_amount)
+                        RankedTier::find_rank(*lower_bound, upper_bound, *staked_amount)
                     } else {
                         0
                     };
@@ -1765,7 +1768,7 @@ pub mod pallet {
 
                 rank_rewards.push(reward_per_rank);
                 dapp_tiers.append(&mut tier_slots);
-                upper_bound = lower_bound; // current threshold becomes upper bound for next tier
+                upper_bound = *lower_bound; // current threshold becomes upper bound for next tier
             }
 
             // 5.
@@ -1954,8 +1957,21 @@ pub mod pallet {
             // Re-calculate tier configuration for the upcoming new era
             let tier_params = StaticTierParams::<T>::get();
             let average_price = T::NativePriceProvider::average_price();
-            let new_tier_config = TierConfig::<T>::get().calculate_new(average_price, &tier_params);
-            TierConfig::<T>::put(new_tier_config);
+            let total_issuance = T::Currency::total_issuance();
+
+            let new_tier_config =
+                TierConfig::<T>::get().calculate_new(&tier_params, average_price, total_issuance);
+
+            // Validate new tier configuration
+            if new_tier_config.is_valid() {
+                TierConfig::<T>::put(new_tier_config);
+            } else {
+                log::warn!(
+                    target: LOG_TARGET,
+                    "New tier configuration is invalid for era {}, preserving old one.",
+                    next_era
+                );
+            }
 
             Self::deposit_event(Event::<T>::NewEra { era: next_era });
             if let Some(period_event) = maybe_period_event {

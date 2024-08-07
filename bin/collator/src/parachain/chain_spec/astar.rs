@@ -30,7 +30,7 @@ use sc_service::ChainType;
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},
-    Permill,
+    Perbill, Permill,
 };
 
 const PARA_ID: u32 = 2006;
@@ -167,21 +167,22 @@ fn make_genesis(
                 Permill::from_percent(30),
                 Permill::from_percent(40),
             ],
+            // percentages below are calulated based on total issuance at the time when dApp staking v3 was launched (8.4B)
             tier_thresholds: vec![
-                TierThreshold::DynamicTvlAmount {
-                    amount: 30000 * ASTR,
-                    minimum_amount: 20000 * ASTR,
+                TierThreshold::DynamicPercentage {
+                    percentage: Perbill::from_parts(35_700_000), // 3.57%
+                    minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
                 },
-                TierThreshold::DynamicTvlAmount {
-                    amount: 7500 * ASTR,
-                    minimum_amount: 5000 * ASTR,
+                TierThreshold::DynamicPercentage {
+                    percentage: Perbill::from_parts(8_900_000), // 0.89%
+                    minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
                 },
-                TierThreshold::DynamicTvlAmount {
-                    amount: 20000 * ASTR,
-                    minimum_amount: 15000 * ASTR,
+                TierThreshold::DynamicPercentage {
+                    percentage: Perbill::from_parts(2_380_000), // 0.238%
+                    minimum_required_percentage: Perbill::from_parts(1_790_000), // 0.179%
                 },
-                TierThreshold::FixedTvlAmount {
-                    amount: 5000 * ASTR,
+                TierThreshold::FixedPercentage {
+                    required_percentage: Perbill::from_parts(200_000), // 0.02%
                 },
             ],
             slots_per_tier: vec![10, 20, 30, 40],

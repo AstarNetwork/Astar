@@ -318,22 +318,33 @@ impl ExtBuilder {
                 ])
                 .unwrap(),
                 tier_thresholds: BoundedVec::try_from(vec![
-                    TierThreshold::DynamicTvlAmount {
-                        amount: 100,
-                        minimum_amount: 80,
+                    TierThreshold::DynamicPercentage {
+                        percentage: Perbill::from_parts(11_112_000), // 1.1112%
+                        minimum_required_percentage: Perbill::from_parts(8_889_000), // 0.8889%
                     },
-                    TierThreshold::DynamicTvlAmount {
-                        amount: 50,
-                        minimum_amount: 40,
+                    TierThreshold::DynamicPercentage {
+                        percentage: Perbill::from_parts(5_556_000), // 0.5556%
+                        minimum_required_percentage: Perbill::from_parts(4_400_000), // 0.44%
                     },
-                    TierThreshold::DynamicTvlAmount {
-                        amount: 20,
-                        minimum_amount: 20,
+                    TierThreshold::DynamicPercentage {
+                        percentage: Perbill::from_parts(2_223_000), // 0.2223%
+                        minimum_required_percentage: Perbill::from_parts(2_223_000), // 0.2223%
                     },
-                    TierThreshold::FixedTvlAmount { amount: 15 },
+                    TierThreshold::FixedPercentage {
+                        required_percentage: Perbill::from_parts(1_667_000), // 0.1667%
+                    },
                 ])
                 .unwrap(),
             };
+
+            let total_issuance = <Test as Config>::Currency::total_issuance();
+            let tier_thresholds = tier_params
+                .tier_thresholds
+                .iter()
+                .map(|t| t.threshold(total_issuance))
+                .collect::<Vec<Balance>>()
+                .try_into()
+                .expect("Invalid number of tier thresholds provided.");
 
             // Init tier config, based on the initial params. Needs to be adjusted to the init price.
             let init_tier_config = TiersConfiguration::<
@@ -341,13 +352,16 @@ impl ExtBuilder {
                 <Test as Config>::TierSlots,
                 <Test as Config>::BaseNativeCurrencyPrice,
             > {
-                number_of_slots: 40,
                 slots_per_tier: BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap(),
                 reward_portion: tier_params.reward_portion.clone(),
-                tier_thresholds: tier_params.tier_thresholds.clone(),
+                tier_thresholds,
                 _phantom: Default::default(),
             }
-            .calculate_new(NATIVE_PRICE.with(|v| v.borrow().clone()), &tier_params);
+            .calculate_new(
+                &tier_params,
+                NATIVE_PRICE.with(|v| v.borrow().clone()),
+                total_issuance,
+            );
 
             pallet_dapp_staking::StaticTierParams::<Test>::put(tier_params);
             pallet_dapp_staking::TierConfig::<Test>::put(init_tier_config.clone());
