@@ -59,17 +59,19 @@ impl<T: frame_system::Config> orml_oracle::WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Oracle::RawValues` (`max_values`: None, `max_size`: Some(73), added: 2548, mode: `MaxEncodedLen`)
 	/// Storage: `Oracle::Values` (r:1 w:0)
 	/// Proof: `Oracle::Values` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
-	/// The range of component `x` is `[1, 2]`.
+	/// The range of component `x` is `[0, 2]`.
 	fn feed_values(x: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `345`
 		//  Estimated: `8634`
-		// Minimum execution time: 25_321_000 picoseconds.
-		Weight::from_parts(18_159_773, 8634)
-			// Standard Error: 58_695
-			.saturating_add(Weight::from_parts(7_973_363, 0).saturating_mul(x.into()))
-			.saturating_add(T::DbWeight::get().reads(7_u64))
-			.saturating_add(T::DbWeight::get().writes(2_u64))
+		// Minimum execution time: 14_010_000 picoseconds.
+		Weight::from_parts(14_824_586, 8634)
+			// Standard Error: 29_331
+			.saturating_add(Weight::from_parts(10_148_634, 0).saturating_mul(x.into()))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().reads((4_u64).saturating_mul(x.into())))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(x.into())))
 	}
 	/// Storage: `Oracle::HasDispatched` (r:0 w:1)
 	/// Proof: `Oracle::HasDispatched` (`max_values`: Some(1), `max_size`: Some(257), added: 752, mode: `MaxEncodedLen`)
@@ -77,8 +79,8 @@ impl<T: frame_system::Config> orml_oracle::WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 1_170_000 picoseconds.
-		Weight::from_parts(1_248_000, 0)
+		// Minimum execution time: 880_000 picoseconds.
+		Weight::from_parts(914_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
