@@ -2062,8 +2062,8 @@ impl_runtime_apis! {
                 type DeliveryHelper = ();
 
                 // destination location to be used in benchmarks
-                assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v4::VERSION));
                 fn valid_destination() -> Result<Location, BenchmarkError> {
+                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v4::VERSION));
                     Ok(Location::parent())
                 }
                 fn worst_case_holding(_depositable_count: u32) -> Assets {

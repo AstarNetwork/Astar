@@ -143,7 +143,7 @@ parameter_types! {
     // For the PoV size, we estimate 4 kB per instruction. This will be changed when we benchmark the instructions.
     pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 4 * 1024);
     pub const MaxInstructions: u32 = 100;
-    pub const MaxAssetsIntoHolding: u32 = MAX_ASSETS;
+    pub const MaxAssetsIntoHolding: u32 = MAX_ASSETS as u32;
 }
 
 pub struct ParentOrParentsPlurality;
