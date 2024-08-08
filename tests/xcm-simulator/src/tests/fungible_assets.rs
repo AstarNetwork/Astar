@@ -626,7 +626,7 @@ fn para_a_send_relay_asset_to_para_b() {
             source_location,
             parent_account_id(),
             Some(true),
-            Some(123),
+            Some(1),
             // free execution
             Some(0)
         ));
@@ -640,7 +640,7 @@ fn para_a_send_relay_asset_to_para_b() {
             source_location,
             parent_account_id(),
             Some(true),
-            Some(123),
+            Some(1),
             Some(1_000_000_000_000)
         ));
     });
