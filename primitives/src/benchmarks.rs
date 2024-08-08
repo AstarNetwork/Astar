@@ -49,7 +49,7 @@ where
         // Max number of assets - relay asset & native asset
         let fungibles = MAX_ASSETS - 2;
         let fungibles_amount: u128 = 1_000_000_000_000_000_000_000_000;
-        let assets = (0..fungibles)
+        let assets = (1..=fungibles)
             .map(|i| Asset {
                 id: AssetId(GeneralIndex(i as u128).into()),
                 fun: Fungible(fungibles_amount * i as u128),
@@ -104,6 +104,7 @@ where
                 id: AssetId(Location::here()),
                 fun: Fungible(fungibles_amount),
             }))
+            .rev()
             .collect::<Vec<Asset>>()
             .into()
     }
