@@ -60,7 +60,7 @@ fn para_to_para_reserve_transfer_and_back_via_xtokens() {
             parachain::RuntimeOrigin::signed(ALICE),
             Box::new((Here, withdraw_amount).into()),
             Box::new(destination.into()),
-            WeightLimit::Unlimited
+            Unlimited
         ));
 
         // Parachain 2 sovereign account should have it's balance increased, while Alice balance should be decreased.
@@ -105,7 +105,7 @@ fn para_to_para_reserve_transfer_and_back_via_xtokens() {
             parachain::RuntimeOrigin::signed(ALICE),
             Box::new((para_a_multiloc, remaining).into()),
             Box::new(destination.into()),
-            WeightLimit::Unlimited
+            Unlimited
         ));
     });
 
@@ -446,7 +446,7 @@ fn receive_relay_asset_from_relay_and_send_them_back_via_xtokens() {
             Box::new(alice.into()),
             Box::new((Here, withdraw_amount).into()),
             0,
-            WeightLimit::Unlimited,
+            Unlimited,
         ));
 
         // Parachain A sovereign account should have it's balance increased, while Alice balance should be decreased.
@@ -493,7 +493,7 @@ fn receive_relay_asset_from_relay_and_send_them_back_via_xtokens() {
             parachain::RuntimeOrigin::signed(ALICE),
             Box::new((Parent, para_a_alice_expected_balance).into()),
             Box::new(destination.into()),
-            WeightLimit::Unlimited,
+            Unlimited,
         ));
     });
 
@@ -545,7 +545,7 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
             Box::new(alice.into()),
             Box::new((Here, withdraw_amount).into()),
             0,
-            WeightLimit::Unlimited,
+            Unlimited,
         ));
 
         // Parachain A sovereign account should have it's balance increased, while Alice balance should be decreased.
@@ -655,7 +655,7 @@ fn para_a_send_relay_asset_to_para_b() {
             Box::new(alice.into_location().into_versioned()),
             Box::new((Here, withdraw_amount).into()),
             0,
-            WeightLimit::Unlimited,
+            Unlimited,
         ));
     });
 
@@ -757,7 +757,7 @@ fn send_relay_asset_to_para_b_with_extra_native() {
             Box::new(alice.into_location().into_versioned()),
             Box::new((Here, withdraw_amount).into()),
             0,
-            WeightLimit::Unlimited,
+            Unlimited,
         ));
     });
 
@@ -845,7 +845,7 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
             ),
             Box::new((Here, withdraw_amount).into()),
             0,
-            WeightLimit::Unlimited,
+            Unlimited,
         ));
     });
 
@@ -880,7 +880,7 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
             ),
             Box::new((Here, withdraw_amount).into()),
             0,
-            WeightLimit::Unlimited,
+            Unlimited,
         ));
     });
 
@@ -932,7 +932,7 @@ fn receive_assets_with_sufficients_true_allows_non_funded_account_to_receive_ass
             ),
             Box::new((Here, withdraw_amount).into()),
             0,
-            WeightLimit::Unlimited,
+            Unlimited,
         ));
     });
 

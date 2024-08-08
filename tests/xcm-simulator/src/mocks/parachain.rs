@@ -23,8 +23,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, Contains, Currency,
-        Everything, Imbalance, InstanceFilter, Nothing, OnUnbalanced,
+        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, Contains, Everything,
+        InstanceFilter, Nothing,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -73,8 +73,6 @@ use astar_primitives::{
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 pub type AssetId = u128;
-
-pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
 pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
@@ -278,19 +276,6 @@ impl pallet_contracts::Config for Runtime {
     type UploadOrigin = EnsureSigned<AccountId32>;
     type InstantiateOrigin = EnsureSigned<AccountId32>;
     type ApiVersion = ();
-}
-
-pub struct BurnFees;
-impl OnUnbalanced<NegativeImbalance> for BurnFees {
-    /// Payout tips but burn all the fees
-    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
-        if let Some(mut fees_to_burn) = fees_then_tips.next() {
-            if let Some(tips) = fees_then_tips.next() {
-                fees_to_burn.subsume(tips)
-            }
-            drop(fees_to_burn);
-        }
-    }
 }
 
 /// The type used to represent the kinds of proxying allowed.
