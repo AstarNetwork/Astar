@@ -73,11 +73,12 @@ done
 if [ "$skip_build" != true ]
 then
   echo "[+] Compiling astar-collator benchmarks..."
-  CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose --features=runtime-benchmarks
+  CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose --features=runtime-benchmarks \
+  -p astar-runtime -p shiden-runtime -p shibuya-runtime
 fi
 
 # The executable to use.
-ASTAR_COLLATOR=./target/release/astar-collator
+BENCHMARK-TOOL="frame-omni-bencher v1"
 
 # Manually exclude some pallets.
 EXCLUDED_PALLETS=(
@@ -86,7 +87,7 @@ EXCLUDED_PALLETS=(
 
 # Load all pallet names in an array.
 ALL_PALLETS=($(
-  $ASTAR_COLLATOR benchmark pallet --list --chain=$chain |\
+  $BENCHMARK-TOOL benchmark pallet --list --runtime ./target/release/wbuild/astar-runtime/${chain}_runtime.compact.compressed.wasm |\
     tail -n+2 |\
     cut -d',' -f1 |\
     sort |\
@@ -120,8 +121,8 @@ for chain in ${chains//,/ }; do
       echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
 
       OUTPUT=$(
-        $ASTAR_COLLATOR benchmark pallet \
-        --chain=$chain \
+        $BENCHMARK-TOOL benchmark pallet \
+        --runtime ./target/release/wbuild/astar-runtime/${chain}_runtime.compact.compressed.wasm \
         --steps=50 \
         --repeat=20 \
         --pallet="$PALLET" \
@@ -139,7 +140,7 @@ for chain in ${chains//,/ }; do
 
     echo "[+] Benchmarking the machine..."
     OUTPUT=$(
-      $ASTAR_COLLATOR benchmark machine --chain=$chain 2>&1
+      $BENCHMARK-TOOL benchmark machine --chain=$chain 2>&1
     )
     if [ $? -ne 0 ]; then
       echo "[-] Failed the machine benchmark"

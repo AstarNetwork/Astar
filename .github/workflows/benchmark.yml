@@ -109,6 +109,9 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
+    - name: Install frame-omni bencher tool
+      run: cargo install frame-omni-bencher
+
     - name: Execute benchmarking
       run: |
         mkdir -p ./benchmark-results
