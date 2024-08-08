@@ -24,7 +24,7 @@ use fc_storage::StorageOverrideHandler;
 use futures::{FutureExt, StreamExt};
 use sc_client_api::{Backend, BlockBackend, BlockchainEvents};
 use sc_consensus_grandpa::SharedVoterState;
-use sc_executor::NativeElseWasmExecutor;
+use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::NetworkBackend;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
@@ -46,37 +46,20 @@ use astar_primitives::*;
 /// imported and generated.
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
-/// Extra host functions
-#[cfg(feature = "runtime-benchmarks")]
+/// Parachain host functions
+#[cfg(feature = "evm-tracing")]
 pub type HostFunctions = (
-    frame_benchmarking::benchmarking::HostFunctions,
-    // evm tracing host functions
+    cumulus_client_service::ParachainHostFunctions,
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
 );
 
-/// Extra host functions
-#[cfg(not(feature = "runtime-benchmarks"))]
-pub type HostFunctions = (
-    // evm tracing host functions
-    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-);
+/// Parachain host functions
+#[cfg(not(feature = "evm-tracing"))]
+pub type HostFunctions = (cumulus_client_service::ParachainHostFunctions,);
 
-/// Local runtime native executor.
-pub struct Executor;
+type ParachainExecutor = WasmExecutor<HostFunctions>;
 
-impl sc_executor::NativeExecutionDispatch for Executor {
-    type ExtendHostFunctions = HostFunctions;
-
-    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-        local_runtime::api::dispatch(method, data)
-    }
-
-    fn native_version() -> sc_executor::NativeVersion {
-        local_runtime::native_version()
-    }
-}
-
-type FullClient = sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>;
+type FullClient = sc_service::TFullClient<Block, RuntimeApi, ParachainExecutor>;
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
@@ -119,7 +102,19 @@ pub fn new_partial(
         })
         .transpose()?;
 
-    let executor = sc_service::new_native_or_wasm_executor(&config);
+    let heap_pages = config
+        .default_heap_pages
+        .map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |h| HeapAllocStrategy::Static {
+            extra_pages: h as _,
+        });
+
+    let executor = ParachainExecutor::builder()
+        .with_execution_method(config.wasm_method)
+        .with_onchain_heap_alloc_strategy(heap_pages)
+        .with_offchain_heap_alloc_strategy(heap_pages)
+        .with_max_runtime_instances(config.max_runtime_instances)
+        .with_runtime_cache_size(config.runtime_cache_size)
+        .build();
 
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts_record_import::<Block, RuntimeApi, _>(

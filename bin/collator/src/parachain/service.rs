@@ -41,7 +41,7 @@ use fc_storage::StorageOverrideHandler;
 use futures::StreamExt;
 use sc_client_api::BlockchainEvents;
 use sc_consensus::{import_queue::BasicQueue, ImportQueue};
-use sc_executor::NativeElseWasmExecutor;
+use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::{NetworkBackend, NetworkBlock};
 use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
@@ -66,113 +66,52 @@ use crate::{
     rpc::tracing,
 };
 
-/// Extra host functions
+/// Parachain host functions
+#[cfg(feature = "evm-tracing")]
 pub type HostFunctions = (
     cumulus_client_service::ParachainHostFunctions,
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
 );
 
-/// Astar network runtime executor.
-pub mod astar {
-    use super::HostFunctions;
-    pub use astar_runtime::RuntimeApi;
+/// Parachain host functions
+#[cfg(not(feature = "evm-tracing"))]
+pub type HostFunctions = (cumulus_client_service::ParachainHostFunctions,);
 
-    /// Shibuya runtime executor.
-    pub struct Executor;
-    impl sc_executor::NativeExecutionDispatch for Executor {
-        type ExtendHostFunctions = HostFunctions;
-
-        fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-            astar_runtime::api::dispatch(method, data)
-        }
-
-        fn native_version() -> sc_executor::NativeVersion {
-            astar_runtime::native_version()
-        }
-    }
-}
-
-/// Shiden network runtime executor.
-pub mod shiden {
-    use super::HostFunctions;
-    pub use shiden_runtime::RuntimeApi;
-
-    /// Shiden runtime executor.
-    pub struct Executor;
-    impl sc_executor::NativeExecutionDispatch for Executor {
-        type ExtendHostFunctions = HostFunctions;
-
-        fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-            shiden_runtime::api::dispatch(method, data)
-        }
-
-        fn native_version() -> sc_executor::NativeVersion {
-            shiden_runtime::native_version()
-        }
-    }
-}
-
-/// Shibuya network runtime executor.
-pub mod shibuya {
-    use super::HostFunctions;
-    pub use shibuya_runtime::RuntimeApi;
-
-    /// Shibuya runtime executor.
-    pub struct Executor;
-    impl sc_executor::NativeExecutionDispatch for Executor {
-        type ExtendHostFunctions = HostFunctions;
-
-        fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-            shibuya_runtime::api::dispatch(method, data)
-        }
-
-        fn native_version() -> sc_executor::NativeVersion {
-            shibuya_runtime::native_version()
-        }
-    }
-}
+type ParachainExecutor = WasmExecutor<HostFunctions>;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
-pub fn new_partial<RuntimeApi, Executor, BIQ>(
+pub fn new_partial<RuntimeApi, BIQ>(
     config: &Configuration,
     build_import_queue: BIQ,
 ) -> Result<
     PartialComponents<
-        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+        TFullClient<Block, RuntimeApi, ParachainExecutor>,
         TFullBackend<Block>,
         (),
         sc_consensus::DefaultImportQueue<Block>,
-        sc_transaction_pool::FullPool<
-            Block,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-        >,
+        sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>,
         (
             ParachainBlockImport<
                 Block,
                 FrontierBlockImport<
                     Block,
-                    Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-                    TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+                    Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
+                    TFullClient<Block, RuntimeApi, ParachainExecutor>,
                 >,
                 TFullBackend<Block>,
             >,
             Option<Telemetry>,
             Option<TelemetryWorkerHandle>,
-            Arc<
-                fc_db::kv::Backend<
-                    Block,
-                    TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-                >,
-            >,
+            Arc<fc_db::kv::Backend<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>>,
         ),
     >,
     sc_service::Error,
 >
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
@@ -185,15 +124,14 @@ where
         + fp_rpc::EthereumRuntimeRPCApi<Block>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
         sc_client_api::backend::StateBackend<BlakeTwo256>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
-        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+        Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
         ParachainBlockImport<
             Block,
             FrontierBlockImport<
                 Block,
-                Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-                TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+                Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
+                TFullClient<Block, RuntimeApi, ParachainExecutor>,
             >,
             TFullBackend<Block>,
         >,
@@ -213,7 +151,19 @@ where
         })
         .transpose()?;
 
-    let executor = sc_service::new_native_or_wasm_executor(&config);
+    let heap_pages = config
+        .default_heap_pages
+        .map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |h| HeapAllocStrategy::Static {
+            extra_pages: h as _,
+        });
+
+    let executor = ParachainExecutor::builder()
+        .with_execution_method(config.wasm_method)
+        .with_onchain_heap_alloc_strategy(heap_pages)
+        .with_offchain_heap_alloc_strategy(heap_pages)
+        .with_max_runtime_instances(config.max_runtime_instances)
+        .with_runtime_cache_size(config.runtime_cache_size)
+        .build();
 
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts_record_import::<Block, RuntimeApi, _>(
@@ -305,7 +255,7 @@ async fn build_relay_chain_interface(
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[cfg(not(feature = "evm-tracing"))]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-async fn start_node_impl<RuntimeApi, Executor, BIQ, SC, N>(
+async fn start_node_impl<RuntimeApi, BIQ, SC, N>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
@@ -315,10 +265,10 @@ async fn start_node_impl<RuntimeApi, Executor, BIQ, SC, N>(
     start_consensus: SC,
 ) -> sc_service::error::Result<(
     TaskManager,
-    Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+    Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
 )>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
@@ -336,15 +286,14 @@ where
         + AuraApi<Block, AuraId>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
         sc_client_api::backend::StateBackend<BlakeTwo256>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
-        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+        Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
         ParachainBlockImport<
             Block,
             FrontierBlockImport<
                 Block,
-                Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-                TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+                Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
+                TFullClient<Block, RuntimeApi, ParachainExecutor>,
             >,
             TFullBackend<Block>,
         >,
@@ -353,14 +302,14 @@ where
         &TaskManager,
     ) -> sc_consensus::DefaultImportQueue<Block>,
     SC: FnOnce(
-        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+        Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
         Arc<TFullBackend<Block>>,
         ParachainBlockImport<
             Block,
             FrontierBlockImport<
                 Block,
-                Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-                TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+                Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
+                TFullClient<Block, RuntimeApi, ParachainExecutor>,
             >,
             TFullBackend<Block>,
         >,
@@ -368,12 +317,7 @@ where
         Option<TelemetryHandle>,
         &TaskManager,
         Arc<dyn RelayChainInterface>,
-        Arc<
-            sc_transaction_pool::FullPool<
-                Block,
-                TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-            >,
-        >,
+        Arc<sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>>,
         Arc<SyncingService<Block>>,
         KeystorePtr,
         ParaId,
@@ -384,7 +328,7 @@ where
 {
     let parachain_config = prepare_node_config(parachain_config);
 
-    let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
+    let params = new_partial::<RuntimeApi, BIQ>(&parachain_config, build_import_queue)?;
     let (parachain_block_import, mut telemetry, telemetry_worker_handle, frontier_backend) =
         params.other;
     let net_config =
@@ -630,7 +574,7 @@ pub struct AdditionalConfig {
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[cfg(feature = "evm-tracing")]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-async fn start_node_impl<RuntimeApi, Executor, BIQ, SC, N>(
+async fn start_node_impl<RuntimeApi, BIQ, SC, N>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
@@ -640,10 +584,10 @@ async fn start_node_impl<RuntimeApi, Executor, BIQ, SC, N>(
     start_consensus: SC,
 ) -> sc_service::error::Result<(
     TaskManager,
-    Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+    Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
 )>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
@@ -663,15 +607,14 @@ where
         + AuraApi<Block, AuraId>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
         sc_client_api::backend::StateBackend<BlakeTwo256>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
-        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+        Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
         ParachainBlockImport<
             Block,
             FrontierBlockImport<
                 Block,
-                Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-                TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+                Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
+                TFullClient<Block, RuntimeApi, ParachainExecutor>,
             >,
             TFullBackend<Block>,
         >,
@@ -680,14 +623,14 @@ where
         &TaskManager,
     ) -> sc_consensus::DefaultImportQueue<Block>,
     SC: FnOnce(
-        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+        Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
         Arc<TFullBackend<Block>>,
         ParachainBlockImport<
             Block,
             FrontierBlockImport<
                 Block,
-                Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-                TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+                Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
+                TFullClient<Block, RuntimeApi, ParachainExecutor>,
             >,
             TFullBackend<Block>,
         >,
@@ -695,12 +638,7 @@ where
         Option<TelemetryHandle>,
         &TaskManager,
         Arc<dyn RelayChainInterface>,
-        Arc<
-            sc_transaction_pool::FullPool<
-                Block,
-                TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-            >,
-        >,
+        Arc<sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>>,
         Arc<SyncingService<Block>>,
         KeystorePtr,
         ParaId,
@@ -711,7 +649,7 @@ where
 {
     let parachain_config = prepare_node_config(parachain_config);
 
-    let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
+    let params = new_partial::<RuntimeApi, BIQ>(&parachain_config, build_import_queue)?;
     let (parachain_block_import, mut telemetry, telemetry_worker_handle, frontier_backend) =
         params.other;
     let net_config =
@@ -966,14 +904,14 @@ where
 
 /// Build aura import queue with fallback to relay-chain verifier.
 /// Starts with relay-chain verifier until aura becomes available.
-pub fn build_import_queue_fallback<RuntimeApi, Executor>(
-    client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+pub fn build_import_queue_fallback<RuntimeApi>(
+    client: Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
     block_import: ParachainBlockImport<
         Block,
         FrontierBlockImport<
             Block,
-            Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+            Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
+            TFullClient<Block, RuntimeApi, ParachainExecutor>,
         >,
         TFullBackend<Block>,
     >,
@@ -982,7 +920,7 @@ pub fn build_import_queue_fallback<RuntimeApi, Executor>(
     task_manager: &TaskManager,
 ) -> sc_consensus::DefaultImportQueue<Block>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
@@ -996,7 +934,6 @@ where
         + AuraApi<Block, AuraId>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
         sc_client_api::StateBackend<BlakeTwo256>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     let verifier_client = client.clone();
 
@@ -1042,14 +979,14 @@ where
 }
 
 /// Build aura only import queue.
-pub fn build_import_queue<RuntimeApi, Executor>(
-    client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+pub fn build_import_queue<RuntimeApi>(
+    client: Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
     block_import: ParachainBlockImport<
         Block,
         FrontierBlockImport<
             Block,
-            Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+            Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
+            TFullClient<Block, RuntimeApi, ParachainExecutor>,
         >,
         TFullBackend<Block>,
     >,
@@ -1058,7 +995,7 @@ pub fn build_import_queue<RuntimeApi, Executor>(
     task_manager: &TaskManager,
 ) -> sc_consensus::DefaultImportQueue<Block>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
@@ -1072,7 +1009,6 @@ where
         + AuraApi<Block, AuraId>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
         sc_client_api::StateBackend<BlakeTwo256>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     let cidp_client = client.clone();
 
@@ -1108,15 +1044,15 @@ where
 }
 
 /// Start collating with the `shell` runtime while waiting for an upgrade to an Aura compatible runtime.
-fn start_aura_consensus_fallback<RuntimeApi, Executor>(
-    client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+fn start_aura_consensus_fallback<RuntimeApi>(
+    client: Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
     backend: Arc<TFullBackend<Block>>,
     parachain_block_import: ParachainBlockImport<
         Block,
         FrontierBlockImport<
             Block,
-            Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+            Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
+            TFullClient<Block, RuntimeApi, ParachainExecutor>,
         >,
         TFullBackend<Block>,
     >,
@@ -1125,10 +1061,7 @@ fn start_aura_consensus_fallback<RuntimeApi, Executor>(
     task_manager: &TaskManager,
     relay_chain_interface: Arc<dyn RelayChainInterface>,
     transaction_pool: Arc<
-        sc_transaction_pool::FullPool<
-            Block,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-        >,
+        sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>,
     >,
     sync_oracle: Arc<SyncingService<Block>>,
     keystore: KeystorePtr,
@@ -1137,7 +1070,7 @@ fn start_aura_consensus_fallback<RuntimeApi, Executor>(
     additional_config: AdditionalConfig,
 ) -> Result<(), sc_service::Error>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
@@ -1153,7 +1086,6 @@ where
         + cumulus_primitives_core::CollectCollationInfo<Block>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
         sc_client_api::StateBackend<BlakeTwo256>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     let mut proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
         task_manager.spawn_handle(),
@@ -1260,15 +1192,15 @@ where
     Ok(())
 }
 
-fn start_aura_consensus<RuntimeApi, Executor>(
-    client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+fn start_aura_consensus<RuntimeApi>(
+    client: Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
     backend: Arc<TFullBackend<Block>>,
     parachain_block_import: ParachainBlockImport<
         Block,
         FrontierBlockImport<
             Block,
-            Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+            Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
+            TFullClient<Block, RuntimeApi, ParachainExecutor>,
         >,
         TFullBackend<Block>,
     >,
@@ -1277,10 +1209,7 @@ fn start_aura_consensus<RuntimeApi, Executor>(
     task_manager: &TaskManager,
     relay_chain_interface: Arc<dyn RelayChainInterface>,
     transaction_pool: Arc<
-        sc_transaction_pool::FullPool<
-            Block,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-        >,
+        sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>,
     >,
     sync_oracle: Arc<SyncingService<Block>>,
     keystore: KeystorePtr,
@@ -1289,7 +1218,7 @@ fn start_aura_consensus<RuntimeApi, Executor>(
     additional_config: AdditionalConfig,
 ) -> Result<(), sc_service::Error>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
@@ -1305,7 +1234,6 @@ where
         + cumulus_primitives_core::CollectCollationInfo<Block>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
         sc_client_api::StateBackend<BlakeTwo256>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     let mut proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
         task_manager.spawn_handle(),
@@ -1376,9 +1304,9 @@ pub async fn start_astar_node(
     additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
-    Arc<TFullClient<Block, astar::RuntimeApi, NativeElseWasmExecutor<astar::Executor>>>,
+    Arc<TFullClient<Block, astar_runtime::RuntimeApi, ParachainExecutor>>,
 )> {
-    start_node_impl::<astar::RuntimeApi, astar::Executor, _, _, sc_network::NetworkWorker<_, _>>(
+    start_node_impl::<astar_runtime::RuntimeApi, _, _, sc_network::NetworkWorker<_, _>>(
         parachain_config,
         polkadot_config,
         collator_options,
@@ -1399,9 +1327,9 @@ pub async fn start_shiden_node(
     additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
-    Arc<TFullClient<Block, shiden::RuntimeApi, NativeElseWasmExecutor<shiden::Executor>>>,
+    Arc<TFullClient<Block, shiden_runtime::RuntimeApi, ParachainExecutor>>,
 )> {
-    start_node_impl::<shiden::RuntimeApi, shiden::Executor, _, _, sc_network::NetworkWorker<_, _>>(
+    start_node_impl::<shiden_runtime::RuntimeApi, _, _, sc_network::NetworkWorker<_, _>>(
         parachain_config,
         polkadot_config,
         collator_options,
@@ -1422,9 +1350,9 @@ pub async fn start_shibuya_node(
     additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
-    Arc<TFullClient<Block, shibuya::RuntimeApi, NativeElseWasmExecutor<shibuya::Executor>>>,
+    Arc<TFullClient<Block, shibuya_runtime::RuntimeApi, ParachainExecutor>>,
 )> {
-    start_node_impl::<shibuya::RuntimeApi, shibuya::Executor, _, _, sc_network::NetworkWorker<_, _>>(
+    start_node_impl::<shibuya_runtime::RuntimeApi, _, _, sc_network::NetworkWorker<_, _>>(
         parachain_config,
         polkadot_config,
         collator_options,

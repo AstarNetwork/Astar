@@ -21,8 +21,8 @@ use crate::{
     cli::{Cli, RelayChainCli, Subcommand},
     local::{self, development_config},
     parachain::{
-        self, astar, chain_spec, service::AdditionalConfig, shibuya, shiden, start_astar_node,
-        start_shibuya_node, start_shiden_node,
+        self, chain_spec, service::AdditionalConfig, start_astar_node, start_shibuya_node,
+        start_shiden_node,
     },
 };
 use cumulus_primitives_core::ParaId;
@@ -205,7 +205,7 @@ pub fn run() -> Result<()> {
                         task_manager,
                         import_queue,
                         ..
-                    } = parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                    } = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue,
                     )?;
@@ -218,7 +218,7 @@ pub fn run() -> Result<()> {
                         task_manager,
                         import_queue,
                         ..
-                    } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    } = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue_fallback,
                     )?;
@@ -231,7 +231,7 @@ pub fn run() -> Result<()> {
                         task_manager,
                         import_queue,
                         ..
-                    } = parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                    } = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue,
                     )?;
@@ -247,7 +247,7 @@ pub fn run() -> Result<()> {
                         client,
                         task_manager,
                         ..
-                    } = parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                    } = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue,
                     )?;
@@ -259,7 +259,7 @@ pub fn run() -> Result<()> {
                         client,
                         task_manager,
                         ..
-                    } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    } = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue_fallback,
                     )?;
@@ -271,7 +271,7 @@ pub fn run() -> Result<()> {
                         client,
                         task_manager,
                         ..
-                    } = parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                    } = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue,
                     )?;
@@ -287,7 +287,7 @@ pub fn run() -> Result<()> {
                         client,
                         task_manager,
                         ..
-                    } = parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                    } = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue,
                     )?;
@@ -299,7 +299,7 @@ pub fn run() -> Result<()> {
                         client,
                         task_manager,
                         ..
-                    } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    } = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue_fallback,
                     )?;
@@ -311,7 +311,7 @@ pub fn run() -> Result<()> {
                         client,
                         task_manager,
                         ..
-                    } = parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                    } = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue,
                     )?;
@@ -328,7 +328,7 @@ pub fn run() -> Result<()> {
                         task_manager,
                         import_queue,
                         ..
-                    } = parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                    } = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue,
                     )?;
@@ -341,7 +341,7 @@ pub fn run() -> Result<()> {
                         task_manager,
                         import_queue,
                         ..
-                    } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    } = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue_fallback,
                     )?;
@@ -354,7 +354,7 @@ pub fn run() -> Result<()> {
                         task_manager,
                         import_queue,
                         ..
-                    } = parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                    } = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue,
                     )?;
@@ -390,7 +390,7 @@ pub fn run() -> Result<()> {
                         task_manager,
                         backend,
                         ..
-                    } = parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                    } = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue,
                     )?;
@@ -407,7 +407,7 @@ pub fn run() -> Result<()> {
                         task_manager,
                         backend,
                         ..
-                    } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    } = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue_fallback,
                     )?;
@@ -424,7 +424,7 @@ pub fn run() -> Result<()> {
                         task_manager,
                         backend,
                         ..
-                    } = parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                    } = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
                         &config,
                         parachain::build_import_queue,
                     )?;
@@ -441,7 +441,7 @@ pub fn run() -> Result<()> {
             if runner.config().chain_spec.is_astar() {
                 runner.sync_run(|config| {
                     let PartialComponents { client, .. } =
-                        parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                        parachain::new_partial::<astar_runtime::RuntimeApi, _>(
                             &config,
                             parachain::build_import_queue,
                         )?;
@@ -450,7 +450,7 @@ pub fn run() -> Result<()> {
             } else if runner.config().chain_spec.is_shiden() {
                 runner.sync_run(|config| {
                     let PartialComponents { client, .. } =
-                        parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                        parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
                             &config,
                             parachain::build_import_queue_fallback,
                         )?;
@@ -459,7 +459,7 @@ pub fn run() -> Result<()> {
             } else {
                 runner.sync_run(|config| {
                     let PartialComponents { client, .. } =
-                        parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                        parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
                             &config,
                             parachain::build_import_queue,
                         )?;
@@ -519,20 +519,18 @@ pub fn run() -> Result<()> {
                 BenchmarkCmd::Block(cmd) => {
                     if chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            let params =
-                                parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
-                                    &config,
-                                    parachain::build_import_queue,
-                                )?;
+                            let params = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
+                                &config,
+                                parachain::build_import_queue,
+                            )?;
                             cmd.run(params.client)
                         })
                     } else if chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            let params =
-                                parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
-                                    &config,
-                                    parachain::build_import_queue_fallback,
-                                )?;
+                            let params = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
+                                &config,
+                                parachain::build_import_queue_fallback,
+                            )?;
                             cmd.run(params.client)
                         })
                     } else if chain_spec.is_shibuya() {
@@ -556,11 +554,10 @@ pub fn run() -> Result<()> {
                 BenchmarkCmd::Storage(cmd) => {
                     if chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            let params =
-                                parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
-                                    &config,
-                                    parachain::build_import_queue,
-                                )?;
+                            let params = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
+                                &config,
+                                parachain::build_import_queue,
+                            )?;
                             let db = params.backend.expose_db();
                             let storage = params.backend.expose_storage();
 
@@ -568,11 +565,10 @@ pub fn run() -> Result<()> {
                         })
                     } else if chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            let params =
-                                parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
-                                    &config,
-                                    parachain::build_import_queue_fallback,
-                                )?;
+                            let params = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
+                                &config,
+                                parachain::build_import_queue_fallback,
+                            )?;
                             let db = params.backend.expose_db();
                             let storage = params.backend.expose_storage();
 
@@ -605,11 +601,10 @@ pub fn run() -> Result<()> {
                 BenchmarkCmd::Overhead(cmd) => {
                     if chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            let params =
-                                parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
-                                    &config,
-                                    parachain::build_import_queue,
-                                )?;
+                            let params = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
+                                &config,
+                                parachain::build_import_queue,
+                            )?;
                             let ext_builder = RemarkBuilder::new(params.client.clone());
                             let inherent_data = para_benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
@@ -624,11 +619,10 @@ pub fn run() -> Result<()> {
                         })
                     } else if chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            let params =
-                                parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
-                                    &config,
-                                    parachain::build_import_queue_fallback,
-                                )?;
+                            let params = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
+                                &config,
+                                parachain::build_import_queue_fallback,
+                            )?;
 
                             let ext_builder = RemarkBuilder::new(params.client.clone());
                             let inherent_data = para_benchmark_inherent_data()
@@ -684,11 +678,10 @@ pub fn run() -> Result<()> {
                 BenchmarkCmd::Extrinsic(cmd) => {
                     if chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            let params =
-                                parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
-                                    &config,
-                                    parachain::build_import_queue,
-                                )?;
+                            let params = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
+                                &config,
+                                parachain::build_import_queue,
+                            )?;
                             let remark_builder = RemarkBuilder::new(params.client.clone());
                             let tka_builder = TransferKeepAliveBuilder::new(
                                 params.client.clone(),
@@ -706,11 +699,10 @@ pub fn run() -> Result<()> {
                         })
                     } else if chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            let params =
-                                parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
-                                    &config,
-                                    parachain::build_import_queue_fallback,
-                                )?;
+                            let params = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
+                                &config,
+                                parachain::build_import_queue_fallback,
+                            )?;
                             let remark_builder = RemarkBuilder::new(params.client.clone());
                             let tka_builder = TransferKeepAliveBuilder::new(
                                 params.client.clone(),
