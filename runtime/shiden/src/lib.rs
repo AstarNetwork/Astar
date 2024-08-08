@@ -1397,7 +1397,6 @@ mod benches {
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
         [pallet_price_aggregator, PriceAggregator]
-        [pallet_membership, OracleMembership]
         [orml_oracle, Oracle]
     );
 }
@@ -2118,7 +2117,7 @@ impl_runtime_apis! {
                     Err(BenchmarkError::Skip)
                 }
                 fn fee_asset() -> Result<Asset, BenchmarkError> {
-                    Ok((AssetId(Here.into()), 100).into())
+                    Ok((AssetId(Here.into()), 1_000_000_000_000_000_000u128).into())
                 }
             }
 
