@@ -535,12 +535,9 @@ pub fn run() -> Result<()> {
                         })
                     } else if chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            let params = parachain::new_partial::<
-                                shibuya::RuntimeApi,
-                                shibuya::Executor,
-                                _,
-                            >(
-                                &config, parachain::build_import_queue
+                            let params = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
+                                &config,
+                                parachain::build_import_queue,
                             )?;
                             cmd.run(params.client)
                         })
@@ -576,12 +573,9 @@ pub fn run() -> Result<()> {
                         })
                     } else if chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            let params = parachain::new_partial::<
-                                shibuya::RuntimeApi,
-                                shibuya::Executor,
-                                _,
-                            >(
-                                &config, parachain::build_import_queue
+                            let params = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
+                                &config,
+                                parachain::build_import_queue,
                             )?;
                             let db = params.backend.expose_db();
                             let storage = params.backend.expose_storage();
@@ -638,12 +632,9 @@ pub fn run() -> Result<()> {
                         })
                     } else if chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            let params = parachain::new_partial::<
-                                shibuya::RuntimeApi,
-                                shibuya::Executor,
-                                _,
-                            >(
-                                &config, parachain::build_import_queue
+                            let params = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
+                                &config,
+                                parachain::build_import_queue,
                             )?;
 
                             let ext_builder = RemarkBuilder::new(params.client.clone());
@@ -720,12 +711,9 @@ pub fn run() -> Result<()> {
                         })
                     } else if chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            let params = parachain::new_partial::<
-                                shibuya::RuntimeApi,
-                                shibuya::Executor,
-                                _,
-                            >(
-                                &config, parachain::build_import_queue
+                            let params = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
+                                &config,
+                                parachain::build_import_queue,
                             )?;
                             let remark_builder = RemarkBuilder::new(params.client.clone());
                             let tka_builder = TransferKeepAliveBuilder::new(

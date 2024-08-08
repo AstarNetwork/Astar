@@ -77,7 +77,8 @@ pub type HostFunctions = (
 #[cfg(not(feature = "evm-tracing"))]
 pub type HostFunctions = (cumulus_client_service::ParachainHostFunctions,);
 
-type ParachainExecutor = WasmExecutor<HostFunctions>;
+/// Parachain executor
+pub type ParachainExecutor = WasmExecutor<HostFunctions>;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
