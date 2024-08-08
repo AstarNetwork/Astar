@@ -271,16 +271,6 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-    pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
-}
-
-impl cumulus_pallet_dmp_queue::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type DmpSink = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
-    type WeightInfo = cumulus_pallet_dmp_queue::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
     /// The absolute location in perspective of the whole network.
     pub ShibuyaLocationAbsolute: Location = Location {
         parents: 1,

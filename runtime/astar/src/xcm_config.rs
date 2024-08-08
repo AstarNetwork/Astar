@@ -342,19 +342,6 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-    pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
-}
-
-// TODO: This pallet should be removed after the lazy migration is done and
-// event `Completed` is emitted.
-// https://github.com/paritytech/polkadot-sdk/pull/1246
-impl cumulus_pallet_dmp_queue::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type DmpSink = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
-    type WeightInfo = cumulus_pallet_dmp_queue::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
     /// The absolute location in perspective of the whole network.
     pub AstarLocationAbsolute: Location = Location {
         parents: 1,

@@ -718,7 +718,7 @@ impl pallet_contracts::Config for Runtime {
     type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
     type Debug = ();
     type Environment = ();
-    type Migrations = ();
+    type Migrations = (pallet_contracts::migration::v16::Migration<Runtime>,);
     type Xcm = ();
     type UploadOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
     type InstantiateOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
@@ -1025,7 +1025,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::XcmpQueue(..)
                         | RuntimeCall::PolkadotXcm(..)
                         | RuntimeCall::CumulusXcm(..)
-                        | RuntimeCall::DmpQueue(..)
                         | RuntimeCall::XcAssetConfig(..)
                         // Skip entire EVM pallet
                         // Skip entire Ethereum pallet
@@ -1226,7 +1225,6 @@ construct_runtime!(
         XcmpQueue: cumulus_pallet_xcmp_queue = 50,
         PolkadotXcm: pallet_xcm = 51,
         CumulusXcm: cumulus_pallet_xcm = 52,
-        DmpQueue: cumulus_pallet_dmp_queue = 53,
         XcAssetConfig: pallet_xc_asset_config = 54,
         XTokens: orml_xtokens = 55,
         MessageQueue: pallet_message_queue = 56,
@@ -1297,17 +1295,23 @@ parameter_types! {
     ];
 }
 
+parameter_types! {
+    pub const DmpQueuePalletName: &'static str = "DmpQueue";
+}
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
     // permanent migration, do not remove
     pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
-    // XCM V3 -> V4
-    pallet_xc_asset_config::migrations::versioned::V2ToV3<Runtime>,
-    pallet_identity::migration::versioned::V0ToV1<Runtime, 250>,
     // dapp-staking dyn tier threshold migrations
     pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime, TierThresholds>,
+    frame_support::migrations::RemovePallet<
+        DmpQueuePalletName,
+        <Runtime as frame_system::Config>::DbWeight,
+    >,
+    pallet_contracts::Migration<Runtime>,
 );
 
 type EventRecord = frame_system::EventRecord<
