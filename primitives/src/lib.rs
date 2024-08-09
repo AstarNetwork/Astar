@@ -48,6 +48,7 @@ pub mod governance;
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarks;
 
+use frame_support::migrations::{FailedMigrationHandler, FailedMigrationHandling};
 use sp_runtime::{
     generic,
     traits::{BlakeTwo256, IdentifyAccount, Verify},
@@ -81,3 +82,14 @@ pub type AssetId = u128;
 pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
 /// Index of a transaction in the chain.
 pub type Nonce = u32;
+
+/// Unfreeze chain on failed migration and continue with extrinsic execution.
+/// Migration must be tested and make sure it doesn't fail. If it happens, we don't have other
+/// choices but unfreeze chain and continue with extrinsic execution.
+pub struct UnfreezeChainOnFailedMigration;
+impl FailedMigrationHandler for UnfreezeChainOnFailedMigration {
+    fn failed(migration: Option<u32>) -> FailedMigrationHandling {
+        log::error!(target: "mbm", "Migration failed at cursor: {migration:?}");
+        FailedMigrationHandling::ForceUnstuck
+    }
+}
