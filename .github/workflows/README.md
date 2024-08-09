@@ -8,22 +8,22 @@ Latest commit hash in PR branch will be built and used for benchmarking.
 ### How to execute
 Usage
 ```
-# [chain names] - Use "," for multiple runtimes. Available values are: astar-dev, shiden-dev, shibuya-dev, dev
+# [chain names] - Use "," for multiple runtimes. Available values are: astar, shiden, shibuya
 # [pallet names] - Use "," for multiple pallets, "all" for all pallets
 /bench [chain names] [pallet names]
 ```
 ```
 # benchmark a pallet
-/bench astar-dev pallet_balances
+/bench astar pallet_balances
 
 # benchmark multiple pallets
-/bench astar-dev pallet_balances,pallet_dapps_staking
+/bench astar pallet_balances,pallet_dapps_staking
 
 # benchmark all pallets
-/bench astar-dev all
+/bench astar all
 
 # benchmark multiple runtimes with multiple pallets
-/bench astar-dev,shibuya-dev pallet_balances,pallet_dapps_staking
+/bench astar,shibuya pallet_balances,pallet_dapps_staking
 ```
 
 
