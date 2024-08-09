@@ -41,8 +41,6 @@ var srcIndex = new Map(JSON.parse('[\
 ["pallet_static_price_provider",["",[],["lib.rs"]]],\
 ["pallet_unified_accounts",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_xc_asset_config",["",[],["lib.rs","migrations.rs","weights.rs"]]],\
-["precompile_utils",["",[["evm",[],["costs.rs","handle.rs","logs.rs","mod.rs"]],["solidity",[["codec",[],["bytes.rs","mod.rs","native.rs","xcm.rs"]]],["mod.rs","modifier.rs","revert.rs"]]],["lib.rs","precompile_set.rs","substrate.rs"]]],\
-["precompile_utils_macro_v2",["",[["precompile",[],["attr.rs","expand.rs","mod.rs","parse.rs"]]],["derive_codec.rs","lib.rs","precompile_name_from_address.rs"]]],\
 ["shibuya_runtime",["",[["weights",[["xcm",[],["fungible.rs","generic.rs","mod.rs"]]],["mod.rs","orml_oracle.rs","pallet_assets.rs","pallet_balances.rs","pallet_dapp_staking_v3.rs","pallet_inflation.rs","pallet_xcm.rs"]]],["chain_extensions.rs","lib.rs","precompiles.rs","xcm_config.rs"]]],\
 ["shiden_runtime",["",[["weights",[["xcm",[],["fungible.rs","generic.rs","mod.rs"]]],["mod.rs","orml_oracle.rs","pallet_assets.rs","pallet_dapp_staking_v3.rs","pallet_inflation.rs","pallet_xcm.rs"]]],["chain_extensions.rs","lib.rs","precompiles.rs","xcm_config.rs"]]],\
 ["unified_accounts_chain_extension_types",["",[],["lib.rs"]]],\

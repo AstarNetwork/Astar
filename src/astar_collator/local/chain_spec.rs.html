@@ -360,7 +360,7 @@
         evm: EVMConfig {
             <span class="comment">// We need _some_ code inserted at the precompile address so that
             // the evm will actually call the address.
-            </span>accounts: Precompiles::used_addresses()
+            </span>accounts: Precompiles::used_addresses_h160()
                 .map(|addr| {
                     (
                         addr,
