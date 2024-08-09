@@ -57,7 +57,7 @@
 //!
 //! ## Tier Information
 //!
-//! * `TierThreshold` - an enum describing tier entry thresholds (as TVL amounts or as percentages of the total issuance).
+//! * `TierThreshold` - an enum describing tier entry thresholds as percentages of the total issuance.
 //! * `TierParameters` - contains static information about tiers, like init thresholds, reward & slot distribution.
 //! * `TiersConfiguration` - contains dynamic information about tiers, derived from `TierParameters` and onchain data.
 //! * `DAppTier` - a compact struct describing a dApp's tier.

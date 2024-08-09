@@ -50,7 +50,7 @@ use std::collections::BTreeMap;
 
 #[test]
 fn maintenances_mode_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Check that maintenance mode is disabled by default
         assert!(!ActiveProtocolState::<Test>::get().maintenance);
 
@@ -78,7 +78,7 @@ fn maintenances_mode_works() {
 
 #[test]
 fn maintenance_mode_call_filtering_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Enable maintenance mode & check post-state
         assert_ok!(DappStaking::maintenance_mode(RuntimeOrigin::root(), true));
         assert!(ActiveProtocolState::<Test>::get().maintenance);
@@ -187,7 +187,7 @@ fn maintenance_mode_call_filtering_works() {
 
 #[test]
 fn on_initialize_is_noop_if_no_era_change() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let protocol_state = ActiveProtocolState::<Test>::get();
         let current_block_number = System::block_number();
 
@@ -206,7 +206,7 @@ fn on_initialize_is_noop_if_no_era_change() {
 
 #[test]
 fn on_initialize_base_state_change_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Sanity check
         let protocol_state = ActiveProtocolState::<Test>::get();
         assert_eq!(protocol_state.era, 1);
@@ -266,7 +266,7 @@ fn on_initialize_base_state_change_works() {
 
 #[test]
 fn register_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Basic test
         assert_register(5, &MockSmartContract::Wasm(1));
 
@@ -293,7 +293,7 @@ fn register_is_ok() {
 
 #[test]
 fn register_with_incorrect_origin_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Test assumes that Contract registry & Manager origins are different.
         assert_noop!(
             DappStaking::register(
@@ -318,7 +318,7 @@ fn register_with_incorrect_origin_fails() {
 
 #[test]
 fn register_already_registered_contract_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let smart_contract = MockSmartContract::Wasm(1);
         assert_register(2, &smart_contract);
         assert_noop!(
@@ -330,7 +330,7 @@ fn register_already_registered_contract_fails() {
 
 #[test]
 fn register_past_max_number_of_contracts_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let limit = <Test as Config>::MaxNumberOfContracts::get();
         for id in 1..=limit {
             assert_register(1, &MockSmartContract::Wasm(id.into()));
@@ -349,7 +349,7 @@ fn register_past_max_number_of_contracts_fails() {
 
 #[test]
 fn register_past_sentinel_value_of_id_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // hacky approach, but good enough for test
         NextDAppId::<Test>::put(DAppId::MAX - 1);
 
@@ -367,7 +367,7 @@ fn register_past_sentinel_value_of_id_fails() {
 
 #[test]
 fn set_dapp_reward_beneficiary_for_contract_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Prepare & register smart contract
         let owner = 1;
         let smart_contract = MockSmartContract::Wasm(3);
@@ -386,7 +386,7 @@ fn set_dapp_reward_beneficiary_for_contract_is_ok() {
 
 #[test]
 fn set_dapp_reward_beneficiary_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let owner = 1;
         let smart_contract = MockSmartContract::Wasm(3);
 
@@ -415,7 +415,7 @@ fn set_dapp_reward_beneficiary_fails() {
 
 #[test]
 fn set_dapp_owner_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Prepare & register smart contract
         let owner = 1;
         let smart_contract = MockSmartContract::Wasm(3);
@@ -433,7 +433,7 @@ fn set_dapp_owner_is_ok() {
 
 #[test]
 fn set_dapp_owner_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let owner = 1;
         let smart_contract = MockSmartContract::Wasm(3);
 
@@ -458,7 +458,7 @@ fn set_dapp_owner_fails() {
 
 #[test]
 fn unregister_no_stake_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Prepare dApp
         let owner = 1;
         let smart_contract = MockSmartContract::Wasm(3);
@@ -484,7 +484,7 @@ fn unregister_no_stake_is_ok() {
 
 #[test]
 fn unregister_with_active_stake_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Prepare dApp
         let owner = 1;
         let smart_contract = MockSmartContract::Wasm(3);
@@ -499,7 +499,7 @@ fn unregister_with_active_stake_is_ok() {
 
 #[test]
 fn unregister_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let owner = 1;
         let smart_contract = MockSmartContract::Wasm(3);
 
@@ -534,7 +534,7 @@ fn unregister_fails() {
 
 #[test]
 fn lock_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Lock some amount
         let locker = 2;
         let free_balance = Balances::total_balance(&locker);
@@ -553,7 +553,7 @@ fn lock_is_ok() {
 
 #[test]
 fn lock_with_reserve_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Prepare locker account
         let locker = 30;
         let minimum_locked_amount: Balance = <Test as Config>::MinimumLockedAmount::get();
@@ -572,7 +572,7 @@ fn lock_with_reserve_is_ok() {
 
 #[test]
 fn lock_with_incorrect_amount_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Cannot lock "nothing"
         assert_noop!(
             DappStaking::lock(RuntimeOrigin::signed(1), Balance::zero()),
@@ -600,7 +600,7 @@ fn lock_with_incorrect_amount_fails() {
 
 #[test]
 fn lock_with_blacklisted_account_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         Balances::make_free_balance_be(&BLACKLISTED_ACCOUNT, 100000);
 
         assert_noop!(
@@ -612,7 +612,7 @@ fn lock_with_blacklisted_account_fails() {
 
 #[test]
 fn unbond_and_unstake_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Lock some amount
         let account = 2;
         let lock_amount = 101;
@@ -635,7 +635,7 @@ fn unbond_and_unstake_is_ok() {
 
 #[test]
 fn unlock_basic_example_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Lock some amount
         let account = 2;
         let lock_amount = 101;
@@ -657,7 +657,7 @@ fn unlock_basic_example_is_ok() {
 
 #[test]
 fn unlock_with_remaining_amount_below_threshold_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Lock some amount in a few eras
         let account = 2;
         let lock_amount = 101;
@@ -678,7 +678,7 @@ fn unlock_with_remaining_amount_below_threshold_is_ok() {
 
 #[test]
 fn unlock_with_amount_higher_than_available_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Lock some amount in a few eras
         let account = 2;
         let lock_amount = 101;
@@ -704,7 +704,7 @@ fn unlock_with_amount_higher_than_available_is_ok() {
 
 #[test]
 fn unlock_advanced_examples_are_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Lock some amount
         let account = 2;
         let lock_amount = 101;
@@ -734,7 +734,7 @@ fn unlock_advanced_examples_are_ok() {
 
 #[test]
 fn unlock_everything_with_active_stake_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let account = 2;
         let lock_amount = 101;
         assert_lock(account, lock_amount);
@@ -759,7 +759,7 @@ fn unlock_everything_with_active_stake_fails() {
 
 #[test]
 fn unlock_with_zero_amount_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let account = 2;
         let lock_amount = 101;
         assert_lock(account, lock_amount);
@@ -786,7 +786,7 @@ fn unlock_with_zero_amount_fails() {
 
 #[test]
 fn unlock_with_exceeding_unlocking_chunks_storage_limits_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Lock some amount in a few eras
         let account = 2;
         let lock_amount = 103;
@@ -814,7 +814,7 @@ fn unlock_with_exceeding_unlocking_chunks_storage_limits_fails() {
 
 #[test]
 fn withdraw_unbonded_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Lock & immediately unlock some amount
         let account = 2;
         let lock_amount = 97;
@@ -837,7 +837,7 @@ fn withdraw_unbonded_is_ok() {
 
 #[test]
 fn claim_unlocked_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let unlocking_blocks = DappStaking::unlocking_period();
 
         // Lock some amount in a few eras
@@ -877,7 +877,7 @@ fn claim_unlocked_is_ok() {
 
 #[test]
 fn claim_unlocked_no_eligible_chunks_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Sanity check
         let account = 2;
         assert_noop!(
@@ -899,7 +899,7 @@ fn claim_unlocked_no_eligible_chunks_fails() {
 
 #[test]
 fn relock_unlocking_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Lock some amount
         let account = 2;
         let lock_amount = 91;
@@ -925,7 +925,7 @@ fn relock_unlocking_is_ok() {
 
 #[test]
 fn relock_unlocking_no_chunks_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         assert_noop!(
             DappStaking::relock_unlocking(RuntimeOrigin::signed(1)),
             Error::<Test>::NoUnlockingChunks,
@@ -935,7 +935,7 @@ fn relock_unlocking_no_chunks_fails() {
 
 #[test]
 fn relock_unlocking_insufficient_lock_amount_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let minimum_locked_amount: Balance = <Test as Config>::MinimumLockedAmount::get();
 
         // lock amount should be above the threshold
@@ -979,7 +979,7 @@ fn relock_unlocking_insufficient_lock_amount_fails() {
 
 #[test]
 fn stake_basic_example_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract & lock some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -998,7 +998,7 @@ fn stake_basic_example_is_ok() {
 
 #[test]
 fn stake_after_expiry_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1032,7 +1032,7 @@ fn stake_after_expiry_is_ok() {
 
 #[test]
 fn stake_with_zero_amount_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract & lock some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -1048,7 +1048,7 @@ fn stake_with_zero_amount_fails() {
 
 #[test]
 fn stake_on_invalid_dapp_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let account = 2;
         assert_lock(account, 300);
 
@@ -1071,7 +1071,7 @@ fn stake_on_invalid_dapp_fails() {
 
 #[test]
 fn stake_in_final_era_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract & lock some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         let account = 2;
@@ -1094,7 +1094,7 @@ fn stake_in_final_era_fails() {
 
 #[test]
 fn stake_fails_if_unclaimed_staker_rewards_from_past_remain() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract & lock some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         let account = 2;
@@ -1122,7 +1122,7 @@ fn stake_fails_if_unclaimed_staker_rewards_from_past_remain() {
 
 #[test]
 fn stake_fails_if_claimable_bonus_rewards_from_past_remain() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         let account = 2;
@@ -1147,7 +1147,7 @@ fn stake_fails_if_claimable_bonus_rewards_from_past_remain() {
 
 #[test]
 fn stake_fails_if_not_enough_stakeable_funds_available() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contracts & lock some amount
         let smart_contract_1 = MockSmartContract::Wasm(1);
         let smart_contract_2 = MockSmartContract::Wasm(2);
@@ -1178,7 +1178,7 @@ fn stake_fails_if_not_enough_stakeable_funds_available() {
 
 #[test]
 fn stake_fails_due_to_too_small_staking_amount() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract & lock some amount
         let smart_contract_1 = MockSmartContract::Wasm(1);
         let smart_contract_2 = MockSmartContract::Wasm(2);
@@ -1217,7 +1217,7 @@ fn stake_fails_due_to_too_small_staking_amount() {
 
 #[test]
 fn stake_fails_due_to_too_many_staked_contracts() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let max_number_of_contracts: u32 = <Test as Config>::MaxNumberOfStakedContracts::get();
 
         // Lock amount by staker
@@ -1265,7 +1265,7 @@ fn stake_fails_due_to_too_many_staked_contracts() {
 
 #[test]
 fn unstake_basic_example_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract & lock some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1287,7 +1287,7 @@ fn unstake_basic_example_is_ok() {
 
 #[test]
 fn unstake_with_leftover_amount_below_minimum_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract & lock some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1307,7 +1307,7 @@ fn unstake_with_leftover_amount_below_minimum_works() {
 
 #[test]
 fn unstake_with_zero_amount_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract & lock some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -1324,7 +1324,7 @@ fn unstake_with_zero_amount_fails() {
 
 #[test]
 fn unstake_on_invalid_dapp_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let account = 2;
         assert_lock(account, 300);
 
@@ -1348,7 +1348,7 @@ fn unstake_on_invalid_dapp_fails() {
 
 #[test]
 fn unstake_with_exceeding_amount_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contracts & lock some amount
         let smart_contract_1 = MockSmartContract::Wasm(1);
         let smart_contract_2 = MockSmartContract::Wasm(2);
@@ -1385,7 +1385,7 @@ fn unstake_with_exceeding_amount_fails() {
 
 #[test]
 fn unstake_from_non_staked_contract_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contracts & lock some amount
         let smart_contract_1 = MockSmartContract::Wasm(1);
         let smart_contract_2 = MockSmartContract::Wasm(2);
@@ -1408,7 +1408,7 @@ fn unstake_from_non_staked_contract_fails() {
 
 #[test]
 fn unstake_with_unclaimed_rewards_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::Wasm(1);
         assert_register(1, &smart_contract);
@@ -1432,7 +1432,7 @@ fn unstake_with_unclaimed_rewards_fails() {
 
 #[test]
 fn unstake_from_past_period_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract & lock some amount
         let smart_contract = MockSmartContract::Wasm(1);
         assert_register(1, &smart_contract);
@@ -1453,7 +1453,7 @@ fn unstake_from_past_period_fails() {
 
 #[test]
 fn claim_staker_rewards_basic_example_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1488,7 +1488,7 @@ fn claim_staker_rewards_basic_example_is_ok() {
 
 #[test]
 fn claim_staker_rewards_double_call_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1515,7 +1515,7 @@ fn claim_staker_rewards_double_call_fails() {
 
 #[test]
 fn claim_staker_rewards_no_claimable_rewards_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1555,7 +1555,7 @@ fn claim_staker_rewards_no_claimable_rewards_fails() {
 
 #[test]
 fn claim_staker_rewards_era_after_expiry_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1589,7 +1589,7 @@ fn claim_staker_rewards_era_after_expiry_works() {
 
 #[test]
 fn claim_staker_rewards_after_expiry_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1622,7 +1622,7 @@ fn claim_staker_rewards_after_expiry_fails() {
 
 #[test]
 fn claim_staker_rewards_fails_due_to_payout_failure() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -1650,7 +1650,7 @@ fn claim_staker_rewards_fails_due_to_payout_failure() {
 
 #[test]
 fn claim_bonus_reward_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1685,7 +1685,7 @@ fn claim_bonus_reward_works() {
 
 #[test]
 fn claim_bonus_reward_double_call_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1710,7 +1710,7 @@ fn claim_bonus_reward_double_call_fails() {
 
 #[test]
 fn claim_bonus_reward_when_nothing_to_claim_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1738,7 +1738,7 @@ fn claim_bonus_reward_when_nothing_to_claim_fails() {
 
 #[test]
 fn claim_bonus_reward_with_only_build_and_earn_stake_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1768,7 +1768,7 @@ fn claim_bonus_reward_with_only_build_and_earn_stake_fails() {
 
 #[test]
 fn claim_bonus_reward_after_expiry_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1804,7 +1804,7 @@ fn claim_bonus_reward_after_expiry_fails() {
 
 #[test]
 fn claim_bonus_reward_fails_due_to_payout_failure() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -1832,7 +1832,7 @@ fn claim_bonus_reward_fails_due_to_payout_failure() {
 
 #[test]
 fn claim_dapp_reward_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -1867,7 +1867,7 @@ fn claim_dapp_reward_works() {
 
 #[test]
 fn claim_dapp_reward_from_non_existing_contract_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_noop!(
             DappStaking::claim_dapp_reward(RuntimeOrigin::signed(1), smart_contract, 1),
@@ -1878,7 +1878,7 @@ fn claim_dapp_reward_from_non_existing_contract_fails() {
 
 #[test]
 fn claim_dapp_reward_from_invalid_era_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -1909,7 +1909,7 @@ fn claim_dapp_reward_from_invalid_era_fails() {
 
 #[test]
 fn claim_dapp_reward_if_dapp_not_in_any_tier_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract_1 = MockSmartContract::Wasm(3);
         let smart_contract_2 = MockSmartContract::Wasm(5);
@@ -1940,7 +1940,7 @@ fn claim_dapp_reward_if_dapp_not_in_any_tier_fails() {
 
 #[test]
 fn claim_dapp_reward_twice_for_same_era_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -1973,7 +1973,7 @@ fn claim_dapp_reward_twice_for_same_era_fails() {
 
 #[test]
 fn claim_dapp_reward_for_expired_era_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -2003,7 +2003,7 @@ fn claim_dapp_reward_for_expired_era_fails() {
 
 #[test]
 fn claim_dapp_reward_fails_due_to_payout_failure() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -2039,7 +2039,7 @@ fn claim_dapp_reward_fails_due_to_payout_failure() {
 
 #[test]
 fn unstake_from_unregistered_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -2057,7 +2057,7 @@ fn unstake_from_unregistered_is_ok() {
 
 #[test]
 fn unstake_from_unregistered_fails_for_active_contract() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -2076,7 +2076,7 @@ fn unstake_from_unregistered_fails_for_active_contract() {
 
 #[test]
 fn unstake_from_unregistered_fails_for_not_staked_contract() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -2091,7 +2091,7 @@ fn unstake_from_unregistered_fails_for_not_staked_contract() {
 
 #[test]
 fn unstake_from_unregistered_fails_for_past_period() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -2114,7 +2114,7 @@ fn unstake_from_unregistered_fails_for_past_period() {
 
 #[test]
 fn cleanup_expired_entries_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contracts
         let contracts: Vec<_> = (1..=5).map(|id| MockSmartContract::Wasm(id)).collect();
         contracts.iter().for_each(|smart_contract| {
@@ -2176,7 +2176,7 @@ fn cleanup_expired_entries_is_ok() {
 
 #[test]
 fn cleanup_expired_entries_fails_with_no_entries() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contracts
         let (contract_1, contract_2) = (MockSmartContract::Wasm(1), MockSmartContract::Wasm(2));
         assert_register(1, &contract_1);
@@ -2205,7 +2205,7 @@ fn cleanup_expired_entries_fails_with_no_entries() {
 
 #[test]
 fn force_era_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // 1. Force new era in the voting subperiod
         let init_state = ActiveProtocolState::<Test>::get();
         assert!(
@@ -2283,7 +2283,7 @@ fn force_era_works() {
 
 #[test]
 fn force_subperiod_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // 1. Force new subperiod in the voting subperiod
         let init_state = ActiveProtocolState::<Test>::get();
         assert!(
@@ -2365,7 +2365,7 @@ fn force_subperiod_works() {
 
 #[test]
 fn force_with_incorrect_origin_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         assert_noop!(
             DappStaking::force(RuntimeOrigin::signed(1), ForcingType::Era),
             BadOrigin
@@ -2375,7 +2375,7 @@ fn force_with_incorrect_origin_fails() {
 
 #[test]
 fn force_with_safeguard_on_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         Safeguard::<Test>::put(true);
         assert_noop!(
             DappStaking::force(RuntimeOrigin::root(), ForcingType::Era),
@@ -2386,7 +2386,7 @@ fn force_with_safeguard_on_fails() {
 
 #[test]
 fn tier_config_recalculation_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let init_price = NATIVE_PRICE.with(|v| v.borrow().clone());
         let init_tier_config = TierConfig::<Test>::get();
 
@@ -2470,7 +2470,7 @@ fn tier_config_recalculation_works() {
 
 #[test]
 fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Tier config is specially adapted for this test.
         TierConfig::<Test>::mutate(|config| {
             config.slots_per_tier = BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap();
@@ -2610,7 +2610,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
 
 #[test]
 fn get_dapp_tier_assignment_and_rewards_zero_slots_per_tier_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // This test will rely on the configuration inside the mock file.
         // If that changes, this test might have to be updated as well.
 
@@ -2647,14 +2647,14 @@ fn get_dapp_tier_assignment_and_rewards_zero_slots_per_tier_works() {
 
 #[test]
 fn advance_for_some_periods_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         advance_to_period(10);
     })
 }
 
 #[test]
 fn unlock_after_staked_period_ends_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -2676,7 +2676,7 @@ fn unlock_after_staked_period_ends_is_ok() {
 
 #[test]
 fn unstake_from_a_contract_staked_in_past_period_fails() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract & lock some amount
         let smart_contract_1 = MockSmartContract::Wasm(1);
         let smart_contract_2 = MockSmartContract::Wasm(2);
@@ -2714,7 +2714,7 @@ fn unstake_from_a_contract_staked_in_past_period_fails() {
 
 #[test]
 fn stake_and_unstake_after_reward_claim_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -2747,7 +2747,7 @@ fn stake_and_unstake_after_reward_claim_is_ok() {
 
 #[test]
 fn stake_and_unstake_correctly_updates_staked_amounts() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -2872,7 +2872,7 @@ fn stake_and_unstake_correctly_updates_staked_amounts() {
 
 #[test]
 fn stake_after_period_ends_with_max_staked_contracts() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let max_number_of_contracts: u32 = <Test as Config>::MaxNumberOfStakedContracts::get();
 
         // Lock amount by staker
@@ -2906,7 +2906,7 @@ fn stake_after_period_ends_with_max_staked_contracts() {
 
 #[test]
 fn post_unlock_balance_cannot_be_transferred() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let staker = 2;
 
         // Lock some of the free balance
@@ -2965,7 +2965,7 @@ fn post_unlock_balance_cannot_be_transferred() {
 
 #[test]
 fn observer_pre_new_era_block_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         fn assert_observer_value(expected: EraNumber) {
             BLOCK_BEFORE_NEW_ERA.with(|v| assert_eq!(expected, *v.borrow()));
         }
@@ -3013,7 +3013,7 @@ fn observer_pre_new_era_block_works() {
 
 #[test]
 fn unregister_after_max_number_of_contracts_allows_register_again() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let max_number_of_contracts = <Test as Config>::MaxNumberOfContracts::get();
         let developer = 2;
 
@@ -3099,7 +3099,7 @@ fn safeguard_configurable_by_genesis_config() {
 
 #[test]
 fn base_number_of_slots_is_respected() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // 0. Get expected number of slots for the base price
         let total_issuance = <Test as Config>::Currency::total_issuance();
         let base_native_price = <Test as Config>::BaseNativeCurrencyPrice::get();
@@ -3203,7 +3203,7 @@ fn base_number_of_slots_is_respected() {
 
 #[test]
 fn ranking_will_calc_reward_correctly() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Tier config is specially adapted for this test.
         TierConfig::<Test>::mutate(|config| {
             config.slots_per_tier = BoundedVec::try_from(vec![2, 3, 2, 20]).unwrap();
@@ -3268,7 +3268,7 @@ fn ranking_will_calc_reward_correctly() {
 
 #[test]
 fn claim_dapp_reward_with_rank() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         let total_issuance = <Test as Config>::Currency::total_issuance();
 
         // Register smart contract, lock&stake some amount
@@ -3315,7 +3315,7 @@ fn claim_dapp_reward_with_rank() {
 
 #[test]
 fn unstake_correctly_reduces_future_contract_stake() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // 0. Register smart contract, lock&stake some amount with staker 1 during the voting subperiod
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
@@ -3359,7 +3359,7 @@ fn unstake_correctly_reduces_future_contract_stake() {
 
 #[test]
 fn lock_correctly_considers_unlocking_amount() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Lock the entire amount & immediately start the unlocking process
         let (staker, unlock_amount) = (1, 13);
         let total_balance = Balances::total_balance(&staker);
@@ -3375,7 +3375,7 @@ fn lock_correctly_considers_unlocking_amount() {
 
 #[test]
 fn fix_account_scenarios_work() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // 1. Lock some amount correctly, unstake it, try to fix it, and ensure the call fails
         let (account_1, lock_1) = (1, 100);
         assert_lock(account_1, lock_1);
@@ -3447,7 +3447,7 @@ fn fix_account_scenarios_work() {
 
 #[test]
 fn claim_staker_rewards_for_basic_example_is_ok() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -3493,7 +3493,7 @@ fn claim_staker_rewards_for_basic_example_is_ok() {
 
 #[test]
 fn claim_bonus_reward_for_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
@@ -3535,5 +3535,12 @@ fn claim_bonus_reward_for_works() {
             Balances::free_balance(&claimer_account),
             "Claimer balance must not change since reward is deposited to the staker."
         );
+    })
+}
+
+#[test]
+fn try_state_works() {
+    ExtBuilder::default().build_and_execute(|| {
+        assert_ok!(DappStaking::try_state_protocol());
     })
 }
