@@ -5,16 +5,15 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "test": "LOG_LEVEL=error vitest --silent --no-color",
+    "test": "vitest",
     "test:runtime-upgrade-shibuya": "RUNTIME=shibuya yarn test tests/runtime-upgrade.test.ts",
     "test:runtime-upgrade-shiden": "RUNTIME=shiden yarn test tests/runtime-upgrade.test.ts",
     "test:runtime-upgrade-astar": "RUNTIME=astar yarn test tests/runtime-upgrade.test.ts"
   },
   "dependencies": {
-    "@acala-network/chopsticks-testing": "^0.12.2",
-    "@polkadot/util-crypto": "^12.6.2",
+    "@acala-network/chopsticks-testing": "^0.13.2",
     "typescript": "^5.3.0",
-    "vitest": "^1.4.0"
+    "vitest": "^2.0"
   },
   "prettier": {
     "tabWidth": 2,
