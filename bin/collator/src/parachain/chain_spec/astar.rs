@@ -134,7 +134,7 @@ fn make_genesis(
         evm: EVMConfig {
             // We need _some_ code inserted at the precompile address so that
             // the evm will actually call the address.
-            accounts: Precompiles::used_addresses()
+            accounts: Precompiles::used_addresses_h160()
                 .map(|addr| {
                     (
                         addr,

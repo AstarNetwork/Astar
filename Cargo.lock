@@ -1206,15 +1206,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
 
 [[package]]
-name = "basic-toml"
-version = "0.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "823388e228f614e9558c6804262db37960ec8821856535f5c3f59913140558f8"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "bech32"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3103,12 +3094,6 @@ dependencies = [
  "rustc_version 0.4.0",
  "syn 1.0.109",
 ]
-
-[[package]]
-name = "diff"
-version = "0.1.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56254986775e3233ffa9c4d7d3faaf6d36a2c09d30b20687e9f88bc8bafc16c8"
 
 [[package]]
 name = "difflib"
@@ -6783,22 +6768,6 @@ checksum = "ef9d79ae96aaba821963320eb2b6e34d17df1e5a83d8a1985c29cc5be59577b3"
 dependencies = [
  "macro_magic_core",
  "quote",
- "syn 2.0.66",
-]
-
-[[package]]
-name = "macrotest"
-version = "1.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c373046e96714b07b66d572e8b43e48d67cad110fd3f5bf2e000e58751864d2d"
-dependencies = [
- "basic-toml",
- "diff",
- "glob",
- "prettyplease 0.2.20",
- "serde",
- "serde_derive",
- "serde_json",
  "syn 2.0.66",
 ]
 
@@ -11457,6 +11426,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 [[package]]
 name = "precompile-utils"
 version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.11.0#1daafa80fc18800e56a0ac60f02a60353240235c"
 dependencies = [
  "derive_more",
  "environmental",
@@ -11468,36 +11438,32 @@ dependencies = [
  "hex-literal",
  "impl-trait-for-tuples",
  "log",
- "num_enum 0.5.11",
+ "num_enum 0.7.2",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils-macro-v2",
+ "precompile-utils-macro",
  "scale-info",
  "serde",
  "similar-asserts",
  "sp-core",
  "sp-io",
  "sp-runtime",
- "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "sp-weights",
  "staging-xcm",
 ]
 
 [[package]]
-name = "precompile-utils-macro-v2"
+name = "precompile-utils-macro"
 version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.11.0#1daafa80fc18800e56a0ac60f02a60353240235c"
 dependencies = [
  "case",
- "fp-evm",
- "frame-support",
- "macrotest",
- "num_enum 0.5.11",
+ "num_enum 0.7.2",
  "prettyplease 0.2.20",
  "proc-macro2",
  "quote",
- "sp-core-hashing",
- "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+ "sp-crypto-hashing",
  "syn 1.0.109",
- "trybuild",
 ]
 
 [[package]]
@@ -15237,14 +15203,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-core-hashing"
-version = "15.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0#8c8edacf8942298c3807a2e192860da9e7e4996a"
-dependencies = [
- "sp-crypto-hashing",
-]
-
-[[package]]
 name = "sp-crypto-ec-utils"
 version = "0.10.0"
 source = "git+https://github.com/paritytech/polkadot-sdk#5fb4c40a3ea24ae3ab2bdfefb3f3a40badc2a583"
@@ -16891,20 +16849,6 @@ name = "try-lock"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
-
-[[package]]
-name = "trybuild"
-version = "1.0.96"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33a5f13f11071020bb12de7a16b925d2d58636175c20c11dc5f96cb64bb6c9b3"
-dependencies = [
- "glob",
- "serde",
- "serde_derive",
- "serde_json",
- "termcolor",
- "toml 0.8.14",
-]
 
 [[package]]
 name = "tt-call"
