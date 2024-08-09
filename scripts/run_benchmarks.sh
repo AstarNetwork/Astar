@@ -30,7 +30,7 @@ while getopts 'bc:fo:p:v' flag; do
       ;;
     c)
       chains=$(echo ${OPTARG} | tr '[:upper:]' '[:lower:]')
-      chains_default=("astar-dev" "shiden-dev" "shibuya-dev" "dev")
+      chains_default=("astar" "shiden" "shibuya")
       for chain in ${chains//,/ }; do
         if [[ ! " ${chains_default[*]} " =~ " ${chain} " ]]; then
           echo "Chain input is invalid. ${chain} not included in ${chains_default[*]}"
@@ -78,7 +78,7 @@ then
 fi
 
 # The executable to use.
-BENCHMARK-TOOL="frame-omni-bencher v1"
+BENCHMARK_TOOL="frame-omni-bencher v1"
 
 # Manually exclude some pallets.
 EXCLUDED_PALLETS=(
@@ -87,7 +87,7 @@ EXCLUDED_PALLETS=(
 
 # Load all pallet names in an array.
 ALL_PALLETS=($(
-  $BENCHMARK-TOOL benchmark pallet --list --runtime ./target/release/wbuild/astar-runtime/${chain}_runtime.compact.compressed.wasm |\
+  $BENCHMARK_TOOL benchmark pallet --list --runtime ./target/release/wbuild/${chain}-runtime/${chain}_runtime.compact.compressed.wasm |\
     tail -n+2 |\
     cut -d',' -f1 |\
     sort |\
@@ -121,8 +121,8 @@ for chain in ${chains//,/ }; do
       echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
 
       OUTPUT=$(
-        $BENCHMARK-TOOL benchmark pallet \
-        --runtime ./target/release/wbuild/astar-runtime/${chain}_runtime.compact.compressed.wasm \
+        $BENCHMARK_TOOL benchmark pallet \
+        --runtime ./target/release/wbuild/${chain}-runtime/${chain}_runtime.compact.compressed.wasm \
         --steps=50 \
         --repeat=20 \
         --pallet="$PALLET" \
@@ -143,7 +143,7 @@ for chain in ${chains//,/ }; do
     #
     # echo "[+] Benchmarking the machine..."
     # OUTPUT=$(
-    #   $BENCHMARK-TOOL benchmark machine --runtime ./target/release/wbuild/astar-runtime/${chain}_runtime.compact.compressed.wasm 2>&1
+    #   $BENCHMARK_TOOL benchmark machine --runtime ./target/release/wbuild/astar-runtime/${chain}_runtime.compact.compressed.wasm 2>&1
     # )
     # if [ $? -ne 0 ]; then
     #   echo "[-] Failed the machine benchmark"
