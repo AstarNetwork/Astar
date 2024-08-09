@@ -1293,7 +1293,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    migrations::OnRuntimeUpgrade,
+    Migrations,
 >;
 
 parameter_types! {
@@ -1323,33 +1323,28 @@ parameter_types! {
     pub const DmpQueuePalletName: &'static str = "DmpQueue";
 }
 
-/// The runtime migrations per release.
-mod migrations {
-    use super::*;
+/// All migrations that will run on the next runtime upgrade.
+///
+/// __NOTE:__ THE ORDER IS IMPORTANT.
+pub type Migrations = (Unreleased, Permanent);
 
-    /// All migrations that will run on the next runtime upgrade.
-    ///
-    /// __NOTE:__ THE ORDER IS IMPORTANT.
-    pub type OnRuntimeUpgrade = (Unreleased, Permanent);
+/// Unreleased migrations. Add new ones here:
+pub type Unreleased = (
+    // dApp-staking dyn tier threshold migrations
+    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<
+        Runtime,
+        TierThresholds,
+        ThresholdVariationPercentage,
+    >,
+    frame_support::migrations::RemovePallet<
+        DmpQueuePalletName,
+        <Runtime as frame_system::Config>::DbWeight,
+    >,
+    pallet_contracts::Migration<Runtime>,
+);
 
-    /// Unreleased migrations. Add new ones here:
-    pub type Unreleased = (
-        // dApp-staking dyn tier threshold migrations
-        pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<
-            Runtime,
-            TierThresholds,
-            ThresholdVariationPercentage,
-        >,
-        frame_support::migrations::RemovePallet<
-            DmpQueuePalletName,
-            <Runtime as frame_system::Config>::DbWeight,
-        >,
-        pallet_contracts::Migration<Runtime>,
-    );
-
-    /// Migrations/checks that do not need to be versioned and can run on every upgrade.
-    pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
-}
+/// Migrations/checks that do not need to be versioned and can run on every upgrade.
+pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
