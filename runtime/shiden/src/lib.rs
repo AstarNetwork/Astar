@@ -1951,7 +1951,166 @@ impl_runtime_apis! {
         }
 
         fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-            get_preset::<RuntimeGenesisConfig>(id, |_| None)
+            // TODO: move helper functions under the primitives
+            // TODO2: cleanup the code in general, this is just c/p from chain-spec file to get it to work ASAP
+            // TODO3: revisit dApp staking benchmarking logic, something causes the total issuance to saturate, probably need to reduce reward amounts
+
+            use sp_core::{sr25519, Pair, Public};
+            use sp_runtime::traits::Verify;
+            use astar_primitives::oracle::CurrencyAmount;
+            use sp_runtime::traits::IdentifyAccount;
+            use scale_info::prelude::format;
+
+            type AccountPublic = <Signature as Verify>::Signer;
+
+            /// Helper function to generate an account ID from seed
+            fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
+            where
+                AccountPublic: From<<TPublic::Pair as Pair>::Public>,
+            {
+                AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
+            }
+
+            fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
+                TPublic::Pair::from_string(&format!("//{}", seed), None)
+                    .expect("static values are valid; qed")
+                    .public()
+            }
+
+
+            let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+            let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
+
+            let balances: Vec<(AccountId, Balance)> = vec![(alice.clone(), 1_000_000 * SDN), (bob.clone(), 1_000_000 * SDN)];
+
+            get_preset::<RuntimeGenesisConfig>(id, move |_| {
+                let authorities = vec![
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Alice"),
+                        get_from_seed::<AuraId>("Alice"),
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Bob"),
+                        get_from_seed::<AuraId>("Bob"),
+                    ),
+                ];
+
+                // This is supposed the be the simplest bytecode to revert without returning any data.
+                // We will pre-deploy it under all of our precompiles to ensure they can be called from
+                // within contracts.
+                // (PUSH1 0x00 PUSH1 0x00 REVERT)
+                let revert_bytecode = vec![0x60, 0x00, 0x60, 0x00, 0xFD];
+
+                let config = RuntimeGenesisConfig {
+                    system: Default::default(),
+                    sudo: SudoConfig {
+                        key: Some(alice),
+                    },
+                    parachain_info: ParachainInfoConfig {
+                        parachain_id: 2007.into(),
+                        ..Default::default()
+                    },
+                    balances: BalancesConfig { balances },
+                    vesting: VestingConfig { vesting: vec![] },
+                    session: SessionConfig {
+                        keys: authorities
+                            .iter()
+                            .map(|x| (x.0.clone(), x.0.clone(), SessionKeys { aura: x.1.clone() }))
+                            .collect::<Vec<_>>(),
+                    },
+                    aura: AuraConfig {
+                        authorities: vec![],
+                    },
+                    aura_ext: Default::default(),
+                    collator_selection: CollatorSelectionConfig {
+                        desired_candidates: 32,
+                        candidacy_bond: 32_000 * SDN,
+                        invulnerables: authorities.iter().map(|x| x.0.clone()).collect::<Vec<_>>(),
+                    },
+                    evm: EVMConfig {
+                        // We need _some_ code inserted at the precompile address so that
+                        // the evm will actually call the address.
+                        accounts: Precompiles::used_addresses_h160()
+                            .map(|addr| {
+                                (
+                                    addr,
+                                    fp_evm::GenesisAccount {
+                                        nonce: Default::default(),
+                                        balance: Default::default(),
+                                        storage: Default::default(),
+                                        code: revert_bytecode.clone(),
+                                    },
+                                )
+                            })
+                            .collect(),
+                        ..Default::default()
+                    },
+                    ethereum: Default::default(),
+                    polkadot_xcm: Default::default(),
+                    assets: Default::default(),
+                    parachain_system: Default::default(),
+                    transaction_payment: Default::default(),
+                    dapp_staking: DappStakingConfig {
+                        reward_portion: vec![
+                            Permill::from_percent(40),
+                            Permill::from_percent(30),
+                            Permill::from_percent(20),
+                            Permill::from_percent(10),
+                        ],
+                        slot_distribution: vec![
+                            Permill::from_percent(10),
+                            Permill::from_percent(20),
+                            Permill::from_percent(30),
+                            Permill::from_percent(40),
+                        ],
+                        // percentages below are calulated based on a total issuance at the time when dApp staking v3 was launched (84.3M)
+                        tier_thresholds: vec![
+                            TierThreshold::DynamicPercentage {
+                                percentage: Perbill::from_parts(35_700_000), // 3.57%
+                                minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
+                            },
+                            TierThreshold::DynamicPercentage {
+                                percentage: Perbill::from_parts(8_900_000), // 0.89%
+                                minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+                            },
+                            TierThreshold::DynamicPercentage {
+                                percentage: Perbill::from_parts(2_380_000), // 0.238%
+                                minimum_required_percentage: Perbill::from_parts(1_790_000), // 0.179%
+                            },
+                            TierThreshold::FixedPercentage {
+                                required_percentage: Perbill::from_parts(600_000), // 0.06%
+                            },
+                        ],
+                        slots_per_tier: vec![10, 20, 30, 40],
+                        safeguard: Some(false),
+                        ..Default::default()
+                    },
+                    inflation: InflationConfig {
+                        params: InflationParameters::default(),
+                        ..Default::default()
+                    },
+                    oracle_membership: OracleMembershipConfig {
+                        members: vec![
+                            get_account_id_from_seed::<sr25519::Public>("Alice"),
+                            get_account_id_from_seed::<sr25519::Public>("Bob"),
+                        ]
+                        .try_into()
+                        .expect("Assumption is that at least two members will be allowed."),
+                        ..Default::default()
+                    },
+                    price_aggregator: PriceAggregatorConfig {
+                        circular_buffer: vec![CurrencyAmount::from_rational(5, 10)]
+                            .try_into()
+                            .expect("Must work since buffer should have at least a single value."),
+                    },
+                };
+
+                let patch = serde_json::to_value(&config).expect("Could not build genesis config.");
+
+                log::info!("Generated genesis state: {}", patch);
+                Some(serde_json::to_string(&patch).expect("serialization to json is expected to work. qed.").into_bytes())
+                }
+            )
         }
 
         fn preset_names() -> Vec<sp_genesis_builder::PresetId> {

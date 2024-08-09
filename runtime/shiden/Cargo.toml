@@ -15,10 +15,12 @@ num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 smallvec = { workspace = true }
+serde_json ={ workspace = true }
 
 # primitives
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }
+fp-evm ={ workspace = true }
 
 sp-api = { workspace = true }
 sp-arithmetic = { workspace = true }
@@ -143,8 +145,10 @@ substrate-wasm-builder = { workspace = true, optional = true }
 default = ["std"]
 std = [
 	"parity-scale-codec/std",
+	"serde_json/std",
 	"fp-rpc/std",
 	"fp-self-contained/std",
+	"fp-evm/std",
 	"sp-std/std",
 	"sp-api/std",
 	"sp-core/std",
@@ -245,6 +249,7 @@ std = [
 	"scale-info/std",
 ]
 runtime-benchmarks = [
+	"log",
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
