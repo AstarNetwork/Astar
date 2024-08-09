@@ -1294,7 +1294,9 @@ pub type Executive = frame_executive::Executive<
 >;
 
 parameter_types! {
-    // percentages below are calulated based on a total issuance at the time when dApp staking v3 was launched (84.3M)
+    // Threshold amount variation allowed for this migration - 10%
+    pub const ThresholdVariationPercentage: u32 = 10;
+    // percentages below are calculated based on a total issuance at the time when dApp staking v3 was launched (84.3M)
     pub const TierThresholds: [TierThreshold; 4] = [
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_parts(35_700_000), // 3.57%
@@ -1330,7 +1332,11 @@ mod migrations {
     /// Unreleased migrations. Add new ones here:
     pub type Unreleased = (
         // dApp-staking dyn tier threshold migrations
-        pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime, TierThresholds>,
+        pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<
+            Runtime,
+            TierThresholds,
+            ThresholdVariationPercentage,
+        >,
         frame_support::migrations::RemovePallet<
             DmpQueuePalletName,
             <Runtime as frame_system::Config>::DbWeight,
