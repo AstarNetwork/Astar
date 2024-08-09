@@ -1257,18 +1257,10 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-parameter_types! {
-    pub const DmpQueuePalletName: &'static str = "DmpQueue";
-}
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    frame_support::migrations::RemovePallet<
-        DmpQueuePalletName,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
     // permanent migration, do not remove
     pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
 );
