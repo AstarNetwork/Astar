@@ -625,9 +625,6 @@
 <a href="#623" id="623">623</a>
 <a href="#624" id="624">624</a>
 <a href="#625" id="625">625</a>
-<a href="#626" id="626">626</a>
-<a href="#627" id="627">627</a>
-<a href="#628" id="628">628</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -818,12 +815,10 @@
 
     <span class="doccomment">/// The invulnerable, fixed collators.
     </span><span class="attr">#[pallet::storage]
-    #[pallet::getter(<span class="kw">fn </span>invulnerables)]
     </span><span class="kw">pub type </span>Invulnerables&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, Vec&lt;T::AccountId&gt;, ValueQuery&gt;;
 
     <span class="doccomment">/// The (community, limited) collation candidates.
     </span><span class="attr">#[pallet::storage]
-    #[pallet::getter(<span class="kw">fn </span>candidates)]
     </span><span class="kw">pub type </span>Candidates&lt;T: Config&gt; =
         StorageValue&lt;<span class="kw">_</span>, Vec&lt;CandidateInfo&lt;T::AccountId, BalanceOf&lt;T&gt;&gt;&gt;, ValueQuery&gt;;
 
@@ -834,7 +829,6 @@
 
     <span class="doccomment">/// Last block authored by collator.
     </span><span class="attr">#[pallet::storage]
-    #[pallet::getter(<span class="kw">fn </span>last_authored_block)]
     </span><span class="kw">pub type </span>LastAuthoredBlock&lt;T: Config&gt; =
         StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::AccountId, BlockNumberFor&lt;T&gt;, ValueQuery&gt;;
 
@@ -842,19 +836,16 @@
     ///
     /// This should ideally always be less than [`Config::MaxCandidates`] for weights to be correct.
     </span><span class="attr">#[pallet::storage]
-    #[pallet::getter(<span class="kw">fn </span>desired_candidates)]
     </span><span class="kw">pub type </span>DesiredCandidates&lt;T&gt; = StorageValue&lt;<span class="kw">_</span>, u32, ValueQuery&gt;;
 
     <span class="doccomment">/// Fixed amount to deposit to become a collator.
     ///
     /// When a collator calls `leave_intent` they immediately receive the deposit back.
     </span><span class="attr">#[pallet::storage]
-    #[pallet::getter(<span class="kw">fn </span>candidacy_bond)]
     </span><span class="kw">pub type </span>CandidacyBond&lt;T&gt; = StorageValue&lt;<span class="kw">_</span>, BalanceOf&lt;T&gt;, ValueQuery&gt;;
 
     <span class="doccomment">/// Destination account for slashed amount.
     </span><span class="attr">#[pallet::storage]
-    #[pallet::getter(<span class="kw">fn </span>slash_destination)]
     </span><span class="kw">pub type </span>SlashDestination&lt;T&gt; = StorageValue&lt;<span class="kw">_</span>, &lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;;
 
     <span class="attr">#[pallet::genesis_config]
@@ -1017,11 +1008,11 @@
             <span class="comment">// ensure we are below limit.
             </span><span class="kw">let </span>length = &lt;Candidates&lt;T&gt;&gt;::decode_len().unwrap_or_default();
             <span class="macro">ensure!</span>(
-                (length <span class="kw">as </span>u32) &lt; <span class="self">Self</span>::desired_candidates(),
+                (length <span class="kw">as </span>u32) &lt; DesiredCandidates::&lt;T&gt;::get(),
                 Error::&lt;T&gt;::TooManyCandidates
             );
             <span class="macro">ensure!</span>(
-                !<span class="self">Self</span>::invulnerables().contains(<span class="kw-2">&amp;</span>who),
+                !Invulnerables::&lt;T&gt;::get().contains(<span class="kw-2">&amp;</span>who),
                 Error::&lt;T&gt;::AlreadyInvulnerable
             );
             <span class="macro">ensure!</span>(
@@ -1049,7 +1040,7 @@
                 <span class="prelude-val">Ok</span>(())
             })<span class="question-mark">?</span>;
 
-            <span class="kw">let </span>deposit = <span class="self">Self</span>::candidacy_bond();
+            <span class="kw">let </span>deposit = CandidacyBond::&lt;T&gt;::get();
             <span class="comment">// First authored block is current block plus kick threshold to handle session delay
             </span><span class="kw">let </span>incoming = CandidateInfo {
                 who: who.clone(),
@@ -1086,7 +1077,7 @@
         </span><span class="kw">pub fn </span>leave_intent(origin: OriginFor&lt;T&gt;) -&gt; DispatchResultWithPostInfo {
             <span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
             <span class="macro">ensure!</span>(
-                <span class="self">Self</span>::candidates().len() <span class="kw">as </span>u32 &gt; T::MinCandidates::get(),
+                Candidates::&lt;T&gt;::get().len() <span class="kw">as </span>u32 &gt; T::MinCandidates::get(),
                 Error::&lt;T&gt;::TooFewCandidates
             );
             <span class="kw">let </span>current_count = <span class="self">Self</span>::try_remove_candidate(<span class="kw-2">&amp;</span>who)<span class="question-mark">?</span>;
@@ -1152,7 +1143,7 @@
                     <span class="kw">let </span>(imbalance, <span class="kw">_</span>) = T::Currency::slash_reserved(who, slash);
                     T::Currency::unreserve(who, remain);
 
-                    <span class="kw">if let </span><span class="prelude-val">Some</span>(dest) = <span class="self">Self</span>::slash_destination() {
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>(dest) = SlashDestination::&lt;T&gt;::get() {
                         T::Currency::resolve_creating(<span class="kw-2">&amp;</span>dest, imbalance);
                     }
 
@@ -1167,7 +1158,7 @@
         ///
         /// This is done on the fly, as frequent as we are told to do so, as the session manager.
         </span><span class="kw">pub fn </span>assemble_collators(candidates: Vec&lt;T::AccountId&gt;) -&gt; Vec&lt;T::AccountId&gt; {
-            <span class="kw">let </span><span class="kw-2">mut </span>collators = <span class="self">Self</span>::invulnerables();
+            <span class="kw">let </span><span class="kw-2">mut </span>collators = Invulnerables::&lt;T&gt;::get();
             collators.extend(candidates.into_iter());
             collators
         }
@@ -1176,14 +1167,14 @@
         </span><span class="kw">pub fn </span>kick_stale_candidates() -&gt; (u32, u32) {
             <span class="kw">let </span>now = frame_system::Pallet::&lt;T&gt;::block_number();
             <span class="kw">let </span>kick_threshold = T::KickThreshold::get();
-            <span class="kw">let </span>count = <span class="self">Self</span>::candidates().len() <span class="kw">as </span>u32;
+            <span class="kw">let </span>count = Candidates::&lt;T&gt;::get().len() <span class="kw">as </span>u32;
             <span class="kw">for </span>(who, last_authored) <span class="kw">in </span>LastAuthoredBlock::&lt;T&gt;::iter() {
                 <span class="kw">if </span>now.saturating_sub(last_authored) &lt; kick_threshold {
                     <span class="kw">continue</span>;
                 }
                 <span class="comment">// still candidate, kick and slash
                 </span><span class="kw">if </span><span class="self">Self</span>::is_account_candidate(<span class="kw-2">&amp;</span>who) {
-                    <span class="kw">if </span><span class="self">Self</span>::candidates().len() &gt; T::MinCandidates::get() <span class="kw">as </span>usize {
+                    <span class="kw">if </span>Candidates::&lt;T&gt;::get().len() &gt; T::MinCandidates::get() <span class="kw">as </span>usize {
                         <span class="comment">// no error, who is a candidate
                         </span><span class="kw">let _ </span>= <span class="self">Self</span>::try_remove_candidate(<span class="kw-2">&amp;</span>who);
                         <span class="self">Self</span>::slash_non_candidate(<span class="kw-2">&amp;</span>who);
@@ -1193,12 +1184,15 @@
                     </span><span class="self">Self</span>::slash_non_candidate(<span class="kw-2">&amp;</span>who);
                 }
             }
-            (count, count.saturating_sub(<span class="self">Self</span>::candidates().len() <span class="kw">as </span>u32))
+            (
+                count,
+                count.saturating_sub(Candidates::&lt;T&gt;::get().len() <span class="kw">as </span>u32),
+            )
         }
 
         <span class="doccomment">/// Check whether an account is a candidate.
         </span><span class="kw">pub fn </span>is_account_candidate(account: <span class="kw-2">&amp;</span>T::AccountId) -&gt; bool {
-            <span class="self">Self</span>::candidates().iter().any(|c| <span class="kw-2">&amp;</span>c.who == account)
+            Candidates::&lt;T&gt;::get().iter().any(|c| <span class="kw-2">&amp;</span>c.who == account)
         }
     }
 
@@ -1241,7 +1235,7 @@
                 DispatchClass::Mandatory,
             );
 
-            <span class="kw">let </span>active_candidates = <span class="self">Self</span>::candidates()
+            <span class="kw">let </span>active_candidates = Candidates::&lt;T&gt;::get()
                 .into_iter()
                 .map(|x| x.who)
                 .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();

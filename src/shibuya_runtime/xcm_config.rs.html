@@ -312,12 +312,6 @@
 <a href="#310" id="310">310</a>
 <a href="#311" id="311">311</a>
 <a href="#312" id="312">312</a>
-<a href="#313" id="313">313</a>
-<a href="#314" id="314">314</a>
-<a href="#315" id="315">315</a>
-<a href="#316" id="316">316</a>
-<a href="#317" id="317">317</a>
-<a href="#318" id="318">318</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -463,7 +457,7 @@
     // For the PoV size, we estimate 4 kB per instruction. This will be changed when we benchmark the instructions.
     </span><span class="kw">pub </span>UnitWeightCost: Weight = Weight::from_parts(<span class="number">1_000_000_000</span>, <span class="number">4 </span>* <span class="number">1024</span>);
     <span class="kw">pub const </span>MaxInstructions: u32 = <span class="number">100</span>;
-    <span class="kw">pub const </span>MaxAssetsIntoHolding: u32 = MAX_ASSETS;
+    <span class="kw">pub const </span>MaxAssetsIntoHolding: u32 = MAX_ASSETS <span class="kw">as </span>u32;
 }
 
 <span class="kw">pub struct </span>ParentOrParentsPlurality;
@@ -528,6 +522,10 @@
     <span class="kw">type </span>SafeCallFilter = Everything;
     <span class="kw">type </span>Aliasers = Nothing;
     <span class="kw">type </span>TransactionalProcessor = FrameTransactionalProcessor;
+
+    <span class="kw">type </span>HrmpNewChannelOpenRequestHandler = ();
+    <span class="kw">type </span>HrmpChannelAcceptedHandler = ();
+    <span class="kw">type </span>HrmpChannelClosingHandler = ();
 }
 
 <span class="doccomment">/// Local origins on this chain are allowed to dispatch XCM sends/executions.
@@ -584,16 +582,6 @@
     <span class="kw">type </span>ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
     <span class="kw">type </span>PriceForSiblingDelivery = NoPriceForMessageDelivery&lt;ParaId&gt;;
     <span class="kw">type </span>WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight&lt;Runtime&gt;;
-}
-
-<span class="macro">parameter_types! </span>{
-    <span class="kw">pub const </span>RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
-}
-
-<span class="kw">impl </span>cumulus_pallet_dmp_queue::Config <span class="kw">for </span>Runtime {
-    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>DmpSink = frame_support::traits::EnqueueWithOrigin&lt;MessageQueue, RelayOrigin&gt;;
-    <span class="kw">type </span>WeightInfo = cumulus_pallet_dmp_queue::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
 <span class="macro">parameter_types! </span>{

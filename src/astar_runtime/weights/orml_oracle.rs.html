@@ -84,6 +84,8 @@
 <a href="#82" id="82">82</a>
 <a href="#83" id="83">83</a>
 <a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -145,17 +147,19 @@
 	/// Proof: `Oracle::RawValues` (`max_values`: None, `max_size`: Some(73), added: 2548, mode: `MaxEncodedLen`)
 	/// Storage: `Oracle::Values` (r:1 w:0)
 	/// Proof: `Oracle::Values` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
-	/// The range of component `x` is `[1, 2]`.
+	/// The range of component `x` is `[0, 2]`.
 	</span><span class="kw">fn </span>feed_values(x: u32, ) -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `280`
 		//  Estimated: `8634`
-		// Minimum execution time: 24_261_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">16_983_859</span>, <span class="number">8634</span>)
-			<span class="comment">// Standard Error: 56_112
-			</span>.saturating_add(Weight::from_parts(<span class="number">8_197_820</span>, <span class="number">0</span>).saturating_mul(x.into()))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">7_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+		// Minimum execution time: 14_011_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">14_697_887</span>, <span class="number">8634</span>)
+			<span class="comment">// Standard Error: 30_083
+			</span>.saturating_add(Weight::from_parts(<span class="number">10_246_544</span>, <span class="number">0</span>).saturating_mul(x.into()))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">3_u64</span>))
+			.saturating_add(T::DbWeight::get().reads((<span class="number">4_u64</span>).saturating_mul(x.into())))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+			.saturating_add(T::DbWeight::get().writes((<span class="number">1_u64</span>).saturating_mul(x.into())))
 	}
 	<span class="doccomment">/// Storage: `Oracle::HasDispatched` (r:0 w:1)
 	/// Proof: `Oracle::HasDispatched` (`max_values`: Some(1), `max_size`: Some(257), added: 752, mode: `MaxEncodedLen`)
@@ -163,8 +167,8 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 981_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">1_018_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 885_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">966_000</span>, <span class="number">0</span>)
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
 	}
 }

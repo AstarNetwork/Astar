@@ -340,9 +340,6 @@
 <a href="#338" id="338">338</a>
 <a href="#339" id="339">339</a>
 <a href="#340" id="340">340</a>
-<a href="#341" id="341">341</a>
-<a href="#342" id="342">342</a>
-<a href="#343" id="343">343</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -519,7 +516,6 @@
     /// Can be used when receiving transaction specifying an asset directly,
     /// like transferring an asset from this chain to another.
     </span><span class="attr">#[pallet::storage]
-    #[pallet::getter(<span class="kw">fn </span>asset_id_to_location)]
     </span><span class="kw">pub type </span>AssetIdToLocation&lt;T: Config&gt; =
         StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::AssetId, VersionedLocation&gt;;
 
@@ -527,7 +523,6 @@
     /// Can be used when receiving a multilocation XCM message to retrieve
     /// the corresponding asset in which tokens should me minted.
     </span><span class="attr">#[pallet::storage]
-    #[pallet::getter(<span class="kw">fn </span>asset_location_to_id)]
     </span><span class="kw">pub type </span>AssetLocationToId&lt;T: Config&gt; =
         StorageMap&lt;<span class="kw">_</span>, Twox64Concat, VersionedLocation, T::AssetId&gt;;
 
@@ -536,7 +531,6 @@
     ///
     /// Not all asset types are supported for payment. If value exists here, it means it is supported.
     </span><span class="attr">#[pallet::storage]
-    #[pallet::getter(<span class="kw">fn </span>asset_location_units_per_second)]
     </span><span class="kw">pub type </span>AssetLocationUnitsPerSecond&lt;T: Config&gt; =
         StorageMap&lt;<span class="kw">_</span>, Twox64Concat, VersionedLocation, u128&gt;;
 

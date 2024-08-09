@@ -148,45 +148,46 @@
 <span class="doccomment">/// Weights for pallet_inflation using the Substrate node and recommended hardware.
 </span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
 <span class="kw">impl</span>&lt;T: frame_system::Config&gt; WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
-	<span class="doccomment">/// Storage: Inflation InflationParams (r:0 w:1)
-	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)
+	<span class="doccomment">/// Storage: `Inflation::InflationParams` (r:0 w:1)
+	/// Proof: `Inflation::InflationParams` (`max_values`: Some(1), `max_size`: Some(64), added: 559, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>force_set_inflation_params() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 8_868_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">9_183_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 6_322_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">6_506_000</span>, <span class="number">0</span>)
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
 	}
-	<span class="doccomment">/// Storage: Inflation InflationParams (r:1 w:0)
-	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)
+	<span class="doccomment">/// Storage: `Inflation::InflationParams` (r:1 w:0)
+	/// Proof: `Inflation::InflationParams` (`max_values`: Some(1), `max_size`: Some(64), added: 559, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>force_inflation_recalculation() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `40`
 		//  Estimated: `1549`
-		// Minimum execution time: 13_226_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">13_460_000</span>, <span class="number">1549</span>)
+		// Minimum execution time: 9_527_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">9_858_000</span>, <span class="number">1549</span>)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
 	}
-	<span class="doccomment">/// Storage: Inflation InflationParams (r:1 w:0)
-	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)
+	<span class="doccomment">/// Storage: `Inflation::InflationParams` (r:1 w:0)
+	/// Proof: `Inflation::InflationParams` (`max_values`: Some(1), `max_size`: Some(64), added: 559, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>recalculation() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `58`
 		//  Estimated: `1549`
-		// Minimum execution time: 13_150_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">13_395_000</span>, <span class="number">1549</span>)
+		// Minimum execution time: 8_939_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">9_083_000</span>, <span class="number">1549</span>)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
 	}
-	<span class="doccomment">/// Storage: System Account (r:2 w:2)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	<span class="doccomment">/// Storage: `System::Account` (r:2 w:2)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>hooks_without_recalculation() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `39`
 		//  Estimated: `6196`
-		// Minimum execution time: 39_539_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">40_043_000</span>, <span class="number">6196</span>)
+		// Minimum execution time: 36_169_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">36_480_000</span>, <span class="number">6196</span>)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
 	}
-}</code></pre></div></section></main></body></html>
+}
+</code></pre></div></section></main></body></html>

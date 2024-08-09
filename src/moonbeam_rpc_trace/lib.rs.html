@@ -952,6 +952,11 @@
 <a href="#950" id="950">950</a>
 <a href="#951" id="951">951</a>
 <a href="#952" id="952">952</a>
+<a href="#953" id="953">953</a>
+<a href="#954" id="954">954</a>
+<a href="#955" id="955">955</a>
+<a href="#956" id="956">956</a>
+<a href="#957" id="957">957</a>
 </pre></div><pre class="rust"><code><span class="comment">// Copyright 2019-2022 PureStake Inc.
 // This file is part of Moonbeam.
 
@@ -999,7 +1004,7 @@
 };
 
 <span class="kw">use </span>ethereum_types::H256;
-<span class="kw">use </span>fc_rpc::OverrideHandle;
+<span class="kw">use </span>fc_storage::StorageOverride;
 <span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 
 <span class="kw">use </span>moonbeam_client_evm_tracing::{
@@ -1396,7 +1401,7 @@
         backend: Arc&lt;BE&gt;,
         cache_duration: Duration,
         blocking_permits: Arc&lt;Semaphore&gt;,
-        overrides: Arc&lt;OverrideHandle&lt;B&gt;&gt;,
+        storage_override: Arc&lt;<span class="kw">dyn </span>StorageOverride&lt;B&gt;&gt;,
         prometheus: <span class="prelude-ty">Option</span>&lt;PrometheusRegistry&gt;,
     ) -&gt; (<span class="kw">impl </span>Future&lt;Output = ()&gt;, CacheRequester) {
         <span class="comment">// Communication with the outside world :
@@ -1443,7 +1448,7 @@
 						<span class="kw">match </span>request {
 							<span class="prelude-val">None </span>=&gt; <span class="kw">break</span>,
 							<span class="prelude-val">Some</span>(CacheRequest::StartBatch {sender, blocks})
-								=&gt; inner.request_start_batch(<span class="kw-2">&amp;</span>blocking_tx, sender, blocks, overrides.clone()),
+								=&gt; inner.request_start_batch(<span class="kw-2">&amp;</span>blocking_tx, sender, blocks, storage_override.clone()),
 							<span class="prelude-val">Some</span>(CacheRequest::GetTraces {sender, block})
 								=&gt; inner.request_get_traces(sender, block),
 							<span class="prelude-val">Some</span>(CacheRequest::StopBatch {batch_id}) =&gt; {
@@ -1483,13 +1488,13 @@
 
     <span class="doccomment">/// Handle the creation of a batch.
     /// Will start the tracing process for blocks that are not already in the cache.
-    </span><span class="attr">#[instrument(skip(<span class="self">self</span>, blocking_tx, sender, blocks, overrides))]
+    </span><span class="attr">#[instrument(skip(<span class="self">self</span>, blocking_tx, sender, blocks, storage_override))]
     </span><span class="kw">fn </span>request_start_batch(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         blocking_tx: <span class="kw-2">&amp;</span>mpsc::Sender&lt;BlockingTaskMessage&gt;,
         sender: oneshot::Sender&lt;CacheBatchId&gt;,
         blocks: Vec&lt;H256&gt;,
-        overrides: Arc&lt;OverrideHandle&lt;B&gt;&gt;,
+        storage_override: Arc&lt;<span class="kw">dyn </span>StorageOverride&lt;B&gt;&gt;,
     ) {
         <span class="macro">tracing::trace!</span>(<span class="string">"Starting batch {}"</span>, <span class="self">self</span>.next_batch_id);
         <span class="self">self</span>.batches.insert(<span class="self">self</span>.next_batch_id, blocks.clone());
@@ -1513,7 +1518,7 @@
                 <span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
                 <span class="kw">let </span>backend = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.backend);
                 <span class="kw">let </span>blocking_tx = blocking_tx.clone();
-                <span class="kw">let </span>overrides = overrides.clone();
+                <span class="kw">let </span>storage_override = storage_override.clone();
 
                 <span class="comment">// Spawn all block caching asynchronously.
                 // It will wait to obtain a permit, then spawn a blocking task.
@@ -1541,7 +1546,7 @@
                         <span class="comment">// Perform block tracing in a tokio blocking task.
                         </span><span class="kw">let </span>result = <span class="kw">async </span>{
                             tokio::task::spawn_blocking(<span class="kw">move </span>|| {
-                                <span class="self">Self</span>::cache_block(client, backend, block, overrides.clone())
+                                <span class="self">Self</span>::cache_block(client, backend, block, storage_override.clone())
                             })
                             .<span class="kw">await
                             </span>.map_err(|e| {
@@ -1741,12 +1746,12 @@
     }
 
     <span class="doccomment">/// (In blocking task) Use the Runtime API to trace the block.
-    </span><span class="attr">#[instrument(skip(client, backend, overrides))]
+    </span><span class="attr">#[instrument(skip(client, backend, storage_override))]
     </span><span class="kw">fn </span>cache_block(
         client: Arc&lt;C&gt;,
         backend: Arc&lt;BE&gt;,
         substrate_hash: H256,
-        overrides: Arc&lt;OverrideHandle&lt;B&gt;&gt;,
+        storage_override: Arc&lt;<span class="kw">dyn </span>StorageOverride&lt;B&gt;&gt;,
     ) -&gt; TxsTraceRes {
         <span class="comment">// Get Subtrate block data.
         </span><span class="kw">let </span>api = client.runtime_api();
@@ -1763,24 +1768,18 @@
         <span class="kw">let </span>height = <span class="kw-2">*</span>block_header.number();
         <span class="kw">let </span>substrate_parent_hash = <span class="kw-2">*</span>block_header.parent_hash();
 
-        <span class="kw">let </span>schema =
-            fc_storage::onchain_storage_schema::&lt;B, C, BE&gt;(client.as_ref(), substrate_hash);
-
         <span class="comment">// Get Ethereum block data.
-        </span><span class="kw">let </span>(eth_block, eth_transactions) = <span class="kw">match </span>overrides.schemas.get(<span class="kw-2">&amp;</span>schema) {
-            <span class="prelude-val">Some</span>(schema) =&gt; <span class="kw">match </span>(
-                schema.current_block(substrate_hash),
-                schema.current_transaction_statuses(substrate_hash),
-            ) {
-                (<span class="prelude-val">Some</span>(a), <span class="prelude-val">Some</span>(b)) =&gt; (a, b),
-                <span class="kw">_ </span>=&gt; {
-                    <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(
-                        <span class="string">"Failed to get Ethereum block data for Substrate block {}"</span>,
-                        substrate_hash
-                    ))
-                }
-            },
-            <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"No storage override at {:?}"</span>, substrate_hash)),
+        </span><span class="kw">let </span>(eth_block, eth_transactions) = <span class="kw">match </span>(
+            storage_override.current_block(substrate_hash),
+            storage_override.current_transaction_statuses(substrate_hash),
+        ) {
+            (<span class="prelude-val">Some</span>(a), <span class="prelude-val">Some</span>(b)) =&gt; (a, b),
+            <span class="kw">_ </span>=&gt; {
+                <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(
+                    <span class="string">"Failed to get Ethereum block data for Substrate block {}"</span>,
+                    substrate_hash
+                ))
+            }
         };
 
         <span class="kw">let </span>eth_block_hash = eth_block.header.hash();
@@ -1848,37 +1847,48 @@
             <span class="prelude-val">Ok</span>(moonbeam_rpc_primitives_debug::Response::Block)
         };
 
+        <span class="kw">let </span>eth_transactions_by_index: BTreeMap&lt;u32, H256&gt; = eth_transactions
+            .iter()
+            .map(|t| (t.transaction_index, t.transaction_hash))
+            .collect();
+
         <span class="kw">let </span><span class="kw-2">mut </span>proxy = moonbeam_client_evm_tracing::listeners::CallList::default();
         proxy.using(f)<span class="question-mark">?</span>;
-        <span class="kw">let </span><span class="kw-2">mut </span>traces: Vec&lt;<span class="kw">_</span>&gt; =
+
+        <span class="kw">let </span>traces: Vec&lt;TransactionTrace&gt; =
             moonbeam_client_evm_tracing::formatters::TraceFilter::format(proxy)
-                .ok_or(<span class="string">"Fail to format proxy"</span>)<span class="question-mark">?</span>;
-        <span class="comment">// Fill missing data.
-        </span><span class="kw">for </span>trace <span class="kw">in </span>traces.iter_mut() {
-            trace.block_hash = eth_block_hash;
-            trace.block_number = height;
-            trace.transaction_hash = eth_transactions
-                .get(trace.transaction_position <span class="kw">as </span>usize)
-                .ok_or_else(|| {
-                    <span class="macro">tracing::warn!</span>(
-                        <span class="string">"Bug: A transaction has been replayed while it shouldn't (in block {})."</span>,
-                        height
-                    );
+                .ok_or(<span class="string">"Fail to format proxy"</span>)<span class="question-mark">?
+                </span>.into_iter()
+                .filter_map(|<span class="kw-2">mut </span>trace| {
+                    <span class="kw">match </span>eth_transactions_by_index.get(<span class="kw-2">&amp;</span>trace.transaction_position) {
+                        <span class="prelude-val">Some</span>(transaction_hash) =&gt; {
+                            trace.block_hash = eth_block_hash;
+                            trace.block_number = height;
+                            trace.transaction_hash = <span class="kw-2">*</span>transaction_hash;
 
-                    <span class="macro">format!</span>(
-                        <span class="string">"Bug: A transaction has been replayed while it shouldn't (in block {})."</span>,
-                        height
-                    )
-                })<span class="question-mark">?
-                </span>.transaction_hash;
+                            <span class="comment">// Reformat error messages.
+                            </span><span class="kw">if let </span>block::TransactionTraceOutput::Error(<span class="kw-2">ref mut </span>error) =
+                                trace.output
+                            {
+                                <span class="kw">if </span>error.as_slice() == <span class="string">b"execution reverted" </span>{
+                                    <span class="kw-2">*</span>error = <span class="string">b"Reverted"</span>.to_vec();
+                                }
+                            }
 
-            <span class="comment">// Reformat error messages.
-            </span><span class="kw">if let </span>block::TransactionTraceOutput::Error(<span class="kw-2">ref mut </span>error) = trace.output {
-                <span class="kw">if </span>error.as_slice() == <span class="string">b"execution reverted" </span>{
-                    <span class="kw-2">*</span>error = <span class="string">b"Reverted"</span>.to_vec();
-                }
-            }
-        }
+                            <span class="prelude-val">Some</span>(trace)
+                        }
+                        <span class="prelude-val">None </span>=&gt; {
+                            <span class="macro">log::warn!</span>(
+								<span class="string">"A trace in block {} does not map to any known ethereum transaction. Trace: {:?}"</span>,
+								height,
+								trace,
+							);
+                            <span class="prelude-val">None
+                        </span>}
+                    }
+                })
+                .collect();
+
         <span class="prelude-val">Ok</span>(traces)
     }
 }

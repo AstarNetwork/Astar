@@ -97,8 +97,8 @@
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">use </span>fp_evm::PrecompileHandle;
-<span class="kw">use </span>sp_core::ConstU32;
 <span class="kw">use </span>sp_core::{crypto::UncheckedFrom, sr25519, H256};
+<span class="kw">use </span>sp_core::{ByteArray, ConstU32};
 <span class="kw">use </span>sp_std::marker::PhantomData;
 
 <span class="kw">use </span>precompile_utils::prelude::<span class="kw-2">*</span>;
@@ -127,7 +127,7 @@
         <span class="comment">// Parse pub key
         </span><span class="kw">let </span>public = sr25519::Public::unchecked_from(public);
         <span class="comment">// Parse signature
-        </span><span class="kw">let </span>signature = <span class="kw">if let </span><span class="prelude-val">Some</span>(sig) = sr25519::Signature::from_slice(<span class="kw-2">&amp;</span>signature.as_bytes()) {
+        </span><span class="kw">let </span>signature = <span class="kw">if let </span><span class="prelude-val">Ok</span>(sig) = sr25519::Signature::from_slice(<span class="kw-2">&amp;</span>signature.as_bytes()) {
             sig
         } <span class="kw">else </span>{
             <span class="comment">// Return `false` if signature length is wrong

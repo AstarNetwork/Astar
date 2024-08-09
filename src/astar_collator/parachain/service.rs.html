@@ -1379,78 +1379,6 @@
 <a href="#1377" id="1377">1377</a>
 <a href="#1378" id="1378">1378</a>
 <a href="#1379" id="1379">1379</a>
-<a href="#1380" id="1380">1380</a>
-<a href="#1381" id="1381">1381</a>
-<a href="#1382" id="1382">1382</a>
-<a href="#1383" id="1383">1383</a>
-<a href="#1384" id="1384">1384</a>
-<a href="#1385" id="1385">1385</a>
-<a href="#1386" id="1386">1386</a>
-<a href="#1387" id="1387">1387</a>
-<a href="#1388" id="1388">1388</a>
-<a href="#1389" id="1389">1389</a>
-<a href="#1390" id="1390">1390</a>
-<a href="#1391" id="1391">1391</a>
-<a href="#1392" id="1392">1392</a>
-<a href="#1393" id="1393">1393</a>
-<a href="#1394" id="1394">1394</a>
-<a href="#1395" id="1395">1395</a>
-<a href="#1396" id="1396">1396</a>
-<a href="#1397" id="1397">1397</a>
-<a href="#1398" id="1398">1398</a>
-<a href="#1399" id="1399">1399</a>
-<a href="#1400" id="1400">1400</a>
-<a href="#1401" id="1401">1401</a>
-<a href="#1402" id="1402">1402</a>
-<a href="#1403" id="1403">1403</a>
-<a href="#1404" id="1404">1404</a>
-<a href="#1405" id="1405">1405</a>
-<a href="#1406" id="1406">1406</a>
-<a href="#1407" id="1407">1407</a>
-<a href="#1408" id="1408">1408</a>
-<a href="#1409" id="1409">1409</a>
-<a href="#1410" id="1410">1410</a>
-<a href="#1411" id="1411">1411</a>
-<a href="#1412" id="1412">1412</a>
-<a href="#1413" id="1413">1413</a>
-<a href="#1414" id="1414">1414</a>
-<a href="#1415" id="1415">1415</a>
-<a href="#1416" id="1416">1416</a>
-<a href="#1417" id="1417">1417</a>
-<a href="#1418" id="1418">1418</a>
-<a href="#1419" id="1419">1419</a>
-<a href="#1420" id="1420">1420</a>
-<a href="#1421" id="1421">1421</a>
-<a href="#1422" id="1422">1422</a>
-<a href="#1423" id="1423">1423</a>
-<a href="#1424" id="1424">1424</a>
-<a href="#1425" id="1425">1425</a>
-<a href="#1426" id="1426">1426</a>
-<a href="#1427" id="1427">1427</a>
-<a href="#1428" id="1428">1428</a>
-<a href="#1429" id="1429">1429</a>
-<a href="#1430" id="1430">1430</a>
-<a href="#1431" id="1431">1431</a>
-<a href="#1432" id="1432">1432</a>
-<a href="#1433" id="1433">1433</a>
-<a href="#1434" id="1434">1434</a>
-<a href="#1435" id="1435">1435</a>
-<a href="#1436" id="1436">1436</a>
-<a href="#1437" id="1437">1437</a>
-<a href="#1438" id="1438">1438</a>
-<a href="#1439" id="1439">1439</a>
-<a href="#1440" id="1440">1440</a>
-<a href="#1441" id="1441">1441</a>
-<a href="#1442" id="1442">1442</a>
-<a href="#1443" id="1443">1443</a>
-<a href="#1444" id="1444">1444</a>
-<a href="#1445" id="1445">1445</a>
-<a href="#1446" id="1446">1446</a>
-<a href="#1447" id="1447">1447</a>
-<a href="#1448" id="1448">1448</a>
-<a href="#1449" id="1449">1449</a>
-<a href="#1450" id="1450">1450</a>
-<a href="#1451" id="1451">1451</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1490,11 +1418,12 @@
 <span class="kw">use </span>cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node_with_rpc;
 <span class="kw">use </span>fc_consensus::FrontierBlockImport;
 <span class="kw">use </span>fc_rpc_core::types::{FeeHistoryCache, FilterPool};
+<span class="kw">use </span>fc_storage::StorageOverrideHandler;
 <span class="kw">use </span>futures::StreamExt;
 <span class="kw">use </span>sc_client_api::BlockchainEvents;
 <span class="kw">use </span>sc_consensus::{import_queue::BasicQueue, ImportQueue};
-<span class="kw">use </span>sc_executor::NativeElseWasmExecutor;
-<span class="kw">use </span>sc_network::NetworkBlock;
+<span class="kw">use </span>sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
+<span class="kw">use </span>sc_network::{NetworkBackend, NetworkBlock};
 <span class="kw">use </span>sc_network_sync::SyncingService;
 <span class="kw">use </span>sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 <span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -1503,8 +1432,10 @@
     sr25519::AuthorityId <span class="kw">as </span>AuraId, sr25519::AuthorityPair <span class="kw">as </span>AuraPair, AuraApi,
 };
 <span class="kw">use </span>sp_keystore::KeystorePtr;
-<span class="kw">use </span>sp_runtime::traits::BlakeTwo256;
-<span class="kw">use </span>sp_runtime::Percent;
+<span class="kw">use </span>sp_runtime::{
+    traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT},
+    Percent,
+};
 <span class="kw">use </span>std::{collections::BTreeMap, sync::Arc, time::Duration};
 <span class="kw">use </span>substrate_prometheus_endpoint::Registry;
 
@@ -1516,117 +1447,53 @@
     rpc::tracing,
 };
 
-<span class="doccomment">/// Extra host functions
-</span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+<span class="doccomment">/// Parachain host functions
+</span><span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
 </span><span class="kw">pub type </span>HostFunctions = (
-    frame_benchmarking::benchmarking::HostFunctions,
+    cumulus_client_service::ParachainHostFunctions,
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-    cumulus_client_service::storage_proof_size::HostFunctions,
 );
 
-<span class="doccomment">/// Extra host functions
-</span><span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
-</span><span class="kw">pub type </span>HostFunctions = (
-    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-    cumulus_client_service::storage_proof_size::HostFunctions,
-);
+<span class="doccomment">/// Parachain host functions
+</span><span class="attr">#[cfg(not(feature = <span class="string">"evm-tracing"</span>))]
+</span><span class="kw">pub type </span>HostFunctions = (cumulus_client_service::ParachainHostFunctions,);
 
-<span class="doccomment">/// Astar network runtime executor.
-</span><span class="kw">pub mod </span>astar {
-    <span class="kw">use </span><span class="kw">super</span>::HostFunctions;
-    <span class="kw">pub use </span>astar_runtime::RuntimeApi;
-
-    <span class="doccomment">/// Shibuya runtime executor.
-    </span><span class="kw">pub struct </span>Executor;
-    <span class="kw">impl </span>sc_executor::NativeExecutionDispatch <span class="kw">for </span>Executor {
-        <span class="kw">type </span>ExtendHostFunctions = HostFunctions;
-
-        <span class="kw">fn </span>dispatch(method: <span class="kw-2">&amp;</span>str, data: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
-            astar_runtime::api::dispatch(method, data)
-        }
-
-        <span class="kw">fn </span>native_version() -&gt; sc_executor::NativeVersion {
-            astar_runtime::native_version()
-        }
-    }
-}
-
-<span class="doccomment">/// Shiden network runtime executor.
-</span><span class="kw">pub mod </span>shiden {
-    <span class="kw">use </span><span class="kw">super</span>::HostFunctions;
-    <span class="kw">pub use </span>shiden_runtime::RuntimeApi;
-
-    <span class="doccomment">/// Shiden runtime executor.
-    </span><span class="kw">pub struct </span>Executor;
-    <span class="kw">impl </span>sc_executor::NativeExecutionDispatch <span class="kw">for </span>Executor {
-        <span class="kw">type </span>ExtendHostFunctions = HostFunctions;
-
-        <span class="kw">fn </span>dispatch(method: <span class="kw-2">&amp;</span>str, data: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
-            shiden_runtime::api::dispatch(method, data)
-        }
-
-        <span class="kw">fn </span>native_version() -&gt; sc_executor::NativeVersion {
-            shiden_runtime::native_version()
-        }
-    }
-}
-
-<span class="doccomment">/// Shibuya network runtime executor.
-</span><span class="kw">pub mod </span>shibuya {
-    <span class="kw">use </span><span class="kw">super</span>::HostFunctions;
-    <span class="kw">pub use </span>shibuya_runtime::RuntimeApi;
-
-    <span class="doccomment">/// Shibuya runtime executor.
-    </span><span class="kw">pub struct </span>Executor;
-    <span class="kw">impl </span>sc_executor::NativeExecutionDispatch <span class="kw">for </span>Executor {
-        <span class="kw">type </span>ExtendHostFunctions = HostFunctions;
-
-        <span class="kw">fn </span>dispatch(method: <span class="kw-2">&amp;</span>str, data: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
-            shibuya_runtime::api::dispatch(method, data)
-        }
-
-        <span class="kw">fn </span>native_version() -&gt; sc_executor::NativeVersion {
-            shibuya_runtime::native_version()
-        }
-    }
-}
+<span class="doccomment">/// Parachain executor
+</span><span class="kw">pub type </span>ParachainExecutor = WasmExecutor&lt;HostFunctions&gt;;
 
 <span class="doccomment">/// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
-</span><span class="kw">pub fn </span>new_partial&lt;RuntimeApi, Executor, BIQ&gt;(
+</span><span class="kw">pub fn </span>new_partial&lt;RuntimeApi, BIQ&gt;(
     config: <span class="kw-2">&amp;</span>Configuration,
     build_import_queue: BIQ,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;
     PartialComponents&lt;
-        TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
+        TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;,
         TFullBackend&lt;Block&gt;,
         (),
         sc_consensus::DefaultImportQueue&lt;Block&gt;,
-        sc_transaction_pool::FullPool&lt;
-            Block,
-            TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
-        &gt;,
+        sc_transaction_pool::FullPool&lt;Block, TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
         (
             ParachainBlockImport&lt;
                 Block,
                 FrontierBlockImport&lt;
                     Block,
-                    Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
-                    TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
+                    Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
+                    TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;,
                 &gt;,
                 TFullBackend&lt;Block&gt;,
             &gt;,
             <span class="prelude-ty">Option</span>&lt;Telemetry&gt;,
             <span class="prelude-ty">Option</span>&lt;TelemetryWorkerHandle&gt;,
-            Arc&lt;fc_db::kv::Backend&lt;Block&gt;&gt;,
+            Arc&lt;fc_db::kv::Backend&lt;Block, TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;&gt;,
         ),
     &gt;,
     sc_service::Error,
 &gt;
 <span class="kw">where
-    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
+    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;
         + Send
         + Sync
         + <span class="lifetime">'static</span>,
@@ -1639,15 +1506,14 @@
         + fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::backend::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
     BIQ: FnOnce(
-        Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+        Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
         ParachainBlockImport&lt;
             Block,
             FrontierBlockImport&lt;
                 Block,
-                Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
-                TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
+                Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
+                TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;,
             &gt;,
             TFullBackend&lt;Block&gt;,
         &gt;,
@@ -1667,7 +1533,19 @@
         })
         .transpose()<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>executor = sc_service::new_native_or_wasm_executor(<span class="kw-2">&amp;</span>config);
+    <span class="kw">let </span>heap_pages = config
+        .default_heap_pages
+        .map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |h| HeapAllocStrategy::Static {
+            extra_pages: h <span class="kw">as _</span>,
+        });
+
+    <span class="kw">let </span>executor = ParachainExecutor::builder()
+        .with_execution_method(config.wasm_method)
+        .with_onchain_heap_alloc_strategy(heap_pages)
+        .with_offchain_heap_alloc_strategy(heap_pages)
+        .with_max_runtime_instances(config.max_runtime_instances)
+        .with_runtime_cache_size(config.runtime_cache_size)
+        .build();
 
     <span class="kw">let </span>(client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts_record_import::&lt;Block, RuntimeApi, <span class="kw">_</span>&gt;(
@@ -1759,7 +1637,7 @@
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 </span><span class="attr">#[cfg(not(feature = <span class="string">"evm-tracing"</span>))]
 #[sc_tracing::logging::prefix_logs_with(<span class="string">"Parachain"</span>)]
-</span><span class="kw">async fn </span>start_node_impl&lt;RuntimeApi, Executor, BIQ, SC&gt;(
+</span><span class="kw">async fn </span>start_node_impl&lt;RuntimeApi, BIQ, SC, N&gt;(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
@@ -1769,10 +1647,10 @@
     start_consensus: SC,
 ) -&gt; sc_service::error::Result&lt;(
     TaskManager,
-    Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+    Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
 )&gt;
 <span class="kw">where
-    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
+    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;
         + Send
         + Sync
         + <span class="lifetime">'static</span>,
@@ -1790,15 +1668,14 @@
         + AuraApi&lt;Block, AuraId&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::backend::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
     BIQ: FnOnce(
-        Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+        Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
         ParachainBlockImport&lt;
             Block,
             FrontierBlockImport&lt;
                 Block,
-                Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
-                TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
+                Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
+                TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;,
             &gt;,
             TFullBackend&lt;Block&gt;,
         &gt;,
@@ -1807,14 +1684,14 @@
         <span class="kw-2">&amp;</span>TaskManager,
     ) -&gt; sc_consensus::DefaultImportQueue&lt;Block&gt;,
     SC: FnOnce(
-        Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+        Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
         Arc&lt;TFullBackend&lt;Block&gt;&gt;,
         ParachainBlockImport&lt;
             Block,
             FrontierBlockImport&lt;
                 Block,
-                Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
-                TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
+                Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
+                TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;,
             &gt;,
             TFullBackend&lt;Block&gt;,
         &gt;,
@@ -1822,25 +1699,22 @@
         <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
         <span class="kw-2">&amp;</span>TaskManager,
         Arc&lt;<span class="kw">dyn </span>RelayChainInterface&gt;,
-        Arc&lt;
-            sc_transaction_pool::FullPool&lt;
-                Block,
-                TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
-            &gt;,
-        &gt;,
+        Arc&lt;sc_transaction_pool::FullPool&lt;Block, TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;&gt;,
         Arc&lt;SyncingService&lt;Block&gt;&gt;,
         KeystorePtr,
         ParaId,
         CollatorPair,
         AdditionalConfig,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;(), sc_service::Error&gt;,
+    N: NetworkBackend&lt;Block, &lt;Block <span class="kw">as </span>BlockT&gt;::Hash&gt;,
 {
     <span class="kw">let </span>parachain_config = prepare_node_config(parachain_config);
 
-    <span class="kw">let </span>params = new_partial::&lt;RuntimeApi, Executor, BIQ&gt;(<span class="kw-2">&amp;</span>parachain_config, build_import_queue)<span class="question-mark">?</span>;
+    <span class="kw">let </span>params = new_partial::&lt;RuntimeApi, BIQ&gt;(<span class="kw-2">&amp;</span>parachain_config, build_import_queue)<span class="question-mark">?</span>;
     <span class="kw">let </span>(parachain_block_import, <span class="kw-2">mut </span>telemetry, telemetry_worker_handle, frontier_backend) =
         params.other;
-    <span class="kw">let </span>net_config = sc_network::config::FullNetworkConfiguration::new(<span class="kw-2">&amp;</span>parachain_config.network);
+    <span class="kw">let </span>net_config =
+        sc_network::config::FullNetworkConfiguration::&lt;<span class="kw">_</span>, <span class="kw">_</span>, N&gt;::new(<span class="kw-2">&amp;</span>parachain_config.network);
 
     <span class="kw">let </span>client = params.client.clone();
     <span class="kw">let </span>backend = params.backend.clone();
@@ -1877,7 +1751,7 @@
 
     <span class="kw">let </span>filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     <span class="kw">let </span>fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
-    <span class="kw">let </span>overrides = fc_storage::overrides_handle(client.clone());
+    <span class="kw">let </span>storage_override = Arc::new(StorageOverrideHandler::new(client.clone()));
 
     <span class="comment">// Sinks for pubsub notifications.
     // Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
@@ -1898,7 +1772,7 @@
             Duration::new(<span class="number">6</span>, <span class="number">0</span>),
             client.clone(),
             backend.clone(),
-            overrides.clone(),
+            storage_override.clone(),
             frontier_backend.clone(),
             <span class="number">3</span>,
             <span class="number">0</span>,
@@ -1928,7 +1802,7 @@
         <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
         fc_rpc::EthTask::fee_history_task(
             client.clone(),
-            overrides.clone(),
+            storage_override.clone(),
             fee_history_cache.clone(),
             FEE_HISTORY_LIMIT,
         ),
@@ -1936,7 +1810,7 @@
 
     <span class="kw">let </span>block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
         task_manager.spawn_handle(),
-        overrides.clone(),
+        storage_override.clone(),
         <span class="number">50</span>,
         <span class="number">50</span>,
         prometheus_registry.clone(),
@@ -1963,7 +1837,7 @@
                 fee_history_limit: FEE_HISTORY_LIMIT,
                 fee_history_cache: fee_history_cache.clone(),
                 block_data_cache: block_data_cache.clone(),
-                overrides: overrides.clone(),
+                storage_override: storage_override.clone(),
                 enable_evm_rpc: additional_config.enable_evm_rpc,
                 <span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
                 </span>command_sink: <span class="prelude-val">None</span>,
@@ -2082,7 +1956,7 @@
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 </span><span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
 #[sc_tracing::logging::prefix_logs_with(<span class="string">"Parachain"</span>)]
-</span><span class="kw">async fn </span>start_node_impl&lt;RuntimeApi, Executor, BIQ, SC&gt;(
+</span><span class="kw">async fn </span>start_node_impl&lt;RuntimeApi, BIQ, SC, N&gt;(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
@@ -2092,10 +1966,10 @@
     start_consensus: SC,
 ) -&gt; sc_service::error::Result&lt;(
     TaskManager,
-    Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+    Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
 )&gt;
 <span class="kw">where
-    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
+    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;
         + Send
         + Sync
         + <span class="lifetime">'static</span>,
@@ -2115,15 +1989,14 @@
         + AuraApi&lt;Block, AuraId&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::backend::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
     BIQ: FnOnce(
-        Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+        Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
         ParachainBlockImport&lt;
             Block,
             FrontierBlockImport&lt;
                 Block,
-                Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
-                TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
+                Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
+                TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;,
             &gt;,
             TFullBackend&lt;Block&gt;,
         &gt;,
@@ -2132,14 +2005,14 @@
         <span class="kw-2">&amp;</span>TaskManager,
     ) -&gt; sc_consensus::DefaultImportQueue&lt;Block&gt;,
     SC: FnOnce(
-        Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+        Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
         Arc&lt;TFullBackend&lt;Block&gt;&gt;,
         ParachainBlockImport&lt;
             Block,
             FrontierBlockImport&lt;
                 Block,
-                Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
-                TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
+                Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
+                TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;,
             &gt;,
             TFullBackend&lt;Block&gt;,
         &gt;,
@@ -2147,25 +2020,22 @@
         <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
         <span class="kw-2">&amp;</span>TaskManager,
         Arc&lt;<span class="kw">dyn </span>RelayChainInterface&gt;,
-        Arc&lt;
-            sc_transaction_pool::FullPool&lt;
-                Block,
-                TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
-            &gt;,
-        &gt;,
+        Arc&lt;sc_transaction_pool::FullPool&lt;Block, TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;&gt;,
         Arc&lt;SyncingService&lt;Block&gt;&gt;,
         KeystorePtr,
         ParaId,
         CollatorPair,
         AdditionalConfig,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;(), sc_service::Error&gt;,
+    N: NetworkBackend&lt;Block, &lt;Block <span class="kw">as </span>BlockT&gt;::Hash&gt;,
 {
     <span class="kw">let </span>parachain_config = prepare_node_config(parachain_config);
 
-    <span class="kw">let </span>params = new_partial::&lt;RuntimeApi, Executor, BIQ&gt;(<span class="kw-2">&amp;</span>parachain_config, build_import_queue)<span class="question-mark">?</span>;
+    <span class="kw">let </span>params = new_partial::&lt;RuntimeApi, BIQ&gt;(<span class="kw-2">&amp;</span>parachain_config, build_import_queue)<span class="question-mark">?</span>;
     <span class="kw">let </span>(parachain_block_import, <span class="kw-2">mut </span>telemetry, telemetry_worker_handle, frontier_backend) =
         params.other;
-    <span class="kw">let </span>net_config = sc_network::config::FullNetworkConfiguration::new(<span class="kw-2">&amp;</span>parachain_config.network);
+    <span class="kw">let </span>net_config =
+        sc_network::config::FullNetworkConfiguration::&lt;<span class="kw">_</span>, <span class="kw">_</span>, N&gt;::new(<span class="kw-2">&amp;</span>parachain_config.network);
 
     <span class="kw">let </span>client = params.client.clone();
     <span class="kw">let </span>backend = params.backend.clone();
@@ -2202,7 +2072,7 @@
 
     <span class="kw">let </span>filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     <span class="kw">let </span>fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
-    <span class="kw">let </span>overrides = fc_storage::overrides_handle(client.clone());
+    <span class="kw">let </span>storage_override = Arc::new(StorageOverrideHandler::new(client.clone()));
 
     <span class="comment">// Sinks for pubsub notifications.
     // Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
@@ -2225,7 +2095,7 @@
                     substrate_backend: backend.clone(),
                     frontier_backend: frontier_backend.clone(),
                     filter_pool: <span class="prelude-val">Some</span>(filter_pool.clone()),
-                    overrides: overrides.clone(),
+                    storage_override: storage_override.clone(),
                 },
             )
         } <span class="kw">else </span>{
@@ -2245,7 +2115,7 @@
             Duration::new(<span class="number">6</span>, <span class="number">0</span>),
             client.clone(),
             backend.clone(),
-            overrides.clone(),
+            storage_override.clone(),
             frontier_backend.clone(),
             <span class="number">3</span>,
             <span class="number">0</span>,
@@ -2275,7 +2145,7 @@
         <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
         fc_rpc::EthTask::fee_history_task(
             client.clone(),
-            overrides.clone(),
+            storage_override.clone(),
             fee_history_cache.clone(),
             FEE_HISTORY_LIMIT,
         ),
@@ -2283,7 +2153,7 @@
 
     <span class="kw">let </span>block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
         task_manager.spawn_handle(),
-        overrides.clone(),
+        storage_override.clone(),
         <span class="number">50</span>,
         <span class="number">50</span>,
         prometheus_registry.clone(),
@@ -2315,7 +2185,7 @@
                 fee_history_limit: FEE_HISTORY_LIMIT,
                 fee_history_cache: fee_history_cache.clone(),
                 block_data_cache: block_data_cache.clone(),
-                overrides: overrides.clone(),
+                storage_override: storage_override.clone(),
                 enable_evm_rpc: additional_config.enable_evm_rpc,
                 <span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
                 </span>command_sink: <span class="prelude-val">None</span>,
@@ -2416,14 +2286,14 @@
 
 <span class="doccomment">/// Build aura import queue with fallback to relay-chain verifier.
 /// Starts with relay-chain verifier until aura becomes available.
-</span><span class="kw">pub fn </span>build_import_queue_fallback&lt;RuntimeApi, Executor&gt;(
-    client: Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+</span><span class="kw">pub fn </span>build_import_queue_fallback&lt;RuntimeApi&gt;(
+    client: Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
     block_import: ParachainBlockImport&lt;
         Block,
         FrontierBlockImport&lt;
             Block,
-            Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
-            TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
+            Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
+            TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;,
         &gt;,
         TFullBackend&lt;Block&gt;,
     &gt;,
@@ -2432,7 +2302,7 @@
     task_manager: <span class="kw-2">&amp;</span>TaskManager,
 ) -&gt; sc_consensus::DefaultImportQueue&lt;Block&gt;
 <span class="kw">where
-    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
+    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;
         + Send
         + Sync
         + <span class="lifetime">'static</span>,
@@ -2446,7 +2316,6 @@
         + AuraApi&lt;Block, AuraId&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
     <span class="kw">let </span>verifier_client = client.clone();
 
@@ -2492,14 +2361,14 @@
 }
 
 <span class="doccomment">/// Build aura only import queue.
-</span><span class="kw">pub fn </span>build_import_queue&lt;RuntimeApi, Executor&gt;(
-    client: Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+</span><span class="kw">pub fn </span>build_import_queue&lt;RuntimeApi&gt;(
+    client: Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
     block_import: ParachainBlockImport&lt;
         Block,
         FrontierBlockImport&lt;
             Block,
-            Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
-            TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
+            Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
+            TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;,
         &gt;,
         TFullBackend&lt;Block&gt;,
     &gt;,
@@ -2508,7 +2377,7 @@
     task_manager: <span class="kw-2">&amp;</span>TaskManager,
 ) -&gt; sc_consensus::DefaultImportQueue&lt;Block&gt;
 <span class="kw">where
-    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
+    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;
         + Send
         + Sync
         + <span class="lifetime">'static</span>,
@@ -2522,11 +2391,8 @@
         + AuraApi&lt;Block, AuraId&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
     <span class="kw">let </span>cidp_client = client.clone();
-    <span class="kw">let </span>slot_duration = cumulus_client_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)
-        .expect(<span class="string">"AuraApi slot_duration failed!"</span>);
 
     cumulus_client_consensus_aura::equivocation_import_queue::fully_verifying_import_queue::&lt;
         AuraPair,
@@ -2553,7 +2419,6 @@
                 <span class="prelude-val">Ok</span>((slot, timestamp))
             }
         },
-        slot_duration,
         <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
         config.prometheus_registry(),
         telemetry_handle,
@@ -2561,15 +2426,15 @@
 }
 
 <span class="doccomment">/// Start collating with the `shell` runtime while waiting for an upgrade to an Aura compatible runtime.
-</span><span class="kw">fn </span>start_aura_consensus_fallback&lt;RuntimeApi, Executor&gt;(
-    client: Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+</span><span class="kw">fn </span>start_aura_consensus_fallback&lt;RuntimeApi&gt;(
+    client: Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
     backend: Arc&lt;TFullBackend&lt;Block&gt;&gt;,
     parachain_block_import: ParachainBlockImport&lt;
         Block,
         FrontierBlockImport&lt;
             Block,
-            Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
-            TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
+            Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
+            TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;,
         &gt;,
         TFullBackend&lt;Block&gt;,
     &gt;,
@@ -2578,10 +2443,7 @@
     task_manager: <span class="kw-2">&amp;</span>TaskManager,
     relay_chain_interface: Arc&lt;<span class="kw">dyn </span>RelayChainInterface&gt;,
     transaction_pool: Arc&lt;
-        sc_transaction_pool::FullPool&lt;
-            Block,
-            TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
-        &gt;,
+        sc_transaction_pool::FullPool&lt;Block, TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
     &gt;,
     sync_oracle: Arc&lt;SyncingService&lt;Block&gt;&gt;,
     keystore: KeystorePtr,
@@ -2590,7 +2452,7 @@
     additional_config: AdditionalConfig,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(), sc_service::Error&gt;
 <span class="kw">where
-    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
+    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;
         + Send
         + Sync
         + <span class="lifetime">'static</span>,
@@ -2606,7 +2468,6 @@
         + cumulus_primitives_core::CollectCollationInfo&lt;Block&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
     <span class="kw">let </span><span class="kw-2">mut </span>proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
         task_manager.spawn_handle(),
@@ -2631,7 +2492,6 @@
     <span class="kw">let </span>collation_future = Box::pin(<span class="kw">async move </span>{
         <span class="kw">use </span>parity_scale_codec::Decode;
         <span class="kw">use </span>sp_api::ApiExt;
-        <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 
         <span class="kw">let </span>client = client_.clone();
 
@@ -2714,15 +2574,15 @@
     <span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn </span>start_aura_consensus&lt;RuntimeApi, Executor&gt;(
-    client: Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+<span class="kw">fn </span>start_aura_consensus&lt;RuntimeApi&gt;(
+    client: Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
     backend: Arc&lt;TFullBackend&lt;Block&gt;&gt;,
     parachain_block_import: ParachainBlockImport&lt;
         Block,
         FrontierBlockImport&lt;
             Block,
-            Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
-            TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
+            Arc&lt;TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
+            TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;,
         &gt;,
         TFullBackend&lt;Block&gt;,
     &gt;,
@@ -2731,10 +2591,7 @@
     task_manager: <span class="kw-2">&amp;</span>TaskManager,
     relay_chain_interface: Arc&lt;<span class="kw">dyn </span>RelayChainInterface&gt;,
     transaction_pool: Arc&lt;
-        sc_transaction_pool::FullPool&lt;
-            Block,
-            TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
-        &gt;,
+        sc_transaction_pool::FullPool&lt;Block, TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;,
     &gt;,
     sync_oracle: Arc&lt;SyncingService&lt;Block&gt;&gt;,
     keystore: KeystorePtr,
@@ -2743,7 +2600,7 @@
     additional_config: AdditionalConfig,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(), sc_service::Error&gt;
 <span class="kw">where
-    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
+    </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;&gt;
         + Send
         + Sync
         + <span class="lifetime">'static</span>,
@@ -2759,7 +2616,6 @@
         + cumulus_primitives_core::CollectCollationInfo&lt;Block&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
     <span class="kw">let </span><span class="kw-2">mut </span>proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
         task_manager.spawn_handle(),
@@ -2830,9 +2686,9 @@
     additional_config: AdditionalConfig,
 ) -&gt; sc_service::error::Result&lt;(
     TaskManager,
-    Arc&lt;TFullClient&lt;Block, astar::RuntimeApi, NativeElseWasmExecutor&lt;astar::Executor&gt;&gt;&gt;,
+    Arc&lt;TFullClient&lt;Block, astar_runtime::RuntimeApi, ParachainExecutor&gt;&gt;,
 )&gt; {
-    start_node_impl::&lt;astar::RuntimeApi, astar::Executor, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+    start_node_impl::&lt;astar_runtime::RuntimeApi, <span class="kw">_</span>, <span class="kw">_</span>, sc_network::NetworkWorker&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt;&gt;(
         parachain_config,
         polkadot_config,
         collator_options,
@@ -2853,9 +2709,9 @@
     additional_config: AdditionalConfig,
 ) -&gt; sc_service::error::Result&lt;(
     TaskManager,
-    Arc&lt;TFullClient&lt;Block, shiden::RuntimeApi, NativeElseWasmExecutor&lt;shiden::Executor&gt;&gt;&gt;,
+    Arc&lt;TFullClient&lt;Block, shiden_runtime::RuntimeApi, ParachainExecutor&gt;&gt;,
 )&gt; {
-    start_node_impl::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+    start_node_impl::&lt;shiden_runtime::RuntimeApi, <span class="kw">_</span>, <span class="kw">_</span>, sc_network::NetworkWorker&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt;&gt;(
         parachain_config,
         polkadot_config,
         collator_options,
@@ -2876,9 +2732,9 @@
     additional_config: AdditionalConfig,
 ) -&gt; sc_service::error::Result&lt;(
     TaskManager,
-    Arc&lt;TFullClient&lt;Block, shibuya::RuntimeApi, NativeElseWasmExecutor&lt;shibuya::Executor&gt;&gt;&gt;,
+    Arc&lt;TFullClient&lt;Block, shibuya_runtime::RuntimeApi, ParachainExecutor&gt;&gt;,
 )&gt; {
-    start_node_impl::&lt;shibuya::RuntimeApi, shibuya::Executor, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+    start_node_impl::&lt;shibuya_runtime::RuntimeApi, <span class="kw">_</span>, <span class="kw">_</span>, sc_network::NetworkWorker&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt;&gt;(
         parachain_config,
         polkadot_config,
         collator_options,

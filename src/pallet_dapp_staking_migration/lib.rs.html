@@ -775,7 +775,7 @@
     }
 
     <span class="kw">pub struct </span>SingularStakingInfoTranslationUpgrade&lt;T: Config&gt;(PhantomData&lt;T&gt;);
-    <span class="kw">impl</span>&lt;T: Config&gt; frame_support::traits::OnRuntimeUpgrade
+    <span class="kw">impl</span>&lt;T: Config&gt; frame_support::traits::UncheckedOnRuntimeUpgrade
         <span class="kw">for </span>SingularStakingInfoTranslationUpgrade&lt;T&gt;
     {
         <span class="kw">fn </span>on_runtime_upgrade() -&gt; Weight {

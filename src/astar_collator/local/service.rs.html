@@ -561,6 +561,15 @@
 <a href="#559" id="559">559</a>
 <a href="#560" id="560">560</a>
 <a href="#561" id="561">561</a>
+<a href="#562" id="562">562</a>
+<a href="#563" id="563">563</a>
+<a href="#564" id="564">564</a>
+<a href="#565" id="565">565</a>
+<a href="#566" id="566">566</a>
+<a href="#567" id="567">567</a>
+<a href="#568" id="568">568</a>
+<a href="#569" id="569">569</a>
+<a href="#570" id="570">570</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -583,13 +592,16 @@
 
 </span><span class="kw">use </span>fc_consensus::FrontierBlockImport;
 <span class="kw">use </span>fc_rpc_core::types::{FeeHistoryCache, FilterPool};
+<span class="kw">use </span>fc_storage::StorageOverrideHandler;
 <span class="kw">use </span>futures::{FutureExt, StreamExt};
 <span class="kw">use </span>sc_client_api::{Backend, BlockBackend, BlockchainEvents};
 <span class="kw">use </span>sc_consensus_grandpa::SharedVoterState;
-<span class="kw">use </span>sc_executor::NativeElseWasmExecutor;
+<span class="kw">use </span>sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
+<span class="kw">use </span>sc_network::NetworkBackend;
 <span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, Configuration, TaskManager};
 <span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryWorker};
 <span class="kw">use </span>sc_transaction_pool_api::OffchainTransactionPoolFactory;
+<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="kw">use </span>std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 <span class="attr">#[cfg(not(feature = <span class="string">"manual-seal"</span>))]
@@ -606,40 +618,20 @@
 /// imported and generated.
 </span><span class="kw">const </span>GRANDPA_JUSTIFICATION_PERIOD: u32 = <span class="number">512</span>;
 
-<span class="doccomment">/// Extra host functions
-</span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+<span class="doccomment">/// Parachain host functions
+</span><span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
 </span><span class="kw">pub type </span>HostFunctions = (
-    <span class="comment">// benchmarking host functions
-    </span>frame_benchmarking::benchmarking::HostFunctions,
-    <span class="comment">// evm tracing host functions
-    </span>moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-    cumulus_client_service::storage_proof_size::HostFunctions,
+    cumulus_client_service::ParachainHostFunctions,
+    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
 );
 
-<span class="doccomment">/// Extra host functions
-</span><span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
-</span><span class="kw">pub type </span>HostFunctions = (
-    <span class="comment">// evm tracing host functions
-    </span>moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-    cumulus_client_service::storage_proof_size::HostFunctions,
-);
+<span class="doccomment">/// Parachain host functions
+</span><span class="attr">#[cfg(not(feature = <span class="string">"evm-tracing"</span>))]
+</span><span class="kw">pub type </span>HostFunctions = (cumulus_client_service::ParachainHostFunctions,);
 
-<span class="doccomment">/// Local runtime native executor.
-</span><span class="kw">pub struct </span>Executor;
+<span class="kw">type </span>ParachainExecutor = WasmExecutor&lt;HostFunctions&gt;;
 
-<span class="kw">impl </span>sc_executor::NativeExecutionDispatch <span class="kw">for </span>Executor {
-    <span class="kw">type </span>ExtendHostFunctions = HostFunctions;
-
-    <span class="kw">fn </span>dispatch(method: <span class="kw-2">&amp;</span>str, data: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
-        local_runtime::api::dispatch(method, data)
-    }
-
-    <span class="kw">fn </span>native_version() -&gt; sc_executor::NativeVersion {
-        local_runtime::native_version()
-    }
-}
-
-<span class="kw">type </span>FullClient = sc_service::TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;;
+<span class="kw">type </span>FullClient = sc_service::TFullClient&lt;Block, RuntimeApi, ParachainExecutor&gt;;
 <span class="kw">type </span>FullBackend = sc_service::TFullBackend&lt;Block&gt;;
 <span class="kw">type </span>FullSelectChain = sc_consensus::LongestChain&lt;FullBackend, Block&gt;;
 
@@ -666,7 +658,7 @@
             &gt;,
             sc_consensus_grandpa::LinkHalf&lt;Block, FullClient, FullSelectChain&gt;,
             <span class="prelude-ty">Option</span>&lt;Telemetry&gt;,
-            Arc&lt;fc_db::kv::Backend&lt;Block&gt;&gt;,
+            Arc&lt;fc_db::kv::Backend&lt;Block, FullClient&gt;&gt;,
         ),
     &gt;,
     ServiceError,
@@ -682,7 +674,19 @@
         })
         .transpose()<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>executor = sc_service::new_native_or_wasm_executor(<span class="kw-2">&amp;</span>config);
+    <span class="kw">let </span>heap_pages = config
+        .default_heap_pages
+        .map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |h| HeapAllocStrategy::Static {
+            extra_pages: h <span class="kw">as _</span>,
+        });
+
+    <span class="kw">let </span>executor = ParachainExecutor::builder()
+        .with_execution_method(config.wasm_method)
+        .with_onchain_heap_alloc_strategy(heap_pages)
+        .with_offchain_heap_alloc_strategy(heap_pages)
+        .with_max_runtime_instances(config.max_runtime_instances)
+        .with_runtime_cache_size(config.runtime_cache_size)
+        .build();
 
     <span class="kw">let </span>(client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts_record_import::&lt;Block, RuntimeApi, <span class="kw">_</span>&gt;(
@@ -768,10 +772,13 @@
 }
 
 <span class="doccomment">/// Builds a new service.
-</span><span class="kw">pub fn </span>start_node(
+</span><span class="kw">pub fn </span>start_node&lt;N&gt;(
     config: Configuration,
     <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)] </span>evm_tracing_config: <span class="kw">crate</span>::evm_tracing_types::EvmTracingConfig,
-) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt;
+<span class="kw">where
+    </span>N: NetworkBackend&lt;Block, &lt;Block <span class="kw">as </span>BlockT&gt;::Hash&gt;,
+{
     <span class="kw">let </span>sc_service::PartialComponents {
         client,
         backend,
@@ -791,10 +798,20 @@
             .expect(<span class="string">"Genesis block exists; qed"</span>),
         <span class="kw-2">&amp;</span>config.chain_spec,
     );
-    <span class="kw">let </span><span class="kw-2">mut </span>net_config = sc_network::config::FullNetworkConfiguration::new(<span class="kw-2">&amp;</span>config.network);
+    <span class="kw">let </span><span class="kw-2">mut </span>net_config =
+        sc_network::config::FullNetworkConfiguration::&lt;<span class="kw">_</span>, <span class="kw">_</span>, N&gt;::new(<span class="kw-2">&amp;</span>config.network);
+
+    <span class="kw">let </span>metrics = N::register_notification_metrics(
+        config.prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry),
+    );
+    <span class="kw">let </span>peer_store_handle = net_config.peer_store_handle();
 
     <span class="kw">let </span>(grandpa_protocol_config, grandpa_notification_service) =
-        sc_consensus_grandpa::grandpa_peers_set_config(protocol_name.clone());
+        sc_consensus_grandpa::grandpa_peers_set_config::&lt;<span class="kw">_</span>, N&gt;(
+            protocol_name.clone(),
+            metrics.clone(),
+            Arc::clone(<span class="kw-2">&amp;</span>peer_store_handle),
+        );
     net_config.add_notification_protocol(grandpa_protocol_config);
 
     <span class="kw">let </span>(network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
@@ -808,6 +825,7 @@
             block_announce_validator_builder: <span class="prelude-val">None</span>,
             warp_sync_params: <span class="prelude-val">None</span>,
             block_relay: <span class="prelude-val">None</span>,
+            metrics,
         })<span class="question-mark">?</span>;
 
     <span class="kw">if </span>config.offchain_worker.enabled {
@@ -821,7 +839,7 @@
                 transaction_pool: <span class="prelude-val">Some</span>(OffchainTransactionPoolFactory::new(
                     transaction_pool.clone(),
                 )),
-                network_provider: network.clone(),
+                network_provider: Arc::new(network.clone()),
                 is_validator: config.role.is_authority(),
                 enable_http_requests: <span class="bool-val">true</span>,
                 custom_extensions: <span class="kw">move </span>|<span class="kw">_</span>| <span class="macro">vec!</span>[],
@@ -833,7 +851,7 @@
 
     <span class="kw">let </span>filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     <span class="kw">let </span>fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
-    <span class="kw">let </span>overrides = fc_storage::overrides_handle(client.clone());
+    <span class="kw">let </span>storage_override = Arc::new(StorageOverrideHandler::new(client.clone()));
 
     <span class="comment">// Sinks for pubsub notifications.
     // Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
@@ -859,7 +877,7 @@
                     substrate_backend: backend.clone(),
                     frontier_backend: frontier_backend.clone(),
                     filter_pool: <span class="prelude-val">Some</span>(filter_pool.clone()),
-                    overrides: overrides.clone(),
+                    storage_override: storage_override.clone(),
                 },
             )
         } <span class="kw">else </span>{
@@ -879,7 +897,7 @@
             Duration::new(<span class="number">6</span>, <span class="number">0</span>),
             client.clone(),
             backend.clone(),
-            overrides.clone(),
+            storage_override.clone(),
             frontier_backend.clone(),
             <span class="number">3</span>,
             <span class="number">0</span>,
@@ -909,7 +927,7 @@
         <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
         fc_rpc::EthTask::fee_history_task(
             client.clone(),
-            overrides.clone(),
+            storage_override.clone(),
             fee_history_cache.clone(),
             FEE_HISTORY_LIMIT,
         ),
@@ -928,7 +946,7 @@
 
     <span class="kw">let </span>block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
         task_manager.spawn_handle(),
-        overrides.clone(),
+        storage_override.clone(),
         <span class="number">50</span>,
         <span class="number">50</span>,
         prometheus_registry.clone(),
@@ -959,7 +977,7 @@
                 fee_history_limit: FEE_HISTORY_LIMIT,
                 fee_history_cache: fee_history_cache.clone(),
                 block_data_cache: block_data_cache.clone(),
-                overrides: overrides.clone(),
+                storage_override: storage_override.clone(),
                 enable_evm_rpc: <span class="bool-val">true</span>, <span class="comment">// enable EVM RPC for dev node by default
                 </span><span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
                 </span>command_sink: <span class="prelude-val">Some</span>(command_sink.clone()),

@@ -994,31 +994,6 @@
 <a href="#992" id="992">992</a>
 <a href="#993" id="993">993</a>
 <a href="#994" id="994">994</a>
-<a href="#995" id="995">995</a>
-<a href="#996" id="996">996</a>
-<a href="#997" id="997">997</a>
-<a href="#998" id="998">998</a>
-<a href="#999" id="999">999</a>
-<a href="#1000" id="1000">1000</a>
-<a href="#1001" id="1001">1001</a>
-<a href="#1002" id="1002">1002</a>
-<a href="#1003" id="1003">1003</a>
-<a href="#1004" id="1004">1004</a>
-<a href="#1005" id="1005">1005</a>
-<a href="#1006" id="1006">1006</a>
-<a href="#1007" id="1007">1007</a>
-<a href="#1008" id="1008">1008</a>
-<a href="#1009" id="1009">1009</a>
-<a href="#1010" id="1010">1010</a>
-<a href="#1011" id="1011">1011</a>
-<a href="#1012" id="1012">1012</a>
-<a href="#1013" id="1013">1013</a>
-<a href="#1014" id="1014">1014</a>
-<a href="#1015" id="1015">1015</a>
-<a href="#1016" id="1016">1016</a>
-<a href="#1017" id="1017">1017</a>
-<a href="#1018" id="1018">1018</a>
-<a href="#1019" id="1019">1019</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1042,8 +1017,8 @@
     cli::{Cli, RelayChainCli, Subcommand},
     local::{<span class="self">self</span>, development_config},
     parachain::{
-        <span class="self">self</span>, astar, chain_spec, service::AdditionalConfig, shibuya, shiden, start_astar_node,
-        start_shibuya_node, start_shiden_node,
+        <span class="self">self</span>, chain_spec, service::AdditionalConfig, start_astar_node, start_shibuya_node,
+        start_shiden_node,
     },
 };
 <span class="kw">use </span>cumulus_primitives_core::ParaId;
@@ -1226,7 +1201,7 @@
                         task_manager,
                         import_queue,
                         ..
-                    } = parachain::new_partial::&lt;astar::RuntimeApi, astar::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;astar_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue,
                     )<span class="question-mark">?</span>;
@@ -1239,7 +1214,7 @@
                         task_manager,
                         import_queue,
                         ..
-                    } = parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;shiden_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue_fallback,
                     )<span class="question-mark">?</span>;
@@ -1252,7 +1227,7 @@
                         task_manager,
                         import_queue,
                         ..
-                    } = parachain::new_partial::&lt;shibuya::RuntimeApi, shibuya::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;shibuya_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue,
                     )<span class="question-mark">?</span>;
@@ -1268,7 +1243,7 @@
                         client,
                         task_manager,
                         ..
-                    } = parachain::new_partial::&lt;astar::RuntimeApi, astar::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;astar_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue,
                     )<span class="question-mark">?</span>;
@@ -1280,7 +1255,7 @@
                         client,
                         task_manager,
                         ..
-                    } = parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;shiden_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue_fallback,
                     )<span class="question-mark">?</span>;
@@ -1292,7 +1267,7 @@
                         client,
                         task_manager,
                         ..
-                    } = parachain::new_partial::&lt;shibuya::RuntimeApi, shibuya::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;shibuya_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue,
                     )<span class="question-mark">?</span>;
@@ -1308,7 +1283,7 @@
                         client,
                         task_manager,
                         ..
-                    } = parachain::new_partial::&lt;astar::RuntimeApi, astar::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;astar_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue,
                     )<span class="question-mark">?</span>;
@@ -1320,7 +1295,7 @@
                         client,
                         task_manager,
                         ..
-                    } = parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;shiden_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue_fallback,
                     )<span class="question-mark">?</span>;
@@ -1332,7 +1307,7 @@
                         client,
                         task_manager,
                         ..
-                    } = parachain::new_partial::&lt;shibuya::RuntimeApi, shibuya::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;shibuya_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue,
                     )<span class="question-mark">?</span>;
@@ -1349,7 +1324,7 @@
                         task_manager,
                         import_queue,
                         ..
-                    } = parachain::new_partial::&lt;astar::RuntimeApi, astar::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;astar_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue,
                     )<span class="question-mark">?</span>;
@@ -1362,7 +1337,7 @@
                         task_manager,
                         import_queue,
                         ..
-                    } = parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;shiden_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue_fallback,
                     )<span class="question-mark">?</span>;
@@ -1375,7 +1350,7 @@
                         task_manager,
                         import_queue,
                         ..
-                    } = parachain::new_partial::&lt;shibuya::RuntimeApi, shibuya::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;shibuya_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue,
                     )<span class="question-mark">?</span>;
@@ -1411,7 +1386,7 @@
                         task_manager,
                         backend,
                         ..
-                    } = parachain::new_partial::&lt;astar::RuntimeApi, astar::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;astar_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue,
                     )<span class="question-mark">?</span>;
@@ -1428,7 +1403,7 @@
                         task_manager,
                         backend,
                         ..
-                    } = parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;shiden_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue_fallback,
                     )<span class="question-mark">?</span>;
@@ -1445,7 +1420,7 @@
                         task_manager,
                         backend,
                         ..
-                    } = parachain::new_partial::&lt;shibuya::RuntimeApi, shibuya::Executor, <span class="kw">_</span>&gt;(
+                    } = parachain::new_partial::&lt;shibuya_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
                         parachain::build_import_queue,
                     )<span class="question-mark">?</span>;
@@ -1462,7 +1437,7 @@
             <span class="kw">if </span>runner.config().chain_spec.is_astar() {
                 runner.sync_run(|config| {
                     <span class="kw">let </span>PartialComponents { client, .. } =
-                        parachain::new_partial::&lt;astar::RuntimeApi, astar::Executor, <span class="kw">_</span>&gt;(
+                        parachain::new_partial::&lt;astar_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                             <span class="kw-2">&amp;</span>config,
                             parachain::build_import_queue,
                         )<span class="question-mark">?</span>;
@@ -1471,7 +1446,7 @@
             } <span class="kw">else if </span>runner.config().chain_spec.is_shiden() {
                 runner.sync_run(|config| {
                     <span class="kw">let </span>PartialComponents { client, .. } =
-                        parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
+                        parachain::new_partial::&lt;shiden_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                             <span class="kw-2">&amp;</span>config,
                             parachain::build_import_queue_fallback,
                         )<span class="question-mark">?</span>;
@@ -1480,7 +1455,7 @@
             } <span class="kw">else </span>{
                 runner.sync_run(|config| {
                     <span class="kw">let </span>PartialComponents { client, .. } =
-                        parachain::new_partial::&lt;shibuya::RuntimeApi, shibuya::Executor, <span class="kw">_</span>&gt;(
+                        parachain::new_partial::&lt;shibuya_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
                             <span class="kw-2">&amp;</span>config,
                             parachain::build_import_queue,
                         )<span class="question-mark">?</span>;
@@ -1513,26 +1488,26 @@
                 BenchmarkCmd::Pallet(cmd) =&gt; {
                     <span class="kw">if </span>chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            cmd.run::&lt;HashingFor&lt;astar_runtime::Block&gt;, parachain::HostFunctions&gt;(
-                                config,
+                            cmd.run_with_spec::&lt;HashingFor&lt;astar_runtime::Block&gt;, parachain::HostFunctions&gt;(
+                                <span class="prelude-val">Some</span>(config.chain_spec),
                             )
                         })
                     } <span class="kw">else if </span>chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            cmd.run::&lt;HashingFor&lt;shiden_runtime::Block&gt;, parachain::HostFunctions&gt;(
-                                config,
+                            cmd.run_with_spec::&lt;HashingFor&lt;shiden_runtime::Block&gt;, parachain::HostFunctions&gt;(
+                                <span class="prelude-val">Some</span>(config.chain_spec),
                             )
                         })
                     } <span class="kw">else if </span>chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            cmd.run::&lt;HashingFor&lt;shibuya_runtime::Block&gt;, parachain::HostFunctions&gt;(
-                                config,
+                            cmd.run_with_spec::&lt;HashingFor&lt;shibuya_runtime::Block&gt;, parachain::HostFunctions&gt;(
+                                <span class="prelude-val">Some</span>(config.chain_spec),
                             )
                         })
                     } <span class="kw">else </span>{
                         runner.sync_run(|config| {
-                            cmd.run::&lt;HashingFor&lt;local_runtime::Block&gt;, local::HostFunctions&gt;(
-                                config,
+                            cmd.run_with_spec::&lt;HashingFor&lt;local_runtime::Block&gt;, local::HostFunctions&gt;(
+                                <span class="prelude-val">Some</span>(config.chain_spec),
                             )
                         })
                     }
@@ -1540,30 +1515,25 @@
                 BenchmarkCmd::Block(cmd) =&gt; {
                     <span class="kw">if </span>chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params =
-                                parachain::new_partial::&lt;astar::RuntimeApi, astar::Executor, <span class="kw">_</span>&gt;(
-                                    <span class="kw-2">&amp;</span>config,
-                                    parachain::build_import_queue,
-                                )<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = parachain::new_partial::&lt;astar_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
+                                <span class="kw-2">&amp;</span>config,
+                                parachain::build_import_queue,
+                            )<span class="question-mark">?</span>;
                             cmd.run(params.client)
                         })
                     } <span class="kw">else if </span>chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params =
-                                parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
-                                    <span class="kw-2">&amp;</span>config,
-                                    parachain::build_import_queue_fallback,
-                                )<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = parachain::new_partial::&lt;shiden_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
+                                <span class="kw-2">&amp;</span>config,
+                                parachain::build_import_queue_fallback,
+                            )<span class="question-mark">?</span>;
                             cmd.run(params.client)
                         })
                     } <span class="kw">else if </span>chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params = parachain::new_partial::&lt;
-                                shibuya::RuntimeApi,
-                                shibuya::Executor,
-                                <span class="kw">_</span>,
-                            &gt;(
-                                <span class="kw-2">&amp;</span>config, parachain::build_import_queue
+                            <span class="kw">let </span>params = parachain::new_partial::&lt;shibuya_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
+                                <span class="kw-2">&amp;</span>config,
+                                parachain::build_import_queue,
                             )<span class="question-mark">?</span>;
                             cmd.run(params.client)
                         })
@@ -1577,11 +1547,10 @@
                 BenchmarkCmd::Storage(cmd) =&gt; {
                     <span class="kw">if </span>chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params =
-                                parachain::new_partial::&lt;astar::RuntimeApi, astar::Executor, <span class="kw">_</span>&gt;(
-                                    <span class="kw-2">&amp;</span>config,
-                                    parachain::build_import_queue,
-                                )<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = parachain::new_partial::&lt;astar_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
+                                <span class="kw-2">&amp;</span>config,
+                                parachain::build_import_queue,
+                            )<span class="question-mark">?</span>;
                             <span class="kw">let </span>db = params.backend.expose_db();
                             <span class="kw">let </span>storage = params.backend.expose_storage();
 
@@ -1589,11 +1558,10 @@
                         })
                     } <span class="kw">else if </span>chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params =
-                                parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
-                                    <span class="kw-2">&amp;</span>config,
-                                    parachain::build_import_queue_fallback,
-                                )<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = parachain::new_partial::&lt;shiden_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
+                                <span class="kw-2">&amp;</span>config,
+                                parachain::build_import_queue_fallback,
+                            )<span class="question-mark">?</span>;
                             <span class="kw">let </span>db = params.backend.expose_db();
                             <span class="kw">let </span>storage = params.backend.expose_storage();
 
@@ -1601,12 +1569,9 @@
                         })
                     } <span class="kw">else if </span>chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params = parachain::new_partial::&lt;
-                                shibuya::RuntimeApi,
-                                shibuya::Executor,
-                                <span class="kw">_</span>,
-                            &gt;(
-                                <span class="kw-2">&amp;</span>config, parachain::build_import_queue
+                            <span class="kw">let </span>params = parachain::new_partial::&lt;shibuya_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
+                                <span class="kw-2">&amp;</span>config,
+                                parachain::build_import_queue,
                             )<span class="question-mark">?</span>;
                             <span class="kw">let </span>db = params.backend.expose_db();
                             <span class="kw">let </span>storage = params.backend.expose_storage();
@@ -1626,11 +1591,10 @@
                 BenchmarkCmd::Overhead(cmd) =&gt; {
                     <span class="kw">if </span>chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params =
-                                parachain::new_partial::&lt;astar::RuntimeApi, astar::Executor, <span class="kw">_</span>&gt;(
-                                    <span class="kw-2">&amp;</span>config,
-                                    parachain::build_import_queue,
-                                )<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = parachain::new_partial::&lt;astar_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
+                                <span class="kw-2">&amp;</span>config,
+                                parachain::build_import_queue,
+                            )<span class="question-mark">?</span>;
                             <span class="kw">let </span>ext_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>inherent_data = para_benchmark_inherent_data()
                                 .map_err(|e| <span class="macro">format!</span>(<span class="string">"generating inherent data: {:?}"</span>, e))<span class="question-mark">?</span>;
@@ -1645,11 +1609,10 @@
                         })
                     } <span class="kw">else if </span>chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params =
-                                parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
-                                    <span class="kw-2">&amp;</span>config,
-                                    parachain::build_import_queue_fallback,
-                                )<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = parachain::new_partial::&lt;shiden_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
+                                <span class="kw-2">&amp;</span>config,
+                                parachain::build_import_queue_fallback,
+                            )<span class="question-mark">?</span>;
 
                             <span class="kw">let </span>ext_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>inherent_data = para_benchmark_inherent_data()
@@ -1665,12 +1628,9 @@
                         })
                     } <span class="kw">else if </span>chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params = parachain::new_partial::&lt;
-                                shibuya::RuntimeApi,
-                                shibuya::Executor,
-                                <span class="kw">_</span>,
-                            &gt;(
-                                <span class="kw-2">&amp;</span>config, parachain::build_import_queue
+                            <span class="kw">let </span>params = parachain::new_partial::&lt;shibuya_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
+                                <span class="kw-2">&amp;</span>config,
+                                parachain::build_import_queue,
                             )<span class="question-mark">?</span>;
 
                             <span class="kw">let </span>ext_builder = RemarkBuilder::new(params.client.clone());
@@ -1705,11 +1665,10 @@
                 BenchmarkCmd::Extrinsic(cmd) =&gt; {
                     <span class="kw">if </span>chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params =
-                                parachain::new_partial::&lt;astar::RuntimeApi, astar::Executor, <span class="kw">_</span>&gt;(
-                                    <span class="kw-2">&amp;</span>config,
-                                    parachain::build_import_queue,
-                                )<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = parachain::new_partial::&lt;astar_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
+                                <span class="kw-2">&amp;</span>config,
+                                parachain::build_import_queue,
+                            )<span class="question-mark">?</span>;
                             <span class="kw">let </span>remark_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>tka_builder = TransferKeepAliveBuilder::new(
                                 params.client.clone(),
@@ -1727,11 +1686,10 @@
                         })
                     } <span class="kw">else if </span>chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params =
-                                parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
-                                    <span class="kw-2">&amp;</span>config,
-                                    parachain::build_import_queue_fallback,
-                                )<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = parachain::new_partial::&lt;shiden_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
+                                <span class="kw-2">&amp;</span>config,
+                                parachain::build_import_queue_fallback,
+                            )<span class="question-mark">?</span>;
                             <span class="kw">let </span>remark_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>tka_builder = TransferKeepAliveBuilder::new(
                                 params.client.clone(),
@@ -1749,12 +1707,9 @@
                         })
                     } <span class="kw">else if </span>chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params = parachain::new_partial::&lt;
-                                shibuya::RuntimeApi,
-                                shibuya::Executor,
-                                <span class="kw">_</span>,
-                            &gt;(
-                                <span class="kw-2">&amp;</span>config, parachain::build_import_queue
+                            <span class="kw">let </span>params = parachain::new_partial::&lt;shibuya_runtime::RuntimeApi, <span class="kw">_</span>&gt;(
+                                <span class="kw-2">&amp;</span>config,
+                                parachain::build_import_queue,
                             )<span class="question-mark">?</span>;
                             <span class="kw">let </span>remark_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>tka_builder = TransferKeepAliveBuilder::new(
@@ -1796,11 +1751,6 @@
                 }
             }
         }
-        <span class="prelude-val">Some</span>(Subcommand::TryRuntime) =&gt; <span class="prelude-val">Err</span>(<span class="string">"The `try-runtime` subcommand has been migrated to a \
-        standalone CLI (https://github.com/paritytech/try-runtime-cli). It is no longer \
-        being maintained here and will be removed entirely some time after January 2024. \
-        Please remove this subcommand from your runtime and use the standalone CLI."
-            </span>.into()),
         <span class="prelude-val">None </span>=&gt; {
             <span class="kw">let </span>runner = cli.create_runner(<span class="kw-2">&amp;</span>cli.run.normalize())<span class="question-mark">?</span>;
             <span class="kw">let </span>collator_options = cli.run.collator_options();
@@ -1819,7 +1769,7 @@
 
             runner.run_node_until_exit(|config| <span class="kw">async move </span>{
                 <span class="kw">if </span>config.chain_spec.is_dev() {
-                    <span class="kw">return </span>local::start_node(config, <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)] </span>evm_tracing_config).map_err(Into::into);
+                    <span class="kw">return </span>local::start_node::&lt;sc_network::NetworkWorker&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt;&gt;(config, <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)] </span>evm_tracing_config).map_err(Into::into);
                 }
 
                 <span class="kw">let </span>polkadot_cli = RelayChainCli::new(

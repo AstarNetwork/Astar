@@ -376,6 +376,7 @@
 <a href="#374" id="374">374</a>
 <a href="#375" id="375">375</a>
 <a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -398,16 +399,17 @@
 
 </span><span class="kw">use </span>fc_rpc::{
     Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
-    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3, Web3ApiServer,
+    EthPubSubApiServer, Net, NetApiServer, Web3, Web3ApiServer,
 };
 <span class="kw">use </span>fc_rpc_core::types::{FeeHistoryCache, FilterPool};
+<span class="kw">use </span>fc_storage::StorageOverride;
 <span class="kw">use </span>jsonrpsee::RpcModule;
 <span class="kw">use </span>pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 
 <span class="kw">use </span>sc_client_api::{
     AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider, UsageProvider,
 };
-<span class="kw">use </span>sc_network::NetworkService;
+<span class="kw">use </span>sc_network::service::traits::NetworkService;
 <span class="kw">use </span>sc_network_sync::SyncingService;
 <span class="kw">use </span>sc_rpc::dev::DevApiServer;
 <span class="kw">pub use </span>sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
@@ -449,14 +451,14 @@
 </span><span class="kw">pub fn </span>open_frontier_backend&lt;C&gt;(
     client: Arc&lt;C&gt;,
     config: <span class="kw-2">&amp;</span>sc_service::Configuration,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;fc_db::kv::Backend&lt;Block&gt;&gt;, String&gt;
+) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;fc_db::kv::Backend&lt;Block, C&gt;&gt;, String&gt;
 <span class="kw">where
     </span>C: sp_blockchain::HeaderBackend&lt;Block&gt;,
 {
     <span class="kw">let </span>config_dir = config.base_path.config_dir(config.chain_spec.id());
     <span class="kw">let </span>path = config_dir.join(<span class="string">"frontier"</span>).join(<span class="string">"db"</span>);
 
-    <span class="prelude-val">Ok</span>(Arc::new(fc_db::kv::Backend::&lt;Block&gt;::new(
+    <span class="prelude-val">Ok</span>(Arc::new(fc_db::kv::Backend::&lt;Block, C&gt;::new(
         client,
         <span class="kw-2">&amp;</span>fc_db::kv::DatabaseSettings {
             source: fc_db::DatabaseSource::RocksDb {
@@ -491,7 +493,7 @@
     <span class="doccomment">/// Graph pool instance.
     </span><span class="kw">pub </span>graph: Arc&lt;Pool&lt;A&gt;&gt;,
     <span class="doccomment">/// Network service
-    </span><span class="kw">pub </span>network: Arc&lt;NetworkService&lt;Block, Hash&gt;&gt;,
+    </span><span class="kw">pub </span>network: Arc&lt;<span class="kw">dyn </span>NetworkService&gt;,
     <span class="doccomment">/// Chain syncing service
     </span><span class="kw">pub </span>sync: Arc&lt;SyncingService&lt;Block&gt;&gt;,
     <span class="doccomment">/// Whether to deny unsafe calls
@@ -506,8 +508,8 @@
     </span><span class="kw">pub </span>fee_history_limit: u64,
     <span class="doccomment">/// Fee history cache.
     </span><span class="kw">pub </span>fee_history_cache: FeeHistoryCache,
-    <span class="doccomment">/// Ethereum data access overrides.
-    </span><span class="kw">pub </span>overrides: Arc&lt;OverrideHandle&lt;Block&gt;&gt;,
+    <span class="doccomment">/// Ethereum data access storage_override.
+    </span><span class="kw">pub </span>storage_override: Arc&lt;<span class="kw">dyn </span>StorageOverride&lt;Block&gt;&gt;,
     <span class="doccomment">/// Cache for Ethereum block data.
     </span><span class="kw">pub </span>block_data_cache: Arc&lt;EthBlockDataCacheTask&lt;Block&gt;&gt;,
     <span class="doccomment">/// Enable EVM RPC servers
@@ -670,7 +672,7 @@
         filter_pool,
         fee_history_limit,
         fee_history_cache,
-        overrides,
+        storage_override,
         block_data_cache,
         enable_evm_rpc,
         <span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
@@ -701,7 +703,7 @@
             no_tx_converter,
             sync.clone(),
             Default::default(),
-            overrides.clone(),
+            storage_override.clone(),
             frontier_backend.clone(),
             is_authority,
             block_data_cache.clone(),
@@ -744,7 +746,7 @@
             client.clone(),
             sync,
             subscription_task_executor,
-            overrides,
+            storage_override,
             pubsub_notification_sinks,
         )
         .into_rpc(),

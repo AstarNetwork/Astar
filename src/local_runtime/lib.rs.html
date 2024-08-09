@@ -1976,6 +1976,89 @@
 <a href="#1974" id="1974">1974</a>
 <a href="#1975" id="1975">1975</a>
 <a href="#1976" id="1976">1976</a>
+<a href="#1977" id="1977">1977</a>
+<a href="#1978" id="1978">1978</a>
+<a href="#1979" id="1979">1979</a>
+<a href="#1980" id="1980">1980</a>
+<a href="#1981" id="1981">1981</a>
+<a href="#1982" id="1982">1982</a>
+<a href="#1983" id="1983">1983</a>
+<a href="#1984" id="1984">1984</a>
+<a href="#1985" id="1985">1985</a>
+<a href="#1986" id="1986">1986</a>
+<a href="#1987" id="1987">1987</a>
+<a href="#1988" id="1988">1988</a>
+<a href="#1989" id="1989">1989</a>
+<a href="#1990" id="1990">1990</a>
+<a href="#1991" id="1991">1991</a>
+<a href="#1992" id="1992">1992</a>
+<a href="#1993" id="1993">1993</a>
+<a href="#1994" id="1994">1994</a>
+<a href="#1995" id="1995">1995</a>
+<a href="#1996" id="1996">1996</a>
+<a href="#1997" id="1997">1997</a>
+<a href="#1998" id="1998">1998</a>
+<a href="#1999" id="1999">1999</a>
+<a href="#2000" id="2000">2000</a>
+<a href="#2001" id="2001">2001</a>
+<a href="#2002" id="2002">2002</a>
+<a href="#2003" id="2003">2003</a>
+<a href="#2004" id="2004">2004</a>
+<a href="#2005" id="2005">2005</a>
+<a href="#2006" id="2006">2006</a>
+<a href="#2007" id="2007">2007</a>
+<a href="#2008" id="2008">2008</a>
+<a href="#2009" id="2009">2009</a>
+<a href="#2010" id="2010">2010</a>
+<a href="#2011" id="2011">2011</a>
+<a href="#2012" id="2012">2012</a>
+<a href="#2013" id="2013">2013</a>
+<a href="#2014" id="2014">2014</a>
+<a href="#2015" id="2015">2015</a>
+<a href="#2016" id="2016">2016</a>
+<a href="#2017" id="2017">2017</a>
+<a href="#2018" id="2018">2018</a>
+<a href="#2019" id="2019">2019</a>
+<a href="#2020" id="2020">2020</a>
+<a href="#2021" id="2021">2021</a>
+<a href="#2022" id="2022">2022</a>
+<a href="#2023" id="2023">2023</a>
+<a href="#2024" id="2024">2024</a>
+<a href="#2025" id="2025">2025</a>
+<a href="#2026" id="2026">2026</a>
+<a href="#2027" id="2027">2027</a>
+<a href="#2028" id="2028">2028</a>
+<a href="#2029" id="2029">2029</a>
+<a href="#2030" id="2030">2030</a>
+<a href="#2031" id="2031">2031</a>
+<a href="#2032" id="2032">2032</a>
+<a href="#2033" id="2033">2033</a>
+<a href="#2034" id="2034">2034</a>
+<a href="#2035" id="2035">2035</a>
+<a href="#2036" id="2036">2036</a>
+<a href="#2037" id="2037">2037</a>
+<a href="#2038" id="2038">2038</a>
+<a href="#2039" id="2039">2039</a>
+<a href="#2040" id="2040">2040</a>
+<a href="#2041" id="2041">2041</a>
+<a href="#2042" id="2042">2042</a>
+<a href="#2043" id="2043">2043</a>
+<a href="#2044" id="2044">2044</a>
+<a href="#2045" id="2045">2045</a>
+<a href="#2046" id="2046">2046</a>
+<a href="#2047" id="2047">2047</a>
+<a href="#2048" id="2048">2048</a>
+<a href="#2049" id="2049">2049</a>
+<a href="#2050" id="2050">2050</a>
+<a href="#2051" id="2051">2051</a>
+<a href="#2052" id="2052">2052</a>
+<a href="#2053" id="2053">2053</a>
+<a href="#2054" id="2054">2054</a>
+<a href="#2055" id="2055">2055</a>
+<a href="#2056" id="2056">2056</a>
+<a href="#2057" id="2057">2057</a>
+<a href="#2058" id="2058">2058</a>
+<a href="#2059" id="2059">2059</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2004,13 +2087,13 @@
 
 <span class="kw">use </span>frame_support::{
     construct_runtime,
-    genesis_builder_helper::{build_config, create_default_config},
+    genesis_builder_helper::{build_state, get_preset},
     parameter_types,
     traits::{
-        fungible::HoldConsideration,
+        fungible::{Balanced, Credit, HoldConsideration},
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EqualPrivilegeOnly,
-        FindAuthor, Get, InstanceFilter, LinearStoragePrice, Nothing, OnFinalize, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, EqualPrivilegeOnly, FindAuthor, Get,
+        InstanceFilter, LinearStoragePrice, Nothing, OnFinalize, WithdrawReasons,
     },
     weights::{
         constants::{ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -2027,7 +2110,7 @@
 <span class="kw">use </span>pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
 <span class="kw">use </span>pallet_evm_precompile_assets_erc20::AddressToAssetId;
 <span class="kw">use </span>pallet_grandpa::{fg_primitives, AuthorityList <span class="kw">as </span>GrandpaAuthorityList};
-<span class="kw">use </span>pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
+<span class="kw">use </span>pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
 <span class="kw">use </span>parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>sp_api::impl_runtime_apis;
 <span class="kw">use </span>sp_core::{crypto::KeyTypeId, ConstBool, OpaqueMetadata, H160, H256, U256};
@@ -2247,6 +2330,7 @@
     <span class="kw">type </span>AuthorityId = AuraId;
     <span class="kw">type </span>DisabledValidators = ();
     <span class="kw">type </span>MaxAuthorities = ConstU32&lt;<span class="number">50</span>&gt;;
+    <span class="kw">type </span>SlotDuration = pallet_aura::MinimumPeriodTimesTwo&lt;Runtime&gt;;
     <span class="kw">type </span>AllowMultipleBlocksPerSlot = ConstBool&lt;<span class="bool-val">false</span>&gt;;
 }
 
@@ -2370,7 +2454,7 @@
 
 <span class="kw">impl </span>pallet_transaction_payment::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>OnChargeTransaction = CurrencyAdapter&lt;Balances, ()&gt;;
+    <span class="kw">type </span>OnChargeTransaction = FungibleAdapter&lt;Balances, ()&gt;;
     <span class="kw">type </span>WeightToFee = WeightToFee;
     <span class="kw">type </span>OperationalFeeMultiplier = OperationalFeeMultiplier;
     <span class="kw">type </span>FeeMultiplierUpdate = TargetedFeeAdjustment&lt;
@@ -2413,8 +2497,6 @@
     <span class="kw">pub const </span>TreasuryPalletId: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b"py/trsry"</span>);
     <span class="kw">pub const </span>DappsStakingPalletId: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b"py/dpsst"</span>);
 }
-
-<span class="kw">type </span>NegativeImbalance = &lt;Balances <span class="kw">as </span>Currency&lt;AccountId&gt;&gt;::NegativeImbalance;
 
 <span class="kw">impl </span>pallet_static_price_provider::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
@@ -2472,12 +2554,12 @@
 }
 
 <span class="kw">pub struct </span>InflationPayoutPerBlock;
-<span class="kw">impl </span>pallet_inflation::PayoutPerBlock&lt;NegativeImbalance&gt; <span class="kw">for </span>InflationPayoutPerBlock {
-    <span class="kw">fn </span>treasury(reward: NegativeImbalance) {
-        Balances::resolve_creating(<span class="kw-2">&amp;</span>TreasuryPalletId::get().into_account_truncating(), reward);
+<span class="kw">impl </span>pallet_inflation::PayoutPerBlock&lt;Credit&lt;AccountId, Balances&gt;&gt; <span class="kw">for </span>InflationPayoutPerBlock {
+    <span class="kw">fn </span>treasury(reward: Credit&lt;AccountId, Balances&gt;) {
+        <span class="kw">let _ </span>= Balances::resolve(<span class="kw-2">&amp;</span>TreasuryPalletId::get().into_account_truncating(), reward);
     }
 
-    <span class="kw">fn </span>collators(_reward: NegativeImbalance) {
+    <span class="kw">fn </span>collators(_reward: Credit&lt;AccountId, Balances&gt;) {
         <span class="comment">// no collators for local dev node
     </span>}
 }
@@ -2560,7 +2642,8 @@
         </span>I: <span class="lifetime">'a </span>+ IntoIterator&lt;Item = (ConsensusEngineId, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[u8])&gt;,
     {
         <span class="kw">if let </span><span class="prelude-val">Some</span>(author_index) = F::find_author(digests) {
-            <span class="kw">let </span>authority_id = Aura::authorities()[author_index <span class="kw">as </span>usize].clone();
+            <span class="kw">let </span>authority_id =
+                pallet_aura::Authorities::&lt;Runtime&gt;::get()[author_index <span class="kw">as </span>usize].clone();
             <span class="kw">return </span><span class="prelude-val">Some</span>(H160::from_slice(<span class="kw-2">&amp;</span>authority_id.encode()[<span class="number">4</span>..<span class="number">24</span>]));
         }
 
@@ -2604,7 +2687,7 @@
     <span class="kw">type </span>PrecompilesType = Precompiles;
     <span class="kw">type </span>PrecompilesValue = PrecompilesValue;
     <span class="kw">type </span>ChainId = ChainId;
-    <span class="kw">type </span>OnChargeTransaction = pallet_evm::EVMCurrencyAdapter&lt;Balances, ()&gt;;
+    <span class="kw">type </span>OnChargeTransaction = pallet_evm::EVMFungibleAdapter&lt;Balances, ()&gt;;
     <span class="kw">type </span>BlockGasLimit = BlockGasLimit;
     <span class="kw">type </span>Timestamp = Timestamp;
     <span class="kw">type </span>OnCreate = ();
@@ -3341,7 +3424,7 @@
         }
 
         <span class="kw">fn </span>authorities() -&gt; Vec&lt;AuraId&gt; {
-            Aura::authorities().into_inner()
+            pallet_aura::Authorities::&lt;Runtime&gt;::get().into_inner()
         }
     }
 
@@ -3777,12 +3860,17 @@
 
 
     <span class="kw">impl </span>sp_genesis_builder::GenesisBuilder&lt;Block&gt; <span class="kw">for </span>Runtime {
-        <span class="kw">fn </span>create_default_config() -&gt; Vec&lt;u8&gt; {
-            create_default_config::&lt;RuntimeGenesisConfig&gt;()
+
+        <span class="kw">fn </span>build_state(config: Vec&lt;u8&gt;) -&gt; sp_genesis_builder::Result {
+            build_state::&lt;RuntimeGenesisConfig&gt;(config)
         }
 
-        <span class="kw">fn </span>build_config(config: Vec&lt;u8&gt;) -&gt; sp_genesis_builder::Result {
-            build_config::&lt;RuntimeGenesisConfig&gt;(config)
+        <span class="kw">fn </span>get_preset(id: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;sp_genesis_builder::PresetId&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
+            get_preset::&lt;RuntimeGenesisConfig&gt;(id, |<span class="kw">_</span>| <span class="prelude-val">None</span>)
+        }
+
+        <span class="kw">fn </span>preset_names() -&gt; Vec&lt;sp_genesis_builder::PresetId&gt; {
+            <span class="macro">vec!</span>[]
         }
     }
 
@@ -3898,6 +3986,84 @@
                 };
             }
 
+            <span class="prelude-val">Ok</span>(())
+        }
+
+        <span class="kw">fn </span>trace_call(
+            header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header,
+            from: H160,
+            to: H160,
+            data: Vec&lt;u8&gt;,
+            value: U256,
+            gas_limit: U256,
+            max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+            max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+            nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+            access_list: <span class="prelude-ty">Option</span>&lt;Vec&lt;(H160, Vec&lt;H256&gt;)&gt;&gt;,
+        ) -&gt; <span class="prelude-ty">Result</span>&lt;(), sp_runtime::DispatchError&gt; {
+            <span class="kw">use </span>moonbeam_evm_tracer::tracer::EvmTracer;
+
+            <span class="comment">// Initialize block: calls the "on_initialize" hook on every pallet
+            // in AllPalletsWithSystem.
+            </span>Executive::initialize_block(header);
+
+            EvmTracer::new().trace(|| {
+                <span class="kw">let </span>is_transactional = <span class="bool-val">false</span>;
+                <span class="kw">let </span>validate = <span class="bool-val">true</span>;
+                <span class="kw">let </span>without_base_extrinsic_weight = <span class="bool-val">true</span>;
+
+
+                <span class="comment">// Estimated encoded transaction size must be based on the heaviest transaction
+                // type (EIP1559Transaction) to be compatible with all transaction types.
+                </span><span class="kw">let </span><span class="kw-2">mut </span>estimated_transaction_len = data.len() +
+                <span class="comment">// pallet ethereum index: 1
+                // transact call index: 1
+                // Transaction enum variant: 1
+                // chain_id 8 bytes
+                // nonce: 32
+                // max_priority_fee_per_gas: 32
+                // max_fee_per_gas: 32
+                // gas_limit: 32
+                // action: 21 (enum varianrt + call address)
+                // value: 32
+                // access_list: 1 (empty vec size)
+                // 65 bytes signature
+                </span><span class="number">258</span>;
+
+                <span class="kw">if </span>access_list.is_some() {
+                    estimated_transaction_len += access_list.encoded_size();
+                }
+
+                <span class="kw">let </span>gas_limit = gas_limit.min(u64::MAX.into()).low_u64();
+
+                <span class="kw">let </span>(weight_limit, proof_size_base_cost) =
+                    <span class="kw">match </span>&lt;Runtime <span class="kw">as </span>pallet_evm::Config&gt;::GasWeightMapping::gas_to_weight(
+                        gas_limit,
+                        without_base_extrinsic_weight
+                    ) {
+                        weight_limit <span class="kw">if </span>weight_limit.proof_size() &gt; <span class="number">0 </span>=&gt; {
+                            (<span class="prelude-val">Some</span>(weight_limit), <span class="prelude-val">Some</span>(estimated_transaction_len <span class="kw">as </span>u64))
+                        }
+                        <span class="kw">_ </span>=&gt; (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
+                    };
+
+                <span class="kw">let _ </span>= &lt;Runtime <span class="kw">as </span>pallet_evm::Config&gt;::Runner::call(
+                    from,
+                    to,
+                    data,
+                    value,
+                    gas_limit,
+                    max_fee_per_gas,
+                    max_priority_fee_per_gas,
+                    nonce,
+                    access_list.unwrap_or_default(),
+                    is_transactional,
+                    validate,
+                    weight_limit,
+                    proof_size_base_cost,
+                    &lt;Runtime <span class="kw">as </span>pallet_evm::Config&gt;::config(),
+                );
+            });
             <span class="prelude-val">Ok</span>(())
         }
     }
