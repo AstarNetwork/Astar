@@ -259,7 +259,7 @@ jobs:
       id: srtool_build
       uses: chevdor/srtool-actions@v0.8.0
       env:
-        needed to enable metadata hash generation
+        # needed to enable metadata hash generation
         BUILD_OPTS: "--features on-chain-release-build"
       with:
         chain: ${{ matrix.chain }}
