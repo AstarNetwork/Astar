@@ -1371,7 +1371,7 @@ pub enum EraRewardSpanError {
 #[scale_info(skip_type_params(SL))]
 pub struct EraRewardSpan<SL: Get<u32>> {
     /// Span of EraRewardInfo entries.
-    span: BoundedVec<EraReward, SL>,
+    pub span: BoundedVec<EraReward, SL>,
     /// The first era in the span.
     #[codec(compact)]
     first_era: EraNumber,

@@ -2401,7 +2401,7 @@ pub mod pallet {
             let mut ledger_total_unlocking = 0u128;
             let mut ledger_total_staked_future = 0u128;
 
-            for (account, ledger) in Ledger::<T>::iter() {
+            for (_, ledger) in Ledger::<T>::iter() {
                 let account_stake: u128 = ledger.staked_amount(current_period_number);
 
                 ledger_total_stake += account_stake;
@@ -2416,12 +2416,16 @@ pub mod pallet {
 
                 // Invariant 4
                 if account_stake < T::MinimumStakeAmount::get() {
-                    return Err("An account has a stake amount lower than the minimum allowed.".into());
+                    return Err(
+                        "An account has a stake amount lower than the minimum allowed.".into(),
+                    );
                 }
 
                 // Invariant 5
                 if ledger.active_locked_amount() < T::MinimumLockedAmount::get() {
-                    return Err("An account has a locked amount lower than the minimum allowed.".into());
+                    return Err(
+                        "An account has a locked amount lower than the minimum allowed.".into(),
+                    );
                 }
 
                 // Invariant 6
@@ -2430,23 +2434,23 @@ pub mod pallet {
                 }
             }
 
-            // // Yield amounts in contracts in [`ContractStake`]
-            // let mut contracts_total_stake = 0u128;
-            // let mut contracts_total_staked_future = 0u128;
+            // Yield amounts in contracts in [`ContractStake`]
+            let mut contracts_total_stake = 0u128;
+            let mut contracts_total_staked_future = 0u128;
 
-            // for (_, contract) in ContractStake::<T>::iter() {
-            //     let contract_stake: u128 = contract.staked_amount(current_period_number);
+            for (_, contract) in ContractStake::<T>::iter() {
+                let contract_stake: u128 = contract.total_staked_amount(current_period_number);
 
-            //     contracts_total_stake += contract_stake;
-            //     contracts_total_staked_future += contract_stake;
-            // }
+                contracts_total_stake += contract_stake;
+                contracts_total_staked_future += contract_stake;
+            }
 
-            // // Invariant 1
-            // if contracts_total_stake != current_era_info.current_stake_amount.total()
-            //     || contracts_total_staked_future != current_era_info.next_stake_amount.total()
-            // {
-            //     return Err("Mismatch between ContractStake totals and CurrentEraInfo.".into());
-            // }
+            // Invariant 1
+            if contracts_total_stake != current_era_info.current_stake_amount.total()
+                || contracts_total_staked_future != current_era_info.next_stake_amount.total()
+            {
+                return Err("Mismatch between ContractStake totals and CurrentEraInfo.".into());
+            }
 
             // Invariant 2
             if ledger_total_stake != current_era_info.current_stake_amount.total()
@@ -2462,10 +2466,37 @@ pub mod pallet {
 
         /// ### Invariants of ContractStake
         ///
-        /// 1. Iterating over all SCs in [`ContractStake`] should yield the correct `staked`& `staked_future` amounts compared to `current_stake_amount` & `next_stake_amount` in [`CurrentEraInfo`]
+        /// 1. Iterating over all contracts in [`ContractStake`]  should yield the correct staked amounts compared to current era in [`CurrentEraInfo`]
         /// 2. Each staking entry in [`ContractStake`] should be greater than or equal to the [`T::MinimumStakeAmount`] constant.
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_contract_stake() -> Result<(), sp_runtime::TryRuntimeError> {
+            let current_era_info = CurrentEraInfo::<T>::get();
+            let current_period_number = ActiveProtocolState::<T>::get().period_number();
+
+            let mut total_staked = 0u128;
+            let mut total_staked_future = 0u128;
+
+            for (_, contract) in ContractStake::<T>::iter() {
+                let contract_stake: u128 = contract.total_staked_amount(current_period_number);
+
+                total_staked += contract_stake;
+                total_staked_future += contract_stake;
+
+                // Invariant 2
+                if contract_stake < T::MinimumStakeAmount::get() {
+                    return Err(
+                        "A contract has a staked amount lower than the minimum allowed.".into(),
+                    );
+                }
+            }
+
+            // Invariant 1
+            if total_staked != current_era_info.current_stake_amount.total()
+                || total_staked_future != current_era_info.next_stake_amount.total()
+            {
+                return Err("Mismatch between ContractStake totals and CurrentEraInfo.".into());
+            }
+
             Ok(())
         }
 
@@ -2473,11 +2504,62 @@ pub mod pallet {
         ///
         /// 1. Era number in [`DAppTiers`] must also be stored in one of the span of [`EraRewards`].
         /// 2. Combining all span lengths it should yield the number of items in [`DAppTiers`]
-        /// 3. The sum of rewards for each span in [`EraRewards`] must be equal to the number of rewards for the same eras in  [`DAppTiers`]
+        /// 3. The sum of rewards for each span in [`EraRewards`] must be equal to the number of rewards for the same eras in [`DAppTiers`]
         /// 4. The number of eras retained in [`EraRewards`] should not exceed the [`T::RewardRetentionInPeriods`] constant.
         /// 5. Each span lenght entry in [`EraRewards`] should be lower than or equal to the [`T::EraRewardSpanLength`] constant.
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_era_rewards() -> Result<(), sp_runtime::TryRuntimeError> {
+            let era_rewards = EraRewards::<T>::iter().collect::<Vec<_>>();
+            let dapp_tiers_count = DAppTiers::<T>::iter().count();
+
+            let mut total_spans_length = 0;
+            let mut total_rewards_dapp_pool = 0u128;
+
+            for (_, span) in &era_rewards {
+                total_spans_length += span.len();
+
+                // Invariant 1
+                for era in span.first_era()..=span.last_era() {
+                    if !DAppTiers::<T>::contains_key(era) {
+                        return Err(
+                            "DAppTiers does not contain a required era from EraRewards.".into()
+                        );
+                    }
+                }
+
+                for reward in &span.span {
+                    total_rewards_dapp_pool += reward.dapp_reward_pool;
+                }
+
+                // Invariant 5
+                if span.len() > T::EraRewardSpanLength::get() as usize {
+                    return Err(
+                        "Span length for a era exceeds the maximum allowed span length.".into(),
+                    );
+                }
+            }
+
+            // Invariant 2
+            if total_spans_length != dapp_tiers_count {
+                return Err(
+                    "Total span lengths do not match the number of items in DAppTiers.".into(),
+                );
+            }
+
+            // Invariant 3
+            let total_dapp_tiers_rewards_dapp_pool: u128 = DAppTiers::<T>::iter()
+                .map(|(_, r)| r.rewards.iter().copied().sum::<Balance>())
+                .sum();
+
+            if total_rewards_dapp_pool != total_dapp_tiers_rewards_dapp_pool {
+                return Err("Mismatch between total rewards in EraRewards and DAppTiers.".into());
+            }
+
+            // Invariant 4
+            if era_rewards.len() > T::RewardRetentionInPeriods::get() as usize {
+                return Err("Number of eras in EraRewards exceeds the retention period.".into());
+            }
+
             Ok(())
         }
     }
