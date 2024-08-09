@@ -1515,18 +1515,22 @@ impl pallet_collective_proxy::Config for Runtime {
 }
 
 parameter_types! {
-    pub MigrationsMaxServiceWeight: Weight = RuntimeBlockWeights::get().max_block.saturating_div(2);
+    pub MbmServiceWeight: Weight = Perbill::from_percent(80) * RuntimeBlockWeights::get().max_block;
 }
 
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type Migrations = ();
-    type CursorMaxLen = ConstU32<{ 1 << 16 }>;
+    // Benchmarks need mocked migrations to guarantee that they succeed.
+    #[cfg(feature = "runtime-benchmarks")]
+    type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
+    type CursorMaxLen = ConstU32<65_536>;
     type IdentifierMaxLen = ConstU32<256>;
     type MigrationStatusHandler = ();
     type FailedMigrationHandler = frame_support::migrations::FreezeChainOnFailedMigration;
-    type MaxServiceWeight = MigrationsMaxServiceWeight;
-    type WeightInfo = ();
+    type MaxServiceWeight = MbmServiceWeight;
+    type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
 }
 
 construct_runtime!(
