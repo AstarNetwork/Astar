@@ -289,7 +289,7 @@ impl frame_system::Config for Runtime {
     type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
     type SingleBlockMigrations = ();
-    type MultiBlockMigrator = ();
+    type MultiBlockMigrator = Migrations;
     type PreInherents = ();
     type PostInherents = ();
     type PostTransactions = ();
@@ -1189,6 +1189,21 @@ impl frame_support::traits::SortedMembers<AccountId> for OracleMembershipWrapper
     }
 }
 
+parameter_types! {
+    pub MigrationsMaxServiceWeight: Weight = RuntimeBlockWeights::get().max_block.saturating_div(2);
+}
+
+impl pallet_migrations::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Migrations = ();
+    type CursorMaxLen = ConstU32<{ 1 << 16 }>;
+    type IdentifierMaxLen = ConstU32<256>;
+    type MigrationStatusHandler = ();
+    type FailedMigrationHandler = frame_support::migrations::FreezeChainOnFailedMigration;
+    type MaxServiceWeight = MigrationsMaxServiceWeight;
+    type WeightInfo = ();
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1225,6 +1240,7 @@ construct_runtime!(
         XcmpQueue: cumulus_pallet_xcmp_queue = 50,
         PolkadotXcm: pallet_xcm = 51,
         CumulusXcm: cumulus_pallet_xcm = 52,
+        // skip 53 - cumulus_pallet_dmp_queue previously
         XcAssetConfig: pallet_xc_asset_config = 54,
         XTokens: orml_xtokens = 55,
         MessageQueue: pallet_message_queue = 56,
@@ -1236,6 +1252,9 @@ construct_runtime!(
         Contracts: pallet_contracts = 70,
 
         Sudo: pallet_sudo = 99,
+
+        // Multi-block migrator
+        Migrations: pallet_migrations = 120,
     }
 );
 
@@ -1271,11 +1290,11 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    Migrations,
+    migrations::OnRuntimeUpgrade,
 >;
 
 parameter_types! {
-    // percentages below are calulated based on total issuance at the time when dApp staking v3 was launched (8.4B)
+    // percentages below are calculated based on total issuance at the time when dApp staking v3 was launched (8.4B)
     pub const TierThresholds: [TierThreshold; 4] = [
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_parts(35_700_000), // 3.57%
@@ -1299,20 +1318,29 @@ parameter_types! {
     pub const DmpQueuePalletName: &'static str = "DmpQueue";
 }
 
-/// All migrations that will run on the next runtime upgrade.
-///
-/// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    // permanent migration, do not remove
-    pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
-    // dapp-staking dyn tier threshold migrations
-    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime, TierThresholds>,
-    frame_support::migrations::RemovePallet<
-        DmpQueuePalletName,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
-    pallet_contracts::Migration<Runtime>,
-);
+/// The runtime migrations per release.
+mod migrations {
+    use super::*;
+
+    /// All migrations that will run on the next runtime upgrade.
+    ///
+    /// __NOTE:__ THE ORDER IS IMPORTANT.
+    pub type OnRuntimeUpgrade = (Unreleased, Permanent);
+
+    /// Unreleased migrations. Add new ones here:
+    pub type Unreleased = (
+        // dApp-staking dyn tier threshold migrations
+        pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime, TierThresholds>,
+        frame_support::migrations::RemovePallet<
+            DmpQueuePalletName,
+            <Runtime as frame_system::Config>::DbWeight,
+        >,
+        pallet_contracts::Migration<Runtime>,
+    );
+
+    /// Migrations/checks that do not need to be versioned and can run on every upgrade.
+    pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
+}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

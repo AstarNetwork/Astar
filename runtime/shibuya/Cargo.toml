@@ -63,6 +63,7 @@ pallet-identity = { workspace = true }
 pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-message-queue = { workspace = true }
+pallet-migrations = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
@@ -78,7 +79,6 @@ pallet-vesting = { workspace = true }
 
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }
-cumulus-pallet-dmp-queue = { workspace = true }
 cumulus-pallet-parachain-system = { workspace = true, features = ["parameterized-consensus-hook"] }
 cumulus-pallet-xcm = { workspace = true }
 cumulus-pallet-xcmp-queue = { workspace = true }
@@ -210,6 +210,7 @@ std = [
 	"pallet-price-aggregator/std",
 	"pallet-identity/std",
 	"pallet-multisig/std",
+	"pallet-migrations/std",
 	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-session/std",
 	"pallet-utility/std",
@@ -236,7 +237,6 @@ std = [
 	"cumulus-primitives-timestamp/std",
 	"cumulus-pallet-parachain-system/std",
 	"cumulus-pallet-aura-ext/std",
-	"cumulus-pallet-dmp-queue/std",
 	"cumulus-pallet-xcmp-queue/std",
 	"cumulus-pallet-xcm/std",
 	"pallet-collator-selection/std",
@@ -306,6 +306,7 @@ runtime-benchmarks = [
 	"pallet-evm-precompile-xcm/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
+	"pallet-migrations/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
@@ -315,7 +316,6 @@ runtime-benchmarks = [
 	"polkadot-primitives/runtime-benchmarks",
 	"polkadot-runtime-common/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",
-	"cumulus-pallet-dmp-queue/runtime-benchmarks",
 	"cumulus-primitives-core/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
 	"orml-oracle/runtime-benchmarks",
@@ -352,13 +352,13 @@ try-runtime = [
 	"pallet-xcm/try-runtime",
 	"pallet-identity/try-runtime",
 	"pallet-multisig/try-runtime",
+	"pallet-migrations/try-runtime",
 	"pallet-insecure-randomness-collective-flip/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-contracts/try-runtime",
 	"pallet-evm-chain-id/try-runtime",
 	"cumulus-pallet-aura-ext/try-runtime",
-	"cumulus-pallet-dmp-queue/try-runtime",
 	"cumulus-pallet-parachain-system/try-runtime",
 	"cumulus-pallet-xcm/try-runtime",
 	"cumulus-pallet-xcmp-queue/try-runtime",

@@ -163,6 +163,7 @@ pallet-contracts = { git = "https://github.com/paritytech/polkadot-sdk", branch 
 pallet-contracts-uapi = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0", default-features = false }
 pallet-identity = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0", default-features = false }
 pallet-multisig = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0", default-features = false }
+pallet-migrations = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0", default-features = false }
 pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0", default-features = false }
 pallet-session = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0", default-features = false, features = ["historical"] }
 pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0", default-features = false }

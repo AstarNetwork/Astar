@@ -759,7 +759,6 @@ dependencies = [
  "astar-primitives",
  "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
@@ -816,6 +815,7 @@ dependencies = [
  "pallet-inflation",
  "pallet-membership",
  "pallet-message-queue",
+ "pallet-migrations",
  "pallet-multisig",
  "pallet-price-aggregator",
  "pallet-proxy",
@@ -2544,24 +2544,6 @@ dependencies = [
  "sp-consensus-aura",
  "sp-runtime",
  "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
-]
-
-[[package]]
-name = "cumulus-pallet-dmp-queue"
-version = "0.7.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0#8c8edacf8942298c3807a2e192860da9e7e4996a"
-dependencies = [
- "cumulus-primitives-core",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-io",
- "sp-runtime",
- "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
- "staging-xcm",
 ]
 
 [[package]]
@@ -9174,6 +9156,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-migrations"
+version = "1.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0#8c8edacf8942298c3807a2e192860da9e7e4996a"
+dependencies = [
+ "docify",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+]
+
+[[package]]
 name = "pallet-mmr"
 version = "27.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0#8c8edacf8942298c3807a2e192860da9e7e4996a"
@@ -14431,7 +14431,6 @@ dependencies = [
  "astar-primitives",
  "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
@@ -14495,6 +14494,7 @@ dependencies = [
  "pallet-insecure-randomness-collective-flip",
  "pallet-membership",
  "pallet-message-queue",
+ "pallet-migrations",
  "pallet-multisig",
  "pallet-preimage",
  "pallet-price-aggregator",
@@ -14551,7 +14551,6 @@ dependencies = [
  "astar-primitives",
  "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
@@ -14609,6 +14608,7 @@ dependencies = [
  "pallet-insecure-randomness-collective-flip",
  "pallet-membership",
  "pallet-message-queue",
+ "pallet-migrations",
  "pallet-multisig",
  "pallet-price-aggregator",
  "pallet-proxy",
@@ -15248,7 +15248,7 @@ dependencies = [
 [[package]]
 name = "sp-crypto-ec-utils"
 version = "0.10.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#2993b0008e2ec4040be91868bf5f48a892508c3a"
 dependencies = [
  "ark-bls12-377",
  "ark-bls12-377-ext",
@@ -15310,7 +15310,7 @@ dependencies = [
 [[package]]
 name = "sp-debug-derive"
 version = "14.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#2993b0008e2ec4040be91868bf5f48a892508c3a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -15330,7 +15330,7 @@ dependencies = [
 [[package]]
 name = "sp-externalities"
 version = "0.25.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#2993b0008e2ec4040be91868bf5f48a892508c3a"
 dependencies = [
  "environmental",
  "parity-scale-codec",
@@ -15545,7 +15545,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface"
 version = "24.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#2993b0008e2ec4040be91868bf5f48a892508c3a"
 dependencies = [
  "bytes",
  "impl-trait-for-tuples",
@@ -15577,7 +15577,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "17.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#2993b0008e2ec4040be91868bf5f48a892508c3a"
 dependencies = [
  "Inflector",
  "expander 2.1.0",
@@ -15666,7 +15666,7 @@ source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot
 [[package]]
 name = "sp-std"
 version = "14.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#2993b0008e2ec4040be91868bf5f48a892508c3a"
 
 [[package]]
 name = "sp-storage"
@@ -15683,7 +15683,7 @@ dependencies = [
 [[package]]
 name = "sp-storage"
 version = "19.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#2993b0008e2ec4040be91868bf5f48a892508c3a"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -15718,7 +15718,7 @@ dependencies = [
 [[package]]
 name = "sp-tracing"
 version = "16.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#2993b0008e2ec4040be91868bf5f48a892508c3a"
 dependencies = [
  "parity-scale-codec",
  "tracing",
@@ -15815,7 +15815,7 @@ dependencies = [
 [[package]]
 name = "sp-wasm-interface"
 version = "20.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#2993b0008e2ec4040be91868bf5f48a892508c3a"
 dependencies = [
  "impl-trait-for-tuples",
  "log",
