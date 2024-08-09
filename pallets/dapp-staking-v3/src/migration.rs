@@ -17,10 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use frame_support::{
-    storage_alias,
-    traits::{GetStorageVersion, OnRuntimeUpgrade},
-};
+use frame_support::{storage_alias, traits::UncheckedOnRuntimeUpgrade};
 
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
@@ -61,7 +58,7 @@ mod v8 {
 
     pub struct VersionMigrateV7ToV8<T, TierThresholds>(PhantomData<(T, TierThresholds)>);
 
-    impl<T: Config, TierThresholds: Get<[TierThreshold; 4]>> OnRuntimeUpgrade
+    impl<T: Config, TierThresholds: Get<[TierThreshold; 4]>> UncheckedOnRuntimeUpgrade
         for VersionMigrateV7ToV8<T, TierThresholds>
     {
         fn on_runtime_upgrade() -> Weight {
@@ -272,7 +269,7 @@ mod v7 {
 
     pub struct VersionMigrateV6ToV7<T>(PhantomData<T>);
 
-    impl<T: Config> OnRuntimeUpgrade for VersionMigrateV6ToV7<T> {
+    impl<T: Config> UncheckedOnRuntimeUpgrade for VersionMigrateV6ToV7<T> {
         fn on_runtime_upgrade() -> Weight {
             let current = Pallet::<T>::in_code_storage_version();
 

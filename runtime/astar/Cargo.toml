@@ -90,6 +90,7 @@ polkadot-runtime-common = { workspace = true }
 xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
+xcm-fee-payment-runtime-api = { workspace = true }
 
 # orml dependencies
 orml-oracle = { workspace = true }
@@ -170,6 +171,7 @@ std = [
 	"pallet-proxy/std",
 	"pallet-dapp-staking-v3/std",
 	"pallet-dapp-staking-migration/std",
+	"xcm-fee-payment-runtime-api/std",
 	"dapp-staking-v3-runtime-api/std",
 	"pallet-inflation/std",
 	"pallet-evm-precompile-dapp-staking-v3/std",

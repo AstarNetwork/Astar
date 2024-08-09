@@ -126,7 +126,6 @@ for chain in ${chains//,/ }; do
         --repeat=20 \
         --pallet="$PALLET" \
         --extrinsic="*" \
-        --execution=wasm \
         --wasm-execution=compiled \
         --heap-pages=4096 \
         --output="$WEIGHT_FILE" \

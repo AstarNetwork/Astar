@@ -128,6 +128,7 @@ cumulus-test-relay-sproof-builder = { workspace = true }
 
 # polkadot dependencies
 polkadot-cli = { workspace = true, optional = true }
+polkadot-core-primitives = { workspace = true }
 polkadot-parachain = { workspace = true, features = ["std"] }
 polkadot-primitives = { workspace = true, features = ["std"] }
 polkadot-service = { workspace = true }
@@ -139,7 +140,6 @@ polkadot-runtime-common = { workspace = true, features = ["std"], optional = tru
 
 # try-runtime
 frame-try-runtime = { workspace = true, features = ["std"], optional = true }
-try-runtime-cli = { workspace = true, optional = true }
 
 # evm-tracing
 moonbeam-rpc-primitives-debug = { workspace = true, features = ["std"], optional = true }
@@ -182,10 +182,8 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 	"cumulus-primitives-core/runtime-benchmarks",
 ]
-cli = ["try-runtime-cli"]
 try-runtime = [
 	"local-runtime/try-runtime",
-	"try-runtime-cli/try-runtime",
 	"astar-primitives/try-runtime",
 	"astar-runtime/try-runtime",
 	"frame-system/try-runtime",

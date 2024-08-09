@@ -19,7 +19,7 @@
 use super::*;
 use frame_support::{
     pallet_prelude::*,
-    traits::{Get, OnRuntimeUpgrade},
+    traits::{Get, UncheckedOnRuntimeUpgrade},
 };
 use sp_std::{marker::PhantomData, vec::Vec};
 use xcm::{IntoVersion, VersionedLocation};
@@ -40,7 +40,7 @@ pub mod versioned {
 }
 
 pub struct MigrationXcmV3<T: Config>(PhantomData<T>);
-impl<T: Config> OnRuntimeUpgrade for MigrationXcmV3<T> {
+impl<T: Config> UncheckedOnRuntimeUpgrade for MigrationXcmV3<T> {
     fn on_runtime_upgrade() -> Weight {
         let version = Pallet::<T>::on_chain_storage_version();
         let mut consumed_weight = Weight::zero();
@@ -140,7 +140,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrationXcmV3<T> {
 }
 
 pub struct MigrationXcmV4<T: Config>(PhantomData<T>);
-impl<T: Config> OnRuntimeUpgrade for MigrationXcmV4<T> {
+impl<T: Config> UncheckedOnRuntimeUpgrade for MigrationXcmV4<T> {
     #[allow(deprecated)]
     fn on_runtime_upgrade() -> Weight {
         let mut consumed_weight = Weight::zero();

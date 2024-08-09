@@ -17,14 +17,13 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    self as pallet_inflation, ActiveInflationConfig, CycleConfiguration, InflationParameters,
-    InflationParams, NegativeImbalanceOf, PayoutPerBlock,
+    self as pallet_inflation, ActiveInflationConfig, CreditOf, CycleConfiguration,
+    InflationParameters, InflationParams, PayoutPerBlock,
 };
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::Currency,
-    traits::{ConstU128, ConstU32, Hooks},
+    traits::{fungible::Balanced, ConstU128, ConstU32, Hooks},
     weights::Weight,
     PalletId,
 };
@@ -110,13 +109,15 @@ pub(crate) const TREASURY_POT: PalletId = PalletId(*b"moktrsry");
 pub(crate) const COLLATOR_POT: PalletId = PalletId(*b"mokcolat");
 
 pub struct DummyPayoutPerBlock;
-impl PayoutPerBlock<NegativeImbalanceOf<Test>> for DummyPayoutPerBlock {
-    fn treasury(reward: NegativeImbalanceOf<Test>) {
-        Balances::resolve_creating(&TREASURY_POT.into_account_truncating(), reward);
+impl PayoutPerBlock<CreditOf<Test>> for DummyPayoutPerBlock {
+    fn treasury(reward: CreditOf<Test>) {
+        Balances::resolve(&TREASURY_POT.into_account_truncating(), reward)
+            .expect("Must succeed for test.");
     }
 
-    fn collators(reward: NegativeImbalanceOf<Test>) {
-        Balances::resolve_creating(&COLLATOR_POT.into_account_truncating(), reward);
+    fn collators(reward: CreditOf<Test>) {
+        Balances::resolve(&COLLATOR_POT.into_account_truncating(), reward)
+            .expect("Must succeed for test.");
     }
 }
 

@@ -18,7 +18,7 @@ sha3 = { workspace = true }
 fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
-# frame dependencies
+# polkadot-sdk dependencies
 cumulus-pallet-parachain-system = { workspace = true }
 cumulus-primitives-core = { workspace = true }
 cumulus-primitives-parachain-inherent = { workspace = true }
@@ -27,6 +27,7 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 orml-oracle = { workspace = true }
 pallet-assets = { workspace = true }
+pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-uapi = { workspace = true }
@@ -39,6 +40,8 @@ sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-trie = { workspace = true }
+xcm = { workspace = true }
+xcm-fee-payment-runtime-api = { workspace = true }
 
 # astar dependencies
 assets-chain-extension-types = { workspace = true }
@@ -110,11 +113,14 @@ std = [
 	"pallet-utility/std",
 	"parity-scale-codec/std",
 	"precompile-utils/std",
+	"pallet-aura/std",
 	"sha3/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"unified-accounts-chain-extension-types/std",
+	"xcm/std",
+	"xcm-fee-payment-runtime-api/std",
 ]
 shibuya = ["shibuya-runtime"]
 shiden = ["shiden-runtime"]

@@ -26,18 +26,19 @@ use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
-    genesis_builder_helper::{build_config, create_default_config},
+    genesis_builder_helper::{build_state, get_preset},
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        fungible::{Balanced, Credit},
+        AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, Contains, FindAuthor, Get, Imbalance,
         InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{
             BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
         },
-        ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-        WeightToFeePolynomial,
+        ConstantMultiplier, Weight, WeightToFee as WeightToFeeT, WeightToFeeCoefficient,
+        WeightToFeeCoefficients, WeightToFeePolynomial,
     },
     ConsensusEngineId, PalletId,
 };
@@ -67,6 +68,11 @@ use sp_runtime::{
     ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
+use xcm::{
+    v4::{AssetId as XcmAssetId, Location as XcmLocation},
+    IntoVersion, VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm,
+};
+use xcm_fee_payment_runtime_api::Error as XcmPaymentApiError;
 
 use astar_primitives::{
     dapp_staking::{
@@ -131,6 +137,7 @@ pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
 /// Change this to adjust the block time.
 pub const MILLISECS_PER_BLOCK: u64 = 12000;
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
+
 // Time is measured by number of blocks.
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
@@ -411,12 +418,12 @@ impl pallet_dapp_staking_v3::Config for Runtime {
 }
 
 pub struct InflationPayoutPerBlock;
-impl pallet_inflation::PayoutPerBlock<NegativeImbalance> for InflationPayoutPerBlock {
-    fn treasury(reward: NegativeImbalance) {
-        Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
+impl pallet_inflation::PayoutPerBlock<Credit<AccountId, Balances>> for InflationPayoutPerBlock {
+    fn treasury(reward: Credit<AccountId, Balances>) {
+        let _ = Balances::resolve(&TreasuryPalletId::get().into_account_truncating(), reward);
     }
 
-    fn collators(reward: NegativeImbalance) {
+    fn collators(reward: Credit<AccountId, Balances>) {
         ToStakingPot::on_unbalanced(reward);
     }
 }
@@ -489,6 +496,7 @@ impl pallet_aura::Config for Runtime {
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<250>;
     type AllowMultipleBlocksPerSlot = ConstBool<false>;
+    type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -556,13 +564,11 @@ parameter_types! {
     pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
-type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
-
 pub struct ToStakingPot;
-impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
-    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+impl OnUnbalanced<Credit<AccountId, Balances>> for ToStakingPot {
+    fn on_nonzero_unbalanced(amount: Credit<AccountId, Balances>) {
         let staking_pot = PotId::get().into_account_truncating();
-        Balances::resolve_creating(&staking_pot, amount);
+        let _ = Balances::resolve(&staking_pot, amount);
     }
 }
 
@@ -712,7 +718,7 @@ impl pallet_contracts::Config for Runtime {
     type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
     type Debug = ();
     type Environment = ();
-    type Migrations = ();
+    type Migrations = (pallet_contracts::migration::v16::Migration<Runtime>,);
     type Xcm = ();
     type UploadOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
     type InstantiateOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
@@ -759,7 +765,7 @@ impl WeightToFeePolynomial for WeightToFee {
 ///
 /// Similar to standard `WeightToFee` handler, but force uses the minimum multiplier.
 pub struct XcmWeightToFee;
-impl frame_support::weights::WeightToFee for XcmWeightToFee {
+impl WeightToFeeT for XcmWeightToFee {
     type Balance = Balance;
 
     fn weight_to_fee(n: &Weight) -> Self::Balance {
@@ -768,27 +774,27 @@ impl frame_support::weights::WeightToFee for XcmWeightToFee {
 }
 
 pub struct DealWithFees;
-impl OnUnbalanced<NegativeImbalance> for DealWithFees {
-    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+impl OnUnbalanced<Credit<AccountId, Balances>> for DealWithFees {
+    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = Credit<AccountId, Balances>>) {
         if let Some(fees) = fees_then_tips.next() {
-            // Burn 80% of fees, rest goes to collators, including 100% of the tips.
-            let (to_burn, mut collators) = fees.ration(80, 20);
+            // Burn 80% of fees, rest goes to collator, including 100% of the tips.
+            let (to_burn, mut collator) = fees.ration(80, 20);
             if let Some(tips) = fees_then_tips.next() {
-                tips.merge_into(&mut collators);
+                tips.merge_into(&mut collator);
             }
 
-            // burn part of fees
+            // burn part of the fees
             drop(to_burn);
 
-            // pay fees to collators
-            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collators);
+            // pay fees to collator
+            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collator);
         }
     }
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
+    type OnChargeTransaction = pallet_transaction_payment::FungibleAdapter<Balances, DealWithFees>;
     type WeightToFee = WeightToFee;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
     type FeeMultiplierUpdate = TargetedFeeAdjustment<
@@ -844,7 +850,8 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
         I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
     {
         if let Some(author_index) = F::find_author(digests) {
-            let authority_id = Aura::authorities()[author_index as usize].clone();
+            let authority_id =
+                pallet_aura::Authorities::<Runtime>::get()[author_index as usize].clone();
             return Some(H160::from_slice(&authority_id.encode()[4..24]));
         }
 
@@ -888,7 +895,7 @@ impl pallet_evm::Config for Runtime {
     type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
     type ChainId = ChainId;
-    type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
+    type OnChargeTransaction = pallet_evm::EVMFungibleAdapter<Balances, ToStakingPot>;
     type BlockGasLimit = BlockGasLimit;
     type Timestamp = Timestamp;
     type OnCreate = ();
@@ -947,6 +954,7 @@ impl pallet_message_queue::Config for Runtime {
     type HeapSize = ConstU32<{ 128 * 1048 }>;
     type MaxStale = ConstU32<8>;
     type ServiceWeight = MessageQueueServiceWeight;
+    type IdleMaxServiceWeight = MessageQueueServiceWeight;
 }
 
 /// The type used to represent the kinds of proxying allowed.
@@ -1017,7 +1025,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::XcmpQueue(..)
                         | RuntimeCall::PolkadotXcm(..)
                         | RuntimeCall::CumulusXcm(..)
-                        | RuntimeCall::DmpQueue(..)
                         | RuntimeCall::XcAssetConfig(..)
                         // Skip entire EVM pallet
                         // Skip entire Ethereum pallet
@@ -1218,7 +1225,6 @@ construct_runtime!(
         XcmpQueue: cumulus_pallet_xcmp_queue = 50,
         PolkadotXcm: pallet_xcm = 51,
         CumulusXcm: cumulus_pallet_xcm = 52,
-        DmpQueue: cumulus_pallet_dmp_queue = 53,
         XcAssetConfig: pallet_xc_asset_config = 54,
         XTokens: orml_xtokens = 55,
         MessageQueue: pallet_message_queue = 56,
@@ -1289,17 +1295,23 @@ parameter_types! {
     ];
 }
 
+parameter_types! {
+    pub const DmpQueuePalletName: &'static str = "DmpQueue";
+}
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
     // permanent migration, do not remove
     pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
-    // XCM V3 -> V4
-    pallet_xc_asset_config::migrations::versioned::V2ToV3<Runtime>,
-    pallet_identity::migration::versioned::V0ToV1<Runtime, 250>,
     // dapp-staking dyn tier threshold migrations
     pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime, TierThresholds>,
+    frame_support::migrations::RemovePallet<
+        DmpQueuePalletName,
+        <Runtime as frame_system::Config>::DbWeight,
+    >,
+    pallet_contracts::Migration<Runtime>,
 );
 
 type EventRecord = frame_system::EventRecord<
@@ -1424,7 +1436,7 @@ impl_runtime_apis! {
         }
 
         fn authorities() -> Vec<AuraId> {
-            Aura::authorities().into_inner()
+            pallet_aura::Authorities::<Runtime>::get().into_inner()
         }
     }
 
@@ -1874,14 +1886,76 @@ impl_runtime_apis! {
         }
     }
 
+    impl xcm_fee_payment_runtime_api::XcmPaymentApi<Block> for Runtime {
+        fn query_acceptable_payment_assets(xcm_version: xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
+            if !matches!(xcm_version, xcm::v3::VERSION | xcm::v4::VERSION) {
+                return Err(XcmPaymentApiError::UnhandledXcmVersion);
+            }
 
-    impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
-        fn create_default_config() -> Vec<u8> {
-            create_default_config::<RuntimeGenesisConfig>()
+            // Native asset is always supported
+            let native_asset_location: XcmLocation = XcmLocation::try_from(xcm_config::AstarLocation::get())
+            .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+
+            Ok([VersionedAssetId::V4(native_asset_location.into())]
+                .into_iter()
+                // Acquire foreign assets which have 'units per second' configured
+                .chain(
+                    pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::iter_keys().filter_map(|asset_location| {
+
+                        match XcmLocation::try_from(asset_location) {
+                            Ok(asset) => Some(VersionedAssetId::V4(asset.into())),
+                            Err(_) => None,
+                        }
+                    })
+            ).filter_map(|asset| asset.into_version(xcm_version).ok()).collect())
         }
 
-        fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
-            build_config::<RuntimeGenesisConfig>(config)
+        fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
+            let native_asset_location = XcmLocation::try_from(xcm_config::AstarLocation::get())
+                .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+            let native_asset = VersionedAssetId::V4(native_asset_location.into());
+
+            let asset = asset
+                .into_version(xcm::v4::VERSION)
+                .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+
+            if native_asset == asset {
+                Ok(XcmWeightToFee::weight_to_fee(&weight))
+            } else {
+                let asset_id: XcmAssetId = asset.try_into().map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+                let versioned_location = VersionedLocation::V4(asset_id.0);
+
+                match pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::get(versioned_location) {
+                    Some(units_per_sec) => {
+                        Ok(units_per_sec.saturating_mul(weight.ref_time() as u128)
+                            / (WEIGHT_REF_TIME_PER_SECOND as u128))
+                    }
+                    None => Err(XcmPaymentApiError::AssetNotFound),
+                }
+            }
+        }
+
+        fn query_xcm_weight(message: VersionedXcm<()>) -> Result<Weight, XcmPaymentApiError> {
+            PolkadotXcm::query_xcm_weight(message)
+        }
+
+        fn query_delivery_fees(destination: VersionedLocation, message: VersionedXcm<()>) -> Result<VersionedAssets, XcmPaymentApiError> {
+            PolkadotXcm::query_delivery_fees(destination, message)
+        }
+    }
+
+    impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
+
+        fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
+            build_state::<RuntimeGenesisConfig>(config)
+        }
+
+        fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
+            get_preset::<RuntimeGenesisConfig>(id, |_| None)
+        }
+
+        fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
+            vec![]
         }
     }
 
@@ -1990,6 +2064,7 @@ impl_runtime_apis! {
 
                 // destination location to be used in benchmarks
                 fn valid_destination() -> Result<Location, BenchmarkError> {
+                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v4::VERSION));
                     Ok(Location::parent())
                 }
                 fn worst_case_holding(_depositable_count: u32) -> Assets {
@@ -2014,11 +2089,13 @@ impl_runtime_apis! {
                 }
                 fn transact_origin_and_runtime_call()
                     -> Result<(Location, RuntimeCall), BenchmarkError> {
+                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v4::VERSION));
                     Ok((Location::parent(), frame_system::Call::remark_with_event {
                         remark: vec![]
                     }.into()))
                 }
                 fn subscribe_origin() -> Result<Location, BenchmarkError> {
+                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v4::VERSION));
                     Ok(Location::parent())
                 }
                 fn claimable_asset()
@@ -2041,7 +2118,7 @@ impl_runtime_apis! {
                     Err(BenchmarkError::Skip)
                 }
                 fn fee_asset() -> Result<Asset, BenchmarkError> {
-                    Ok((AssetId(Here.into()), 100).into())
+                    Ok((AssetId(Here.into()), 1_000_000_000_000_000_000u128).into())
                 }
             }
 
@@ -2172,6 +2249,84 @@ impl_runtime_apis! {
                 };
             }
 
+            Ok(())
+        }
+
+        fn trace_call(
+            header: &<Block as BlockT>::Header,
+            from: H160,
+            to: H160,
+            data: Vec<u8>,
+            value: U256,
+            gas_limit: U256,
+            max_fee_per_gas: Option<U256>,
+            max_priority_fee_per_gas: Option<U256>,
+            nonce: Option<U256>,
+            access_list: Option<Vec<(H160, Vec<H256>)>>,
+        ) -> Result<(), sp_runtime::DispatchError> {
+            use moonbeam_evm_tracer::tracer::EvmTracer;
+
+            // Initialize block: calls the "on_initialize" hook on every pallet
+            // in AllPalletsWithSystem.
+            Executive::initialize_block(header);
+
+            EvmTracer::new().trace(|| {
+                let is_transactional = false;
+                let validate = true;
+                let without_base_extrinsic_weight = true;
+
+
+                // Estimated encoded transaction size must be based on the heaviest transaction
+                // type (EIP1559Transaction) to be compatible with all transaction types.
+                let mut estimated_transaction_len = data.len() +
+                // pallet ethereum index: 1
+                // transact call index: 1
+                // Transaction enum variant: 1
+                // chain_id 8 bytes
+                // nonce: 32
+                // max_priority_fee_per_gas: 32
+                // max_fee_per_gas: 32
+                // gas_limit: 32
+                // action: 21 (enum varianrt + call address)
+                // value: 32
+                // access_list: 1 (empty vec size)
+                // 65 bytes signature
+                258;
+
+                if access_list.is_some() {
+                    estimated_transaction_len += access_list.encoded_size();
+                }
+
+                let gas_limit = gas_limit.min(u64::MAX.into()).low_u64();
+
+                let (weight_limit, proof_size_base_cost) =
+                    match <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+                        gas_limit,
+                        without_base_extrinsic_weight
+                    ) {
+                        weight_limit if weight_limit.proof_size() > 0 => {
+                            (Some(weight_limit), Some(estimated_transaction_len as u64))
+                        }
+                        _ => (None, None),
+                    };
+
+                let _ = <Runtime as pallet_evm::Config>::Runner::call(
+                    from,
+                    to,
+                    data,
+                    value,
+                    gas_limit,
+                    max_fee_per_gas,
+                    max_priority_fee_per_gas,
+                    nonce,
+                    access_list.unwrap_or_default(),
+                    is_transactional,
+                    validate,
+                    weight_limit,
+                    proof_size_base_cost,
+                    <Runtime as pallet_evm::Config>::config(),
+                );
+            });
             Ok(())
         }
     }

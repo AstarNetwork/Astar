@@ -28,10 +28,10 @@ use xcm::latest::prelude::*;
 mod benchmarks {
     use super::*;
 
-    /// We need re-write buy_execution benchmark becuase our runtime
+    /// We need re-write buy_execution benchmark because our runtime
     /// needs 1 additional DB read (XcAssetConfig) for fetching unit per sec
     /// for a fungible asset. The upstream benchmark use native assets thus
-    /// won't accout for it.
+    /// won't account for it.
     #[benchmark]
     fn buy_execution() -> Result<(), BenchmarkError> {
         let holding = T::worst_case_holding(0).into();
@@ -43,9 +43,9 @@ mod benchmarks {
         let fee_asset = Location::parent();
 
         let instruction = Instruction::<XcmCallOf<T>>::BuyExecution {
-            fees: (fee_asset, u128::MAX).into(), // should be something inside of holding
-            // this should not be Unlimited, as xcm-executor will skip buying the
-            // exceution altogether.
+            // Should be something inside of holding register.
+            fees: (fee_asset, 1_000_000_000_000_000_000u128).into(),
+            // This should not be `Unlimited`, as xcm-executor will skip buying the execution altogether.
             weight_limit: WeightLimit::Limited(Weight::from_parts(1u64, 1024)),
         };
 

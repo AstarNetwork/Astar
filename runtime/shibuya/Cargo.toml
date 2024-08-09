@@ -96,6 +96,7 @@ polkadot-runtime-common = { workspace = true }
 xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
+xcm-fee-payment-runtime-api = { workspace = true }
 
 # orml dependencies
 orml-oracle = { workspace = true }
@@ -200,6 +201,7 @@ std = [
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-xcm/std",
 	"pallet-evm-precompile-unified-accounts/std",
+	"xcm-fee-payment-runtime-api/std",
 	"pallet-evm-precompile-dispatch-lockdrop/std",
 	"pallet-dapp-staking-v3/std",
 	"orml-oracle/std",

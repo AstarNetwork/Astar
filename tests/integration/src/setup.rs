@@ -23,10 +23,8 @@ pub use frame_support::{
     traits::{OnFinalize, OnIdle, OnInitialize},
     weights::Weight,
 };
-pub use pallet_evm::AddressMapping;
 use parity_scale_codec::Encode;
-pub use sp_core::{Get, H160, H256, U256};
-pub use sp_io::hashing::keccak_256;
+pub use sp_core::{Get, H160};
 pub use sp_runtime::{AccountId32, MultiAddress};
 
 use cumulus_primitives_core::{relay_chain::HeadData, PersistedValidationData};
@@ -35,7 +33,6 @@ use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 
 pub use astar_primitives::{
     dapp_staking::CycleConfiguration,
-    evm::UnifiedAddressMapper,
     governance::{
         CommunityCouncilMembershipInst, MainCouncilMembershipInst, OracleMembershipInst,
         TechnicalCommitteeMembershipInst,
@@ -55,42 +52,12 @@ mod shibuya {
     pub const UNIT: Balance = SBY;
 
     pub fn alith_secret_key() -> libsecp256k1::SecretKey {
-        libsecp256k1::SecretKey::parse(&keccak_256(b"Alith")).unwrap()
+        libsecp256k1::SecretKey::parse(&sp_io::hashing::keccak_256(b"Alith")).unwrap()
     }
 
     /// H160 address mapped to `ALICE`.
     pub fn alith() -> H160 {
         UnifiedAccounts::eth_address(&alith_secret_key())
-    }
-
-    /// Convert `H160` to `AccountId32`.
-    pub fn account_id_from(address: H160) -> AccountId32 {
-        <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(address)
-    }
-
-    /// Deploy an EVM contract with code via ALICE as origin.
-    pub fn deploy_evm_contract(code: &str) -> H160 {
-        assert_ok!(EVM::create2(
-            RuntimeOrigin::root(),
-            alith(),
-            hex::decode(code).expect("invalid code hex"),
-            H256::zero(),
-            U256::zero(),
-            1_000_000,
-            U256::from(DefaultBaseFeePerGas::get()),
-            None,
-            None,
-            vec![],
-        ));
-        match System::events()
-            .iter()
-            .last()
-            .expect("no event found")
-            .event
-        {
-            RuntimeEvent::EVM(pallet_evm::Event::Created { address }) => address,
-            _ => panic!("Deploy failed."),
-        }
     }
 
     /// Build the signature payload for given native account and eth private key
@@ -312,12 +279,11 @@ pub fn run_to_block(n: BlockNumber) {
             b"ParachainSystem",
             b"UnincludedSegment",
         ));
-        if let Some((slot, _authored)) = AuraExt::slot_info() {
-            sp_io::storage::set(
-                &frame_support::storage::storage_prefix(b"AuraExt", b"SlotInfo"),
-                &(slot, 0u32).encode(),
-            );
-        }
+
+        sp_io::storage::set(
+            &frame_support::storage::storage_prefix(b"AuraExt", b"SlotInfo"),
+            &(pallet_aura::CurrentSlot::<Runtime>::get(), 0u32).encode(),
+        );
 
         // initialize block
         System::set_block_number(block_number + 1);

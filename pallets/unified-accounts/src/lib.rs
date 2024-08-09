@@ -88,7 +88,6 @@ use sp_std::marker::PhantomData;
 
 pub use pallet::*;
 
-pub mod migration;
 pub mod weights;
 pub use weights::WeightInfo;
 

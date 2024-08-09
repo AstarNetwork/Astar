@@ -19,8 +19,8 @@
 ///! EVM tracing RPC support.
 use crate::evm_tracing_types::{EthApi as EthApiCmd, EvmTracingConfig};
 
-use fc_rpc::OverrideHandle;
 use fc_rpc_core::types::FilterPool;
+use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
 use moonbeam_rpc_debug::{DebugHandler, DebugRequester};
 use moonbeam_rpc_trace::{CacheRequester as TraceFilterCacheRequester, CacheTask};
@@ -49,7 +49,7 @@ pub struct SpawnTasksParams<'a, B: BlockT, C, BE> {
     pub substrate_backend: Arc<BE>,
     pub frontier_backend: Arc<dyn fc_api::Backend<B> + Send + Sync>,
     pub filter_pool: Option<FilterPool>,
-    pub overrides: Arc<OverrideHandle<B>>,
+    pub storage_override: Arc<dyn StorageOverride<B>>,
 }
 
 /// Spawn the tasks that are required to run a EVM tracing.
@@ -80,7 +80,7 @@ where
                 Arc::clone(&params.substrate_backend),
                 core::time::Duration::from_secs(rpc_config.ethapi_trace_cache_duration),
                 Arc::clone(&permit_pool),
-                Arc::clone(&params.overrides),
+                Arc::clone(&params.storage_override),
                 prometheus,
             );
             (Some(trace_filter_task), Some(trace_filter_requester))
@@ -94,7 +94,7 @@ where
             Arc::clone(&params.substrate_backend),
             Arc::clone(&params.frontier_backend),
             Arc::clone(&permit_pool),
-            Arc::clone(&params.overrides),
+            Arc::clone(&params.storage_override),
             rpc_config.tracing_raw_max_memory_usage,
         );
         (Some(debug_task), Some(debug_requester))

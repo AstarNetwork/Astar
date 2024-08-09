@@ -49,3 +49,6 @@ mod evm_tracing;
 
 #[cfg(any(feature = "shibuya"))]
 mod governance;
+
+#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
+mod xcm_api;

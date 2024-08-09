@@ -19,8 +19,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use fp_evm::PrecompileHandle;
-use sp_core::ConstU32;
 use sp_core::{crypto::UncheckedFrom, sr25519, H256};
+use sp_core::{ByteArray, ConstU32};
 use sp_std::marker::PhantomData;
 
 use precompile_utils::prelude::*;
@@ -49,7 +49,7 @@ impl<Runtime: pallet_evm::Config> Sr25519Precompile<Runtime> {
         // Parse pub key
         let public = sr25519::Public::unchecked_from(public);
         // Parse signature
-        let signature = if let Some(sig) = sr25519::Signature::from_slice(&signature.as_bytes()) {
+        let signature = if let Ok(sig) = sr25519::Signature::from_slice(&signature.as_bytes()) {
             sig
         } else {
             // Return `false` if signature length is wrong

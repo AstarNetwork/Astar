@@ -135,6 +135,7 @@ impl pallet_aura::Config for Test {
     type MaxAuthorities = MaxAuthorities;
     type DisabledValidators = ();
     type AllowMultipleBlocksPerSlot = ConstBool<false>;
+    type SlotDuration = pallet_aura::MinimumPeriodTimesTwo<Test>;
 }
 
 sp_runtime::impl_opaque_keys! {

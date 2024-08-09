@@ -106,7 +106,10 @@ use astar_primitives::{
 };
 use frame_support::{
     pallet_prelude::*,
-    traits::{Currency, GetStorageVersion, OnRuntimeUpgrade},
+    traits::{
+        fungible::{Balanced, Credit, Inspect},
+        tokens::Precision,
+    },
     DefaultNoBound,
 };
 use frame_system::{ensure_root, pallet_prelude::*};
@@ -140,19 +143,15 @@ pub mod pallet {
     pub struct Pallet<T>(PhantomData<T>);
 
     // Negative imbalance type of this pallet.
-    pub(crate) type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
-        <T as frame_system::Config>::AccountId,
-    >>::NegativeImbalance;
+    pub(crate) type CreditOf<T> =
+        Credit<<T as frame_system::Config>::AccountId, <T as Config>::Currency>;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// The currency trait.
-        /// This has been soft-deprecated but it still needs to be used here in order to access `NegativeImbalance`
-        /// which is defined in the currency trait.
-        type Currency: Currency<Self::AccountId, Balance = Balance>;
+        type Currency: Balanced<Self::AccountId, Balance = Balance>;
 
         /// Handler for 'per-block' payouts.
-        type PayoutPerBlock: PayoutPerBlock<NegativeImbalanceOf<Self>>;
+        type PayoutPerBlock: PayoutPerBlock<CreditOf<Self>>;
 
         /// Cycle ('year') configuration - covers periods, subperiods, eras & blocks.
         type CycleConfiguration: CycleConfiguration;
@@ -455,9 +454,11 @@ pub mod pallet {
 
             // This can fail only if the amount is below existential deposit & the account doesn't exist,
             // or if the account has no provider references.
+            // Another possibility is overflow, but if that happens, we already have a huge problem.
+            //
             // In both cases, the reward is lost but this can be ignored since it's extremely unlikely
             // to appear and doesn't bring any real harm.
-            let _ = T::Currency::deposit_creating(account, reward);
+            let _ = T::Currency::deposit(account, reward, Precision::Exact);
             Ok(())
         }
     }
@@ -620,45 +621,4 @@ pub trait PayoutPerBlock<Imbalance> {
 
     /// Payout reward to the collator responsible for producing the block.
     fn collators(reward: Imbalance);
-}
-
-/// `OnRuntimeUpgrade` logic for integrating this pallet into the live network.
-#[cfg(feature = "try-runtime")]
-use sp_std::vec::Vec;
-pub struct PalletInflationInitConfig<T, P>(PhantomData<(T, P, Weight)>);
-impl<T: Config, P: Get<(InflationParameters, EraNumber, Weight)>> OnRuntimeUpgrade
-    for PalletInflationInitConfig<T, P>
-{
-    fn on_runtime_upgrade() -> Weight {
-        if Pallet::<T>::on_chain_storage_version() >= STORAGE_VERSION {
-            return T::DbWeight::get().reads(1);
-        }
-
-        // 1. Get & set inflation parameters
-        let (inflation_params, next_era, extra_weight) = P::get();
-        InflationParams::<T>::put(inflation_params.clone());
-
-        // 2. Calculation inflation config, set it & deposit event
-        let config = Pallet::<T>::recalculate_inflation(next_era);
-        ActiveInflationConfig::<T>::put(config.clone());
-
-        Pallet::<T>::deposit_event(Event::<T>::NewInflationConfiguration { config });
-
-        // 3. Set version
-        STORAGE_VERSION.put::<Pallet<T>>();
-
-        log::info!("Inflation pallet storage initialized.");
-
-        T::WeightInfo::recalculation()
-            .saturating_add(T::DbWeight::get().reads_writes(1, 2))
-            .saturating_add(extra_weight)
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
-        assert_eq!(Pallet::<T>::on_chain_storage_version(), STORAGE_VERSION);
-        assert!(InflationParams::<T>::get().is_valid());
-
-        Ok(())
-    }
 }

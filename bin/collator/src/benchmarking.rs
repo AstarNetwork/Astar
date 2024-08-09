@@ -16,13 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+use crate::parachain::service::ParachainExecutor;
 use astar_primitives::{AccountId, Balance, Block};
 use cumulus_primitives_core::PersistedValidationData;
 use cumulus_primitives_parachain_inherent::{ParachainInherentData, INHERENT_IDENTIFIER};
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use parity_scale_codec::Encode;
 use polkadot_runtime_common::BlockHashCount;
-use sc_executor::NativeElseWasmExecutor;
 use sc_service::TFullClient;
 use sp_api::ConstructRuntimeApi;
 use sp_core::{Pair, H256};
@@ -33,41 +33,35 @@ use std::sync::Arc;
 /// Generates `System::Remark` extrinsics for the benchmarks.
 ///
 /// Note: Should only be used for benchmarking.
-pub struct RemarkBuilder<RuntimeApi, Executor>
+pub struct RemarkBuilder<RuntimeApi>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
-    client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+    client: Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
 }
 
-impl<RuntimeApi, Executor> RemarkBuilder<RuntimeApi, Executor>
+impl<RuntimeApi> RemarkBuilder<RuntimeApi>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     /// Creates a new [`Self`] from the given client.
-    pub fn new(
-        client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-    ) -> Self {
+    pub fn new(client: Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>) -> Self {
         Self { client }
     }
 }
 
-impl<RuntimeApi, Executor> frame_benchmarking_cli::ExtrinsicBuilder
-    for RemarkBuilder<RuntimeApi, Executor>
+impl<RuntimeApi> frame_benchmarking_cli::ExtrinsicBuilder for RemarkBuilder<RuntimeApi>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     fn pallet(&self) -> &str {
         "system"
@@ -100,30 +94,28 @@ where
 /// Generates `Balances::TransferKeepAlive` extrinsics for the benchmarks.
 ///
 /// Note: Should only be used for benchmarking.
-pub struct TransferKeepAliveBuilder<RuntimeApi, Executor>
+pub struct TransferKeepAliveBuilder<RuntimeApi>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
-    client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+    client: Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
     dest: AccountId,
     value: Balance,
 }
 
-impl<RuntimeApi, Executor> TransferKeepAliveBuilder<RuntimeApi, Executor>
+impl<RuntimeApi> TransferKeepAliveBuilder<RuntimeApi>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     /// Creates a new [`Self`] from the given client.
     pub fn new(
-        client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+        client: Arc<TFullClient<Block, RuntimeApi, ParachainExecutor>>,
         dest: AccountId,
         value: Balance,
     ) -> Self {
@@ -135,14 +127,12 @@ where
     }
 }
 
-impl<RuntimeApi, Executor> frame_benchmarking_cli::ExtrinsicBuilder
-    for TransferKeepAliveBuilder<RuntimeApi, Executor>
+impl<RuntimeApi> frame_benchmarking_cli::ExtrinsicBuilder for TransferKeepAliveBuilder<RuntimeApi>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     fn pallet(&self) -> &str {
         "balances"
@@ -192,14 +182,13 @@ trait BenchmarkCallSigner<RuntimeCall: Encode + Clone, Signer: Pair> {
     ) -> OpaqueExtrinsic;
 }
 
-impl<RuntimeApi, Executor> BenchmarkCallSigner<local_runtime::RuntimeCall, sp_core::sr25519::Pair>
-    for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
+impl<RuntimeApi> BenchmarkCallSigner<local_runtime::RuntimeCall, sp_core::sr25519::Pair>
+    for TFullClient<Block, RuntimeApi, ParachainExecutor>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     fn sign_call(
         &self,
@@ -251,14 +240,13 @@ where
     }
 }
 
-impl<RuntimeApi, Executor> BenchmarkCallSigner<astar_runtime::RuntimeCall, sp_core::sr25519::Pair>
-    for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
+impl<RuntimeApi> BenchmarkCallSigner<astar_runtime::RuntimeCall, sp_core::sr25519::Pair>
+    for TFullClient<Block, RuntimeApi, ParachainExecutor>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     fn sign_call(
         &self,
@@ -310,14 +298,13 @@ where
     }
 }
 
-impl<RuntimeApi, Executor> BenchmarkCallSigner<shiden_runtime::RuntimeCall, sp_core::sr25519::Pair>
-    for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
+impl<RuntimeApi> BenchmarkCallSigner<shiden_runtime::RuntimeCall, sp_core::sr25519::Pair>
+    for TFullClient<Block, RuntimeApi, ParachainExecutor>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     fn sign_call(
         &self,
@@ -369,14 +356,13 @@ where
     }
 }
 
-impl<RuntimeApi, Executor> BenchmarkCallSigner<shibuya_runtime::RuntimeCall, sp_core::sr25519::Pair>
-    for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
+impl<RuntimeApi> BenchmarkCallSigner<shibuya_runtime::RuntimeCall, sp_core::sr25519::Pair>
+    for TFullClient<Block, RuntimeApi, ParachainExecutor>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     fn sign_call(
         &self,
@@ -434,14 +420,12 @@ pub trait ExistentialDepositProvider {
     fn existential_deposit(&self) -> Balance;
 }
 
-impl<RuntimeApi, Executor> ExistentialDepositProvider
-    for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
+impl<RuntimeApi> ExistentialDepositProvider for TFullClient<Block, RuntimeApi, ParachainExecutor>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, ParachainExecutor>>
         + Send
         + Sync
         + 'static,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     fn existential_deposit(&self) -> Balance {
         with_runtime! {
