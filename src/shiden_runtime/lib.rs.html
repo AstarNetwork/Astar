@@ -2391,6 +2391,12 @@
 <a href="#2389" id="2389">2389</a>
 <a href="#2390" id="2390">2390</a>
 <a href="#2391" id="2391">2391</a>
+<a href="#2392" id="2392">2392</a>
+<a href="#2393" id="2393">2393</a>
+<a href="#2394" id="2394">2394</a>
+<a href="#2395" id="2395">2395</a>
+<a href="#2396" id="2396">2396</a>
+<a href="#2397" id="2397">2397</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3668,6 +3674,8 @@
 &gt;;
 
 <span class="macro">parameter_types! </span>{
+    <span class="comment">// Threshold amount variation allowed for this migration - 10%
+    </span><span class="kw">pub const </span>ThresholdVariationPercentage: u32 = <span class="number">10</span>;
     <span class="comment">// percentages below are calulated based on a total issuance at the time when dApp staking v3 was launched (84.3M)
     </span><span class="kw">pub const </span>TierThresholds: [TierThreshold; <span class="number">4</span>] = [
         TierThreshold::DynamicPercentage {
@@ -3698,7 +3706,11 @@
 </span><span class="kw">pub type </span>Migrations = (
     pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,
     <span class="comment">// dapp-staking dyn tier threshold migrations
-    </span>pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8&lt;Runtime, TierThresholds&gt;,
+    </span>pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8&lt;
+        Runtime,
+        TierThresholds,
+        ThresholdVariationPercentage,
+    &gt;,
     frame_support::migrations::RemovePallet&lt;
         DmpQueuePalletName,
         &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight,
