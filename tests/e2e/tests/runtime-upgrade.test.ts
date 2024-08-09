@@ -13,11 +13,7 @@ describe('runtime upgrade', async () => {
   const { alice } = testingPairs();
 
   const runtime = process.env.RUNTIME || 'shibuya';
-  const { api, dev, teardown } = await setupContext({
-    endpoint: endpoints[runtime],
-    runtimeLogLevel: 5,
-    timeout: 300_000,
-  });
+  const { api, dev, teardown } = await setupContext({ endpoint: endpoints[runtime], timeout: 300_000 });
 
   beforeAll(async () => {
     await dev.setStorage({

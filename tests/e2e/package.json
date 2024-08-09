@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "test": "vitest",
+    "test": "LOG_LEVEL=error vitest --silent --no-color",
     "test:runtime-upgrade-shibuya": "RUNTIME=shibuya yarn test tests/runtime-upgrade.test.ts",
     "test:runtime-upgrade-shiden": "RUNTIME=shiden yarn test tests/runtime-upgrade.test.ts",
     "test:runtime-upgrade-astar": "RUNTIME=astar yarn test tests/runtime-upgrade.test.ts"
