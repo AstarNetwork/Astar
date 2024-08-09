@@ -189,10 +189,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 133,
+    spec_version: 134,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 2,
+    transaction_version: 3,
     state_version: 1,
 };
 
@@ -1612,17 +1612,20 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+parameter_types! {
+    pub const DmpQueuePalletName: &'static str = "DmpQueue";
+}
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>,
+    frame_support::migrations::RemovePallet<
+        DmpQueuePalletName,
+        <Runtime as frame_system::Config>::DbWeight,
+    >,
     // permanent migration, do not remove
     pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
-    // XCM V3 -> V4
-    pallet_xc_asset_config::migrations::versioned::V2ToV3<Runtime>,
-    pallet_identity::migration::versioned::V0ToV1<Runtime, 250>,
-    pallet_unified_accounts::migration::ClearCorruptedUnifiedMappings<Runtime>,
 );
 
 type EventRecord = frame_system::EventRecord<
