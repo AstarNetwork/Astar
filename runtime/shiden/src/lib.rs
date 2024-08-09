@@ -291,7 +291,7 @@ impl frame_system::Config for Runtime {
     type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
     type SingleBlockMigrations = ();
-    type MultiBlockMigrator = Migrations;
+    type MultiBlockMigrator = MultiBlockMigrations;
     type PreInherents = ();
     type PostInherents = ();
     type PostTransactions = ();
@@ -1257,8 +1257,7 @@ construct_runtime!(
 
         Sudo: pallet_sudo = 99,
 
-        // Multi-block migrator
-        Migrations: pallet_migrations = 120,
+        MultiBlockMigrations: pallet_migrations = 120,
     }
 );
 
@@ -1429,6 +1428,7 @@ mod benches {
         [pallet_timestamp, Timestamp]
         [pallet_dapp_staking_v3, DappStaking]
         [pallet_inflation, Inflation]
+        [pallet_migrations, MultiBlockMigrations]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PalletXcmExtrinsicsBenchmark::<Runtime>]
