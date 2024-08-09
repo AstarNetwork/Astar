@@ -138,16 +138,19 @@ for chain in ${chains//,/ }; do
       fi
     done
 
-    echo "[+] Benchmarking the machine..."
-    OUTPUT=$(
-      $BENCHMARK-TOOL benchmark machine --chain=$chain 2>&1
-    )
-    if [ $? -ne 0 ]; then
-      echo "[-] Failed the machine benchmark"
-      echo "$OUTPUT" >> "$ERR_FILE"
-    else
-      echo "$OUTPUT" >> "$output_path/$chain/$chain-machine-bench.txt"
-    fi
+    # Disabled for now - command isn't available (yet).
+    # With latest changes we also benchmark the HW each time the client starts.
+    #
+    # echo "[+] Benchmarking the machine..."
+    # OUTPUT=$(
+    #   $BENCHMARK-TOOL benchmark machine --runtime ./target/release/wbuild/astar-runtime/${chain}_runtime.compact.compressed.wasm 2>&1
+    # )
+    # if [ $? -ne 0 ]; then
+    #   echo "[-] Failed the machine benchmark"
+    #   echo "$OUTPUT" >> "$ERR_FILE"
+    # else
+    #   echo "$OUTPUT" >> "$output_path/$chain/$chain-machine-bench.txt"
+    # fi
 
     # Check if the error file exists.
     if [ -f "$ERR_FILE" ]; then
