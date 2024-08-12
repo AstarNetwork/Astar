@@ -4,16 +4,16 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const endpoints = {
-  shibuya: 'wss://shibuya-rpc.dwellir.com',
-  shiden: 'wss://shiden.api.onfinality.io/public-ws',
-  astar: 'wss://astar.api.onfinality.io/public-ws',
+  shibuya: 'wss://rpc.shibuya.astar.network',
+  shiden: 'wss://rpc.shiden.astar.network',
+  astar: 'wss://rpc.astar.network',
 };
 
 describe('runtime upgrade', async () => {
   const { alice } = testingPairs();
 
   const runtime = process.env.RUNTIME || 'shibuya';
-  const { api, dev, teardown } = await setupContext({ endpoint: endpoints[runtime] });
+  const { api, dev, teardown } = await setupContext({ endpoint: endpoints[runtime], timeout: 300_000 });
 
   beforeAll(async () => {
     await dev.setStorage({

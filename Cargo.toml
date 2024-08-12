@@ -209,6 +209,7 @@ pallet-base-fee = { git = "https://github.com/AstarNetwork/frontier", branch = "
 pallet-evm-chain-id = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.11.0", default-features = false }
 fp-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.11.0", default-features = false }
 fp-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.11.0", default-features = false }
+precompile-utils = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.11.0", default-features = false }
 
 # (native)
 fc-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.11.0" }
@@ -312,8 +313,6 @@ pallet-chain-extension-unified-accounts = { path = "./chain-extensions/unified-a
 
 assets-chain-extension-types = { path = "./chain-extensions/types/assets", default-features = false }
 unified-accounts-chain-extension-types = { path = "./chain-extensions/types/unified-accounts", default-features = false }
-
-precompile-utils = { path = "./precompiles/utils", default-features = false }
 
 local-runtime = { path = "./runtime/local", default-features = false }
 shibuya-runtime = { path = "./runtime/shibuya", default-features = false }
