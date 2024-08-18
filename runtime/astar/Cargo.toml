@@ -72,13 +72,11 @@ pallet-xcm-benchmarks = { workspace = true, optional = true }
 
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }
-cumulus-pallet-dmp-queue = { workspace = true }
 cumulus-pallet-parachain-system = { workspace = true, features = ["parameterized-consensus-hook"] }
 cumulus-pallet-xcm = { workspace = true }
 cumulus-pallet-xcmp-queue = { workspace = true }
 cumulus-primitives-aura = { workspace = true }
 cumulus-primitives-core = { workspace = true }
-cumulus-primitives-timestamp = { workspace = true }
 cumulus-primitives-utility = { workspace = true }
 parachain-info = { workspace = true }
 parachains-common = { workspace = true }
@@ -109,7 +107,6 @@ frame-try-runtime = { workspace = true, optional = true }
 astar-primitives = { workspace = true }
 astar-xcm-benchmarks = { workspace = true, optional = true }
 pallet-collator-selection = { workspace = true }
-pallet-dapp-staking-migration = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapp-staking-v3 = { workspace = true }
@@ -170,7 +167,6 @@ std = [
 	"pallet-balances/std",
 	"pallet-proxy/std",
 	"pallet-dapp-staking-v3/std",
-	"pallet-dapp-staking-migration/std",
 	"xcm-fee-payment-runtime-api/std",
 	"dapp-staking-v3-runtime-api/std",
 	"pallet-inflation/std",
@@ -209,10 +205,8 @@ std = [
 	"cumulus-primitives-aura/std",
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-utility/std",
-	"cumulus-primitives-timestamp/std",
 	"cumulus-pallet-parachain-system/std",
 	"cumulus-pallet-aura-ext/std",
-	"cumulus-pallet-dmp-queue/std",
 	"cumulus-pallet-xcmp-queue/std",
 	"pallet-message-queue/std",
 	"parachains-common/std",
@@ -251,7 +245,6 @@ runtime-benchmarks = [
 	'pallet-timestamp/runtime-benchmarks',
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-dapp-staking-v3/runtime-benchmarks",
-	"pallet-dapp-staking-migration/runtime-benchmarks",
 	"pallet-price-aggregator/runtime-benchmarks",
 	"pallet-inflation/runtime-benchmarks",
 	"pallet-membership/runtime-benchmarks",
@@ -285,7 +278,6 @@ runtime-benchmarks = [
 	"polkadot-primitives/runtime-benchmarks",
 	"polkadot-runtime-common/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",
-	"cumulus-pallet-dmp-queue/runtime-benchmarks",
 	"cumulus-primitives-core/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
 	"orml-oracle/runtime-benchmarks",
@@ -301,7 +293,6 @@ try-runtime = [
 	"pallet-balances/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-dapp-staking-v3/try-runtime",
-	"pallet-dapp-staking-migration/try-runtime",
 	"pallet-inflation/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
@@ -321,7 +312,6 @@ try-runtime = [
 	"pallet-identity/try-runtime",
 	"pallet-multisig/try-runtime",
 	"cumulus-pallet-aura-ext/try-runtime",
-	"cumulus-pallet-dmp-queue/try-runtime",
 	"cumulus-pallet-parachain-system/try-runtime",
 	"cumulus-pallet-xcm/try-runtime",
 	"cumulus-pallet-xcmp-queue/try-runtime",
