@@ -759,13 +759,11 @@ dependencies = [
  "astar-primitives",
  "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-aura",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "dapp-staking-v3-runtime-api",
  "fp-rpc",
@@ -794,7 +792,6 @@ dependencies = [
  "pallet-chain-extension-assets",
  "pallet-collator-selection 3.3.2",
  "pallet-contracts",
- "pallet-dapp-staking-migration",
  "pallet-dapp-staking-v3",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
@@ -2538,24 +2535,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-pallet-dmp-queue"
-version = "0.7.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0#8c8edacf8942298c3807a2e192860da9e7e4996a"
-dependencies = [
- "cumulus-primitives-core",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-io",
- "sp-runtime",
- "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
- "staging-xcm",
-]
-
-[[package]]
 name = "cumulus-pallet-parachain-system"
 version = "0.7.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0#8c8edacf8942298c3807a2e192860da9e7e4996a"
@@ -2698,19 +2677,6 @@ dependencies = [
  "sp-externalities 0.25.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
  "sp-runtime-interface 24.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
  "sp-trie",
-]
-
-[[package]]
-name = "cumulus-primitives-timestamp"
-version = "0.7.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0#8c8edacf8942298c3807a2e192860da9e7e4996a"
-dependencies = [
- "cumulus-primitives-core",
- "futures 0.3.30",
- "parity-scale-codec",
- "sp-inherents",
- "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
- "sp-timestamp",
 ]
 
 [[package]]
@@ -14396,13 +14362,11 @@ dependencies = [
  "astar-primitives",
  "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-aura",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "dapp-staking-v3-runtime-api",
  "fp-rpc",
@@ -14516,13 +14480,11 @@ dependencies = [
  "astar-primitives",
  "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-aura",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "dapp-staking-v3-runtime-api",
  "fp-rpc",
@@ -14551,7 +14513,6 @@ dependencies = [
  "pallet-chain-extension-assets",
  "pallet-collator-selection 3.3.2",
  "pallet-contracts",
- "pallet-dapp-staking-migration",
  "pallet-dapp-staking-v3",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
