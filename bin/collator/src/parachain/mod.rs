@@ -27,10 +27,9 @@ pub mod service;
 /// Parachain specs.
 pub mod chain_spec;
 
-pub use service::{
-    build_import_queue, build_import_queue_fallback, new_partial, start_astar_node,
-    start_shibuya_node, start_shiden_node, HostFunctions,
-};
+pub mod fake_runtime_api;
+
+pub use service::{build_import_queue, new_partial, start_node, HostFunctions};
 
 pub(crate) use shell_upgrade::{
     AuraConsensusDataProviderFallback, PendingCrateInherentDataProvider,

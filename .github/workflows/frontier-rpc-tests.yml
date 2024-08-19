@@ -2,7 +2,7 @@ name: Frontier RPC Tests
 on:
   workflow_dispatch:
   push:
-    branches: [ master ]
+    branches: [master]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,7 +25,7 @@ jobs:
         run: rustup target list --installed
 
       - name: Build astar-collator
-        run: cargo build --release --locked --features manual-seal,evm-tracing --bin astar-collator
+        run: cargo build --release --locked --features manual-seal --bin astar-collator
 
       - name: Clone frontier tests
         run: git clone https://github.com/AstarNetwork/frontier-tests.git --depth 1
@@ -34,7 +34,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18.x
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: frontier-tests/package-lock.json
 
       - name: Install dependencies
