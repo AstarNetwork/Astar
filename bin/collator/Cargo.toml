@@ -186,6 +186,7 @@ runtime-benchmarks = [
 	"sc-service/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"cumulus-primitives-core/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
 ]
 try-runtime = [
 	"local-runtime/try-runtime",
@@ -202,5 +203,6 @@ try-runtime = [
 	"shibuya-runtime/try-runtime",
 	"shiden-runtime/try-runtime",
 	"sp-runtime/try-runtime",
+	"frame-support/try-runtime",
 ]
 manual-seal = ["sc-consensus-manual-seal"]
