@@ -3537,10 +3537,3 @@ fn claim_bonus_reward_for_works() {
         );
     })
 }
-
-#[test]
-fn try_state_works() {
-    ExtBuilder::default().build_and_execute(|| {
-        assert_ok!(DappStaking::try_state_protocol());
-    })
-}

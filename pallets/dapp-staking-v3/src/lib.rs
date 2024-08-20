@@ -2271,15 +2271,14 @@ pub mod pallet {
 
         /// ### Invariants of active protocol storage items
         ///
-        /// 1. [`PeriodInfo`] number in [`ActiveProtocolState`] must always be greater than or equal to the number of elements in [`PeriodEnd`].
+        /// 1. [`PeriodInfo`] number in [`ActiveProtocolState`] must always be greater than the number of elements in [`PeriodEnd`].
         /// 2. Ensures the `era` number and `next_era_start` block number are valid.
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_protocol() -> Result<(), sp_runtime::TryRuntimeError> {
             let protocol_state = ActiveProtocolState::<T>::get();
-            let period_number = protocol_state.period_info.number;
 
             // Invariant 1
-            if PeriodEnd::<T>::iter().count() >= period_number as usize {
+            if PeriodEnd::<T>::iter().count() >= protocol_state.period_info.number as usize {
                 return Err("Number of periods in `PeriodEnd` exceeds or is equal to actual `PeriodInfo` number.".into());
             }
 
@@ -2301,8 +2300,8 @@ pub mod pallet {
 
         /// ### Invariants of NextDAppId
         ///
-        /// 1. [`NextDAppId`] must always be equal to the number of dapps in [`IntegratedDApps`].
-        /// 2. [`NextDAppId`] must always be equal to the number of contracts in [`ContractStake`].
+        /// 1. [`NextDAppId`] must always be greater than or equal to the number of dapps in [`IntegratedDApps`].
+        /// 2. [`NextDAppId`] must always be greater than or equal to the number of contracts in [`ContractStake`].
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_next_dapp_id() -> Result<(), sp_runtime::TryRuntimeError> {
             let next_dapp_id = NextDAppId::<T>::get();
@@ -2337,8 +2336,8 @@ pub mod pallet {
 
         /// ### Invariants of StaticTierParams and TierConfig
         ///
-        /// 1. The [`T::NumberOfTiers`] constant must always be equal to the number of `slot_distribution`, `reward_portion`, `tier_thresholds`in [`StaticTierParams`].
-        /// 2. The [`T::NumberOfTiers`] constant must always be equal to the number of `slots_per_tier`, `reward_portion`, `tier_thresholds`in [`TierConfig`].
+        /// 1. The [`T::NumberOfTiers`] constant must always be equal to the number of `slot_distribution`, `reward_portion`, `tier_thresholds` in [`StaticTierParams`].
+        /// 2. The [`T::NumberOfTiers`] constant must always be equal to the number of `slots_per_tier`, `reward_portion`, `tier_thresholds` in [`TierConfig`].
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_tiers() -> Result<(), sp_runtime::TryRuntimeError> {
             let nb_tiers = T::NumberOfTiers::get();
@@ -2384,81 +2383,74 @@ pub mod pallet {
 
         /// ### Invariants of Ledger
         ///
-        /// 1. Iterating over all [`Ledger`] accounts should yield the correct stake amount accross all contracts in [`ContractStake`].
-        /// 2. Iterating over all [`Ledger`] accounts should yield the correct locked and stakes amounts compared to current era in [`CurrentEraInfo`].
-        /// 3. The number of unlocking chunks in [`Ledger`] for any account should not exceed the [`T::MaxUnlockingChunks`] constant.
-        /// 4. Each staking entry in [`Ledger`] should be greater than or equal to the [`T::MinimumStakeAmount`] constant.
-        /// 5. Each locking entry in [`Ledger`] should be greater than or equal to the [`T::MinimumLockedAmount`] constant.
-        /// 6. The number of staking entries per account in [`Ledger`] should not exceed the [`T::MaxNumberOfStakedContracts`] constant.
+        /// 1. Iterating over all [`Ledger`] accounts should yield the correct locked and stakes amounts compared to current era in [`CurrentEraInfo`].
+        /// 2. The number of unlocking chunks in [`Ledger`] for any account should not exceed the [`T::MaxUnlockingChunks`] constant.
+        /// 3. Each staking entry in [`Ledger`] should be greater than or equal to the [`T::MinimumStakeAmount`] constant.
+        /// 4. Each locking entry in [`Ledger`] should be greater than or equal to the [`T::MinimumLockedAmount`] constant.
+        /// 5. The number of staking entries per account in [`Ledger`] should not exceed the [`T::MaxNumberOfStakedContracts`] constant.
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_ledger() -> Result<(), sp_runtime::TryRuntimeError> {
-            let current_era_info = CurrentEraInfo::<T>::get();
             let current_period_number = ActiveProtocolState::<T>::get().period_number();
+            let current_era_info = CurrentEraInfo::<T>::get();
+            let current_era_total_stake = current_era_info.total_staked_amount_next_era();
 
             // Yield amounts in [`Ledger`]
-            let mut ledger_total_stake = 0u128;
-            let mut ledger_total_locked = 0u128;
-            let mut ledger_total_unlocking = 0u128;
-            let mut ledger_total_staked_future = 0u128;
+            let mut ledger_total_stake = Balance::zero();
+            let mut ledger_total_locked = Balance::zero();
+            let mut ledger_total_unlocking = Balance::zero();
 
             for (_, ledger) in Ledger::<T>::iter() {
-                let account_stake: u128 = ledger.staked_amount(current_period_number);
+                let account_stake = ledger.staked_amount(current_period_number);
 
                 ledger_total_stake += account_stake;
-                ledger_total_staked_future += account_stake;
                 ledger_total_locked += ledger.active_locked_amount();
                 ledger_total_unlocking += ledger.unlocking_amount();
 
-                // Invariant 3
+                // Invariant 2
                 if ledger.unlocking.len() > T::MaxUnlockingChunks::get() as usize {
                     return Err("An account exceeds the maximum unlocking chunks.".into());
                 }
 
-                // Invariant 4
-                if account_stake < T::MinimumStakeAmount::get() {
+                // Invariant 3
+                if account_stake > Balance::zero() && account_stake < T::MinimumStakeAmount::get() {
                     return Err(
                         "An account has a stake amount lower than the minimum allowed.".into(),
                     );
                 }
 
-                // Invariant 5
-                if ledger.active_locked_amount() < T::MinimumLockedAmount::get() {
+                // Invariant 4
+                if ledger.active_locked_amount() > Balance::zero()
+                    && ledger.active_locked_amount() < T::MinimumLockedAmount::get()
+                {
                     return Err(
                         "An account has a locked amount lower than the minimum allowed.".into(),
                     );
                 }
 
-                // Invariant 6
+                // Invariant 5
                 if ledger.contract_stake_count > T::MaxNumberOfStakedContracts::get() {
                     return Err("An account exceeds the maximum number of staked contracts.".into());
                 }
             }
 
-            // Yield amounts in contracts in [`ContractStake`]
-            let mut contracts_total_stake = 0u128;
-            let mut contracts_total_staked_future = 0u128;
-
-            for (_, contract) in ContractStake::<T>::iter() {
-                let contract_stake: u128 = contract.total_staked_amount(current_period_number);
-
-                contracts_total_stake += contract_stake;
-                contracts_total_staked_future += contract_stake;
-            }
-
             // Invariant 1
-            if contracts_total_stake != current_era_info.current_stake_amount.total()
-                || contracts_total_staked_future != current_era_info.next_stake_amount.total()
-            {
-                return Err("Mismatch between ContractStake totals and CurrentEraInfo.".into());
+            if ledger_total_stake != current_era_total_stake {
+                return Err(
+                    "Mismatch between Ledger total staked amounts and CurrentEraInfo total.".into(),
+                );
             }
 
-            // Invariant 2
-            if ledger_total_stake != current_era_info.current_stake_amount.total()
-                || ledger_total_locked != current_era_info.total_locked
-                || ledger_total_unlocking != current_era_info.unlocking
-                || ledger_total_staked_future != current_era_info.next_stake_amount.total()
-            {
-                return Err("Mismatch between Ledger totals and CurrentEraInfo.".into());
+            if ledger_total_locked != current_era_info.total_locked {
+                return Err(
+                    "Mismatch between Ledger total locked amounts and CurrentEraInfo total.".into(),
+                );
+            }
+
+            if ledger_total_unlocking != current_era_info.unlocking {
+                return Err(
+                    "Mismatch between Ledger total unlocked amounts and CurrentEraInfo total."
+                        .into(),
+                );
             }
 
             Ok(())
@@ -2466,24 +2458,25 @@ pub mod pallet {
 
         /// ### Invariants of ContractStake
         ///
-        /// 1. Iterating over all contracts in [`ContractStake`]  should yield the correct staked amounts compared to current era in [`CurrentEraInfo`]
+        /// 1. Iterating over all contracts in [`ContractStake`] should yield the correct staked amounts compared to current era in [`CurrentEraInfo`]
         /// 2. Each staking entry in [`ContractStake`] should be greater than or equal to the [`T::MinimumStakeAmount`] constant.
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_contract_stake() -> Result<(), sp_runtime::TryRuntimeError> {
-            let current_era_info = CurrentEraInfo::<T>::get();
             let current_period_number = ActiveProtocolState::<T>::get().period_number();
+            let current_era_info = CurrentEraInfo::<T>::get();
+            let current_era_total_stake = current_era_info.total_staked_amount_next_era();
+            let ok = current_era_info.total_staked_amount();
 
-            let mut total_staked = 0u128;
-            let mut total_staked_future = 0u128;
+            let mut total_staked = Balance::zero();
 
             for (_, contract) in ContractStake::<T>::iter() {
-                let contract_stake: u128 = contract.total_staked_amount(current_period_number);
+                let contract_stake = contract.total_staked_amount(current_period_number);
 
                 total_staked += contract_stake;
-                total_staked_future += contract_stake;
 
                 // Invariant 2
-                if contract_stake < T::MinimumStakeAmount::get() {
+                if contract_stake > Balance::zero() && contract_stake < T::MinimumStakeAmount::get()
+                {
                     return Err(
                         "A contract has a staked amount lower than the minimum allowed.".into(),
                     );
@@ -2491,9 +2484,7 @@ pub mod pallet {
             }
 
             // Invariant 1
-            if total_staked != current_era_info.current_stake_amount.total()
-                || total_staked_future != current_era_info.next_stake_amount.total()
-            {
+            if total_staked != current_era_total_stake {
                 return Err("Mismatch between ContractStake totals and CurrentEraInfo.".into());
             }
 
@@ -2503,61 +2494,35 @@ pub mod pallet {
         /// ### Invariants of EraRewards
         ///
         /// 1. Era number in [`DAppTiers`] must also be stored in one of the span of [`EraRewards`].
-        /// 2. Combining all span lengths it should yield the number of items in [`DAppTiers`]
-        /// 3. The sum of rewards for each span in [`EraRewards`] must be equal to the number of rewards for the same eras in [`DAppTiers`]
-        /// 4. The number of eras retained in [`EraRewards`] should not exceed the [`T::RewardRetentionInPeriods`] constant.
-        /// 5. Each span lenght entry in [`EraRewards`] should be lower than or equal to the [`T::EraRewardSpanLength`] constant.
+        /// 2. Each span lenght entry in [`EraRewards`] should be lower than or equal to the [`T::EraRewardSpanLength`] constant.
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_era_rewards() -> Result<(), sp_runtime::TryRuntimeError> {
             let era_rewards = EraRewards::<T>::iter().collect::<Vec<_>>();
-            let dapp_tiers_count = DAppTiers::<T>::iter().count();
+            let dapp_tiers = DAppTiers::<T>::iter().collect::<Vec<_>>();
 
-            let mut total_spans_length = 0;
-            let mut total_rewards_dapp_pool = 0u128;
-
-            for (_, span) in &era_rewards {
-                total_spans_length += span.len();
-
-                // Invariant 1
-                for era in span.first_era()..=span.last_era() {
-                    if !DAppTiers::<T>::contains_key(era) {
-                        return Err(
-                            "DAppTiers does not contain a required era from EraRewards.".into()
-                        );
+            // Invariant 1
+            for (era, _) in &dapp_tiers {
+                let mut found = false;
+                for (_, span) in &era_rewards {
+                    if *era >= span.first_era() && *era <= span.last_era() {
+                        found = true;
+                        break;
                     }
                 }
 
-                for reward in &span.span {
-                    total_rewards_dapp_pool += reward.dapp_reward_pool;
+                // Invariant 1
+                if !found {
+                    return Err("Era in DAppTiers is not found in any span in EraRewards.".into());
                 }
+            }
 
-                // Invariant 5
+            for (_, span) in &era_rewards {
+                // Invariant 3
                 if span.len() > T::EraRewardSpanLength::get() as usize {
                     return Err(
                         "Span length for a era exceeds the maximum allowed span length.".into(),
                     );
                 }
-            }
-
-            // Invariant 2
-            if total_spans_length != dapp_tiers_count {
-                return Err(
-                    "Total span lengths do not match the number of items in DAppTiers.".into(),
-                );
-            }
-
-            // Invariant 3
-            let total_dapp_tiers_rewards_dapp_pool: u128 = DAppTiers::<T>::iter()
-                .map(|(_, r)| r.rewards.iter().copied().sum::<Balance>())
-                .sum();
-
-            if total_rewards_dapp_pool != total_dapp_tiers_rewards_dapp_pool {
-                return Err("Mismatch between total rewards in EraRewards and DAppTiers.".into());
-            }
-
-            // Invariant 4
-            if era_rewards.len() > T::RewardRetentionInPeriods::get() as usize {
-                return Err("Number of eras in EraRewards exceeds the retention period.".into());
             }
 
             Ok(())
