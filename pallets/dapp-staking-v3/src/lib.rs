@@ -2465,7 +2465,6 @@ pub mod pallet {
             let current_period_number = ActiveProtocolState::<T>::get().period_number();
             let current_era_info = CurrentEraInfo::<T>::get();
             let current_era_total_stake = current_era_info.total_staked_amount_next_era();
-            let ok = current_era_info.total_staked_amount();
 
             let mut total_staked = Balance::zero();
 
