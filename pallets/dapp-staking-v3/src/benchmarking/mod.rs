@@ -1083,6 +1083,6 @@ mod tests {
     use sp_io::TestExternalities;
 
     pub fn new_test_ext() -> TestExternalities {
-        mock::ExtBuilder::build()
+        mock::ExtBuilder::default().build()
     }
 }
