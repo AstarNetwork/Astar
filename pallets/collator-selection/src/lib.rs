@@ -553,6 +553,11 @@ pub mod pallet {
                         Self::slash_non_candidate(&who);
                     }
                 } else {
+                    let (locked_until, _) = NonCandidates::<T>::get(&who);
+                    if T::ValidatorSet::session_index() > locked_until {
+                        // bond is already unlocked
+                        continue;
+                    }
                     // slash un-bonding candidate
                     Self::slash_non_candidate(&who);
                 }

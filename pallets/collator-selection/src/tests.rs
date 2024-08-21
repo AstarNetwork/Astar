@@ -493,7 +493,7 @@ fn kick_and_slash_mechanism() {
 }
 
 #[test]
-fn slash_mechanism_for_unbonding_candidates() {
+fn slash_mechanism_for_unbonding_candidates_who_missed_block() {
     new_test_ext().execute_with(|| {
         // Define slash destination account
         <crate::SlashDestination<Test>>::put(5);
@@ -535,6 +535,45 @@ fn slash_mechanism_for_unbonding_candidates() {
         // slashed collator gets funds back except slashed 10% (of 10 bond)
         assert_eq!(Balances::free_balance(3), 99);
         assert_eq!(Balances::free_balance(5), 101);
+    });
+}
+
+#[test]
+fn should_not_slash_unbonding_candidates() {
+    new_test_ext().execute_with(|| {
+        // add a new collator
+        assert_ok!(CollatorSelection::register_as_candidate(
+            RuntimeOrigin::signed(3)
+        ));
+        assert_ok!(CollatorSelection::register_as_candidate(
+            RuntimeOrigin::signed(4)
+        ));
+        assert_eq!(LastAuthoredBlock::<Test>::get(3), 10);
+        assert_eq!(LastAuthoredBlock::<Test>::get(4), 10);
+
+        assert_ok!(CollatorSelection::leave_intent(RuntimeOrigin::signed(3)));
+        // can withdraw on next session
+        assert_eq!(NonCandidates::<Test>::get(3), (1, 10));
+
+        initialize_to_block(10);
+        // not included next session and doesn't withdraw bond
+        assert_eq!(NextSessionCollators::get(), vec![1, 2, 4]);
+        assert_eq!(LastAuthoredBlock::<Test>::get(3), 10);
+        assert_eq!(LastAuthoredBlock::<Test>::get(4), 10);
+        assert_eq!(NonCandidates::<Test>::get(3), (1, 10));
+        assert_eq!(Balances::free_balance(3), 90);
+
+        initialize_to_block(20);
+        assert_eq!(SessionChangeBlock::get(), 20);
+        assert_eq!(LastAuthoredBlock::<Test>::get(3), 10);
+        assert_eq!(LastAuthoredBlock::<Test>::get(4), 20);
+
+        assert_eq!(NonCandidates::<Test>::get(3), (1, 10));
+        assert_eq!(Balances::free_balance(3), 90);
+
+        assert_ok!(CollatorSelection::withdraw_bond(RuntimeOrigin::signed(3)));
+        assert_eq!(NonCandidates::<Test>::get(3), (0, 0));
+        assert_eq!(Balances::free_balance(3), 100);
     });
 }
 
