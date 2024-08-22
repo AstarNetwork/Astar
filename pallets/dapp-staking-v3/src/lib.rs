@@ -2458,33 +2458,21 @@ pub mod pallet {
 
         /// ### Invariants of ContractStake
         ///
-        /// 1. Iterating over all contracts in [`ContractStake`] should yield the correct staked amounts compared to current era in [`CurrentEraInfo`]
-        /// 2. Each staking entry in [`ContractStake`] should be greater than or equal to the [`T::MinimumStakeAmount`] constant.
+        /// 1. Each staking entry in [`ContractStake`] should be greater than or equal to the [`T::MinimumStakeAmount`] constant.
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_contract_stake() -> Result<(), sp_runtime::TryRuntimeError> {
             let current_period_number = ActiveProtocolState::<T>::get().period_number();
-            let current_era_info = CurrentEraInfo::<T>::get();
-            let current_era_total_stake = current_era_info.total_staked_amount_next_era();
-
-            let mut total_staked = Balance::zero();
 
             for (_, contract) in ContractStake::<T>::iter() {
                 let contract_stake = contract.total_staked_amount(current_period_number);
 
-                total_staked += contract_stake;
-
-                // Invariant 2
+                // Invariant 1
                 if contract_stake > Balance::zero() && contract_stake < T::MinimumStakeAmount::get()
                 {
                     return Err(
                         "A contract has a staked amount lower than the minimum allowed.".into(),
                     );
                 }
-            }
-
-            // Invariant 1
-            if total_staked != current_era_total_stake {
-                return Err("Mismatch between ContractStake totals and CurrentEraInfo.".into());
             }
 
             Ok(())

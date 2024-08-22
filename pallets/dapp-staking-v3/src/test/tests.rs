@@ -483,8 +483,6 @@ fn unregister_no_stake_is_ok() {
 }
 
 #[test]
-#[ignore]
-/// TODO - Reestablish this test once this bug is fixed: <https://github.com/AstarNetwork/Astar/issues/1333>
 fn unregister_with_active_stake_is_ok() {
     ExtBuilder::default().build_and_execute(|| {
         // Prepare dApp
@@ -1324,9 +1322,7 @@ fn unstake_with_zero_amount_fails() {
     })
 }
 
-/// TODO - Reestablish this test once this bug is fixed: <https://github.com/AstarNetwork/Astar/issues/1333>
 #[test]
-#[ignore]
 fn unstake_on_invalid_dapp_fails() {
     ExtBuilder::default().build_and_execute(|| {
         let account = 2;
