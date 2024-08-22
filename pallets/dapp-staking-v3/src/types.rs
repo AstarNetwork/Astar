@@ -998,19 +998,6 @@ impl SingularStakingInfo {
         }
     }
 
-    /// TODO: remove this after migration to v6 has been done.
-    pub fn new_migration(
-        previous_staked: StakeAmount,
-        staked: StakeAmount,
-        loyal_staker: bool,
-    ) -> Self {
-        Self {
-            previous_staked,
-            staked,
-            loyal_staker,
-        }
-    }
-
     /// Stake the specified amount on the contract, for the specified subperiod.
     pub fn stake(&mut self, amount: Balance, current_era: EraNumber, subperiod: Subperiod) {
         // Keep the previous stake amount for future reference
