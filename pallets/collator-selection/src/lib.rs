@@ -219,7 +219,7 @@ pub mod pallet {
 
     /// Destination account for slashed amount.
     #[pallet::storage]
-    pub type SlashDestination<T> = StorageValue<_, <T as frame_system::Config>::AccountId>;
+    pub type SlashDestination<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
     #[pallet::genesis_config]
     #[derive(DefaultNoBound)]
@@ -478,6 +478,22 @@ pub mod pallet {
                 }
             })?;
 
+            Ok(())
+        }
+
+        /// Set slash destination.
+        /// Use `Some` to deposit slashed balance into destination or `None` to burn it.
+        #[pallet::call_index(6)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 1))]
+        pub fn set_slash_destination(
+            origin: OriginFor<T>,
+            destination: Option<T::AccountId>,
+        ) -> DispatchResult {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            match destination {
+                Some(account) => <SlashDestination<T>>::put(account),
+                None => <SlashDestination<T>>::kill(),
+            }
             Ok(())
         }
     }

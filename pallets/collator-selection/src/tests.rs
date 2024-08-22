@@ -18,7 +18,7 @@
 use crate as collator_selection;
 use crate::{
     mock::*, CandidacyBond, CandidateInfo, Candidates, DesiredCandidates, Error, Invulnerables,
-    LastAuthoredBlock, NonCandidates,
+    LastAuthoredBlock, NonCandidates, SlashDestination,
 };
 use frame_support::{
     assert_noop, assert_ok,
@@ -627,4 +627,31 @@ fn cannot_set_genesis_value_twice() {
     };
     // collator selection must be initialized before session.
     collator_selection.assimilate_storage(&mut t).unwrap();
+}
+
+#[test]
+fn set_slash_destination() {
+    new_test_ext().execute_with(|| {
+        assert_eq!(SlashDestination::<Test>::get(), None);
+
+        // only UpdateOrigin can update
+        assert_noop!(
+            CollatorSelection::set_slash_destination(RuntimeOrigin::signed(1), Some(1)),
+            sp_runtime::DispatchError::BadOrigin
+        );
+
+        // set destination
+        assert_ok!(CollatorSelection::set_slash_destination(
+            RuntimeOrigin::signed(RootAccount::get()),
+            Some(1),
+        ));
+        assert_eq!(SlashDestination::<Test>::get(), Some(1));
+
+        // remove destination
+        assert_ok!(CollatorSelection::set_slash_destination(
+            RuntimeOrigin::signed(RootAccount::get()),
+            None,
+        ));
+        assert_eq!(SlashDestination::<Test>::get(), None);
+    });
 }
