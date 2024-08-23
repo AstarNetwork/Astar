@@ -565,7 +565,7 @@ fn should_not_slash_unbonding_candidates() {
 
         initialize_to_block(20);
         assert_eq!(SessionChangeBlock::get(), 20);
-        assert_eq!(LastAuthoredBlock::<Test>::get(3), 10);
+        assert!(!LastAuthoredBlock::<Test>::contains_key(3));
         assert_eq!(LastAuthoredBlock::<Test>::get(4), 20);
 
         assert_eq!(NonCandidates::<Test>::get(3), (1, 10));
