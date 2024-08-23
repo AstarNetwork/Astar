@@ -561,14 +561,14 @@ pub mod pallet {
                 if now.saturating_sub(last_authored) < kick_threshold {
                     continue;
                 }
-                // still candidate, kick and slash
+                // stale candidate, kick and slash
                 if Self::is_account_candidate(&who) {
                     if Candidates::<T>::get().len() > T::MinCandidates::get() as usize {
                         // no error, who is a candidate
                         let _ = Self::try_remove_candidate(&who);
                         Self::slash_non_candidate(&who);
                     }
-                } else {
+                } else if NonCandidates::<T>::contains_key(&who) {
                     let (locked_until, _) = NonCandidates::<T>::get(&who);
                     if T::ValidatorSet::session_index() > locked_until {
                         // bond is already unlocked
