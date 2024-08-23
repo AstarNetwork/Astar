@@ -198,7 +198,7 @@ pub mod pallet {
     /// Candidates who initiated leave intent or kicked.
     #[pallet::storage]
     pub type NonCandidates<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, (SessionIndex, BalanceOf<T>), ValueQuery>;
+        StorageMap<_, Twox64Concat, T::AccountId, (SessionIndex, BalanceOf<T>), OptionQuery>;
 
     /// Last block authored by collator.
     #[pallet::storage]
@@ -568,8 +568,7 @@ pub mod pallet {
                         let _ = Self::try_remove_candidate(&who);
                         Self::slash_non_candidate(&who);
                     }
-                } else if NonCandidates::<T>::contains_key(&who) {
-                    let (locked_until, _) = NonCandidates::<T>::get(&who);
+                } else if let Some((locked_until, _)) = NonCandidates::<T>::get(&who) {
                     if T::ValidatorSet::session_index() > locked_until {
                         // bond is already unlocked
                         <LastAuthoredBlock<T>>::remove(who);

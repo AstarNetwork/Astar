@@ -282,7 +282,7 @@ fn leave_intent() {
         assert_eq!(Balances::reserved_balance(3), 10);
         assert_eq!(LastAuthoredBlock::<Test>::get(3), 10);
         // 10 unbonding from session 1
-        assert_eq!(NonCandidates::<Test>::get(3), (1, 10));
+        assert_eq!(NonCandidates::<Test>::get(3), Some((1, 10)));
     });
 }
 
@@ -313,7 +313,7 @@ fn withdraw_unbond() {
 
         initialize_to_block(10);
         assert_ok!(CollatorSelection::withdraw_bond(RuntimeOrigin::signed(3)));
-        assert_eq!(NonCandidates::<Test>::get(3), (0, 0));
+        assert_eq!(NonCandidates::<Test>::get(3), None);
         assert_eq!(Balances::free_balance(3), 100);
         assert_eq!(Balances::reserved_balance(3), 0);
 
@@ -553,14 +553,14 @@ fn should_not_slash_unbonding_candidates() {
 
         assert_ok!(CollatorSelection::leave_intent(RuntimeOrigin::signed(3)));
         // can withdraw on next session
-        assert_eq!(NonCandidates::<Test>::get(3), (1, 10));
+        assert_eq!(NonCandidates::<Test>::get(3), Some((1, 10)));
 
         initialize_to_block(10);
         // not included next session and doesn't withdraw bond
         assert_eq!(NextSessionCollators::get(), vec![1, 2, 4]);
         assert_eq!(LastAuthoredBlock::<Test>::get(3), 10);
         assert_eq!(LastAuthoredBlock::<Test>::get(4), 10);
-        assert_eq!(NonCandidates::<Test>::get(3), (1, 10));
+        assert_eq!(NonCandidates::<Test>::get(3), Some((1, 10)));
         assert_eq!(Balances::free_balance(3), 90);
 
         initialize_to_block(20);
@@ -568,11 +568,11 @@ fn should_not_slash_unbonding_candidates() {
         assert!(!LastAuthoredBlock::<Test>::contains_key(3));
         assert_eq!(LastAuthoredBlock::<Test>::get(4), 20);
 
-        assert_eq!(NonCandidates::<Test>::get(3), (1, 10));
+        assert_eq!(NonCandidates::<Test>::get(3), Some((1, 10)));
         assert_eq!(Balances::free_balance(3), 90);
 
         assert_ok!(CollatorSelection::withdraw_bond(RuntimeOrigin::signed(3)));
-        assert_eq!(NonCandidates::<Test>::get(3), (0, 0));
+        assert_eq!(NonCandidates::<Test>::get(3), None);
         assert_eq!(Balances::free_balance(3), 100);
     });
 }
