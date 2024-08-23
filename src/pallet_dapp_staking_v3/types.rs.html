@@ -1824,19 +1824,6 @@
 <a href="#1822" id="1822">1822</a>
 <a href="#1823" id="1823">1823</a>
 <a href="#1824" id="1824">1824</a>
-<a href="#1825" id="1825">1825</a>
-<a href="#1826" id="1826">1826</a>
-<a href="#1827" id="1827">1827</a>
-<a href="#1828" id="1828">1828</a>
-<a href="#1829" id="1829">1829</a>
-<a href="#1830" id="1830">1830</a>
-<a href="#1831" id="1831">1831</a>
-<a href="#1832" id="1832">1832</a>
-<a href="#1833" id="1833">1833</a>
-<a href="#1834" id="1834">1834</a>
-<a href="#1835" id="1835">1835</a>
-<a href="#1836" id="1836">1836</a>
-<a href="#1837" id="1837">1837</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2834,19 +2821,6 @@
             },
             <span class="comment">// Loyalty staking is only possible if stake is first made during the voting subperiod.
             </span>loyal_staker: subperiod == Subperiod::Voting,
-        }
-    }
-
-    <span class="doccomment">/// TODO: remove this after migration to v6 has been done.
-    </span><span class="kw">pub fn </span>new_migration(
-        previous_staked: StakeAmount,
-        staked: StakeAmount,
-        loyal_staker: bool,
-    ) -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{
-            previous_staked,
-            staked,
-            loyal_staker,
         }
     }
 
