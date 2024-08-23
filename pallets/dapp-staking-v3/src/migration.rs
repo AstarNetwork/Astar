@@ -270,6 +270,7 @@ mod v7 {
         },
     }
 
+    #[cfg(feature = "try-runtime")]
     impl TierThreshold {
         /// Return threshold for the tier.
         pub fn threshold(&self) -> Balance {
