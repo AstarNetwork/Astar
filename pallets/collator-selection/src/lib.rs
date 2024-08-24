@@ -198,7 +198,7 @@ pub mod pallet {
     /// Candidates who initiated leave intent or kicked.
     #[pallet::storage]
     pub type NonCandidates<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, (SessionIndex, BalanceOf<T>), ValueQuery>;
+        StorageMap<_, Twox64Concat, T::AccountId, (SessionIndex, BalanceOf<T>), OptionQuery>;
 
     /// Last block authored by collator.
     #[pallet::storage]
@@ -219,7 +219,7 @@ pub mod pallet {
 
     /// Destination account for slashed amount.
     #[pallet::storage]
-    pub type SlashDestination<T> = StorageValue<_, <T as frame_system::Config>::AccountId>;
+    pub type SlashDestination<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
     #[pallet::genesis_config]
     #[derive(DefaultNoBound)]
@@ -480,6 +480,22 @@ pub mod pallet {
 
             Ok(())
         }
+
+        /// Set slash destination.
+        /// Use `Some` to deposit slashed balance into destination or `None` to burn it.
+        #[pallet::call_index(6)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 1))]
+        pub fn set_slash_destination(
+            origin: OriginFor<T>,
+            destination: Option<T::AccountId>,
+        ) -> DispatchResult {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            match destination {
+                Some(account) => <SlashDestination<T>>::put(account),
+                None => <SlashDestination<T>>::kill(),
+            }
+            Ok(())
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -545,16 +561,21 @@ pub mod pallet {
                 if now.saturating_sub(last_authored) < kick_threshold {
                     continue;
                 }
-                // still candidate, kick and slash
+                // stale candidate, kick and slash
                 if Self::is_account_candidate(&who) {
                     if Candidates::<T>::get().len() > T::MinCandidates::get() as usize {
                         // no error, who is a candidate
                         let _ = Self::try_remove_candidate(&who);
                         Self::slash_non_candidate(&who);
                     }
-                } else {
-                    // slash un-bonding candidate
-                    Self::slash_non_candidate(&who);
+                } else if let Some((locked_until, _)) = NonCandidates::<T>::get(&who) {
+                    if T::ValidatorSet::session_index() > locked_until {
+                        // bond is already unlocked
+                        <LastAuthoredBlock<T>>::remove(who);
+                    } else {
+                        // slash un-bonding candidate
+                        Self::slash_non_candidate(&who);
+                    }
                 }
             }
             (
