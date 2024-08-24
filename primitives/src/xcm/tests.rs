@@ -133,7 +133,7 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
     };
     let weight: Weight = Weight::from_parts(1_000_000_000, 0);
     let ctx = XcmContext {
-        // arbitary ML
+        // arbitrary ML
         origin: Some(Location::here()),
         message_id: XcmHash::default(),
         topic: None,
@@ -255,7 +255,7 @@ fn fixed_rate_of_foreign_asset_buy_execution_fails() {
     };
     let weight: Weight = Weight::from_parts(3_000_000_000, 0);
     let ctx = XcmContext {
-        // arbitary ML
+        // arbitrary ML
         origin: Some(Location::here()),
         message_id: XcmHash::default(),
         topic: None,
@@ -298,7 +298,7 @@ fn fixed_rate_of_foreign_asset_refund_is_ok() {
     };
     let weight: Weight = Weight::from_parts(1_000_000_000, 0);
     let ctx = XcmContext {
-        // arbitary ML
+        // arbitrary ML
         origin: Some(Location::here()),
         message_id: XcmHash::default(),
         topic: None,
