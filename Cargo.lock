@@ -609,7 +609,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.43.0"
+version = "5.43.1"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
@@ -753,7 +753,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.43.0"
+version = "5.43.1"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -6536,7 +6536,7 @@ dependencies = [
 
 [[package]]
 name = "local-runtime"
-version = "5.43.0"
+version = "5.43.1"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -14336,7 +14336,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.43.0"
+version = "5.43.1"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -14454,7 +14454,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.43.0"
+version = "5.43.1"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
