@@ -2033,7 +2033,7 @@ impl_runtime_apis! {
                             Permill::from_percent(30),
                             Permill::from_percent(40),
                         ],
-                        // percentages below are calulated based on a total issuance at the time when dApp staking v3 was launched (84.3M)
+                        // percentages below are calculated based on a total issuance at the time when dApp staking v3 was launched (84.3M)
                         tier_thresholds: vec![
                             TierThreshold::DynamicPercentage {
                                 percentage: Perbill::from_parts(35_700_000), // 3.57%

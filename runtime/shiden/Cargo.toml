@@ -14,13 +14,13 @@ log = { workspace = true, optional = true }
 num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
+serde_json = { workspace = true }
 smallvec = { workspace = true }
-serde_json ={ workspace = true }
 
 # primitives
+fp-evm = { workspace = true }
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }
-fp-evm ={ workspace = true }
 
 sp-api = { workspace = true }
 sp-arithmetic = { workspace = true }

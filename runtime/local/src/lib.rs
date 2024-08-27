@@ -52,7 +52,7 @@ use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, ConstBool, OpaqueMetadata, H160, H256, U256};
+use sp_core::{crypto::KeyTypeId, sr25519, ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
@@ -357,8 +357,8 @@ impl pallet_assets::Config for Runtime {
 
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
 parameter_types! {
-    pub const TransactionLengthFeeFactor: Balance = 23_500_000_000_000; // 0.000_023_500_000_000_000 SBY per byte
-    pub const WeightFeeFactor: Balance = 30_855_000_000_000_000; // Around 0.03 SBY per unit of ref time.
+    pub const TransactionLengthFeeFactor: Balance = 23_500_000_000_000; // 0.000_023_500_000_000_000 AST per byte
+    pub const WeightFeeFactor: Balance = 30_855_000_000_000_000; // Around 0.03 AST per unit of ref time.
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     pub const OperationalFeeMultiplier: u8 = 5;
     pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(000_015, 1_000_000); // 0.000_015
@@ -1805,7 +1805,129 @@ impl_runtime_apis! {
         }
 
         fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-            get_preset::<RuntimeGenesisConfig>(id, |_| None)
+            use astar_primitives::{evm::EVM_REVERT_CODE, genesis::GenesisAccount};
+
+            let alice = GenesisAccount::<sr25519::Public>::from_seed("Alice");
+            let bob = GenesisAccount::<sr25519::Public>::from_seed("Bob");
+            let charlie = GenesisAccount::<sr25519::Public>::from_seed("Charlie");
+            let dave = GenesisAccount::<sr25519::Public>::from_seed("Dave");
+            let eve = GenesisAccount::<sr25519::Public>::from_seed("Eve");
+
+            let balances: Vec<(AccountId, Balance)> = vec![(alice.account_id(), 1_000_000_000_000 * AST), (bob.account_id(), 1_000_000_000_000 * AST)];
+
+            get_preset::<RuntimeGenesisConfig>(id, move |_| {
+                let accounts = vec![&alice, &bob, &charlie, &dave, &eve].iter().map(|x| x.account_id()).collect::<Vec<_>>();
+
+                let config = RuntimeGenesisConfig {
+                    system: Default::default(),
+                    sudo: SudoConfig {
+                        key: Some(alice.account_id()),
+                    },
+                    balances: BalancesConfig { balances },
+                    vesting: VestingConfig { vesting: vec![] },
+                    aura: Default::default(),
+                    grandpa: Default::default(),
+                    evm: EVMConfig {
+                        // We need _some_ code inserted at the precompile address so that
+                        // the evm will actually call the address.
+                        accounts: Precompiles::used_addresses_h160()
+                            .map(|addr| {
+                                (
+                                    addr,
+                                    fp_evm::GenesisAccount {
+                                        nonce: Default::default(),
+                                        balance: Default::default(),
+                                        storage: Default::default(),
+                                        code: EVM_REVERT_CODE.into(),
+                                    },
+                                )
+                            })
+                            .collect(),
+                        ..Default::default()
+                    },
+                    ethereum: Default::default(),
+                    assets: Default::default(),
+                    transaction_payment: Default::default(),
+                    dapp_staking: DappStakingConfig {
+                        reward_portion: vec![
+                            Permill::from_percent(40),
+                            Permill::from_percent(30),
+                            Permill::from_percent(20),
+                            Permill::from_percent(10),
+                        ],
+                        slot_distribution: vec![
+                            Permill::from_percent(10),
+                            Permill::from_percent(20),
+                            Permill::from_percent(30),
+                            Permill::from_percent(40),
+                        ],
+                        tier_thresholds: vec![
+                            TierThreshold::DynamicPercentage {
+                                percentage: Perbill::from_parts(35_700_000), // 3.57%
+                                minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
+                            },
+                            TierThreshold::DynamicPercentage {
+                                percentage: Perbill::from_parts(8_900_000), // 0.89%
+                                minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+                            },
+                            TierThreshold::DynamicPercentage {
+                                percentage: Perbill::from_parts(23_800_000), // 2.38%
+                                minimum_required_percentage: Perbill::from_parts(17_900_000), // 1.79%
+                            },
+                            TierThreshold::FixedPercentage {
+                                required_percentage: Perbill::from_parts(600_000), // 0.06%
+                            },
+                        ],
+                        slots_per_tier: vec![10, 20, 30, 40],
+                        safeguard: Some(false),
+                        ..Default::default()
+                    },
+                    inflation: InflationConfig {
+                        params: InflationParameters {
+                            max_inflation_rate: Perquintill::from_percent(7),
+                            treasury_part: Perquintill::from_percent(5),
+                            collators_part: Perquintill::from_percent(3),
+                            dapps_part: Perquintill::from_percent(20),
+                            base_stakers_part: Perquintill::from_percent(25),
+                            adjustable_stakers_part: Perquintill::from_percent(35),
+                            bonus_part: Perquintill::from_percent(12),
+                            ideal_staking_rate: Perquintill::from_percent(50),
+                        },
+                        ..Default::default()
+                    },
+                    council_membership: CouncilMembershipConfig {
+                        members: accounts
+                            .clone()
+                            .try_into()
+                            .expect("Should support at least 5 members."),
+                        phantom: Default::default(),
+                    },
+                    technical_committee_membership: TechnicalCommitteeMembershipConfig {
+                        members: accounts[..3]
+                            .to_vec()
+                            .try_into()
+                            .expect("Should support at least 3 members."),
+                        phantom: Default::default(),
+                    },
+                    community_council_membership: CommunityCouncilMembershipConfig {
+                        members: accounts
+                            .try_into()
+                            .expect("Should support at least 5 members."),
+                        phantom: Default::default(),
+                    },
+                    council: Default::default(),
+                    technical_committee: Default::default(),
+                    community_council: Default::default(),
+                    democracy: Default::default(),
+                    treasury: Default::default(),
+                    community_treasury: Default::default(),
+                };
+
+                let patch = serde_json::to_value(&config).expect("Could not build genesis config.");
+
+                Some(serde_json::to_string(&patch).expect("serialization to json is expected to work. qed.").into_bytes())
+                }
+            )
         }
 
         fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
