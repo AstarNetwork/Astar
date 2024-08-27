@@ -59,6 +59,7 @@ pallet-evm-precompile-simple = { workspace = true }
 pallet-identity = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-message-queue = { workspace = true }
+pallet-migrations = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-session = { workspace = true, features = ["historical"] }
@@ -188,6 +189,7 @@ std = [
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-identity/std",
 	"pallet-multisig/std",
+	"pallet-migrations/std",
 	"pallet-session/std",
 	"pallet-utility/std",
 	"pallet-timestamp/std",
@@ -271,6 +273,7 @@ runtime-benchmarks = [
 	"pallet-evm-precompile-xcm/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
+	"pallet-migrations/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
@@ -311,6 +314,7 @@ try-runtime = [
 	"pallet-xcm/try-runtime",
 	"pallet-identity/try-runtime",
 	"pallet-multisig/try-runtime",
+	"pallet-migrations/try-runtime",
 	"cumulus-pallet-aura-ext/try-runtime",
 	"cumulus-pallet-parachain-system/try-runtime",
 	"cumulus-pallet-xcm/try-runtime",

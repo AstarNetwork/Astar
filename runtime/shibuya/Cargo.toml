@@ -63,6 +63,7 @@ pallet-identity = { workspace = true }
 pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-message-queue = { workspace = true }
+pallet-migrations = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
@@ -208,6 +209,7 @@ std = [
 	"pallet-price-aggregator/std",
 	"pallet-identity/std",
 	"pallet-multisig/std",
+	"pallet-migrations/std",
 	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-session/std",
 	"pallet-utility/std",
@@ -302,6 +304,7 @@ runtime-benchmarks = [
 	"pallet-evm-precompile-xcm/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
+	"pallet-migrations/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
@@ -347,6 +350,7 @@ try-runtime = [
 	"pallet-xcm/try-runtime",
 	"pallet-identity/try-runtime",
 	"pallet-multisig/try-runtime",
+	"pallet-migrations/try-runtime",
 	"pallet-insecure-randomness-collective-flip/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"pallet-proxy/try-runtime",
