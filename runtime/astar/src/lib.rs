@@ -1190,7 +1190,7 @@ impl frame_support::traits::SortedMembers<AccountId> for OracleMembershipWrapper
 }
 
 parameter_types! {
-    pub MbmServiceWeight: Weight = Perbill::from_percent(80) * RuntimeBlockWeights::get().max_block;
+    pub MbmServiceWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
 impl pallet_migrations::Config for Runtime {

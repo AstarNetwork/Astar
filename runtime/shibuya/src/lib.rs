@@ -1515,7 +1515,7 @@ impl pallet_collective_proxy::Config for Runtime {
 }
 
 parameter_types! {
-    pub MbmServiceWeight: Weight = Perbill::from_percent(80) * RuntimeBlockWeights::get().max_block;
+    pub MbmServiceWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
 impl pallet_migrations::Config for Runtime {
