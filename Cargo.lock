@@ -609,7 +609,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.42.2"
+version = "5.43.1"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
@@ -753,19 +753,17 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.42.2"
+version = "5.43.1"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
  "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-aura",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "dapp-staking-v3-runtime-api",
  "fp-rpc",
@@ -794,7 +792,6 @@ dependencies = [
  "pallet-chain-extension-assets",
  "pallet-collator-selection 3.3.2",
  "pallet-contracts",
- "pallet-dapp-staking-migration",
  "pallet-dapp-staking-v3",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
@@ -1891,7 +1888,7 @@ dependencies = [
 [[package]]
 name = "common"
 version = "0.1.0"
-source = "git+https://github.com/w3f/ring-proof#665f5f51af5734c7b6d90b985dd6861d4c5b4752"
+source = "git+https://github.com/w3f/ring-proof#b273d33f9981e2bb3375ab45faeb537f7ee35224"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -2538,24 +2535,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-pallet-dmp-queue"
-version = "0.7.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0#8c8edacf8942298c3807a2e192860da9e7e4996a"
-dependencies = [
- "cumulus-primitives-core",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-io",
- "sp-runtime",
- "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
- "staging-xcm",
-]
-
-[[package]]
 name = "cumulus-pallet-parachain-system"
 version = "0.7.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0#8c8edacf8942298c3807a2e192860da9e7e4996a"
@@ -2698,19 +2677,6 @@ dependencies = [
  "sp-externalities 0.25.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
  "sp-runtime-interface 24.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
  "sp-trie",
-]
-
-[[package]]
-name = "cumulus-primitives-timestamp"
-version = "0.7.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0#8c8edacf8942298c3807a2e192860da9e7e4996a"
-dependencies = [
- "cumulus-primitives-core",
- "futures 0.3.30",
- "parity-scale-codec",
- "sp-inherents",
- "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
- "sp-timestamp",
 ]
 
 [[package]]
@@ -6570,7 +6536,7 @@ dependencies = [
 
 [[package]]
 name = "local-runtime"
-version = "5.42.2"
+version = "5.43.1"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -6666,9 +6632,9 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.22"
+version = "0.4.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
+checksum = "90ed8c1e510134f979dbc4f070f87d4313098b704861a105fe34231c70a3901c"
 
 [[package]]
 name = "lru"
@@ -8491,26 +8457,6 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-io",
- "sp-runtime",
- "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
-]
-
-[[package]]
-name = "pallet-dapp-staking-migration"
-version = "1.0.0"
-dependencies = [
- "astar-primitives",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-balances",
- "pallet-dapp-staking-v3",
- "parity-scale-codec",
- "scale-info",
- "sp-arithmetic",
- "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
@@ -12230,14 +12176,13 @@ dependencies = [
 [[package]]
 name = "ring"
 version = "0.1.0"
-source = "git+https://github.com/w3f/ring-proof#665f5f51af5734c7b6d90b985dd6861d4c5b4752"
+source = "git+https://github.com/w3f/ring-proof#b273d33f9981e2bb3375ab45faeb537f7ee35224"
 dependencies = [
  "ark-ec",
  "ark-ff",
  "ark-poly",
  "ark-serialize",
  "ark-std",
- "arrayvec 0.7.4",
  "blake2 0.10.6",
  "common",
  "fflonk",
@@ -14232,9 +14177,9 @@ checksum = "cd0b0ec5f1c1ca621c432a25813d8d60c88abe6d3e08a3eb9cf37d97a0fe3d73"
 
 [[package]]
 name = "serde"
-version = "1.0.204"
+version = "1.0.203"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc76f558e0cbb2a839d37354c575f1dc3fdc6546b5be373ba43d95f231bf7c12"
+checksum = "7253ab4de971e72fb7be983802300c30b5a7f0c2e56fab8abfc6a214307c0094"
 dependencies = [
  "serde_derive",
 ]
@@ -14250,9 +14195,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.204"
+version = "1.0.203"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0cd7e117be63d3c3678776753929474f3b04a43a080c744d6b0ae2a8c28e222"
+checksum = "500cbc0ebeb6f46627f50f3f5811ccf6bf00643be300b4c3eabc0ef55dc5b5ba"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -14391,19 +14336,17 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.42.2"
+version = "5.43.1"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
  "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-aura",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "dapp-staking-v3-runtime-api",
  "fp-rpc",
@@ -14511,19 +14454,17 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.42.2"
+version = "5.43.1"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
  "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-aura",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "dapp-staking-v3-runtime-api",
  "fp-evm",
@@ -14553,7 +14494,6 @@ dependencies = [
  "pallet-chain-extension-assets",
  "pallet-collator-selection 3.3.2",
  "pallet-contracts",
- "pallet-dapp-staking-migration",
  "pallet-dapp-staking-v3",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
@@ -15208,7 +15148,7 @@ dependencies = [
 [[package]]
 name = "sp-crypto-ec-utils"
 version = "0.10.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#5fb4c40a3ea24ae3ab2bdfefb3f3a40badc2a583"
 dependencies = [
  "ark-bls12-377",
  "ark-bls12-377-ext",
@@ -15270,7 +15210,7 @@ dependencies = [
 [[package]]
 name = "sp-debug-derive"
 version = "14.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#5fb4c40a3ea24ae3ab2bdfefb3f3a40badc2a583"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -15290,7 +15230,7 @@ dependencies = [
 [[package]]
 name = "sp-externalities"
 version = "0.25.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#5fb4c40a3ea24ae3ab2bdfefb3f3a40badc2a583"
 dependencies = [
  "environmental",
  "parity-scale-codec",
@@ -15505,7 +15445,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface"
 version = "24.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#5fb4c40a3ea24ae3ab2bdfefb3f3a40badc2a583"
 dependencies = [
  "bytes",
  "impl-trait-for-tuples",
@@ -15537,7 +15477,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "17.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#5fb4c40a3ea24ae3ab2bdfefb3f3a40badc2a583"
 dependencies = [
  "Inflector",
  "expander 2.1.0",
@@ -15626,7 +15566,7 @@ source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot
 [[package]]
 name = "sp-std"
 version = "14.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#5fb4c40a3ea24ae3ab2bdfefb3f3a40badc2a583"
 
 [[package]]
 name = "sp-storage"
@@ -15643,7 +15583,7 @@ dependencies = [
 [[package]]
 name = "sp-storage"
 version = "19.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#5fb4c40a3ea24ae3ab2bdfefb3f3a40badc2a583"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -15678,7 +15618,7 @@ dependencies = [
 [[package]]
 name = "sp-tracing"
 version = "16.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#5fb4c40a3ea24ae3ab2bdfefb3f3a40badc2a583"
 dependencies = [
  "parity-scale-codec",
  "tracing",
@@ -15775,7 +15715,7 @@ dependencies = [
 [[package]]
 name = "sp-wasm-interface"
 version = "20.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#776e95748901b50ff2833a7d27ea83fd91fbf9d1"
+source = "git+https://github.com/paritytech/polkadot-sdk#5fb4c40a3ea24ae3ab2bdfefb3f3a40badc2a583"
 dependencies = [
  "impl-trait-for-tuples",
  "log",
@@ -16729,7 +16669,6 @@ dependencies = [
  "sharded-slab",
  "smallvec",
  "thread_local",
- "time",
  "tracing",
  "tracing-core",
  "tracing-log 0.2.0",

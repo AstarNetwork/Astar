@@ -204,10 +204,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 133,
+    spec_version: 136,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 2,
+    transaction_version: 3,
     state_version: 1,
 };
 
@@ -1616,6 +1616,8 @@ pub type Executive = frame_executive::Executive<
 >;
 
 parameter_types! {
+    // Threshold amount variation allowed for this migration - 150%
+    pub const ThresholdVariationPercentage: u32 = 150;
     // percentages below are calulated based on a total issuance at the time when dApp staking v3 was launched (147M)
     pub const TierThresholds: [TierThreshold; 4] = [
         TierThreshold::DynamicPercentage {
@@ -1647,7 +1649,11 @@ pub type Migrations = (
     // permanent migration, do not remove
     pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
     // dapp-staking dyn tier threshold migrations
-    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime, TierThresholds>,
+    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<
+        Runtime,
+        TierThresholds,
+        ThresholdVariationPercentage,
+    >,
     frame_support::migrations::RemovePallet<
         DmpQueuePalletName,
         <Runtime as frame_system::Config>::DbWeight,

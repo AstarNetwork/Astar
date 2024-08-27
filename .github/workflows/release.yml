@@ -129,7 +129,7 @@ jobs:
       run: rustup target list --installed
 
     - name: Build optimized binary with evm tracing
-      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target x86_64-unknown-linux-gnu --features evm-tracing --verbose --locked
+      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target x86_64-unknown-linux-gnu --features on-chain-release-build,evm-tracing --verbose --locked
 
     - uses: actions/upload-artifact@v3
       with:

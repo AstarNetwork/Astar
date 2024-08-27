@@ -636,6 +636,12 @@ pub mod pallet {
             assert!(T::CycleConfiguration::eras_per_build_and_earn_subperiod() > 0);
             assert!(T::CycleConfiguration::blocks_per_era() > 0);
         }
+
+        #[cfg(feature = "try-runtime")]
+        fn try_state(_n: BlockNumberFor<T>) -> Result<(), sp_runtime::TryRuntimeError> {
+            Self::do_try_state()?;
+            Ok(())
+        }
     }
 
     /// A reason for freezing funds.
@@ -2246,6 +2252,266 @@ pub mod pallet {
                 period: staked_period,
                 amount: bonus_reward,
             });
+
+            Ok(())
+        }
+
+        /// Ensure the correctness of the state of this pallet.
+        #[cfg(any(feature = "try-runtime", test))]
+        pub fn do_try_state() -> Result<(), sp_runtime::TryRuntimeError> {
+            Self::try_state_protocol()?;
+            Self::try_state_next_dapp_id()?;
+            Self::try_state_integrated_dapps()?;
+            Self::try_state_tiers()?;
+            Self::try_state_ledger()?;
+            Self::try_state_contract_stake()?;
+            Self::try_state_era_rewards()?;
+
+            Ok(())
+        }
+
+        /// ### Invariants of active protocol storage items
+        ///
+        /// 1. [`PeriodInfo`] number in [`ActiveProtocolState`] must always be greater than the number of elements in [`PeriodEnd`].
+        /// 2. Ensures the `era` number and `next_era_start` block number are valid.
+        #[cfg(any(feature = "try-runtime", test))]
+        pub fn try_state_protocol() -> Result<(), sp_runtime::TryRuntimeError> {
+            let protocol_state = ActiveProtocolState::<T>::get();
+
+            // Invariant 1
+            if PeriodEnd::<T>::iter().count() >= protocol_state.period_info.number as usize {
+                return Err("Number of periods in `PeriodEnd` exceeds or is equal to actual `PeriodInfo` number.".into());
+            }
+
+            // Invariant 2
+            if protocol_state.era == 0 {
+                return Err("Invalid era number in ActiveProtocolState.".into());
+            }
+
+            let current_block: BlockNumber =
+                frame_system::Pallet::<T>::block_number().saturated_into();
+            if current_block > protocol_state.next_era_start {
+                return Err(
+                    "Next era start block number is in the past in ActiveProtocolState.".into(),
+                );
+            }
+
+            Ok(())
+        }
+
+        /// ### Invariants of NextDAppId
+        ///
+        /// 1. [`NextDAppId`] must always be greater than or equal to the number of dapps in [`IntegratedDApps`].
+        /// 2. [`NextDAppId`] must always be greater than or equal to the number of contracts in [`ContractStake`].
+        #[cfg(any(feature = "try-runtime", test))]
+        pub fn try_state_next_dapp_id() -> Result<(), sp_runtime::TryRuntimeError> {
+            let next_dapp_id = NextDAppId::<T>::get();
+
+            // Invariant 1
+            if next_dapp_id < IntegratedDApps::<T>::count() as u16 {
+                return Err("Number of integrated dapps is greater than NextDAppId.".into());
+            }
+
+            // Invariant 2
+            if next_dapp_id < ContractStake::<T>::iter().count() as u16 {
+                return Err("Number of contract stake infos is greater than NextDAppId.".into());
+            }
+
+            Ok(())
+        }
+
+        /// ### Invariants of IntegratedDApps
+        ///
+        /// 1. The number of entries in [`IntegratedDApps`] should not exceed the [`T::MaxNumberOfContracts`] constant.
+        #[cfg(any(feature = "try-runtime", test))]
+        pub fn try_state_integrated_dapps() -> Result<(), sp_runtime::TryRuntimeError> {
+            let integrated_dapps_count = IntegratedDApps::<T>::count();
+            let max_number_of_contracts = T::MaxNumberOfContracts::get();
+
+            if integrated_dapps_count > max_number_of_contracts {
+                return Err("Number of integrated dapps exceeds the maximum allowed.".into());
+            }
+
+            Ok(())
+        }
+
+        /// ### Invariants of StaticTierParams and TierConfig
+        ///
+        /// 1. The [`T::NumberOfTiers`] constant must always be equal to the number of `slot_distribution`, `reward_portion`, `tier_thresholds` in [`StaticTierParams`].
+        /// 2. The [`T::NumberOfTiers`] constant must always be equal to the number of `slots_per_tier`, `reward_portion`, `tier_thresholds` in [`TierConfig`].
+        #[cfg(any(feature = "try-runtime", test))]
+        pub fn try_state_tiers() -> Result<(), sp_runtime::TryRuntimeError> {
+            let nb_tiers = T::NumberOfTiers::get();
+            let tier_params = StaticTierParams::<T>::get();
+            let tier_config = TierConfig::<T>::get();
+
+            // Invariant 1
+            if nb_tiers != tier_params.slot_distribution.len() as u32 {
+                return Err(
+                    "Number of tiers is incorrect in slot_distribution in StaticTierParams.".into(),
+                );
+            }
+            if nb_tiers != tier_params.reward_portion.len() as u32 {
+                return Err(
+                    "Number of tiers is incorrect in reward_portion in StaticTierParams.".into(),
+                );
+            }
+            if nb_tiers != tier_params.tier_thresholds.len() as u32 {
+                return Err(
+                    "Number of tiers is incorrect in tier_thresholds in StaticTierParams.".into(),
+                );
+            }
+
+            // Invariant 2
+            if nb_tiers != tier_config.slots_per_tier.len() as u32 {
+                return Err(
+                    "Number of tiers is incorrect in slots_per_tier in StaticTierParams.".into(),
+                );
+            }
+            if nb_tiers != tier_config.reward_portion.len() as u32 {
+                return Err(
+                    "Number of tiers is incorrect in reward_portion in StaticTierParams.".into(),
+                );
+            }
+            if nb_tiers != tier_config.tier_thresholds.len() as u32 {
+                return Err(
+                    "Number of tiers is incorrect in tier_thresholds in StaticTierParams.".into(),
+                );
+            }
+
+            Ok(())
+        }
+
+        /// ### Invariants of Ledger
+        ///
+        /// 1. Iterating over all [`Ledger`] accounts should yield the correct locked and stakes amounts compared to current era in [`CurrentEraInfo`].
+        /// 2. The number of unlocking chunks in [`Ledger`] for any account should not exceed the [`T::MaxUnlockingChunks`] constant.
+        /// 3. Each staking entry in [`Ledger`] should be greater than or equal to the [`T::MinimumStakeAmount`] constant.
+        /// 4. Each locking entry in [`Ledger`] should be greater than or equal to the [`T::MinimumLockedAmount`] constant.
+        /// 5. The number of staking entries per account in [`Ledger`] should not exceed the [`T::MaxNumberOfStakedContracts`] constant.
+        #[cfg(any(feature = "try-runtime", test))]
+        pub fn try_state_ledger() -> Result<(), sp_runtime::TryRuntimeError> {
+            let current_period_number = ActiveProtocolState::<T>::get().period_number();
+            let current_era_info = CurrentEraInfo::<T>::get();
+            let current_era_total_stake = current_era_info.total_staked_amount_next_era();
+
+            // Yield amounts in [`Ledger`]
+            let mut ledger_total_stake = Balance::zero();
+            let mut ledger_total_locked = Balance::zero();
+            let mut ledger_total_unlocking = Balance::zero();
+
+            for (_, ledger) in Ledger::<T>::iter() {
+                let account_stake = ledger.staked_amount(current_period_number);
+
+                ledger_total_stake += account_stake;
+                ledger_total_locked += ledger.active_locked_amount();
+                ledger_total_unlocking += ledger.unlocking_amount();
+
+                // Invariant 2
+                if ledger.unlocking.len() > T::MaxUnlockingChunks::get() as usize {
+                    return Err("An account exceeds the maximum unlocking chunks.".into());
+                }
+
+                // Invariant 3
+                if account_stake > Balance::zero() && account_stake < T::MinimumStakeAmount::get() {
+                    return Err(
+                        "An account has a stake amount lower than the minimum allowed.".into(),
+                    );
+                }
+
+                // Invariant 4
+                if ledger.active_locked_amount() > Balance::zero()
+                    && ledger.active_locked_amount() < T::MinimumLockedAmount::get()
+                {
+                    return Err(
+                        "An account has a locked amount lower than the minimum allowed.".into(),
+                    );
+                }
+
+                // Invariant 5
+                if ledger.contract_stake_count > T::MaxNumberOfStakedContracts::get() {
+                    return Err("An account exceeds the maximum number of staked contracts.".into());
+                }
+            }
+
+            // Invariant 1
+            if ledger_total_stake != current_era_total_stake {
+                return Err(
+                    "Mismatch between Ledger total staked amounts and CurrentEraInfo total.".into(),
+                );
+            }
+
+            if ledger_total_locked != current_era_info.total_locked {
+                return Err(
+                    "Mismatch between Ledger total locked amounts and CurrentEraInfo total.".into(),
+                );
+            }
+
+            if ledger_total_unlocking != current_era_info.unlocking {
+                return Err(
+                    "Mismatch between Ledger total unlocked amounts and CurrentEraInfo total."
+                        .into(),
+                );
+            }
+
+            Ok(())
+        }
+
+        /// ### Invariants of ContractStake
+        ///
+        /// 1. Each staking entry in [`ContractStake`] should be greater than or equal to the [`T::MinimumStakeAmount`] constant.
+        #[cfg(any(feature = "try-runtime", test))]
+        pub fn try_state_contract_stake() -> Result<(), sp_runtime::TryRuntimeError> {
+            let current_period_number = ActiveProtocolState::<T>::get().period_number();
+
+            for (_, contract) in ContractStake::<T>::iter() {
+                let contract_stake = contract.total_staked_amount(current_period_number);
+
+                // Invariant 1
+                if contract_stake > Balance::zero() && contract_stake < T::MinimumStakeAmount::get()
+                {
+                    return Err(
+                        "A contract has a staked amount lower than the minimum allowed.".into(),
+                    );
+                }
+            }
+
+            Ok(())
+        }
+
+        /// ### Invariants of EraRewards
+        ///
+        /// 1. Era number in [`DAppTiers`] must also be stored in one of the span of [`EraRewards`].
+        /// 2. Each span lenght entry in [`EraRewards`] should be lower than or equal to the [`T::EraRewardSpanLength`] constant.
+        #[cfg(any(feature = "try-runtime", test))]
+        pub fn try_state_era_rewards() -> Result<(), sp_runtime::TryRuntimeError> {
+            let era_rewards = EraRewards::<T>::iter().collect::<Vec<_>>();
+            let dapp_tiers = DAppTiers::<T>::iter().collect::<Vec<_>>();
+
+            // Invariant 1
+            for (era, _) in &dapp_tiers {
+                let mut found = false;
+                for (_, span) in &era_rewards {
+                    if *era >= span.first_era() && *era <= span.last_era() {
+                        found = true;
+                        break;
+                    }
+                }
+
+                // Invariant 1
+                if !found {
+                    return Err("Era in DAppTiers is not found in any span in EraRewards.".into());
+                }
+            }
+
+            for (_, span) in &era_rewards {
+                // Invariant 3
+                if span.len() > T::EraRewardSpanLength::get() as usize {
+                    return Err(
+                        "Span length for a era exceeds the maximum allowed span length.".into(),
+                    );
+                }
+            }
 
             Ok(())
         }

@@ -208,10 +208,10 @@ benchmarks! {
         assert_ok!(CollatorSelection::<T>::leave_intent(RawOrigin::Signed(leaving.clone()).into()));
         let session_length = <T as session::Config>::NextSessionRotation::average_session_length();
         session::Pallet::<T>::on_initialize(session_length);
-        assert_eq!(<NonCandidates<T>>::get(&leaving), (1u32, T::Currency::minimum_balance()));
+        assert_eq!(<NonCandidates<T>>::get(&leaving), Some((1u32, T::Currency::minimum_balance())));
     }: _(RawOrigin::Signed(leaving.clone()))
     verify {
-        assert_eq!(<NonCandidates<T>>::get(&leaving), (0u32, BalanceOf::<T>::default()));
+        assert_eq!(<NonCandidates<T>>::get(&leaving), None);
     }
 
     // worse case is paying a non-existing candidate account.

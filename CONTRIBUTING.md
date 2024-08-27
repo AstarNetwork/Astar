@@ -6,7 +6,8 @@ This document will act as a starting point for those who want to be part of the 
 
 ## Types of Contribution
 
-We welcome any types of contributions that can improve the project/network in any shape or form, may it be directly to the Astar repository codebase, feedback, or making community contributions. You don't have to be a developer to contribute to the network.
+We are an open source project and will accept contributions which fix an issue, provide a new required feature, etc.
+However, at this time, we're not accepting pull requests which aim to fix typos, change comment wording, rename variables, etc.
 
 ## Using GitHub
 

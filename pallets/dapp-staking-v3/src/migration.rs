@@ -41,13 +41,14 @@ pub mod versioned_migrations {
 
     /// Migration V7 to V8 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
     /// the migration is only performed when on-chain version is 7.
-    pub type V7ToV8<T, TierThresholds> = frame_support::migrations::VersionedMigration<
-        7,
-        8,
-        v8::VersionMigrateV7ToV8<T, TierThresholds>,
-        Pallet<T>,
-        <T as frame_system::Config>::DbWeight,
-    >;
+    pub type V7ToV8<T, TierThresholds, ThresholdVariationPercentage> =
+        frame_support::migrations::VersionedMigration<
+            7,
+            8,
+            v8::VersionMigrateV7ToV8<T, TierThresholds, ThresholdVariationPercentage>,
+            Pallet<T>,
+            <T as frame_system::Config>::DbWeight,
+        >;
 }
 
 // TierThreshold as percentage of the total issuance
@@ -56,10 +57,16 @@ mod v8 {
     use crate::migration::v7::TierParameters as TierParametersV7;
     use crate::migration::v7::TiersConfiguration as TiersConfigurationV7;
 
-    pub struct VersionMigrateV7ToV8<T, TierThresholds>(PhantomData<(T, TierThresholds)>);
+    pub struct VersionMigrateV7ToV8<T, TierThresholds, ThresholdVariationPercentage>(
+        PhantomData<(T, TierThresholds, ThresholdVariationPercentage)>,
+    );
 
-    impl<T: Config, TierThresholds: Get<[TierThreshold; 4]>> UncheckedOnRuntimeUpgrade
-        for VersionMigrateV7ToV8<T, TierThresholds>
+    impl<
+            T: Config,
+            TierThresholds: Get<[TierThreshold; 4]>,
+            ThresholdVariationPercentage: Get<u32>,
+        > UncheckedOnRuntimeUpgrade
+        for VersionMigrateV7ToV8<T, TierThresholds, ThresholdVariationPercentage>
     {
         fn on_runtime_upgrade() -> Weight {
             // 1. Update static tier parameters with new thresholds from the runtime configurable param TierThresholds
@@ -148,51 +155,103 @@ mod v8 {
 
         #[cfg(feature = "try-runtime")]
         fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
+            let tier_thresholds: Result<BoundedVec<TierThreshold, T::NumberOfTiers>, _> =
+                BoundedVec::try_from(TierThresholds::get().to_vec());
+            assert!(tier_thresholds.is_ok());
+
             let old_config = v7::TierConfig::<T>::get().ok_or_else(|| {
                 TryRuntimeError::Other(
                     "dapp-staking-v3::migration::v8: No old configuration found for TierConfig",
                 )
             })?;
-            Ok(old_config.number_of_slots.encode())
+            Ok((old_config.number_of_slots, old_config.tier_thresholds).encode())
         }
 
         #[cfg(feature = "try-runtime")]
         fn post_upgrade(data: Vec<u8>) -> Result<(), TryRuntimeError> {
-            let old_number_of_slots = u16::decode(&mut &data[..]).map_err(|_| {
-                TryRuntimeError::Other("dapp-staking-v3::migration::v8: Failed to decode old value for number of slots")
+            let (old_number_of_slots, old_tier_thresholds): (u16, BoundedVec<v7::TierThreshold, T::NumberOfTiers>) =
+            Decode::decode(&mut &data[..]).map_err(|_| {
+                TryRuntimeError::Other("dapp-staking-v3::migration::v8: Failed to decode old v7 version of tier config")
             })?;
 
+            // 0. Prerequisites
             let actual_config = TierConfig::<T>::get();
-
-            // Calculated based on "slots_per_tier", which might have slight variations due to the nature of saturating permill distribution.
-            let actual_number_of_slots = actual_config.total_number_of_slots();
-            let within_tolerance = (old_number_of_slots - 1)..=old_number_of_slots;
-            assert!(
-                within_tolerance.contains(&actual_number_of_slots),
-                "dapp-staking-v3::migration::v8: New TiersConfiguration format not set correctly, number of slots has derived. Old: {}. Actual: {}.",
-                old_number_of_slots,
-                actual_number_of_slots
-            );
-
             assert!(actual_config.is_valid());
-
-            let actual_tier_params = StaticTierParams::<T>::get();
-            assert!(actual_tier_params.is_valid());
-
-            let expected_tier_thresholds: BoundedVec<TierThreshold, T::NumberOfTiers> =
-                BoundedVec::try_from(TierThresholds::get().to_vec()).unwrap();
-            let actual_tier_thresholds = actual_tier_params.tier_thresholds;
-            assert_eq!(expected_tier_thresholds, actual_tier_thresholds);
 
             ensure!(
                 Pallet::<T>::on_chain_storage_version() >= 8,
                 "dapp-staking-v3::migration::v8: Wrong storage version."
             );
+
+            // 1. Ensure the number of slots is preserved
+            let actual_number_of_slots = actual_config.total_number_of_slots();
+            let within_tolerance =
+                (old_number_of_slots.saturating_sub(1))..=old_number_of_slots.saturating_add(1);
+
+            assert!(
+                within_tolerance.contains(&actual_number_of_slots),
+                "dapp-staking-v3::migration::v8: New TiersConfiguration format not set correctly, number of slots has diverged. Old: {}. Actual: {}.",
+                old_number_of_slots,
+                actual_number_of_slots
+            );
+
+            // 2. Ensure the provided static tier params are applied
+            let actual_tier_params = StaticTierParams::<T>::get();
+            assert!(actual_tier_params.is_valid());
+
+            let expected_tier_thresholds: Result<BoundedVec<TierThreshold, T::NumberOfTiers>, _> =
+                BoundedVec::try_from(TierThresholds::get().to_vec());
+            ensure!(
+                expected_tier_thresholds.is_ok(),
+                "dapp-staking-v3::migration::v8: Failed to convert expected tier thresholds."
+            );
+            let actual_tier_thresholds = actual_tier_params.clone().tier_thresholds;
+            assert_eq!(expected_tier_thresholds.unwrap(), actual_tier_thresholds);
+
+            // 3. Double check new threshold amounts allowing
+            let variation_percentage = ThresholdVariationPercentage::get();
+            let total_issuance = T::Currency::total_issuance();
+            let average_price = T::NativePriceProvider::average_price();
+
+            let old_threshold_amounts: Result<BoundedVec<Balance, T::NumberOfTiers>, _> =
+                old_tier_thresholds
+                    .iter()
+                    .map(|t| t.threshold())
+                    .collect::<Vec<Balance>>()
+                    .try_into();
+
+            ensure!(
+                old_threshold_amounts.is_ok(),
+                "dapp-staking-v3::migration::v8: Failed to convert old v7 version tier thresholds to balance amounts."
+            );
+            let old_threshold_amounts = old_threshold_amounts.unwrap();
+            let expected_new_threshold_amounts = actual_config
+                .calculate_new(&actual_tier_params, average_price, total_issuance)
+                .tier_thresholds;
+
+            for (old_amount, actual_amount) in old_threshold_amounts
+                .iter()
+                .zip(expected_new_threshold_amounts)
+            {
+                let lower_bound = old_amount
+                    .saturating_mul(100u32.saturating_sub(variation_percentage).into())
+                    .saturating_div(100u32.into());
+                let upper_bound = old_amount
+                    .saturating_mul(100u32.saturating_add(variation_percentage).into())
+                    .saturating_div(100u32.into());
+
+                assert!(
+                    (lower_bound..=upper_bound).contains(&actual_amount),
+                    "dapp-staking-v3::migration::v8: New tier threshold amounts diverged to much from old values, consider adjusting static tier parameters. Old: {}. Actual: {}.",
+                    old_amount,
+                    actual_amount
+                );
+            }
+
             Ok(())
         }
     }
 }
-
 /// Translate DAppTiers to include rank rewards.
 mod v7 {
     use super::*;
@@ -209,6 +268,17 @@ mod v7 {
             amount: Balance,
             minimum_amount: Balance,
         },
+    }
+
+    #[cfg(feature = "try-runtime")]
+    impl TierThreshold {
+        /// Return threshold for the tier.
+        pub fn threshold(&self) -> Balance {
+            match self {
+                Self::FixedTvlAmount { amount } => *amount,
+                Self::DynamicTvlAmount { amount, .. } => *amount,
+            }
+        }
     }
 
     /// Top level description of tier slot parameters used to calculate tier configuration.
