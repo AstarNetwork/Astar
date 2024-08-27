@@ -245,9 +245,16 @@ impl pallet_dapp_staking::Config for Test {
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
 }
 
-pub struct ExtBuilder;
+pub struct ExtBuilder {}
+
+impl Default for ExtBuilder {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
 impl ExtBuilder {
-    pub fn build() -> TestExternalities {
+    pub fn build(self) -> TestExternalities {
         // Normal behavior is for reward payout to succeed
         DOES_PAYOUT_SUCCEED.with(|v| *v.borrow_mut() = true);
 
@@ -371,6 +378,13 @@ impl ExtBuilder {
         });
 
         ext
+    }
+
+    pub fn build_and_execute(self, test: impl FnOnce() -> ()) {
+        self.build().execute_with(|| {
+            test();
+            DappStaking::do_try_state().unwrap();
+        })
     }
 }
 

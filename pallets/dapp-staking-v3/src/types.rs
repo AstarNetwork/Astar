@@ -57,7 +57,7 @@
 //!
 //! ## Tier Information
 //!
-//! * `TierThreshold` - an enum describing tier entry thresholds (as TVL amounts or as percentages of the total issuance).
+//! * `TierThreshold` - an enum describing tier entry thresholds as percentages of the total issuance.
 //! * `TierParameters` - contains static information about tiers, like init thresholds, reward & slot distribution.
 //! * `TiersConfiguration` - contains dynamic information about tiers, derived from `TierParameters` and onchain data.
 //! * `DAppTier` - a compact struct describing a dApp's tier.
@@ -1358,7 +1358,7 @@ pub enum EraRewardSpanError {
 #[scale_info(skip_type_params(SL))]
 pub struct EraRewardSpan<SL: Get<u32>> {
     /// Span of EraRewardInfo entries.
-    span: BoundedVec<EraReward, SL>,
+    pub span: BoundedVec<EraReward, SL>,
     /// The first era in the span.
     #[codec(compact)]
     first_era: EraNumber,
