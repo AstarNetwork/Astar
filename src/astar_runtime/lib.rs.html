@@ -2394,6 +2394,33 @@
 <a href="#2392" id="2392">2392</a>
 <a href="#2393" id="2393">2393</a>
 <a href="#2394" id="2394">2394</a>
+<a href="#2395" id="2395">2395</a>
+<a href="#2396" id="2396">2396</a>
+<a href="#2397" id="2397">2397</a>
+<a href="#2398" id="2398">2398</a>
+<a href="#2399" id="2399">2399</a>
+<a href="#2400" id="2400">2400</a>
+<a href="#2401" id="2401">2401</a>
+<a href="#2402" id="2402">2402</a>
+<a href="#2403" id="2403">2403</a>
+<a href="#2404" id="2404">2404</a>
+<a href="#2405" id="2405">2405</a>
+<a href="#2406" id="2406">2406</a>
+<a href="#2407" id="2407">2407</a>
+<a href="#2408" id="2408">2408</a>
+<a href="#2409" id="2409">2409</a>
+<a href="#2410" id="2410">2410</a>
+<a href="#2411" id="2411">2411</a>
+<a href="#2412" id="2412">2412</a>
+<a href="#2413" id="2413">2413</a>
+<a href="#2414" id="2414">2414</a>
+<a href="#2415" id="2415">2415</a>
+<a href="#2416" id="2416">2416</a>
+<a href="#2417" id="2417">2417</a>
+<a href="#2418" id="2418">2418</a>
+<a href="#2419" id="2419">2419</a>
+<a href="#2420" id="2420">2420</a>
+<a href="#2421" id="2421">2421</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2478,7 +2505,7 @@
     evm::EvmRevertCodeHandler,
     oracle::{CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
-    Address, AssetId, BlockNumber, Hash, Header, Nonce,
+    Address, AssetId, BlockNumber, Hash, Header, Nonce, UnfreezeChainOnFailedMigration,
 };
 <span class="kw">pub use </span>astar_primitives::{governance::OracleMembershipInst, AccountId, Balance, Signature};
 
@@ -2685,7 +2712,7 @@
     <span class="kw">type </span>OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode&lt;<span class="self">Self</span>&gt;;
     <span class="kw">type </span>MaxConsumers = frame_support::traits::ConstU32&lt;<span class="number">16</span>&gt;;
     <span class="kw">type </span>SingleBlockMigrations = ();
-    <span class="kw">type </span>MultiBlockMigrator = ();
+    <span class="kw">type </span>MultiBlockMigrator = MultiBlockMigrations;
     <span class="kw">type </span>PreInherents = ();
     <span class="kw">type </span>PostInherents = ();
     <span class="kw">type </span>PostTransactions = ();
@@ -3585,6 +3612,25 @@
     }
 }
 
+<span class="macro">parameter_types! </span>{
+    <span class="kw">pub </span>MbmServiceWeight: Weight = Perbill::from_percent(<span class="number">50</span>) * RuntimeBlockWeights::get().max_block;
+}
+
+<span class="kw">impl </span>pallet_migrations::Config <span class="kw">for </span>Runtime {
+    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+    <span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
+    </span><span class="kw">type </span>Migrations = ();
+    <span class="comment">// Benchmarks need mocked migrations to guarantee that they succeed.
+    </span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+    </span><span class="kw">type </span>Migrations = pallet_migrations::mock_helpers::MockedMigrations;
+    <span class="kw">type </span>CursorMaxLen = ConstU32&lt;<span class="number">65_536</span>&gt;;
+    <span class="kw">type </span>IdentifierMaxLen = ConstU32&lt;<span class="number">256</span>&gt;;
+    <span class="kw">type </span>MigrationStatusHandler = ();
+    <span class="kw">type </span>FailedMigrationHandler = UnfreezeChainOnFailedMigration;
+    <span class="kw">type </span>MaxServiceWeight = MbmServiceWeight;
+    <span class="kw">type </span>WeightInfo = pallet_migrations::weights::SubstrateWeight&lt;Runtime&gt;;
+}
+
 <span class="macro">construct_runtime!</span>(
     <span class="kw">pub struct </span>Runtime
     {
@@ -3621,7 +3667,8 @@
         XcmpQueue: cumulus_pallet_xcmp_queue = <span class="number">50</span>,
         PolkadotXcm: pallet_xcm = <span class="number">51</span>,
         CumulusXcm: cumulus_pallet_xcm = <span class="number">52</span>,
-        XcAssetConfig: pallet_xc_asset_config = <span class="number">54</span>,
+        <span class="comment">// skip 53 - cumulus_pallet_dmp_queue previously
+        </span>XcAssetConfig: pallet_xc_asset_config = <span class="number">54</span>,
         XTokens: orml_xtokens = <span class="number">55</span>,
         MessageQueue: pallet_message_queue = <span class="number">56</span>,
 
@@ -3632,6 +3679,8 @@
         Contracts: pallet_contracts = <span class="number">70</span>,
 
         Sudo: pallet_sudo = <span class="number">99</span>,
+
+        MultiBlockMigrations: pallet_migrations = <span class="number">120</span>,
     }
 );
 
@@ -3673,7 +3722,7 @@
 <span class="macro">parameter_types! </span>{
     <span class="comment">// Threshold amount variation allowed for this migration - 10%
     </span><span class="kw">pub const </span>ThresholdVariationPercentage: u32 = <span class="number">10</span>;
-    <span class="comment">// percentages below are calulated based on total issuance at the time when dApp staking v3 was launched (8.4B)
+    <span class="comment">// percentages below are calculated based on total issuance at the time when dApp staking v3 was launched (8.4B)
     </span><span class="kw">pub const </span>TierThresholds: [TierThreshold; <span class="number">4</span>] = [
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_parts(<span class="number">35_700_000</span>), <span class="comment">// 3.57%
@@ -3699,11 +3748,12 @@
 
 <span class="doccomment">/// All migrations that will run on the next runtime upgrade.
 ///
-/// Once done, migrations should be removed from the tuple.
-</span><span class="kw">pub type </span>Migrations = (
-    <span class="comment">// permanent migration, do not remove
-    </span>pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,
-    <span class="comment">// dapp-staking dyn tier threshold migrations
+/// __NOTE:__ THE ORDER IS IMPORTANT.
+</span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
+
+<span class="doccomment">/// Unreleased migrations. Add new ones here:
+</span><span class="kw">pub type </span>Unreleased = (
+    <span class="comment">// dApp-staking dyn tier threshold migrations
     </span>pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8&lt;
         Runtime,
         TierThresholds,
@@ -3715,6 +3765,9 @@
     &gt;,
     pallet_contracts::Migration&lt;Runtime&gt;,
 );
+
+<span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
+</span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,
@@ -3793,6 +3846,7 @@
         [pallet_timestamp, Timestamp]
         [pallet_dapp_staking_v3, DappStaking]
         [pallet_inflation, Inflation]
+        [pallet_migrations, MultiBlockMigrations]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PalletXcmExtrinsicsBenchmark::&lt;Runtime&gt;]
