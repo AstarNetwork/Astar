@@ -44,6 +44,9 @@ pub mod oracle;
 /// Governance primitives.
 pub mod governance;
 
+/// Genesis generation helpers & primitives.
+pub mod genesis;
+
 /// Benchmark primitives
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarks;

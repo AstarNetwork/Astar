@@ -55,7 +55,7 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
-use sp_core::{OpaqueMetadata, H160, H256, U256};
+use sp_core::{sr25519, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
@@ -80,7 +80,7 @@ use astar_primitives::{
     },
     evm::EvmRevertCodeHandler,
     governance::OracleMembershipInst,
-    oracle::{CurrencyId, DummyCombineData, Price},
+    oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
@@ -1957,60 +1957,24 @@ impl_runtime_apis! {
         }
 
         fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-            // TODO: move helper functions under the primitives
-            // TODO2: cleanup the code in general, this is just c/p from chain-spec file to get it to work ASAP
-            // TODO3: revisit dApp staking benchmarking logic, something causes the total issuance to saturate, probably need to reduce reward amounts
+            use astar_primitives::{evm::EVM_REVERT_CODE, genesis::GenesisAccount};
 
-            use sp_core::{sr25519, Pair, Public};
-            use sp_runtime::traits::Verify;
-            use astar_primitives::oracle::CurrencyAmount;
-            use sp_runtime::traits::IdentifyAccount;
-            use scale_info::prelude::format;
+            // TODO: revisit dApp staking benchmarking logic, something causes the total issuance to saturate, probably need to reduce reward amounts
+            // UPDATE: the issue seems to be with the omni-bencher-tool. For some reason, no issuance is generated for subsequent runs.
+            // Reducing steps to `repeats` to 0 or 1 helps, but it's unclear why.
 
-            type AccountPublic = <Signature as Verify>::Signer;
+            let alice = GenesisAccount::<sr25519::Public>::from_seed("Alice");
+            let bob = GenesisAccount::<sr25519::Public>::from_seed("Bob");
 
-            /// Helper function to generate an account ID from seed
-            fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-            where
-                AccountPublic: From<<TPublic::Pair as Pair>::Public>,
-            {
-                AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
-            }
-
-            fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-                TPublic::Pair::from_string(&format!("//{}", seed), None)
-                    .expect("static values are valid; qed")
-                    .public()
-            }
-
-
-            let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
-            let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
-
-            let balances: Vec<(AccountId, Balance)> = vec![(alice.clone(), 1_000_000_000_000 * SDN), (bob.clone(), 1_000_000_000_000 * SDN)];
+            let balances: Vec<(AccountId, Balance)> = vec![(alice.account_id(), 1_000_000_000_000 * SDN), (bob.account_id(), 1_000_000_000_000 * SDN)];
 
             get_preset::<RuntimeGenesisConfig>(id, move |_| {
-                let authorities = vec![
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        get_from_seed::<AuraId>("Alice"),
-                    ),
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        get_from_seed::<AuraId>("Bob"),
-                    ),
-                ];
-
-                // This is supposed the be the simplest bytecode to revert without returning any data.
-                // We will pre-deploy it under all of our precompiles to ensure they can be called from
-                // within contracts.
-                // (PUSH1 0x00 PUSH1 0x00 REVERT)
-                let revert_bytecode = vec![0x60, 0x00, 0x60, 0x00, 0xFD];
+                let authorities = vec![&alice, &bob];
 
                 let config = RuntimeGenesisConfig {
                     system: Default::default(),
                     sudo: SudoConfig {
-                        key: Some(alice),
+                        key: Some(alice.account_id()),
                     },
                     parachain_info: ParachainInfoConfig {
                         parachain_id: 2007.into(),
@@ -2021,7 +1985,7 @@ impl_runtime_apis! {
                     session: SessionConfig {
                         keys: authorities
                             .iter()
-                            .map(|x| (x.0.clone(), x.0.clone(), SessionKeys { aura: x.1.clone() }))
+                            .map(|x| (x.account_id(), x.account_id(), SessionKeys { aura: x.pub_key().into() }))
                             .collect::<Vec<_>>(),
                     },
                     aura: AuraConfig {
@@ -2031,7 +1995,7 @@ impl_runtime_apis! {
                     collator_selection: CollatorSelectionConfig {
                         desired_candidates: 32,
                         candidacy_bond: 32_000 * SDN,
-                        invulnerables: authorities.iter().map(|x| x.0.clone()).collect::<Vec<_>>(),
+                        invulnerables: authorities.iter().map(|x| x.account_id()).collect::<Vec<_>>(),
                     },
                     evm: EVMConfig {
                         // We need _some_ code inserted at the precompile address so that
@@ -2044,7 +2008,7 @@ impl_runtime_apis! {
                                         nonce: Default::default(),
                                         balance: Default::default(),
                                         storage: Default::default(),
-                                        code: revert_bytecode.clone(),
+                                        code: EVM_REVERT_CODE.into(),
                                     },
                                 )
                             })
@@ -2105,10 +2069,7 @@ impl_runtime_apis! {
                         ..Default::default()
                     },
                     oracle_membership: OracleMembershipConfig {
-                        members: vec![
-                            get_account_id_from_seed::<sr25519::Public>("Alice"),
-                            get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        ]
+                        members: vec![alice.account_id(), bob.account_id()]
                         .try_into()
                         .expect("Assumption is that at least two members will be allowed."),
                         ..Default::default()
@@ -2122,7 +2083,6 @@ impl_runtime_apis! {
 
                 let patch = serde_json::to_value(&config).expect("Could not build genesis config.");
 
-                log::info!("Generated genesis state: {}", patch);
                 Some(serde_json::to_string(&patch).expect("serialization to json is expected to work. qed.").into_bytes())
                 }
             )
