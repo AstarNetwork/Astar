@@ -1981,7 +1981,7 @@ impl_runtime_apis! {
             let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
             let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
 
-            let balances: Vec<(AccountId, Balance)> = vec![(alice.clone(), 1_000_000 * SDN), (bob.clone(), 1_000_000 * SDN)];
+            let balances: Vec<(AccountId, Balance)> = vec![(alice.clone(), 1_000_000_000_000 * SDN), (bob.clone(), 1_000_000_000_000 * SDN)];
 
             get_preset::<RuntimeGenesisConfig>(id, move |_| {
                 let authorities = vec![
@@ -2086,7 +2086,16 @@ impl_runtime_apis! {
                         ..Default::default()
                     },
                     inflation: InflationConfig {
-                        params: InflationParameters::default(),
+                        params: InflationParameters {
+                            max_inflation_rate: Perquintill::from_percent(7),
+                            treasury_part: Perquintill::from_percent(5),
+                            collators_part: Perquintill::from_percent(3),
+                            dapps_part: Perquintill::from_percent(20),
+                            base_stakers_part: Perquintill::from_percent(25),
+                            adjustable_stakers_part: Perquintill::from_percent(35),
+                            bonus_part: Perquintill::from_percent(12),
+                            ideal_staking_rate: Perquintill::from_percent(50),
+                        },
                         ..Default::default()
                     },
                     oracle_membership: OracleMembershipConfig {
