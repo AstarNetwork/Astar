@@ -16,8 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! Chain specifications.
-
 use local_runtime::wasm_binary_unwrap;
 use sc_service::ChainType;
 
