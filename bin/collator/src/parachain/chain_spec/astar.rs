@@ -19,10 +19,9 @@
 //! Astar chain specifications.
 
 use super::Extensions;
+use astar_primitives::parachain::ASTAR_ID;
 use astar_runtime::wasm_binary_unwrap;
 use sc_service::ChainType;
-
-const PARA_ID: u32 = 2006;
 
 /// Specialized `ChainSpec` for Astar Network.
 pub type AstarChainSpec =
@@ -39,13 +38,13 @@ pub fn get_chain_spec() -> AstarChainSpec {
         Extensions {
             bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),
-            para_id: PARA_ID,
+            para_id: ASTAR_ID,
         },
     )
     .with_name("Astar Testnet")
     .with_id("astar")
     .with_chain_type(ChainType::Development)
     .with_properties(properties)
-    .with_genesis_config(astar_runtime::genesis_config::default_config(PARA_ID))
+    .with_genesis_config(astar_runtime::genesis_config::default_config(ASTAR_ID))
     .build()
 }

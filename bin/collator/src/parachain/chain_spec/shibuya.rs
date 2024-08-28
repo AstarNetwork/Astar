@@ -18,15 +18,13 @@
 
 //! Shibuya chain specifications.
 
+use super::Extensions;
+use astar_primitives::parachain::SHIBUYA_ID;
 use sc_service::ChainType;
 use shibuya_runtime::{wasm_binary_unwrap, RuntimeGenesisConfig};
 
 // TODO to use?
 // use sc_chain_spec::{ChainSpec, ChainSpecExtension, ChainSpecGroup, ChainType};
-
-use super::Extensions;
-
-const PARA_ID: u32 = 2000;
 
 /// Specialized `ChainSpec` for Shibuya testnet.
 pub type ShibuyaChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig, Extensions>;
@@ -42,13 +40,13 @@ pub fn get_chain_spec() -> ShibuyaChainSpec {
         Extensions {
             bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),
-            para_id: PARA_ID,
+            para_id: SHIBUYA_ID,
         },
     )
     .with_name("Shibuya Testnet")
     .with_id("shibuya")
     .with_chain_type(ChainType::Development)
     .with_properties(properties)
-    .with_genesis_config(shibuya_runtime::genesis_config::default_config(PARA_ID))
+    .with_genesis_config(shibuya_runtime::genesis_config::default_config(SHIBUYA_ID))
     .build()
 }

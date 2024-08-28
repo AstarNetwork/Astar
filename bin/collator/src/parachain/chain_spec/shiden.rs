@@ -19,10 +19,9 @@
 //! Shiden chain specifications.
 
 use super::Extensions;
+use astar_primitives::parachain::SHIDEN_ID;
 use sc_service::ChainType;
 use shiden_runtime::wasm_binary_unwrap;
-
-const PARA_ID: u32 = 2007;
 
 /// Specialized `ChainSpec` for Shiden Network.
 pub type ShidenChainSpec =
@@ -39,13 +38,13 @@ pub fn get_chain_spec() -> ShidenChainSpec {
         Extensions {
             bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),
-            para_id: PARA_ID,
+            para_id: SHIDEN_ID,
         },
     )
     .with_name("Shiden Testnet")
     .with_id("shiden")
     .with_chain_type(ChainType::Development)
     .with_properties(properties)
-    .with_genesis_config(shiden_runtime::genesis_config::default_config(PARA_ID))
+    .with_genesis_config(shiden_runtime::genesis_config::default_config(SHIDEN_ID))
     .build()
 }
