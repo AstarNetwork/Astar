@@ -714,6 +714,9 @@ impl pallet_vesting::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type BlockNumberToBalance = ConvertInto;
+    #[cfg(feature = "runtime-benchmarks")]
+    type MinVestedTransfer = ConstU128<1>;
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type MinVestedTransfer = MinVestedTransfer;
     type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
     type UnvestedFundsAllowedWithdrawReasons = UnvestedFundsAllowedWithdrawReasons;
@@ -1521,7 +1524,8 @@ parameter_types! {
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations = ();
+    type Migrations =
+        (vesting_mbm::LazyMigration<Runtime, vesting_mbm::weights::SubstrateWeight<Runtime>>,);
     // Benchmarks need mocked migrations to guarantee that they succeed.
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -1532,6 +1536,9 @@ impl pallet_migrations::Config for Runtime {
     type MaxServiceWeight = MbmServiceWeight;
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
 }
+
+#[cfg(feature = "runtime-benchmarks")]
+impl vesting_mbm::Config for Runtime {}
 
 construct_runtime!(
     pub struct Runtime
@@ -1599,6 +1606,9 @@ construct_runtime!(
         CollectiveProxy: pallet_collective_proxy = 109,
 
         MultiBlockMigrations: pallet_migrations = 120,
+
+        #[cfg(feature = "runtime-benchmarks")]
+        VestingMBM: vesting_mbm = 250,
     }
 );
 
@@ -1776,6 +1786,7 @@ mod benches {
         [pallet_price_aggregator, PriceAggregator]
         [pallet_collective_proxy, CollectiveProxy]
         [orml_oracle, Oracle]
+        [vesting_mbm, VestingMBM]
     );
 }
 

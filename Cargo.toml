@@ -292,6 +292,7 @@ astar-xcm-benchmarks = { path = "./pallets/astar-xcm-benchmarks", default-featur
 pallet-static-price-provider = { path = "./pallets/static-price-provider", default-features = false }
 pallet-price-aggregator = { path = "./pallets/price-aggregator", default-features = false }
 pallet-collective-proxy = { path = "./pallets/collective-proxy", default-features = false }
+vesting-mbm = { path = "./pallets/vesting-mbm", default-features = false }
 
 dapp-staking-v3-runtime-api = { path = "./pallets/dapp-staking-v3/rpc/runtime-api", default-features = false }
 
