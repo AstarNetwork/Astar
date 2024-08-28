@@ -26,8 +26,7 @@ use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
-    genesis_builder_helper::build_state,
-    parameter_types,
+    genesis_builder_helper, parameter_types,
     traits::{
         fungible::{Balanced, Credit},
         AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, Contains, FindAuthor, Get, Imbalance,
@@ -1954,19 +1953,17 @@ impl_runtime_apis! {
     impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
 
         fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
-            build_state::<RuntimeGenesisConfig>(config)
+            genesis_builder_helper::build_state::<RuntimeGenesisConfig>(config)
         }
 
-        fn get_preset(_id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-            Some(
-                serde_json::to_string(&genesis_config::default_config(2007))
-                    .expect("serialization to json is expected to work. qed.")
-                    .into_bytes()
-            )
+        fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
+            genesis_builder_helper::get_preset::<RuntimeGenesisConfig>(id, &genesis_config::get_preset)
         }
 
         fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-            vec![]
+            vec![
+                sp_genesis_builder::PresetId::from("development"),
+            ]
         }
     }
 

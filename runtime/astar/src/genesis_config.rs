@@ -19,6 +19,19 @@
 use crate::*;
 use astar_primitives::{evm::EVM_REVERT_CODE, genesis::GenesisAccount};
 
+/// Provides the JSON representation of predefined genesis config for given `id`.
+pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
+    let genesis = match id.try_into() {
+        Ok("development") => default_config(2006),
+        _ => return None,
+    };
+    Some(
+        serde_json::to_string(&genesis)
+            .expect("serialization to json is expected to work. qed.")
+            .into_bytes(),
+    )
+}
+
 /// Get the default genesis config for the Astar runtime.
 pub fn default_config(para_id: u32) -> serde_json::Value {
     let alice = GenesisAccount::<sr25519::Public>::from_seed("Alice");
