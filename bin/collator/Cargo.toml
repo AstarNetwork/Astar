@@ -39,6 +39,7 @@ sp-offchain = { workspace = true, features = ["std"] }
 sp-runtime = { workspace = true, features = ["std"] }
 sp-session = { workspace = true, features = ["std"] }
 sp-transaction-pool = { workspace = true, features = ["std"] }
+sp-genesis-builder = { workspace = true, features = ["std"] }
 
 sp-blockchain = { workspace = true }
 sp-consensus = { workspace = true }
