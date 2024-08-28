@@ -33,7 +33,7 @@ sp-tracing = { workspace = true }
 # Custom Astar inclusions
 astar-primitives = { workspace = true }
 astar-test-utils = { workspace = true }
-pallet-dapp-staking-v3 = { workspace = true }
+pallet-dapp-staking = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 
 # polkadot deps
@@ -81,7 +81,7 @@ std = [
 	"orml-xtokens/std",
 	"orml-traits/std",
 	"orml-xcm-support/std",
-	"pallet-dapp-staking-v3/std",
+	"pallet-dapp-staking/std",
 ]
 runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
@@ -97,5 +97,5 @@ runtime-benchmarks = [
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
-	"pallet-dapp-staking-v3/runtime-benchmarks",
+	"pallet-dapp-staking/runtime-benchmarks",
 ]

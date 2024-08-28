@@ -220,7 +220,7 @@ fn remote_dapps_staking_staker_claim() {
         ));
 
         // advance enough blocks so we at least get to era 5 - this gives us era 2, 3 and 4 for claiming
-        while pallet_dapp_staking_v3::ActiveProtocolState::<parachain::Runtime>::get().era < 5 {
+        while pallet_dapp_staking::ActiveProtocolState::<parachain::Runtime>::get().era < 5 {
             advance_parachain_block_to(parachain::System::block_number() + 1);
         }
         // Ensure it's not first block so event storage is clear
@@ -235,7 +235,7 @@ fn remote_dapps_staking_staker_claim() {
         ));
     });
 
-    let claim_staker_call = parachain::RuntimeCall::DappStaking(pallet_dapp_staking_v3::Call::<
+    let claim_staker_call = parachain::RuntimeCall::DappStaking(pallet_dapp_staking::Call::<
         parachain::Runtime,
     >::claim_staker_rewards {});
 
@@ -276,16 +276,16 @@ fn remote_dapps_staking_staker_claim() {
             .into_iter()
             .map(|r| r.event)
             .filter_map(|e| {
-                <parachain::Runtime as pallet_dapp_staking_v3::Config>::RuntimeEvent::from(e)
+                <parachain::Runtime as pallet_dapp_staking::Config>::RuntimeEvent::from(e)
                     .try_into()
                     .ok()
             })
-            .collect::<Vec<pallet_dapp_staking_v3::Event<parachain::Runtime>>>();
+            .collect::<Vec<pallet_dapp_staking::Event<parachain::Runtime>>>();
 
         assert_eq!(dapp_staking_events.len(), 1);
         assert_matches::assert_matches!(
             dapp_staking_events[0].clone(),
-                pallet_dapp_staking_v3::Event::Reward { account, .. }
+                pallet_dapp_staking::Event::Reward { account, .. }
             if account == ALICE
         );
 
@@ -336,9 +336,7 @@ fn remote_dapps_staking_staker_claim() {
                 .iter()
                 .filter(|r| matches!(
                     r.event,
-                    parachain::RuntimeEvent::DappStaking(
-                        pallet_dapp_staking_v3::Event::Reward { .. }
-                    )
+                    parachain::RuntimeEvent::DappStaking(pallet_dapp_staking::Event::Reward { .. })
                 ))
                 .count(),
             2

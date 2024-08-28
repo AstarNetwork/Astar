@@ -126,7 +126,7 @@ fn community_council_can_execute_dapp_staking_calls() {
         Balances::make_free_balance_be(&proxy_account, lock_amount);
 
         // Prepare the wrapped dApp staking lock call
-        let lock_call = RuntimeCall::DappStaking(pallet_dapp_staking_v3::Call::lock {
+        let lock_call = RuntimeCall::DappStaking(pallet_dapp_staking::Call::lock {
             amount: lock_amount,
         });
         let collective_proxy_call =
@@ -162,7 +162,7 @@ fn community_council_can_execute_dapp_staking_calls() {
 
         // Check that the lock was successful
         assert_eq!(
-            pallet_dapp_staking_v3::Ledger::<Runtime>::get(&proxy_account).locked,
+            pallet_dapp_staking::Ledger::<Runtime>::get(&proxy_account).locked,
             lock_amount
         );
     })

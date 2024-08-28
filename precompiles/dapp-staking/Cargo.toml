@@ -1,5 +1,5 @@
 [package]
-name = "pallet-evm-precompile-dapp-staking-v3"
+name = "pallet-evm-precompile-dapp-staking"
 version = "0.1.0"
 license = "GPL-3.0-or-later"
 description = "dApp Staking EVM precompiles"
@@ -23,7 +23,7 @@ sp-std = { workspace = true }
 
 # Astar
 astar-primitives = { workspace = true }
-pallet-dapp-staking-v3 = { workspace = true }
+pallet-dapp-staking = { workspace = true }
 precompile-utils = { workspace = true, default-features = false }
 
 # Frontier
@@ -53,7 +53,7 @@ std = [
 	"fp-evm/std",
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-dapp-staking-v3/std",
+	"pallet-dapp-staking/std",
 	"pallet-evm/std",
 	"precompile-utils/std",
 	"pallet-balances/std",
@@ -62,7 +62,7 @@ std = [
 	"num_enum/std",
 ]
 runtime-benchmarks = [
-	"pallet-dapp-staking-v3/runtime-benchmarks",
+	"pallet-dapp-staking/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",

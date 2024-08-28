@@ -161,7 +161,7 @@ mod v8 {
 
             let old_config = v7::TierConfig::<T>::get().ok_or_else(|| {
                 TryRuntimeError::Other(
-                    "dapp-staking-v3::migration::v8: No old configuration found for TierConfig",
+                    "dapp-staking::migration::v8: No old configuration found for TierConfig",
                 )
             })?;
             Ok((old_config.number_of_slots, old_config.tier_thresholds).encode())
@@ -169,9 +169,13 @@ mod v8 {
 
         #[cfg(feature = "try-runtime")]
         fn post_upgrade(data: Vec<u8>) -> Result<(), TryRuntimeError> {
-            let (old_number_of_slots, old_tier_thresholds): (u16, BoundedVec<v7::TierThreshold, T::NumberOfTiers>) =
-            Decode::decode(&mut &data[..]).map_err(|_| {
-                TryRuntimeError::Other("dapp-staking-v3::migration::v8: Failed to decode old v7 version of tier config")
+            let (old_number_of_slots, old_tier_thresholds): (
+                u16,
+                BoundedVec<v7::TierThreshold, T::NumberOfTiers>,
+            ) = Decode::decode(&mut &data[..]).map_err(|_| {
+                TryRuntimeError::Other(
+                    "dapp-staking::migration::v8: Failed to decode old v7 version of tier config",
+                )
             })?;
 
             // 0. Prerequisites
@@ -180,7 +184,7 @@ mod v8 {
 
             ensure!(
                 Pallet::<T>::on_chain_storage_version() >= 8,
-                "dapp-staking-v3::migration::v8: Wrong storage version."
+                "dapp-staking::migration::v8: Wrong storage version."
             );
 
             // 1. Ensure the number of slots is preserved
@@ -190,7 +194,7 @@ mod v8 {
 
             assert!(
                 within_tolerance.contains(&actual_number_of_slots),
-                "dapp-staking-v3::migration::v8: New TiersConfiguration format not set correctly, number of slots has diverged. Old: {}. Actual: {}.",
+                "dapp-staking::migration::v8: New TiersConfiguration format not set correctly, number of slots has diverged. Old: {}. Actual: {}.",
                 old_number_of_slots,
                 actual_number_of_slots
             );
@@ -203,7 +207,7 @@ mod v8 {
                 BoundedVec::try_from(TierThresholds::get().to_vec());
             ensure!(
                 expected_tier_thresholds.is_ok(),
-                "dapp-staking-v3::migration::v8: Failed to convert expected tier thresholds."
+                "dapp-staking::migration::v8: Failed to convert expected tier thresholds."
             );
             let actual_tier_thresholds = actual_tier_params.clone().tier_thresholds;
             assert_eq!(expected_tier_thresholds.unwrap(), actual_tier_thresholds);
@@ -222,7 +226,7 @@ mod v8 {
 
             ensure!(
                 old_threshold_amounts.is_ok(),
-                "dapp-staking-v3::migration::v8: Failed to convert old v7 version tier thresholds to balance amounts."
+                "dapp-staking::migration::v8: Failed to convert old v7 version tier thresholds to balance amounts."
             );
             let old_threshold_amounts = old_threshold_amounts.unwrap();
             let expected_new_threshold_amounts = actual_config
@@ -242,7 +246,7 @@ mod v8 {
 
                 assert!(
                     (lower_bound..=upper_bound).contains(&actual_amount),
-                    "dapp-staking-v3::migration::v8: New tier threshold amounts diverged to much from old values, consider adjusting static tier parameters. Old: {}. Actual: {}.",
+                    "dapp-staking::migration::v8: New tier threshold amounts diverged to much from old values, consider adjusting static tier parameters. Old: {}. Actual: {}.",
                     old_amount,
                     actual_amount
                 );
@@ -379,7 +383,7 @@ mod v7 {
         fn post_upgrade(_data: Vec<u8>) -> Result<(), TryRuntimeError> {
             ensure!(
                 Pallet::<T>::on_chain_storage_version() >= 7,
-                "dapp-staking-v3::migration::v7: wrong storage version"
+                "dapp-staking::migration::v7: wrong storage version"
             );
             Ok(())
         }

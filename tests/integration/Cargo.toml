@@ -47,7 +47,7 @@ xcm-fee-payment-runtime-api = { workspace = true }
 assets-chain-extension-types = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-collective-proxy = { workspace = true }
-pallet-dapp-staking-v3 = { workspace = true }
+pallet-dapp-staking = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
@@ -98,7 +98,7 @@ std = [
 	"cumulus-pallet-parachain-system/std",
 	"pallet-democracy/std",
 	"pallet-timestamp/std",
-	"pallet-dapp-staking-v3/std",
+	"pallet-dapp-staking/std",
 	"pallet-ethereum?/std",
 	"pallet-ethereum-checked/std",
 	"pallet-evm/std",

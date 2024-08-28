@@ -29,7 +29,7 @@ use astar_primitives::{
     dapp_staking::{CycleConfiguration, EraNumber},
     BlockNumber,
 };
-use pallet_dapp_staking_v3::ActiveProtocolState;
+use pallet_dapp_staking::ActiveProtocolState;
 
 #[test]
 fn protocol_state_is_ok() {
@@ -65,9 +65,9 @@ fn unlocking_period_is_ok() {
         initialize();
 
         let unlocking_period_in_eras: EraNumber =
-            <Test as pallet_dapp_staking_v3::Config>::UnlockingPeriod::get();
+            <Test as pallet_dapp_staking::Config>::UnlockingPeriod::get();
         let era_length: BlockNumber =
-            <Test as pallet_dapp_staking_v3::Config>::CycleConfiguration::blocks_per_era();
+            <Test as pallet_dapp_staking::Config>::CycleConfiguration::blocks_per_era();
 
         let expected_outcome = era_length * unlocking_period_in_eras;
 
@@ -99,7 +99,7 @@ fn lock_is_ok() {
         assert_eq!(events.len(), 1);
         assert_matches!(
             events[0].clone(),
-            pallet_dapp_staking_v3::Event::Locked {
+            pallet_dapp_staking::Event::Locked {
                 amount,
                 ..
             } if amount == amount
@@ -136,7 +136,7 @@ fn unlock_is_ok() {
         assert_eq!(events.len(), 1);
         assert_matches!(
             events[0].clone(),
-            pallet_dapp_staking_v3::Event::Unlocking {
+            pallet_dapp_staking::Event::Unlocking {
                 amount,
                 ..
             } if amount == unlock_amount
@@ -180,7 +180,7 @@ fn claim_unlocked_is_ok() {
         assert_eq!(events.len(), 1);
         assert_matches!(
             events[0].clone(),
-            pallet_dapp_staking_v3::Event::ClaimedUnlocked {
+            pallet_dapp_staking::Event::ClaimedUnlocked {
                 amount,
                 ..
             } if amount == amount
@@ -197,7 +197,7 @@ fn stake_is_ok() {
         let staker_h160 = ALICE;
         let smart_contract_h160 = H160::repeat_byte(0xFA);
         let smart_contract =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+            <Test as pallet_dapp_staking::Config>::SmartContract::evm(smart_contract_h160);
         assert_ok!(DappStaking::register(
             RawOrigin::Root.into(),
             AddressMapper::into_account_id(staker_h160),
@@ -234,7 +234,7 @@ fn stake_is_ok() {
         assert_eq!(events.len(), 1);
         assert_matches!(
             events[0].clone(),
-            pallet_dapp_staking_v3::Event::Stake {
+            pallet_dapp_staking::Event::Stake {
                 smart_contract,
                 amount,
                 ..
@@ -251,7 +251,7 @@ fn unstake_is_ok() {
         // Register a dApp for staking
         let staker_h160 = ALICE;
         let smart_contract_address = [0xAF; 32];
-        let smart_contract = <Test as pallet_dapp_staking_v3::Config>::SmartContract::wasm(
+        let smart_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
             smart_contract_address.into(),
         );
         assert_ok!(DappStaking::register(
@@ -295,7 +295,7 @@ fn unstake_is_ok() {
         assert_eq!(events.len(), 1);
         assert_matches!(
             events[0].clone(),
-            pallet_dapp_staking_v3::Event::Unstake {
+            pallet_dapp_staking::Event::Unstake {
                 smart_contract,
                 amount,
                 ..
@@ -312,7 +312,7 @@ fn claim_staker_rewards_is_ok() {
         // Register a dApp and stake on it
         let staker_h160 = ALICE;
         let smart_contract_address = [0xAF; 32];
-        let smart_contract = <Test as pallet_dapp_staking_v3::Config>::SmartContract::wasm(
+        let smart_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
             smart_contract_address.into(),
         );
         let amount = 1234;
@@ -340,7 +340,7 @@ fn claim_staker_rewards_is_ok() {
         for era in 2..target_era {
             assert_matches!(
                 events[era as usize - 2].clone(),
-                pallet_dapp_staking_v3::Event::Reward { era, .. } if era == era
+                pallet_dapp_staking::Event::Reward { era, .. } if era == era
             );
         }
     });
@@ -354,7 +354,7 @@ fn claim_bonus_reward_is_ok() {
         // Register a dApp and stake on it, loyally
         let staker_h160 = ALICE;
         let smart_contract_address = [0xAF; 32];
-        let smart_contract = <Test as pallet_dapp_staking_v3::Config>::SmartContract::wasm(
+        let smart_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
             smart_contract_address.into(),
         );
         let amount = 1234;
@@ -385,7 +385,7 @@ fn claim_bonus_reward_is_ok() {
         assert_eq!(events.len(), 1);
         assert_matches!(
             events[0].clone(),
-            pallet_dapp_staking_v3::Event::BonusReward { smart_contract, .. } if smart_contract == smart_contract
+            pallet_dapp_staking::Event::BonusReward { smart_contract, .. } if smart_contract == smart_contract
         );
     });
 }
@@ -398,7 +398,7 @@ fn claim_dapp_reward_is_ok() {
         // Register a dApp and stake on it
         let staker_h160 = ALICE;
         let smart_contract_address = [0xAF; 32];
-        let smart_contract = <Test as pallet_dapp_staking_v3::Config>::SmartContract::wasm(
+        let smart_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
             smart_contract_address.into(),
         );
         let amount = 1234;
@@ -431,7 +431,7 @@ fn claim_dapp_reward_is_ok() {
         assert_eq!(events.len(), 1);
         assert_matches!(
             events[0].clone(),
-            pallet_dapp_staking_v3::Event::DAppReward { era, smart_contract, .. } if era == claim_era && smart_contract == smart_contract
+            pallet_dapp_staking::Event::DAppReward { era, smart_contract, .. } if era == claim_era && smart_contract == smart_contract
         );
     });
 }
@@ -444,7 +444,7 @@ fn unstake_from_unregistered_is_ok() {
         // Register a dApp and stake on it
         let staker_h160 = ALICE;
         let smart_contract_address = [0xAF; 32];
-        let smart_contract = <Test as pallet_dapp_staking_v3::Config>::SmartContract::wasm(
+        let smart_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
             smart_contract_address.into(),
         );
         let amount = 1234;
@@ -478,7 +478,7 @@ fn unstake_from_unregistered_is_ok() {
         assert_eq!(events.len(), 1);
         assert_matches!(
             events[0].clone(),
-            pallet_dapp_staking_v3::Event::UnstakeFromUnregistered { smart_contract, amount, .. } if smart_contract == smart_contract && amount == amount
+            pallet_dapp_staking::Event::UnstakeFromUnregistered { smart_contract, amount, .. } if smart_contract == smart_contract && amount == amount
         );
     });
 }
@@ -499,7 +499,7 @@ fn cleanup_expired_entries_is_ok() {
         // Register a dApp and stake on it
         let staker_h160 = ALICE;
         let smart_contract_address = [0xAF; 32];
-        let smart_contract = <Test as pallet_dapp_staking_v3::Config>::SmartContract::wasm(
+        let smart_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
             smart_contract_address.into(),
         );
         let amount = 1234;
@@ -523,7 +523,7 @@ fn cleanup_expired_entries_is_ok() {
         assert_eq!(events.len(), 1);
         assert_matches!(
             events[0].clone(),
-            pallet_dapp_staking_v3::Event::ExpiredEntriesRemoved { count, .. } if count == 1
+            pallet_dapp_staking::Event::ExpiredEntriesRemoved { count, .. } if count == 1
         );
     });
 }

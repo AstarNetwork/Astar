@@ -18,7 +18,7 @@
 
 pub mod orml_oracle;
 pub mod pallet_assets;
-pub mod pallet_dapp_staking_v3;
+pub mod pallet_dapp_staking;
 pub mod pallet_inflation;
 pub mod pallet_xcm;
 pub mod xcm;

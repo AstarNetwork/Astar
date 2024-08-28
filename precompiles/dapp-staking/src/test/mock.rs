@@ -48,7 +48,7 @@ use astar_primitives::{
     oracle::PriceProvider,
     AccountId, Balance, BlockNumber,
 };
-use pallet_dapp_staking_v3::TierThreshold;
+use pallet_dapp_staking::TierThreshold;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -240,7 +240,7 @@ impl CycleConfiguration for DummyCycleConfiguration {
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
-impl pallet_dapp_staking_v3::BenchmarkHelper<MockSmartContract, AccountId>
+impl pallet_dapp_staking::BenchmarkHelper<MockSmartContract, AccountId>
     for BenchmarkHelper<MockSmartContract, AccountId>
 {
     fn get_smart_contract(id: u32) -> MockSmartContract {
@@ -254,7 +254,7 @@ parameter_types! {
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
 
-impl pallet_dapp_staking_v3::Config for Test {
+impl pallet_dapp_staking::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
@@ -279,7 +279,7 @@ impl pallet_dapp_staking_v3::Config for Test {
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
-    type WeightInfo = pallet_dapp_staking_v3::weights::SubstrateWeight<Test>;
+    type WeightInfo = pallet_dapp_staking::weights::SubstrateWeight<Test>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
 }
@@ -290,7 +290,7 @@ construct_runtime!(
         Balances: pallet_balances,
         Evm: pallet_evm,
         Timestamp: pallet_timestamp,
-        DappStaking: pallet_dapp_staking_v3,
+        DappStaking: pallet_dapp_staking,
     }
 );
 
@@ -301,8 +301,8 @@ impl ExternalityBuilder {
             .build_storage()
             .unwrap();
 
-        pallet_dapp_staking_v3::GenesisConfig::<Test>::assimilate_storage(
-            &pallet_dapp_staking_v3::GenesisConfig::<Test> {
+        pallet_dapp_staking::GenesisConfig::<Test>::assimilate_storage(
+            &pallet_dapp_staking::GenesisConfig::<Test> {
                 reward_portion: vec![
                     Permill::from_percent(40),
                     Permill::from_percent(30),
@@ -343,7 +343,7 @@ impl ExternalityBuilder {
 
             let alice_native = AddressMapper::into_account_id(ALICE);
             assert_ok!(
-                <Test as pallet_dapp_staking_v3::Config>::Currency::write_balance(
+                <Test as pallet_dapp_staking::Config>::Currency::write_balance(
                     &alice_native,
                     1000_000_000_000_000_000_000 as Balance,
                 )
@@ -364,7 +364,7 @@ pub const ALICE: H160 = H160::repeat_byte(0xAA);
 /// Used to register a smart contract, and stake some funds on it.
 pub fn register_and_stake(
     account: H160,
-    smart_contract: <Test as pallet_dapp_staking_v3::Config>::SmartContract,
+    smart_contract: <Test as pallet_dapp_staking::Config>::SmartContract,
     amount: Balance,
 ) {
     let alice_native = AddressMapper::into_account_id(account);
@@ -466,12 +466,12 @@ pub(crate) fn advance_to_next_period() {
 }
 
 // Return all dApp staking events from the event buffer.
-pub fn dapp_staking_events() -> Vec<pallet_dapp_staking_v3::Event<Test>> {
+pub fn dapp_staking_events() -> Vec<pallet_dapp_staking::Event<Test>> {
     System::events()
         .into_iter()
         .map(|r| r.event)
         .filter_map(|e| {
-            <Test as pallet_dapp_staking_v3::Config>::RuntimeEvent::from(e)
+            <Test as pallet_dapp_staking::Config>::RuntimeEvent::from(e)
                 .try_into()
                 .ok()
         })
