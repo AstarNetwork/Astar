@@ -70,7 +70,6 @@ pub fn default_config() -> serde_json::Value {
         vesting: VestingConfig { vesting: vec![] },
         aura: AuraConfig {
             authorities: vec![get_from_seed::<AuraId>("Alice")],
-            ..Default::default()
         },
         grandpa: GrandpaConfig {
             authorities: vec![(get_from_seed::<GrandpaId>("Alice"), 1)],
