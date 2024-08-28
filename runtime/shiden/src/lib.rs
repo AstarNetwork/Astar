@@ -26,7 +26,7 @@ use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
-    genesis_builder_helper::{build_state, get_preset},
+    genesis_builder_helper::build_state,
     parameter_types,
     traits::{
         fungible::{Balanced, Credit},

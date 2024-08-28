@@ -19,6 +19,7 @@
 use crate::*;
 use astar_primitives::{evm::EVM_REVERT_CODE, genesis::GenesisAccount};
 
+/// Get the default genesis config for the Shibuya runtime.
 pub fn default_config(para_id: u32) -> serde_json::Value {
     let alice = GenesisAccount::<sr25519::Public>::from_seed("Alice");
     let bob = GenesisAccount::<sr25519::Public>::from_seed("Bob");
@@ -144,19 +145,7 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
             safeguard: Some(false),
             ..Default::default()
         },
-        inflation: InflationConfig {
-            params: InflationParameters {
-                max_inflation_rate: Perquintill::from_percent(7),
-                treasury_part: Perquintill::from_percent(5),
-                collators_part: Perquintill::from_percent(3),
-                dapps_part: Perquintill::from_percent(20),
-                base_stakers_part: Perquintill::from_percent(25),
-                adjustable_stakers_part: Perquintill::from_percent(35),
-                bonus_part: Perquintill::from_percent(12),
-                ideal_staking_rate: Perquintill::from_percent(50),
-            },
-            ..Default::default()
-        },
+        inflation: Default::default(),
         oracle_membership: OracleMembershipConfig {
             members: vec![alice.account_id(), bob.account_id()]
                 .try_into()
