@@ -20,8 +20,9 @@
 
 use crate::{Config, Pallet};
 use frame_benchmarking::v2::*;
-use frame_support::traits::Currency;
-use frame_support::{assert_ok, migrations::SteppedMigration, weights::WeightMeter};
+use frame_support::{
+    assert_ok, migrations::SteppedMigration, traits::Currency, weights::WeightMeter,
+};
 use pallet_vesting::VestingInfo;
 use sp_runtime::traits::StaticLookup;
 use sp_std::vec;
@@ -49,7 +50,6 @@ mod benches {
 
         #[block]
         {
-            // start from some cursor to avoid counting prefix read
             crate::LazyMigration::<T, crate::weights::SubstrateWeight<T>>::step(None, &mut meter)
                 .unwrap();
         }
