@@ -22,11 +22,11 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
 //! DATE: 2024-08-28, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `Ermals-MacBook-Pro-M1.local`, CPU: `<UNKNOWN>`
+//! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
 //! EXECUTION: , WASM-EXECUTION: Compiled, CHAIN: Some("shibuya-dev"), DB CACHE: 1024
 
 // Executed Command:
-// target/release/astar-collator
+// ./target/release/astar-collator
 // benchmark
 // pallet
 // --chain=shibuya-dev
@@ -36,7 +36,7 @@
 // --extrinsic=*
 // --wasm-execution=compiled
 // --heap-pages=4096
-// --output=./pallets/vesting-mbm/src/weights.rs
+// --output=./benchmark-results/shibuya-dev/mbm_weights.rs
 // --template=./scripts/templates/weight-template.hbs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
@@ -61,10 +61,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `316 + x * (36 ±0)`
 		//  Estimated: `8054`
-		// Minimum execution time: 11_000_000 picoseconds.
-		Weight::from_parts(12_088_198, 8054)
-			// Standard Error: 2_315
-			.saturating_add(Weight::from_parts(75_271, 0).saturating_mul(x.into()))
+		// Minimum execution time: 13_079_000 picoseconds.
+		Weight::from_parts(13_513_131, 8054)
+			// Standard Error: 723
+			.saturating_add(Weight::from_parts(102_389, 0).saturating_mul(x.into()))
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -79,10 +79,10 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `316 + x * (36 ±0)`
 		//  Estimated: `8054`
-		// Minimum execution time: 11_000_000 picoseconds.
-		Weight::from_parts(12_088_198, 8054)
-			// Standard Error: 2_315
-			.saturating_add(Weight::from_parts(75_271, 0).saturating_mul(x.into()))
+		// Minimum execution time: 13_079_000 picoseconds.
+		Weight::from_parts(13_513_131, 8054)
+			// Standard Error: 723
+			.saturating_add(Weight::from_parts(102_389, 0).saturating_mul(x.into()))
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
