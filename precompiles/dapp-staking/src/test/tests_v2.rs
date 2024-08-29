@@ -41,7 +41,7 @@ fn read_current_era_is_ok() {
                 PrecompileCall::read_current_era {},
             )
             .expect_no_logs()
-            .execute_returns(ActiveProtocolState::<Test>::get().era);
+            .execute_returns(ActiveProtocolState::<Test>::get().era());
 
         // advance a few eras, check value again
         advance_to_era(7);
@@ -52,7 +52,7 @@ fn read_current_era_is_ok() {
                 PrecompileCall::read_current_era {},
             )
             .expect_no_logs()
-            .execute_returns(ActiveProtocolState::<Test>::get().era);
+            .execute_returns(ActiveProtocolState::<Test>::get().era());
     });
 }
 
@@ -89,7 +89,7 @@ fn read_era_reward_is_ok() {
         let era_rewards_span = EraRewards::<Test>::get(span_index).expect("Entry must exist.");
         let expected_reward = era_rewards_span
             .get(era)
-            .map(|r| r.staker_reward_pool + r.dapp_reward_pool)
+            .map(|r| r.staker_reward_pool() + r.dapp_reward_pool())
             .expect("It's history era so it must exist.");
         assert!(expected_reward > 0, "Sanity check.");
 
@@ -125,7 +125,7 @@ fn read_era_staked_is_ok() {
             <Test as pallet_dapp_staking::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1_000_000_000_000;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
-        let anchor_era = ActiveProtocolState::<Test>::get().era;
+        let anchor_era = ActiveProtocolState::<Test>::get().era();
 
         // 1. Current era stake must be zero, since stake is only valid from the next era.
         precompiles()
@@ -167,7 +167,7 @@ fn read_era_staked_is_ok() {
                 staker_h160,
                 precompile_address(),
                 PrecompileCall::read_era_staked {
-                    era: ActiveProtocolState::<Test>::get().era + 2,
+                    era: ActiveProtocolState::<Test>::get().era() + 2,
                 },
             )
             .expect_no_logs()
@@ -605,7 +605,7 @@ fn withdraw_unbonded_is_ok() {
         ));
 
         // Advance enough into time so unlocking chunk can be claimed
-        let unlock_block = Ledger::<Test>::get(&staker_native).unlocking[0].unlock_block;
+        let unlock_block = Ledger::<Test>::get(&staker_native).unlocking_chunks()[0].unlock_block;
         run_to_block(unlock_block);
 
         // Execute legacy call, expect unlocked funds to be claimed back
