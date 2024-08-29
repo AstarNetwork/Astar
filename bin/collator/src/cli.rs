@@ -19,7 +19,6 @@
 use clap::Parser;
 use std::path::PathBuf;
 
-#[cfg(feature = "evm-tracing")]
 use crate::evm_tracing_types::EthApiOptions;
 
 /// An overarching CLI command definition.
@@ -34,7 +33,6 @@ pub struct Cli {
     pub run: cumulus_client_cli::RunCmd,
 
     #[allow(missing_docs)]
-    #[cfg(feature = "evm-tracing")]
     #[clap(flatten)]
     pub eth_api_options: EthApiOptions,
 

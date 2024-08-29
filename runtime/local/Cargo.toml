@@ -12,8 +12,10 @@ log = { workspace = true, optional = true }
 num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
+serde_json = { workspace = true }
 smallvec = { workspace = true }
 
+fp-evm = { workspace = true }
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }
 frame-executive = { workspace = true }
@@ -71,10 +73,10 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 astar-primitives = { workspace = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-collective-proxy = { workspace = true }
-pallet-dapp-staking-v3 = { workspace = true }
+pallet-dapp-staking = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
-pallet-evm-precompile-dapp-staking-v3 = { workspace = true }
+pallet-evm-precompile-dapp-staking = { workspace = true }
 pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
@@ -83,7 +85,7 @@ pallet-inflation = { workspace = true }
 pallet-static-price-provider = { workspace = true }
 pallet-unified-accounts = { workspace = true }
 
-dapp-staking-v3-runtime-api = { workspace = true }
+dapp-staking-runtime-api = { workspace = true }
 
 precompile-utils = { workspace = true }
 
@@ -110,7 +112,9 @@ substrate-wasm-builder = { workspace = true, optional = true }
 default = ["std"]
 std = [
 	"parity-scale-codec/std",
+	"serde_json/std",
 	"fp-rpc/std",
+	"fp-evm/std",
 	"fp-self-contained/std",
 	"frame-executive/std",
 	"frame-support/std",
@@ -123,8 +127,8 @@ std = [
 	"pallet-balances/std",
 	"pallet-contracts/std",
 	"pallet-chain-extension-unified-accounts/std",
-	"pallet-dapp-staking-v3/std",
-	"dapp-staking-v3-runtime-api/std",
+	"pallet-dapp-staking/std",
+	"dapp-staking-runtime-api/std",
 	"pallet-inflation/std",
 	"pallet-static-price-provider/std",
 	"pallet-dynamic-evm-base-fee/std",
@@ -138,7 +142,7 @@ std = [
 	"pallet-evm-precompile-ed25519/std",
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
-	"pallet-evm-precompile-dapp-staking-v3/std",
+	"pallet-evm-precompile-dapp-staking/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
 	"pallet-evm-precompile-unified-accounts/std",
@@ -206,7 +210,7 @@ runtime-benchmarks = [
 	"pallet-unified-accounts/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
-	"pallet-dapp-staking-v3/runtime-benchmarks",
+	"pallet-dapp-staking/runtime-benchmarks",
 	"pallet-inflation/runtime-benchmarks",
 	"pallet-membership/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
@@ -215,7 +219,7 @@ runtime-benchmarks = [
 	"pallet-contracts/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
 	"pallet-evm-precompile-assets-erc20/runtime-benchmarks",
-	"pallet-evm-precompile-dapp-staking-v3/runtime-benchmarks",
+	"pallet-evm-precompile-dapp-staking/runtime-benchmarks",
 	"pallet-grandpa/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
@@ -235,7 +239,7 @@ try-runtime = [
 	"pallet-balances/try-runtime",
 	"pallet-contracts/try-runtime",
 	"pallet-collective-proxy/try-runtime",
-	"pallet-dapp-staking-v3/try-runtime",
+	"pallet-dapp-staking/try-runtime",
 	"pallet-treasury/try-runtime",
 	"pallet-inflation/try-runtime",
 	"pallet-membership/try-runtime",
@@ -261,11 +265,6 @@ try-runtime = [
 	"astar-primitives/try-runtime",
 	"pallet-chain-extension-assets/try-runtime",
 	"sp-runtime/try-runtime",
-]
-evm-tracing = [
-	"moonbeam-evm-tracer",
-	"moonbeam-rpc-primitives-debug",
-	"moonbeam-rpc-primitives-txpool",
 ]
 
 # Enable metadata hash generation at compile time for the `CheckMetadataHash` extension.

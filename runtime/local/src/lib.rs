@@ -25,9 +25,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_support::{
-    construct_runtime,
-    genesis_builder_helper::{build_state, get_preset},
-    parameter_types,
+    construct_runtime, genesis_builder_helper, parameter_types,
     traits::{
         fungible::{Balanced, Credit, HoldConsideration},
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
@@ -52,7 +50,7 @@ use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, ConstBool, OpaqueMetadata, H160, H256, U256};
+use sp_core::{crypto::KeyTypeId, sr25519, ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
@@ -83,7 +81,7 @@ use astar_primitives::{
 };
 
 pub use astar_primitives::{AccountId, Signature};
-pub use pallet_dapp_staking_v3::TierThreshold;
+pub use pallet_dapp_staking::TierThreshold;
 
 pub use crate::precompiles::WhitelistedCalls;
 #[cfg(feature = "std")]
@@ -134,6 +132,7 @@ pub type Precompiles = LocalPrecompiles<Runtime>;
 mod chain_extensions;
 pub use chain_extensions::LocalChainExtensions;
 
+pub mod genesis_config;
 mod weights;
 
 /// Constant values used within the runtime.
@@ -357,8 +356,8 @@ impl pallet_assets::Config for Runtime {
 
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
 parameter_types! {
-    pub const TransactionLengthFeeFactor: Balance = 23_500_000_000_000; // 0.000_023_500_000_000_000 SBY per byte
-    pub const WeightFeeFactor: Balance = 30_855_000_000_000_000; // Around 0.03 SBY per unit of ref time.
+    pub const TransactionLengthFeeFactor: Balance = 23_500_000_000_000; // 0.000_023_500_000_000_000 AST per byte
+    pub const WeightFeeFactor: Balance = 30_855_000_000_000_000; // Around 0.03 AST per unit of ref time.
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     pub const OperationalFeeMultiplier: u8 = 5;
     pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(000_015, 1_000_000); // 0.000_015
@@ -444,7 +443,7 @@ impl pallet_static_price_provider::Config for Runtime {
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
-impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId>
+impl pallet_dapp_staking::BenchmarkHelper<SmartContract<AccountId>, AccountId>
     for BenchmarkHelper<SmartContract<AccountId>, AccountId>
 {
     fn get_smart_contract(id: u32) -> SmartContract<AccountId> {
@@ -462,7 +461,7 @@ parameter_types! {
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
 
-impl pallet_dapp_staking_v3::Config for Runtime {
+impl pallet_dapp_staking::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
@@ -487,7 +486,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type MinimumStakeAmount = ConstU128<AST>;
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
-    type WeightInfo = pallet_dapp_staking_v3::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = pallet_dapp_staking::weights::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
 }
@@ -845,7 +844,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                 matches!(
                     c,
                     RuntimeCall::DappStaking(
-                        pallet_dapp_staking_v3::Call::claim_staker_rewards { .. }
+                        pallet_dapp_staking::Call::claim_staker_rewards { .. }
                     )
                 )
             }
@@ -1137,7 +1136,7 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment = 30,
         Balances: pallet_balances = 31,
         Vesting: pallet_vesting = 32,
-        DappStaking: pallet_dapp_staking_v3 = 34,
+        DappStaking: pallet_dapp_staking = 34,
         Inflation: pallet_inflation = 35,
         Assets: pallet_assets = 36,
         StaticPriceProvider: pallet_static_price_provider = 37,
@@ -1285,7 +1284,7 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_ethereum_checked, EthereumChecked]
-        [pallet_dapp_staking_v3, DappStaking]
+        [pallet_dapp_staking, DappStaking]
         [pallet_inflation, Inflation]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
     );
@@ -1775,7 +1774,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl dapp_staking_v3_runtime_api::DappStakingApi<Block> for Runtime {
+    impl dapp_staking_runtime_api::DappStakingApi<Block> for Runtime {
         fn periods_per_cycle() -> PeriodNumber {
             InflationCycleConfig::periods_per_cycle()
         }
@@ -1801,15 +1800,17 @@ impl_runtime_apis! {
     impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
 
         fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
-            build_state::<RuntimeGenesisConfig>(config)
+            genesis_builder_helper::build_state::<RuntimeGenesisConfig>(config)
         }
 
         fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-            get_preset::<RuntimeGenesisConfig>(id, |_| None)
+            genesis_builder_helper::get_preset::<RuntimeGenesisConfig>(id, &genesis_config::get_preset)
         }
 
         fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-            vec![]
+            vec![
+                sp_genesis_builder::PresetId::from("development"),
+            ]
         }
     }
 
@@ -1854,7 +1855,6 @@ impl_runtime_apis! {
         }
     }
 
-    #[cfg(feature = "evm-tracing")]
     impl moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block> for Runtime {
         fn trace_transaction(
             extrinsics: Vec<<Block as BlockT>::Extrinsic>,
@@ -2007,7 +2007,6 @@ impl_runtime_apis! {
         }
     }
 
-    #[cfg(feature = "evm-tracing")]
     impl moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block> for Runtime {
         fn extrinsic_filter(
             xts_ready: Vec<<Block as BlockT>::Extrinsic>,

@@ -18,6 +18,10 @@
 
 //! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
+use crate::{
+    evm_tracing_types::{EthApi as EthApiCmd, EvmTracingConfig},
+    rpc::tracing,
+};
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_storage::StorageOverrideHandler;
@@ -29,14 +33,10 @@ use sc_network::NetworkBackend;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
-use sp_runtime::traits::Block as BlockT;
-use std::{collections::BTreeMap, sync::Arc, time::Duration};
-
 #[cfg(not(feature = "manual-seal"))]
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
-
-#[cfg(feature = "evm-tracing")]
-use crate::{evm_tracing_types::EthApi as EthApiCmd, rpc::tracing};
+use sp_runtime::traits::Block as BlockT;
+use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 pub use local_runtime::RuntimeApi;
 
@@ -47,15 +47,10 @@ use astar_primitives::*;
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
 /// Parachain host functions
-#[cfg(feature = "evm-tracing")]
 pub type HostFunctions = (
     cumulus_client_service::ParachainHostFunctions,
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
 );
-
-/// Parachain host functions
-#[cfg(not(feature = "evm-tracing"))]
-pub type HostFunctions = (cumulus_client_service::ParachainHostFunctions,);
 
 type ParachainExecutor = WasmExecutor<HostFunctions>;
 
@@ -202,7 +197,7 @@ pub fn new_partial(
 /// Builds a new service.
 pub fn start_node<N>(
     config: Configuration,
-    #[cfg(feature = "evm-tracing")] evm_tracing_config: crate::evm_tracing_types::EvmTracingConfig,
+    evm_tracing_config: EvmTracingConfig,
 ) -> Result<TaskManager, ServiceError>
 where
     N: NetworkBackend<Block, <Block as BlockT>::Hash>,
@@ -290,10 +285,8 @@ where
     > = Default::default();
     let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
 
-    #[cfg(feature = "evm-tracing")]
     let ethapi_cmd = evm_tracing_config.ethapi.clone();
 
-    #[cfg(feature = "evm-tracing")]
     let tracing_requesters =
         if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
             tracing::spawn_tracing_tasks(
@@ -415,7 +408,6 @@ where
                 deps,
                 subscription,
                 pubsub_notification_sinks.clone(),
-                #[cfg(feature = "evm-tracing")]
                 crate::rpc::EvmTracingConfig {
                     tracing_requesters: tracing_requesters.clone(),
                     trace_filter_max_count: evm_tracing_config.ethapi_trace_max_count,

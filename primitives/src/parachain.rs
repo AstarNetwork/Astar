@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-pub mod orml_oracle;
-pub mod pallet_assets;
-pub mod pallet_dapp_staking;
-pub mod pallet_inflation;
-pub mod pallet_xcm;
-pub mod xcm;
+/// Shibuya parachain Id used in production.
+pub const SHIBUYA_ID: u32 = 1000;
+/// Astar parachain Id used in production.
+pub const ASTAR_ID: u32 = 2006;
+/// Shiden parachain Id used in production.
+pub const SHIDEN_ID: u32 = 2007;

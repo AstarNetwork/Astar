@@ -45,7 +45,7 @@ use sp_std::{marker::PhantomData, prelude::*};
 extern crate alloc;
 
 use astar_primitives::{dapp_staking::SmartContractHandle, AccountId, Balance, BlockNumber};
-use pallet_dapp_staking_v3::{
+use pallet_dapp_staking::{
     AccountLedgerFor, ActiveProtocolState, ContractStake, ContractStakeAmount, CurrentEraInfo,
     DAppInfoFor, EraInfo, EraRewardSpanFor, EraRewards, IntegratedDApps, Ledger,
     Pallet as DAppStaking, ProtocolState, SingularStakingInfo, StakerInfo, Subperiod,
@@ -116,12 +116,12 @@ pub struct DappStakingV3Precompile<R>(PhantomData<R>);
 impl<R> DappStakingV3Precompile<R>
 where
     R: pallet_evm::Config
-        + pallet_dapp_staking_v3::Config
+        + pallet_dapp_staking::Config
         + frame_system::Config<AccountId = AccountId>,
     BlockNumberFor<R>: IsType<BlockNumber>,
     <R::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<R::AccountId>>,
     R::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
-    R::RuntimeCall: From<pallet_dapp_staking_v3::Call<R>>,
+    R::RuntimeCall: From<pallet_dapp_staking::Call<R>>,
 {
     // v1 functions
 
@@ -144,7 +144,7 @@ where
     #[precompile::view]
     fn read_unbonding_period(_: &mut impl PrecompileHandle) -> EvmResult<U256> {
         // constant, no DB read
-        Ok(<R as pallet_dapp_staking_v3::Config>::UnlockingPeriod::get().into())
+        Ok(<R as pallet_dapp_staking::Config>::UnlockingPeriod::get().into())
     }
 
     /// Read the total assigned reward pool for the given era.
@@ -237,7 +237,7 @@ where
         handle.record_db_read::<R>(
             24 + AccountLedgerFor::<R>::max_encoded_len()
                 + ProtocolState::max_encoded_len()
-                + <R as pallet_dapp_staking_v3::Config>::SmartContract::max_encoded_len(),
+                + <R as pallet_dapp_staking::Config>::SmartContract::max_encoded_len(),
         )?;
 
         let staker = Self::parse_input_address(staker.into())?;
@@ -267,12 +267,12 @@ where
         // Blake2_128Concat(16 + SmartContract::max_encoded_len) + SingularStakingInfo::max_encoded_len
         handle.record_db_read::<R>(
             24 + ProtocolState::max_encoded_len()
-                + <R as pallet_dapp_staking_v3::Config>::SmartContract::max_encoded_len()
+                + <R as pallet_dapp_staking::Config>::SmartContract::max_encoded_len()
                 + SingularStakingInfo::max_encoded_len(),
         )?;
 
         let smart_contract =
-            <R as pallet_dapp_staking_v3::Config>::SmartContract::evm(contract_h160.into());
+            <R as pallet_dapp_staking::Config>::SmartContract::evm(contract_h160.into());
 
         // parse the staker account
         let staker = Self::parse_input_address(staker.into())?;
@@ -307,13 +307,13 @@ where
         // Twox64Concat(8) + EraIndex(4) + ContractStakeAmount::max_encoded_len
         handle.record_db_read::<R>(
             36 + ProtocolState::max_encoded_len()
-                + <R as pallet_dapp_staking_v3::Config>::SmartContract::max_encoded_len()
+                + <R as pallet_dapp_staking::Config>::SmartContract::max_encoded_len()
                 + DAppInfoFor::<R>::max_encoded_len()
                 + ContractStakeAmount::max_encoded_len(),
         )?;
 
         let smart_contract =
-            <R as pallet_dapp_staking_v3::Config>::SmartContract::evm(contract_h160.into());
+            <R as pallet_dapp_staking::Config>::SmartContract::evm(contract_h160.into());
 
         let current_period_number = ActiveProtocolState::<R>::get().period_number();
         let dapp_info = match IntegratedDApps::<R>::get(&smart_contract) {
@@ -356,11 +356,11 @@ where
         handle.record_db_read::<R>(
             24 + AccountLedgerFor::<R>::max_encoded_len()
                 + ProtocolState::max_encoded_len()
-                + <R as pallet_dapp_staking_v3::Config>::SmartContract::max_encoded_len(),
+                + <R as pallet_dapp_staking::Config>::SmartContract::max_encoded_len(),
         )?;
 
         let smart_contract =
-            <R as pallet_dapp_staking_v3::Config>::SmartContract::evm(contract_h160.into());
+            <R as pallet_dapp_staking::Config>::SmartContract::evm(contract_h160.into());
         log::trace!(target: "ds-precompile", "bond_and_stake {:?}, {:?}", smart_contract, amount);
 
         // Read total locked & staked amounts
@@ -375,12 +375,12 @@ where
         if stakeable_amount < amount {
             let delta = amount.saturating_sub(stakeable_amount);
 
-            let lock_call = pallet_dapp_staking_v3::Call::<R>::lock { amount: delta };
+            let lock_call = pallet_dapp_staking::Call::<R>::lock { amount: delta };
             RuntimeHelper::<R>::try_dispatch(handle, Some(origin.clone()).into(), lock_call)?;
         }
 
         // Now, with best effort, we can try & stake the given `value`.
-        let stake_call = pallet_dapp_staking_v3::Call::<R>::stake {
+        let stake_call = pallet_dapp_staking::Call::<R>::stake {
             smart_contract,
             amount,
         };
@@ -403,12 +403,12 @@ where
         // Blake2_128Concat(16 + SmartContract::max_encoded_len) + SingularStakingInfo::max_encoded_len
         handle.record_db_read::<R>(
             24 + ProtocolState::max_encoded_len()
-                + <R as pallet_dapp_staking_v3::Config>::SmartContract::max_encoded_len()
+                + <R as pallet_dapp_staking::Config>::SmartContract::max_encoded_len()
                 + SingularStakingInfo::max_encoded_len(),
         )?;
 
         let smart_contract =
-            <R as pallet_dapp_staking_v3::Config>::SmartContract::evm(contract_h160.into());
+            <R as pallet_dapp_staking::Config>::SmartContract::evm(contract_h160.into());
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         log::trace!(target: "ds-precompile", "unbond_and_unstake {:?}, {:?}", smart_contract, amount);
 
@@ -418,7 +418,7 @@ where
 
         // If there is, we need to unstake it before calling `unlock`
         if staker_info.period_number() == protocol_state.period_number() {
-            let unstake_call = pallet_dapp_staking_v3::Call::<R>::unstake {
+            let unstake_call = pallet_dapp_staking::Call::<R>::unstake {
                 smart_contract,
                 amount,
             };
@@ -426,7 +426,7 @@ where
         }
 
         // Now we can try and `unlock` the given `amount`
-        let unlock_call = pallet_dapp_staking_v3::Call::<R>::unlock { amount };
+        let unlock_call = pallet_dapp_staking::Call::<R>::unlock { amount };
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), unlock_call)?;
 
         Ok(true)
@@ -436,7 +436,7 @@ where
     #[precompile::public("withdraw_unbonded()")]
     fn withdraw_unbonded(handle: &mut impl PrecompileHandle) -> EvmResult<bool> {
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
-        let call = pallet_dapp_staking_v3::Call::<R>::claim_unlocked {};
+        let call = pallet_dapp_staking::Call::<R>::claim_unlocked {};
 
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
 
@@ -451,7 +451,7 @@ where
         era: u128,
     ) -> EvmResult<bool> {
         let smart_contract =
-            <R as pallet_dapp_staking_v3::Config>::SmartContract::evm(contract_h160.into());
+            <R as pallet_dapp_staking::Config>::SmartContract::evm(contract_h160.into());
 
         // parse era
         let era = era
@@ -462,7 +462,7 @@ where
         log::trace!(target: "ds-precompile", "claim_dapp {:?}, era {:?}", smart_contract, era);
 
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
-        let call = pallet_dapp_staking_v3::Call::<R>::claim_dapp_reward {
+        let call = pallet_dapp_staking::Call::<R>::claim_dapp_reward {
             smart_contract,
             era,
         };
@@ -481,7 +481,7 @@ where
         _contract_h160: Address,
     ) -> EvmResult<bool> {
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
-        let call = pallet_dapp_staking_v3::Call::<R>::claim_staker_rewards {};
+        let call = pallet_dapp_staking::Call::<R>::claim_staker_rewards {};
 
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
 
@@ -503,11 +503,11 @@ where
         contract_h160: Address,
     ) -> EvmResult<bool> {
         let smart_contract =
-            <R as pallet_dapp_staking_v3::Config>::SmartContract::evm(contract_h160.into());
+            <R as pallet_dapp_staking::Config>::SmartContract::evm(contract_h160.into());
         log::trace!(target: "ds-precompile", "withdraw_from_unregistered {:?}", smart_contract);
 
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
-        let call = pallet_dapp_staking_v3::Call::<R>::unstake_from_unregistered { smart_contract };
+        let call = pallet_dapp_staking::Call::<R>::unstake_from_unregistered { smart_contract };
 
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
 
@@ -528,14 +528,14 @@ where
         // Storage item: StakerInfo:
         // Blake2_128Concat(16 + SmartContract::max_encoded_len) + SingularStakingInfo::max_encoded_len
         handle.record_db_read::<R>(
-            16 + <R as pallet_dapp_staking_v3::Config>::SmartContract::max_encoded_len()
+            16 + <R as pallet_dapp_staking::Config>::SmartContract::max_encoded_len()
                 + SingularStakingInfo::max_encoded_len(),
         )?;
 
         let origin_smart_contract =
-            <R as pallet_dapp_staking_v3::Config>::SmartContract::evm(origin_contract_h160.into());
+            <R as pallet_dapp_staking::Config>::SmartContract::evm(origin_contract_h160.into());
         let target_smart_contract =
-            <R as pallet_dapp_staking_v3::Config>::SmartContract::evm(target_contract_h160.into());
+            <R as pallet_dapp_staking::Config>::SmartContract::evm(target_contract_h160.into());
         log::trace!(target: "ds-precompile", "nomination_transfer {:?} {:?} {:?}", origin_smart_contract, amount, target_smart_contract);
 
         // Find out how much staker has staked on the origin contract
@@ -546,7 +546,7 @@ where
         // if value comes from the past period.
         let staked_amount = staker_info.total_staked_amount();
         let minimum_allowed_stake_amount =
-            <R as pallet_dapp_staking_v3::Config>::MinimumStakeAmount::get();
+            <R as pallet_dapp_staking::Config>::MinimumStakeAmount::get();
 
         // In case the remaining staked amount on the origin contract is less than the minimum allowed stake amount,
         // everything will be unstaked. To keep in line with legacy `nomination_transfer` behavior, we should transfer
@@ -562,14 +562,14 @@ where
         };
 
         // First call unstake from the origin smart contract
-        let unstake_call = pallet_dapp_staking_v3::Call::<R>::unstake {
+        let unstake_call = pallet_dapp_staking::Call::<R>::unstake {
             smart_contract: origin_smart_contract,
             amount,
         };
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin.clone()).into(), unstake_call)?;
 
         // Then call stake on the target smart contract
-        let stake_call = pallet_dapp_staking_v3::Call::<R>::stake {
+        let stake_call = pallet_dapp_staking::Call::<R>::stake {
             smart_contract: target_smart_contract,
             amount: stake_amount,
         };
@@ -611,7 +611,7 @@ where
     fn lock(handle: &mut impl PrecompileHandle, amount: u128) -> EvmResult<bool> {
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
-        let lock_call = pallet_dapp_staking_v3::Call::<R>::lock { amount };
+        let lock_call = pallet_dapp_staking::Call::<R>::lock { amount };
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), lock_call)?;
 
         Ok(true)
@@ -622,7 +622,7 @@ where
     fn unlock(handle: &mut impl PrecompileHandle, amount: u128) -> EvmResult<bool> {
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
-        let unlock_call = pallet_dapp_staking_v3::Call::<R>::unlock { amount };
+        let unlock_call = pallet_dapp_staking::Call::<R>::unlock { amount };
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), unlock_call)?;
 
         Ok(true)
@@ -633,7 +633,7 @@ where
     fn claim_unlocked(handle: &mut impl PrecompileHandle) -> EvmResult<bool> {
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
-        let claim_unlocked_call = pallet_dapp_staking_v3::Call::<R>::claim_unlocked {};
+        let claim_unlocked_call = pallet_dapp_staking::Call::<R>::claim_unlocked {};
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_unlocked_call)?;
 
         Ok(true)
@@ -650,7 +650,7 @@ where
 
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
-        let stake_call = pallet_dapp_staking_v3::Call::<R>::stake {
+        let stake_call = pallet_dapp_staking::Call::<R>::stake {
             smart_contract,
             amount,
         };
@@ -670,7 +670,7 @@ where
 
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
-        let unstake_call = pallet_dapp_staking_v3::Call::<R>::unstake {
+        let unstake_call = pallet_dapp_staking::Call::<R>::unstake {
             smart_contract,
             amount,
         };
@@ -684,7 +684,7 @@ where
     fn claim_staker_rewards(handle: &mut impl PrecompileHandle) -> EvmResult<bool> {
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
-        let claim_staker_rewards_call = pallet_dapp_staking_v3::Call::<R>::claim_staker_rewards {};
+        let claim_staker_rewards_call = pallet_dapp_staking::Call::<R>::claim_staker_rewards {};
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_staker_rewards_call)?;
 
         Ok(true)
@@ -701,7 +701,7 @@ where
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         let claim_bonus_reward_call =
-            pallet_dapp_staking_v3::Call::<R>::claim_bonus_reward { smart_contract };
+            pallet_dapp_staking::Call::<R>::claim_bonus_reward { smart_contract };
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_bonus_reward_call)?;
 
         Ok(true)
@@ -722,7 +722,7 @@ where
 
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
-        let claim_dapp_reward_call = pallet_dapp_staking_v3::Call::<R>::claim_dapp_reward {
+        let claim_dapp_reward_call = pallet_dapp_staking::Call::<R>::claim_dapp_reward {
             smart_contract,
             era,
         };
@@ -742,7 +742,7 @@ where
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         let unstake_from_unregistered_call =
-            pallet_dapp_staking_v3::Call::<R>::unstake_from_unregistered { smart_contract };
+            pallet_dapp_staking::Call::<R>::unstake_from_unregistered { smart_contract };
         RuntimeHelper::<R>::try_dispatch(
             handle,
             Some(origin).into(),
@@ -758,7 +758,7 @@ where
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         let cleanup_expired_entries_call =
-            pallet_dapp_staking_v3::Call::<R>::cleanup_expired_entries {};
+            pallet_dapp_staking::Call::<R>::cleanup_expired_entries {};
         RuntimeHelper::<R>::try_dispatch(
             handle,
             Some(origin).into(),
@@ -773,7 +773,7 @@ where
     /// Helper method to decode smart contract struct for v2 calls
     pub(crate) fn decode_smart_contract(
         smart_contract: SmartContractV2,
-    ) -> EvmResult<<R as pallet_dapp_staking_v3::Config>::SmartContract> {
+    ) -> EvmResult<<R as pallet_dapp_staking::Config>::SmartContract> {
         let smart_contract = match smart_contract.contract_type {
             SmartContractTypes::Evm => {
                 ensure!(
@@ -781,7 +781,7 @@ where
                     revert("Invalid address length for Astar EVM smart contract.")
                 );
                 let h160_address = H160::from_slice(smart_contract.address.as_bytes());
-                <R as pallet_dapp_staking_v3::Config>::SmartContract::evm(h160_address)
+                <R as pallet_dapp_staking::Config>::SmartContract::evm(h160_address)
             }
             SmartContractTypes::Wasm => {
                 ensure!(
@@ -791,7 +791,7 @@ where
                 let mut staker_bytes = [0_u8; 32];
                 staker_bytes[..].clone_from_slice(&smart_contract.address.as_bytes());
 
-                <R as pallet_dapp_staking_v3::Config>::SmartContract::wasm(staker_bytes.into())
+                <R as pallet_dapp_staking::Config>::SmartContract::wasm(staker_bytes.into())
             }
         };
 

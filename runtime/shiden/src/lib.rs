@@ -26,8 +26,7 @@ use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
-    genesis_builder_helper::{build_state, get_preset},
-    parameter_types,
+    genesis_builder_helper, parameter_types,
     traits::{
         fungible::{Balanced, Credit},
         AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, Contains, FindAuthor, Get, Imbalance,
@@ -55,7 +54,7 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
-use sp_core::{OpaqueMetadata, H160, H256, U256};
+use sp_core::{sr25519, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
@@ -80,13 +79,13 @@ use astar_primitives::{
     },
     evm::EvmRevertCodeHandler,
     governance::OracleMembershipInst,
-    oracle::{CurrencyId, DummyCombineData, Price},
+    oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce, UnfreezeChainOnFailedMigration,
 };
 pub use astar_primitives::{AccountId, Balance, Signature};
 
-pub use pallet_dapp_staking_v3::TierThreshold;
+pub use pallet_dapp_staking::TierThreshold;
 pub use pallet_inflation::InflationParameters;
 
 pub use crate::precompiles::WhitelistedCalls;
@@ -104,6 +103,7 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 
 mod chain_extensions;
+pub mod genesis_config;
 mod precompiles;
 mod weights;
 mod xcm_config;
@@ -388,7 +388,7 @@ impl pallet_multisig::Config for Runtime {
 #[cfg(feature = "runtime-benchmarks")]
 pub struct DAppStakingBenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
-impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId>
+impl pallet_dapp_staking::BenchmarkHelper<SmartContract<AccountId>, AccountId>
     for DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>
 {
     fn get_smart_contract(id: u32) -> SmartContract<AccountId> {
@@ -427,7 +427,7 @@ parameter_types! {
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
 
-impl pallet_dapp_staking_v3::Config for Runtime {
+impl pallet_dapp_staking::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
@@ -452,7 +452,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type MinimumStakeAmount = MinimumStakingAmount;
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
-    type WeightInfo = weights::pallet_dapp_staking_v3::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_dapp_staking::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>;
 }
@@ -1055,7 +1055,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                 matches!(
                     c,
                     RuntimeCall::DappStaking(
-                        pallet_dapp_staking_v3::Call::claim_staker_rewards { .. }
+                        pallet_dapp_staking::Call::claim_staker_rewards { .. }
                     )
                 )
             }
@@ -1228,7 +1228,7 @@ construct_runtime!(
         // logic is executed.
         // TODO: Address this later. It would be best if Inflation was first pallet.
         Inflation: pallet_inflation = 33,
-        DappStaking: pallet_dapp_staking_v3 = 34,
+        DappStaking: pallet_dapp_staking = 34,
         Assets: pallet_assets = 36,
         PriceAggregator: pallet_price_aggregator = 37,
         Oracle: orml_oracle = 38,
@@ -1331,7 +1331,7 @@ pub type Migrations = (Unreleased, Permanent);
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased = (
     // dApp-staking dyn tier threshold migrations
-    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<
+    pallet_dapp_staking::migration::versioned_migrations::V7ToV8<
         Runtime,
         TierThresholds,
         ThresholdVariationPercentage,
@@ -1421,7 +1421,7 @@ mod benches {
         [pallet_assets, pallet_assets::Pallet::<Runtime>]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
-        [pallet_dapp_staking_v3, DappStaking]
+        [pallet_dapp_staking, DappStaking]
         [pallet_inflation, Inflation]
         [pallet_migrations, MultiBlockMigrations]
         [pallet_xc_asset_config, XcAssetConfig]
@@ -1898,7 +1898,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl dapp_staking_v3_runtime_api::DappStakingApi<Block> for Runtime {
+    impl dapp_staking_runtime_api::DappStakingApi<Block> for Runtime {
         fn periods_per_cycle() -> PeriodNumber {
             InflationCycleConfig::periods_per_cycle()
         }
@@ -1981,15 +1981,17 @@ impl_runtime_apis! {
     impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
 
         fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
-            build_state::<RuntimeGenesisConfig>(config)
+            genesis_builder_helper::build_state::<RuntimeGenesisConfig>(config)
         }
 
         fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-            get_preset::<RuntimeGenesisConfig>(id, |_| None)
+            genesis_builder_helper::get_preset::<RuntimeGenesisConfig>(id, &genesis_config::get_preset)
         }
 
         fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-            vec![]
+            vec![
+                sp_genesis_builder::PresetId::from("development"),
+            ]
         }
     }
 
