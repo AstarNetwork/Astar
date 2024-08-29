@@ -106,7 +106,7 @@ pub const INIT_PRICE: Price = Price::from_rational(1, 10);
 
 pub type SystemError = frame_system::Error<Runtime>;
 pub use pallet_balances::Call as BalancesCall;
-pub use pallet_dapp_staking_v3 as DappStakingCall;
+pub use pallet_dapp_staking as DappStakingCall;
 pub use pallet_proxy::Event as ProxyEvent;
 pub use pallet_utility::{Call as UtilityCall, Event as UtilityEvent};
 use parity_scale_codec::Decode;
@@ -195,21 +195,21 @@ impl ExtBuilder {
         ext.execute_with(|| {
             System::set_block_number(1);
 
-            let era_length = <Runtime as pallet_dapp_staking_v3::Config>::CycleConfiguration::blocks_per_era();
+            let era_length = <Runtime as pallet_dapp_staking::Config>::CycleConfiguration::blocks_per_era();
             let voting_period_length_in_eras =
-            <Runtime as pallet_dapp_staking_v3::Config>::CycleConfiguration::eras_per_voting_subperiod();
+            <Runtime as pallet_dapp_staking::Config>::CycleConfiguration::eras_per_voting_subperiod();
 
-            pallet_dapp_staking_v3::ActiveProtocolState::<Runtime>::put(pallet_dapp_staking_v3::ProtocolState {
+            pallet_dapp_staking::ActiveProtocolState::<Runtime>::put(pallet_dapp_staking::ProtocolState {
                 era: 1,
                 next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + 1,
-                period_info: pallet_dapp_staking_v3::PeriodInfo {
+                period_info: pallet_dapp_staking::PeriodInfo {
                     number: 1,
-                    subperiod: pallet_dapp_staking_v3::Subperiod::Voting,
+                    subperiod: pallet_dapp_staking::Subperiod::Voting,
                     next_subperiod_start_era: 2,
                 },
                 maintenance: false,
             });
-            pallet_dapp_staking_v3::Safeguard::<Runtime>::put(false);
+            pallet_dapp_staking::Safeguard::<Runtime>::put(false);
 
             // Ensure the initial state is set for the first block
             AllPalletsWithSystem::on_initialize(1);

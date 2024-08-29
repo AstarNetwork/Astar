@@ -107,11 +107,11 @@ astar-primitives = { workspace = true }
 astar-xcm-benchmarks = { workspace = true, optional = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-collator-selection = { workspace = true }
-pallet-dapp-staking-v3 = { workspace = true }
+pallet-dapp-staking = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
-pallet-evm-precompile-dapp-staking-v3 = { workspace = true }
+pallet-evm-precompile-dapp-staking = { workspace = true }
 pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
@@ -124,7 +124,7 @@ pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 pallet-xcm-benchmarks = { workspace = true, optional = true }
 
-dapp-staking-v3-runtime-api = { workspace = true }
+dapp-staking-runtime-api = { workspace = true }
 
 precompile-utils = { workspace = true }
 
@@ -194,7 +194,7 @@ std = [
 	"pallet-evm-precompile-ed25519/std",
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
-	"pallet-evm-precompile-dapp-staking-v3/std",
+	"pallet-evm-precompile-dapp-staking/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
 	"pallet-evm-precompile-assets-erc20/std",
@@ -202,9 +202,9 @@ std = [
 	"pallet-evm-precompile-unified-accounts/std",
 	"xcm-fee-payment-runtime-api/std",
 	"pallet-evm-precompile-dispatch-lockdrop/std",
-	"pallet-dapp-staking-v3/std",
+	"pallet-dapp-staking/std",
 	"orml-oracle/std",
-	"dapp-staking-v3-runtime-api/std",
+	"dapp-staking-runtime-api/std",
 	"pallet-inflation/std",
 	"pallet-price-aggregator/std",
 	"pallet-identity/std",
@@ -273,7 +273,7 @@ runtime-benchmarks = [
 	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
-	"pallet-dapp-staking-v3/runtime-benchmarks",
+	"pallet-dapp-staking/runtime-benchmarks",
 	"pallet-inflation/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-membership/runtime-benchmarks",
@@ -300,7 +300,7 @@ runtime-benchmarks = [
 	"pallet-contracts/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
 	"pallet-evm-precompile-assets-erc20/runtime-benchmarks",
-	"pallet-evm-precompile-dapp-staking-v3/runtime-benchmarks",
+	"pallet-evm-precompile-dapp-staking/runtime-benchmarks",
 	"pallet-evm-precompile-xcm/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
@@ -327,7 +327,7 @@ try-runtime = [
 	"frame-system/try-runtime",
 	"pallet-aura/try-runtime",
 	"pallet-balances/try-runtime",
-	"pallet-dapp-staking-v3/try-runtime",
+	"pallet-dapp-staking/try-runtime",
 	"pallet-inflation/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",

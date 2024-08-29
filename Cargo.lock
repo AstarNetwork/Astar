@@ -770,7 +770,7 @@ dependencies = [
  "cumulus-primitives-aura",
  "cumulus-primitives-core",
  "cumulus-primitives-utility",
- "dapp-staking-v3-runtime-api",
+ "dapp-staking-runtime-api",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -797,14 +797,14 @@ dependencies = [
  "pallet-chain-extension-assets",
  "pallet-collator-selection 3.3.2",
  "pallet-contracts",
- "pallet-dapp-staking-v3",
+ "pallet-dapp-staking",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
- "pallet-evm-precompile-dapp-staking-v3",
+ "pallet-evm-precompile-dapp-staking",
  "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
@@ -2941,7 +2941,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "dapp-staking-v3-runtime-api"
+name = "dapp-staking-runtime-api"
 version = "0.1.0"
 dependencies = [
  "astar-primitives",
@@ -5565,7 +5565,7 @@ dependencies = [
  "pallet-collective-proxy",
  "pallet-contracts",
  "pallet-contracts-uapi",
- "pallet-dapp-staking-v3",
+ "pallet-dapp-staking",
  "pallet-democracy",
  "pallet-ethereum",
  "pallet-ethereum-checked",
@@ -6546,7 +6546,7 @@ version = "5.43.1"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
- "dapp-staking-v3-runtime-api",
+ "dapp-staking-runtime-api",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -6570,7 +6570,7 @@ dependencies = [
  "pallet-collective",
  "pallet-collective-proxy",
  "pallet-contracts",
- "pallet-dapp-staking-v3",
+ "pallet-dapp-staking",
  "pallet-democracy",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
@@ -6579,7 +6579,7 @@ dependencies = [
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
- "pallet-evm-precompile-dapp-staking-v3",
+ "pallet-evm-precompile-dapp-staking",
  "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
@@ -8469,7 +8469,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-dapp-staking-v3"
+name = "pallet-dapp-staking"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
@@ -8712,7 +8712,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-evm-precompile-dapp-staking-v3"
+name = "pallet-evm-precompile-dapp-staking"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
@@ -8724,7 +8724,7 @@ dependencies = [
  "log",
  "num_enum 0.5.11",
  "pallet-balances",
- "pallet-dapp-staking-v3",
+ "pallet-dapp-staking",
  "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -14372,7 +14372,7 @@ dependencies = [
  "cumulus-primitives-aura",
  "cumulus-primitives-core",
  "cumulus-primitives-utility",
- "dapp-staking-v3-runtime-api",
+ "dapp-staking-runtime-api",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -14402,7 +14402,7 @@ dependencies = [
  "pallet-collective",
  "pallet-collective-proxy",
  "pallet-contracts",
- "pallet-dapp-staking-v3",
+ "pallet-dapp-staking",
  "pallet-democracy",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
@@ -14412,7 +14412,7 @@ dependencies = [
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
- "pallet-evm-precompile-dapp-staking-v3",
+ "pallet-evm-precompile-dapp-staking",
  "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
@@ -14491,7 +14491,7 @@ dependencies = [
  "cumulus-primitives-aura",
  "cumulus-primitives-core",
  "cumulus-primitives-utility",
- "dapp-staking-v3-runtime-api",
+ "dapp-staking-runtime-api",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -14518,14 +14518,14 @@ dependencies = [
  "pallet-chain-extension-assets",
  "pallet-collator-selection 3.3.2",
  "pallet-contracts",
- "pallet-dapp-staking-v3",
+ "pallet-dapp-staking",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
- "pallet-evm-precompile-dapp-staking-v3",
+ "pallet-evm-precompile-dapp-staking",
  "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
@@ -18106,7 +18106,7 @@ dependencies = [
  "pallet-assets",
  "pallet-balances",
  "pallet-contracts",
- "pallet-dapp-staking-v3",
+ "pallet-dapp-staking",
  "pallet-insecure-randomness-collective-flip",
  "pallet-message-queue",
  "pallet-proxy",

@@ -1,5 +1,5 @@
 [package]
-name = "dapp-staking-v3-runtime-api"
+name = "dapp-staking-runtime-api"
 version = "0.1.0"
 description = "dApp Staking v3 runtime API"
 authors.workspace = true

@@ -287,7 +287,7 @@ orml-oracle = { git = "https://github.com/AstarNetwork/open-runtime-module-libra
 # Astar pallets & modules
 # (wasm)
 pallet-collator-selection = { path = "./pallets/collator-selection", default-features = false }
-pallet-dapp-staking-v3 = { path = "./pallets/dapp-staking-v3", default-features = false }
+pallet-dapp-staking = { path = "./pallets/dapp-staking", default-features = false }
 pallet-xc-asset-config = { path = "./pallets/xc-asset-config", default-features = false }
 pallet-ethereum-checked = { path = "./pallets/ethereum-checked", default-features = false }
 pallet-inflation = { path = "./pallets/inflation", default-features = false }
@@ -298,7 +298,7 @@ pallet-static-price-provider = { path = "./pallets/static-price-provider", defau
 pallet-price-aggregator = { path = "./pallets/price-aggregator", default-features = false }
 pallet-collective-proxy = { path = "./pallets/collective-proxy", default-features = false }
 
-dapp-staking-v3-runtime-api = { path = "./pallets/dapp-staking-v3/rpc/runtime-api", default-features = false }
+dapp-staking-runtime-api = { path = "./pallets/dapp-staking/rpc/runtime-api", default-features = false }
 
 astar-primitives = { path = "./primitives", default-features = false }
 astar-test-utils = { path = "./tests/utils", default-features = false }
@@ -307,7 +307,7 @@ pallet-evm-precompile-assets-erc20 = { path = "./precompiles/assets-erc20", defa
 pallet-evm-precompile-sr25519 = { path = "./precompiles/sr25519", default-features = false }
 pallet-evm-precompile-substrate-ecdsa = { path = "./precompiles/substrate-ecdsa", default-features = false }
 pallet-evm-precompile-xcm = { path = "./precompiles/xcm", default-features = false }
-pallet-evm-precompile-dapp-staking-v3 = { path = "./precompiles/dapp-staking-v3", default-features = false }
+pallet-evm-precompile-dapp-staking = { path = "./precompiles/dapp-staking", default-features = false }
 pallet-evm-precompile-unified-accounts = { path = "./precompiles/unified-accounts", default-features = false }
 pallet-evm-precompile-dispatch-lockdrop = { path = "./precompiles/dispatch-lockdrop", default-features = false }
 
