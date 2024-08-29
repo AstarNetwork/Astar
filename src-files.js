@@ -1,6 +1,6 @@
 var srcIndex = new Map(JSON.parse('[\
 ["assets_chain_extension_types",["",[],["lib.rs"]]],\
-["astar_collator",["",[["local",[],["chain_spec.rs","mod.rs","service.rs"]],["parachain",[["chain_spec",[],["astar.rs","mod.rs","shibuya.rs","shiden.rs"]]],["mod.rs","service.rs","shell_upgrade.rs"]]],["cli.rs","command.rs","evm_tracing_types.rs","lib.rs","rpc.rs"]]],\
+["astar_collator",["",[["local",[],["chain_spec.rs","mod.rs","service.rs"]],["parachain",[["chain_spec",[],["astar.rs","mod.rs","shibuya.rs","shiden.rs"]]],["fake_runtime_api.rs","mod.rs","service.rs","shell_upgrade.rs"]],["rpc",[],["tracing.rs"]]],["cli.rs","command.rs","evm_tracing_types.rs","lib.rs","rpc.rs"]]],\
 ["astar_primitives",["",[["xcm",[],["mod.rs"]]],["dapp_staking.rs","ethereum_checked.rs","evm.rs","governance.rs","lib.rs","oracle.rs","precompiles.rs","testing.rs"]]],\
 ["astar_runtime",["",[["weights",[["xcm",[],["fungible.rs","generic.rs","mod.rs"]]],["mod.rs","orml_oracle.rs","pallet_assets.rs","pallet_dapp_staking_v3.rs","pallet_inflation.rs","pallet_xcm.rs"]]],["chain_extensions.rs","lib.rs","precompiles.rs","xcm_config.rs"]]],\
 ["astar_test_utils",["",[],["lib.rs"]]],\

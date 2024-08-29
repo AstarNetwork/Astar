@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["chain_spec","service"]};
+window.SIDEBAR_ITEMS = {"mod":["chain_spec","fake_runtime_api","service"]};

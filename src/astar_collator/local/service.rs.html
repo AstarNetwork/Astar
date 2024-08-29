@@ -562,14 +562,6 @@
 <a href="#560" id="560">560</a>
 <a href="#561" id="561">561</a>
 <a href="#562" id="562">562</a>
-<a href="#563" id="563">563</a>
-<a href="#564" id="564">564</a>
-<a href="#565" id="565">565</a>
-<a href="#566" id="566">566</a>
-<a href="#567" id="567">567</a>
-<a href="#568" id="568">568</a>
-<a href="#569" id="569">569</a>
-<a href="#570" id="570">570</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -590,7 +582,11 @@
 
 </span><span class="doccomment">//! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-</span><span class="kw">use </span>fc_consensus::FrontierBlockImport;
+</span><span class="kw">use crate</span>::{
+    evm_tracing_types::{EthApi <span class="kw">as </span>EthApiCmd, EvmTracingConfig},
+    rpc::tracing,
+};
+<span class="kw">use </span>fc_consensus::FrontierBlockImport;
 <span class="kw">use </span>fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 <span class="kw">use </span>fc_storage::StorageOverrideHandler;
 <span class="kw">use </span>futures::{FutureExt, StreamExt};
@@ -601,14 +597,10 @@
 <span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, Configuration, TaskManager};
 <span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryWorker};
 <span class="kw">use </span>sc_transaction_pool_api::OffchainTransactionPoolFactory;
-<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
-<span class="kw">use </span>std::{collections::BTreeMap, sync::Arc, time::Duration};
-
 <span class="attr">#[cfg(not(feature = <span class="string">"manual-seal"</span>))]
 </span><span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityPair <span class="kw">as </span>AuraPair;
-
-<span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
-</span><span class="kw">use crate</span>::{evm_tracing_types::EthApi <span class="kw">as </span>EthApiCmd, rpc::tracing};
+<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
+<span class="kw">use </span>std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 <span class="kw">pub use </span>local_runtime::RuntimeApi;
 
@@ -619,15 +611,10 @@
 </span><span class="kw">const </span>GRANDPA_JUSTIFICATION_PERIOD: u32 = <span class="number">512</span>;
 
 <span class="doccomment">/// Parachain host functions
-</span><span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
 </span><span class="kw">pub type </span>HostFunctions = (
     cumulus_client_service::ParachainHostFunctions,
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
 );
-
-<span class="doccomment">/// Parachain host functions
-</span><span class="attr">#[cfg(not(feature = <span class="string">"evm-tracing"</span>))]
-</span><span class="kw">pub type </span>HostFunctions = (cumulus_client_service::ParachainHostFunctions,);
 
 <span class="kw">type </span>ParachainExecutor = WasmExecutor&lt;HostFunctions&gt;;
 
@@ -774,7 +761,7 @@
 <span class="doccomment">/// Builds a new service.
 </span><span class="kw">pub fn </span>start_node&lt;N&gt;(
     config: Configuration,
-    <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)] </span>evm_tracing_config: <span class="kw">crate</span>::evm_tracing_types::EvmTracingConfig,
+    evm_tracing_config: EvmTracingConfig,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt;
 <span class="kw">where
     </span>N: NetworkBackend&lt;Block, &lt;Block <span class="kw">as </span>BlockT&gt;::Hash&gt;,
@@ -862,11 +849,9 @@
     &gt; = Default::default();
     <span class="kw">let </span>pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
 
-    <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
-    </span><span class="kw">let </span>ethapi_cmd = evm_tracing_config.ethapi.clone();
+    <span class="kw">let </span>ethapi_cmd = evm_tracing_config.ethapi.clone();
 
-    <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
-    </span><span class="kw">let </span>tracing_requesters =
+    <span class="kw">let </span>tracing_requesters =
         <span class="kw">if </span>ethapi_cmd.contains(<span class="kw-2">&amp;</span>EthApiCmd::Debug) || ethapi_cmd.contains(<span class="kw-2">&amp;</span>EthApiCmd::Trace) {
             tracing::spawn_tracing_tasks(
                 <span class="kw-2">&amp;</span>evm_tracing_config,
@@ -987,8 +972,7 @@
                 deps,
                 subscription,
                 pubsub_notification_sinks.clone(),
-                <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
-                </span><span class="kw">crate</span>::rpc::EvmTracingConfig {
+                <span class="kw">crate</span>::rpc::EvmTracingConfig {
                     tracing_requesters: tracing_requesters.clone(),
                     trace_filter_max_count: evm_tracing_config.ethapi_trace_max_count,
                     enable_txpool: ethapi_cmd.contains(<span class="kw-2">&amp;</span>EthApiCmd::TxPool),

@@ -36,7 +36,6 @@
 <a href="#34" id="34">34</a>
 <a href="#35" id="35">35</a>
 <a href="#36" id="36">36</a>
-<a href="#37" id="37">37</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -66,10 +65,9 @@
 <span class="doccomment">/// Parachain specs.
 </span><span class="kw">pub mod </span>chain_spec;
 
-<span class="kw">pub use </span>service::{
-    build_import_queue, build_import_queue_fallback, new_partial, start_astar_node,
-    start_shibuya_node, start_shiden_node, HostFunctions,
-};
+<span class="kw">pub mod </span>fake_runtime_api;
+
+<span class="kw">pub use </span>service::{build_import_queue, new_partial, start_node, HostFunctions};
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>shell_upgrade::{
     AuraConsensusDataProviderFallback, PendingCrateInherentDataProvider,

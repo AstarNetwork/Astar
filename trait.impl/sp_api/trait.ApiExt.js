@@ -1,4 +1,5 @@
 (function() {var implementors = {
+"astar_collator":[["impl&lt;Block: BlockT, C: CallApiAt&lt;Block&gt;&gt; ApiExt&lt;Block&gt; for <a class=\"struct\" href=\"astar_collator/parachain/fake_runtime_api/struct.RuntimeApiImpl.html\" title=\"struct astar_collator::parachain::fake_runtime_api::RuntimeApiImpl\">RuntimeApiImpl</a>&lt;Block, C&gt;"]],
 "astar_runtime":[["impl&lt;Block: BlockT, C: CallApiAt&lt;Block&gt;&gt; ApiExt&lt;Block&gt; for <a class=\"struct\" href=\"astar_runtime/struct.RuntimeApiImpl.html\" title=\"struct astar_runtime::RuntimeApiImpl\">RuntimeApiImpl</a>&lt;Block, C&gt;"]],
 "local_runtime":[["impl&lt;Block: BlockT, C: CallApiAt&lt;Block&gt;&gt; ApiExt&lt;Block&gt; for <a class=\"struct\" href=\"local_runtime/struct.RuntimeApiImpl.html\" title=\"struct local_runtime::RuntimeApiImpl\">RuntimeApiImpl</a>&lt;Block, C&gt;"]],
 "shibuya_runtime":[["impl&lt;Block: BlockT, C: CallApiAt&lt;Block&gt;&gt; ApiExt&lt;Block&gt; for <a class=\"struct\" href=\"shibuya_runtime/struct.RuntimeApiImpl.html\" title=\"struct shibuya_runtime::RuntimeApiImpl\">RuntimeApiImpl</a>&lt;Block, C&gt;"]],

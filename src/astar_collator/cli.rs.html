@@ -144,8 +144,6 @@
 <a href="#142" id="142">142</a>
 <a href="#143" id="143">143</a>
 <a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -167,8 +165,7 @@
 </span><span class="kw">use </span>clap::Parser;
 <span class="kw">use </span>std::path::PathBuf;
 
-<span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
-</span><span class="kw">use </span><span class="kw">crate</span>::evm_tracing_types::EthApiOptions;
+<span class="kw">use </span><span class="kw">crate</span>::evm_tracing_types::EthApiOptions;
 
 <span class="doccomment">/// An overarching CLI command definition.
 </span><span class="attr">#[derive(Debug, clap::Parser)]
@@ -182,7 +179,6 @@
     </span><span class="kw">pub </span>run: cumulus_client_cli::RunCmd,
 
     <span class="attr">#[allow(missing_docs)]
-    #[cfg(feature = <span class="string">"evm-tracing"</span>)]
     #[clap(flatten)]
     </span><span class="kw">pub </span>eth_api_options: EthApiOptions,
 
