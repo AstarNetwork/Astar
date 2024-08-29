@@ -1,6 +1,6 @@
 (function() {var implementors = {
 "pallet_collator_selection":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_collator_selection/pallet/enum.Error.html\" title=\"enum pallet_collator_selection::pallet::Error\">Error</a>&lt;T&gt;"]],
-"pallet_dapp_staking_v3":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_dapp_staking_v3/pallet/enum.Error.html\" title=\"enum pallet_dapp_staking_v3::pallet::Error\">Error</a>&lt;T&gt;"]],
+"pallet_dapp_staking":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_dapp_staking/pallet/enum.Error.html\" title=\"enum pallet_dapp_staking::pallet::Error\">Error</a>&lt;T&gt;"]],
 "pallet_dynamic_evm_base_fee":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_dynamic_evm_base_fee/pallet/enum.Error.html\" title=\"enum pallet_dynamic_evm_base_fee::pallet::Error\">Error</a>&lt;T&gt;"]],
 "pallet_inflation":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_inflation/pallet/enum.Error.html\" title=\"enum pallet_inflation::pallet::Error\">Error</a>&lt;T&gt;"]],
 "pallet_static_price_provider":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_static_price_provider/pallet/enum.Error.html\" title=\"enum pallet_static_price_provider::pallet::Error\">Error</a>&lt;T&gt;"]],

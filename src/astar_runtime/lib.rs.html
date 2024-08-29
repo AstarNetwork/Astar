@@ -2509,7 +2509,7 @@
 };
 <span class="kw">pub use </span>astar_primitives::{governance::OracleMembershipInst, AccountId, Balance, Signature};
 
-<span class="kw">pub use </span>pallet_dapp_staking_v3::TierThreshold;
+<span class="kw">pub use </span>pallet_dapp_staking::TierThreshold;
 <span class="kw">pub use </span>pallet_inflation::InflationParameters;
 
 <span class="kw">pub use </span><span class="kw">crate</span>::precompiles::WhitelistedCalls;
@@ -2785,7 +2785,7 @@
 <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
 </span><span class="kw">pub struct </span>DAppStakingBenchmarkHelper&lt;SC, ACC&gt;(sp_std::marker::PhantomData&lt;(SC, ACC)&gt;);
 <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-</span><span class="kw">impl </span>pallet_dapp_staking_v3::BenchmarkHelper&lt;SmartContract&lt;AccountId&gt;, AccountId&gt;
+</span><span class="kw">impl </span>pallet_dapp_staking::BenchmarkHelper&lt;SmartContract&lt;AccountId&gt;, AccountId&gt;
     <span class="kw">for </span>DAppStakingBenchmarkHelper&lt;SmartContract&lt;AccountId&gt;, AccountId&gt;
 {
     <span class="kw">fn </span>get_smart_contract(id: u32) -&gt; SmartContract&lt;AccountId&gt; {
@@ -2810,7 +2810,7 @@
     }
 }
 
-<span class="kw">impl </span>pallet_dapp_staking_v3::Config <span class="kw">for </span>Runtime {
+<span class="kw">impl </span>pallet_dapp_staking::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="kw">type </span>RuntimeFreezeReason = RuntimeFreezeReason;
     <span class="kw">type </span>Currency = Balances;
@@ -2835,7 +2835,7 @@
     <span class="kw">type </span>MinimumStakeAmount = MinimumStakingAmount;
     <span class="kw">type </span>NumberOfTiers = ConstU32&lt;<span class="number">4</span>&gt;;
     <span class="kw">type </span>RankingEnabled = ConstBool&lt;<span class="bool-val">true</span>&gt;;
-    <span class="kw">type </span>WeightInfo = weights::pallet_dapp_staking_v3::SubstrateWeight&lt;Runtime&gt;;
+    <span class="kw">type </span>WeightInfo = weights::pallet_dapp_staking::SubstrateWeight&lt;Runtime&gt;;
     <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
     </span><span class="kw">type </span>BenchmarkHelper = DAppStakingBenchmarkHelper&lt;SmartContract&lt;AccountId&gt;, AccountId&gt;;
 }
@@ -3479,7 +3479,7 @@
                 <span class="macro">matches!</span>(
                     c,
                     RuntimeCall::DappStaking(
-                        pallet_dapp_staking_v3::Call::claim_staker_rewards { .. }
+                        pallet_dapp_staking::Call::claim_staker_rewards { .. }
                     )
                 )
             }
@@ -3652,7 +3652,7 @@
         // logic is executed.
         // TODO: Address this later. It would be best if Inflation was first pallet.
         </span>Inflation: pallet_inflation = <span class="number">33</span>,
-        DappStaking: pallet_dapp_staking_v3 = <span class="number">34</span>,
+        DappStaking: pallet_dapp_staking = <span class="number">34</span>,
         Assets: pallet_assets = <span class="number">36</span>,
         PriceAggregator: pallet_price_aggregator = <span class="number">37</span>,
         Oracle: orml_oracle = <span class="number">38</span>,
@@ -3754,7 +3754,7 @@
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
 </span><span class="kw">pub type </span>Unreleased = (
     <span class="comment">// dApp-staking dyn tier threshold migrations
-    </span>pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8&lt;
+    </span>pallet_dapp_staking::migration::versioned_migrations::V7ToV8&lt;
         Runtime,
         TierThresholds,
         ThresholdVariationPercentage,
@@ -3844,7 +3844,7 @@
         [pallet_assets, pallet_assets::Pallet::&lt;Runtime&gt;]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
-        [pallet_dapp_staking_v3, DappStaking]
+        [pallet_dapp_staking, DappStaking]
         [pallet_inflation, Inflation]
         [pallet_migrations, MultiBlockMigrations]
         [pallet_xc_asset_config, XcAssetConfig]
@@ -4320,7 +4320,7 @@
         }
     }
 
-    <span class="kw">impl </span>dapp_staking_v3_runtime_api::DappStakingApi&lt;Block&gt; <span class="kw">for </span>Runtime {
+    <span class="kw">impl </span>dapp_staking_runtime_api::DappStakingApi&lt;Block&gt; <span class="kw">for </span>Runtime {
         <span class="kw">fn </span>periods_per_cycle() -&gt; PeriodNumber {
             InflationCycleConfig::periods_per_cycle()
         }
