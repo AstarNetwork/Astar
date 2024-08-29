@@ -44,6 +44,12 @@ pub mod oracle;
 /// Governance primitives.
 pub mod governance;
 
+/// Genesis generation helpers & primitives.
+pub mod genesis;
+
+/// Parachain related constants.
+pub mod parachain;
+
 /// Benchmark primitives
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarks;

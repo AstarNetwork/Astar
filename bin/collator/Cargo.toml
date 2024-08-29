@@ -33,6 +33,7 @@ sp-api = { workspace = true, features = ["std"] }
 sp-block-builder = { workspace = true, features = ["std"] }
 sp-consensus-aura = { workspace = true, features = ["std"] }
 sp-core = { workspace = true, features = ["std"] }
+sp-genesis-builder = { workspace = true, features = ["std"] }
 sp-inherents = { workspace = true, features = ["std"] }
 sp-io = { workspace = true, features = ["std"] }
 sp-offchain = { workspace = true, features = ["std"] }

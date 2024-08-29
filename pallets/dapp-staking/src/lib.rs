@@ -509,6 +509,7 @@ pub mod pallet {
         pub tier_thresholds: Vec<TierThreshold>,
         pub slots_per_tier: Vec<u16>,
         pub safeguard: Option<bool>,
+        #[serde(skip)]
         pub _config: PhantomData<T>,
     }
 

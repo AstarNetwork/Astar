@@ -26,8 +26,7 @@ use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
-    genesis_builder_helper::{build_state, get_preset},
-    parameter_types,
+    genesis_builder_helper, parameter_types,
     traits::{
         fungible::{Balanced, Credit},
         AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, Contains, FindAuthor, Get, Imbalance,
@@ -56,7 +55,7 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
-use sp_core::{OpaqueMetadata, H160, H256, U256};
+use sp_core::{sr25519, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
@@ -80,7 +79,7 @@ use astar_primitives::{
         PeriodNumber, RankedTier, SmartContract, StandardTierSlots,
     },
     evm::EvmRevertCodeHandler,
-    oracle::{CurrencyId, DummyCombineData, Price},
+    oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce, UnfreezeChainOnFailedMigration,
 };
@@ -103,6 +102,7 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 
 mod chain_extensions;
+pub mod genesis_config;
 mod precompiles;
 mod weights;
 mod xcm_config;
@@ -1980,15 +1980,17 @@ impl_runtime_apis! {
     impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
 
         fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
-            build_state::<RuntimeGenesisConfig>(config)
+            genesis_builder_helper::build_state::<RuntimeGenesisConfig>(config)
         }
 
         fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-            get_preset::<RuntimeGenesisConfig>(id, |_| None)
+            genesis_builder_helper::get_preset::<RuntimeGenesisConfig>(id, &genesis_config::get_preset)
         }
 
         fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-            vec![]
+            vec![
+                sp_genesis_builder::PresetId::from("development"),
+            ]
         }
     }
 

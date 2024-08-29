@@ -25,9 +25,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_support::{
-    construct_runtime,
-    genesis_builder_helper::{build_state, get_preset},
-    parameter_types,
+    construct_runtime, genesis_builder_helper, parameter_types,
     traits::{
         fungible::{Balanced, Credit, HoldConsideration},
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
@@ -52,7 +50,7 @@ use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, ConstBool, OpaqueMetadata, H160, H256, U256};
+use sp_core::{crypto::KeyTypeId, sr25519, ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
@@ -134,6 +132,7 @@ pub type Precompiles = LocalPrecompiles<Runtime>;
 mod chain_extensions;
 pub use chain_extensions::LocalChainExtensions;
 
+pub mod genesis_config;
 mod weights;
 
 /// Constant values used within the runtime.
@@ -357,8 +356,8 @@ impl pallet_assets::Config for Runtime {
 
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
 parameter_types! {
-    pub const TransactionLengthFeeFactor: Balance = 23_500_000_000_000; // 0.000_023_500_000_000_000 SBY per byte
-    pub const WeightFeeFactor: Balance = 30_855_000_000_000_000; // Around 0.03 SBY per unit of ref time.
+    pub const TransactionLengthFeeFactor: Balance = 23_500_000_000_000; // 0.000_023_500_000_000_000 AST per byte
+    pub const WeightFeeFactor: Balance = 30_855_000_000_000_000; // Around 0.03 AST per unit of ref time.
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     pub const OperationalFeeMultiplier: u8 = 5;
     pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(000_015, 1_000_000); // 0.000_015
@@ -1801,15 +1800,17 @@ impl_runtime_apis! {
     impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
 
         fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
-            build_state::<RuntimeGenesisConfig>(config)
+            genesis_builder_helper::build_state::<RuntimeGenesisConfig>(config)
         }
 
         fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-            get_preset::<RuntimeGenesisConfig>(id, |_| None)
+            genesis_builder_helper::get_preset::<RuntimeGenesisConfig>(id, &genesis_config::get_preset)
         }
 
         fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-            vec![]
+            vec![
+                sp_genesis_builder::PresetId::from("development"),
+            ]
         }
     }
 

@@ -201,6 +201,7 @@ pub mod pallet {
     #[derive(DefaultNoBound)]
     pub struct GenesisConfig<T> {
         pub params: InflationParameters,
+        #[serde(skip)]
         pub _config: sp_std::marker::PhantomData<T>,
     }
 
