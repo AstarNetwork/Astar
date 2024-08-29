@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-#![cfg(test)]
+#![cfg(all(test, not(feature = "runtime-benchmarks")))]
 
 use crate::mock::{
     new_test_ext, run_to_block, AllPalletsWithSystem, Balances, RuntimeOrigin, Vesting, ALICE, BOB,

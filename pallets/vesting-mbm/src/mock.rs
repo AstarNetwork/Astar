@@ -60,7 +60,10 @@ parameter_types! {
 
 #[derive_impl(pallet_migrations::config_preludes::TestDefaultConfig)]
 impl pallet_migrations::Config for Runtime {
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type Migrations = (crate::LazyMigration<Runtime, crate::weights::SubstrateWeight<Runtime>>,);
+    #[cfg(feature = "runtime-benchmarks")]
+    type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
     type MigrationStatusHandler = ();
     type MaxServiceWeight = MaxServiceWeight;
 }
