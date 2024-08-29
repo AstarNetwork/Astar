@@ -55,7 +55,7 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MaxServiceWeight: Weight = Weight::MAX.div(10);
+    pub const MaxServiceWeight: Weight = Weight::from_parts(1_000_000_000, 1_000_000);
 }
 
 #[derive_impl(pallet_migrations::config_preludes::TestDefaultConfig)]
