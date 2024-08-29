@@ -63,6 +63,7 @@ pallet-identity = { workspace = true }
 pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-message-queue = { workspace = true }
+pallet-migrations = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-session = { workspace = true, features = ["historical"] }
@@ -111,9 +112,9 @@ frame-try-runtime = { workspace = true, optional = true }
 astar-primitives = { workspace = true }
 astar-xcm-benchmarks = { workspace = true, optional = true }
 pallet-collator-selection = { workspace = true }
-pallet-dapp-staking-v3 = { workspace = true }
+pallet-dapp-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
-pallet-evm-precompile-dapp-staking-v3 = { workspace = true }
+pallet-evm-precompile-dapp-staking = { workspace = true }
 pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
@@ -123,7 +124,7 @@ pallet-price-aggregator = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 
-dapp-staking-v3-runtime-api = { workspace = true }
+dapp-staking-runtime-api = { workspace = true }
 
 precompile-utils = { workspace = true }
 
@@ -181,16 +182,17 @@ std = [
 	"pallet-evm-precompile-modexp/std",
 	"xcm-fee-payment-runtime-api/std",
 	"pallet-evm-precompile-sha3fips/std",
-	"pallet-dapp-staking-v3/std",
-	"dapp-staking-v3-runtime-api/std",
+	"pallet-dapp-staking/std",
+	"dapp-staking-runtime-api/std",
 	"pallet-inflation/std",
-	"pallet-evm-precompile-dapp-staking-v3/std",
+	"pallet-evm-precompile-dapp-staking/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
 	"pallet-evm-precompile-xcm/std",
 	"pallet-identity/std",
 	"pallet-multisig/std",
+	"pallet-migrations/std",
 	"pallet-membership/std",
 	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-session/std",
@@ -250,7 +252,7 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
-	"pallet-dapp-staking-v3/runtime-benchmarks",
+	"pallet-dapp-staking/runtime-benchmarks",
 	"pallet-inflation/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
@@ -274,10 +276,11 @@ runtime-benchmarks = [
 	"pallet-contracts/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
 	"pallet-evm-precompile-assets-erc20/runtime-benchmarks",
-	"pallet-evm-precompile-dapp-staking-v3/runtime-benchmarks",
+	"pallet-evm-precompile-dapp-staking/runtime-benchmarks",
 	"pallet-evm-precompile-xcm/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
+	"pallet-migrations/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
@@ -304,7 +307,7 @@ try-runtime = [
 	"orml-oracle/try-runtime",
 	"pallet-price-aggregator/try-runtime",
 	"pallet-membership/try-runtime",
-	"pallet-dapp-staking-v3/try-runtime",
+	"pallet-dapp-staking/try-runtime",
 	"pallet-inflation/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
@@ -320,6 +323,7 @@ try-runtime = [
 	"pallet-xcm/try-runtime",
 	"pallet-identity/try-runtime",
 	"pallet-multisig/try-runtime",
+	"pallet-migrations/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-insecure-randomness-collective-flip/try-runtime",
 	"pallet-contracts/try-runtime",

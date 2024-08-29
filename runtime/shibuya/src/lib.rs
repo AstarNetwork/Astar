@@ -91,11 +91,11 @@ use astar_primitives::{
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
-    Address, AssetId, BlockNumber, Hash, Header, Nonce,
+    Address, AssetId, BlockNumber, Hash, Header, Nonce, UnfreezeChainOnFailedMigration,
 };
 pub use astar_primitives::{AccountId, Balance, Signature};
 
-pub use pallet_dapp_staking_v3::TierThreshold;
+pub use pallet_dapp_staking::TierThreshold;
 pub use pallet_inflation::InflationParameters;
 
 pub use crate::precompiles::WhitelistedCalls;
@@ -326,7 +326,7 @@ impl frame_system::Config for Runtime {
     type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
     type SingleBlockMigrations = ();
-    type MultiBlockMigrator = ();
+    type MultiBlockMigrator = MultiBlockMigrations;
     type PreInherents = ();
     type PostInherents = ();
     type PostTransactions = ();
@@ -432,7 +432,7 @@ impl pallet_preimage::Config for Runtime {
 #[cfg(feature = "runtime-benchmarks")]
 pub struct DAppStakingBenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
-impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId>
+impl pallet_dapp_staking::BenchmarkHelper<SmartContract<AccountId>, AccountId>
     for DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>
 {
     fn get_smart_contract(id: u32) -> SmartContract<AccountId> {
@@ -462,7 +462,7 @@ parameter_types! {
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
 
-impl pallet_dapp_staking_v3::Config for Runtime {
+impl pallet_dapp_staking::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
@@ -487,7 +487,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type MinimumStakeAmount = MinimumStakingAmount;
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
-    type WeightInfo = weights::pallet_dapp_staking_v3::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_dapp_staking::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>;
 }
@@ -1094,7 +1094,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                 matches!(
                     c,
                     RuntimeCall::DappStaking(
-                        pallet_dapp_staking_v3::Call::claim_staker_rewards { .. }
+                        pallet_dapp_staking::Call::claim_staker_rewards { .. }
                     )
                 )
             }
@@ -1514,6 +1514,25 @@ impl pallet_collective_proxy::Config for Runtime {
     type WeightInfo = pallet_collective_proxy::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub MbmServiceWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
+}
+
+impl pallet_migrations::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    #[cfg(not(feature = "runtime-benchmarks"))]
+    type Migrations = ();
+    // Benchmarks need mocked migrations to guarantee that they succeed.
+    #[cfg(feature = "runtime-benchmarks")]
+    type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
+    type CursorMaxLen = ConstU32<65_536>;
+    type IdentifierMaxLen = ConstU32<256>;
+    type MigrationStatusHandler = ();
+    type FailedMigrationHandler = UnfreezeChainOnFailedMigration;
+    type MaxServiceWeight = MbmServiceWeight;
+    type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1532,7 +1551,7 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment = 30,
         Balances: pallet_balances = 31,
         Vesting: pallet_vesting = 32,
-        DappStaking: pallet_dapp_staking_v3 = 34,
+        DappStaking: pallet_dapp_staking = 34,
         Inflation: pallet_inflation = 35,
         Assets: pallet_assets = 36,
         PriceAggregator: pallet_price_aggregator = 37,
@@ -1548,6 +1567,7 @@ construct_runtime!(
         XcmpQueue: cumulus_pallet_xcmp_queue = 50,
         PolkadotXcm: pallet_xcm = 51,
         CumulusXcm: cumulus_pallet_xcm = 52,
+        // skip 53 - cumulus_pallet_dmp_queue previously
         XcAssetConfig: pallet_xc_asset_config = 54,
         XTokens: orml_xtokens = 55,
         MessageQueue: pallet_message_queue = 56,
@@ -1577,6 +1597,8 @@ construct_runtime!(
         Treasury: pallet_treasury::<Instance1> = 107,
         CommunityTreasury: pallet_treasury::<Instance2> = 108,
         CollectiveProxy: pallet_collective_proxy = 109,
+
+        MultiBlockMigrations: pallet_migrations = 120,
     }
 );
 
@@ -1644,12 +1666,13 @@ parameter_types! {
 
 /// All migrations that will run on the next runtime upgrade.
 ///
-/// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    // permanent migration, do not remove
-    pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
-    // dapp-staking dyn tier threshold migrations
-    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<
+/// __NOTE:__ THE ORDER IS IMPORTANT.
+pub type Migrations = (Unreleased, Permanent);
+
+/// Unreleased migrations. Add new ones here:
+pub type Unreleased = (
+    // dApp-staking dyn tier threshold migrations
+    pallet_dapp_staking::migration::versioned_migrations::V7ToV8<
         Runtime,
         TierThresholds,
         ThresholdVariationPercentage,
@@ -1660,6 +1683,9 @@ pub type Migrations = (
     >,
     pallet_contracts::Migration<Runtime>,
 );
+
+/// Migrations/checks that do not need to be versioned and can run on every upgrade.
+pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1736,8 +1762,9 @@ mod benches {
         [pallet_assets, pallet_assets::Pallet::<Runtime>]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
-        [pallet_dapp_staking_v3, DappStaking]
+        [pallet_dapp_staking, DappStaking]
         [pallet_inflation, Inflation]
+        [pallet_migrations, MultiBlockMigrations]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PalletXcmExtrinsicsBenchmark::<Runtime>]
@@ -2215,7 +2242,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl dapp_staking_v3_runtime_api::DappStakingApi<Block> for Runtime {
+    impl dapp_staking_runtime_api::DappStakingApi<Block> for Runtime {
         fn periods_per_cycle() -> PeriodNumber {
             InflationCycleConfig::periods_per_cycle()
         }

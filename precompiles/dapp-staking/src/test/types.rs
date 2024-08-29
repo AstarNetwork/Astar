@@ -57,7 +57,9 @@ fn decode_smart_contract_is_ok() {
             };
 
             assert_eq!(
-                Ok(<Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(address)),
+                Ok(<Test as pallet_dapp_staking::Config>::SmartContract::evm(
+                    address
+                )),
                 DappStakingV3Precompile::<Test>::decode_smart_contract(smart_contract_v2)
             );
         }
@@ -71,7 +73,9 @@ fn decode_smart_contract_is_ok() {
             };
 
             assert_eq!(
-                Ok(<Test as pallet_dapp_staking_v3::Config>::SmartContract::wasm(address.into())),
+                Ok(<Test as pallet_dapp_staking::Config>::SmartContract::wasm(
+                    address.into()
+                )),
                 DappStakingV3Precompile::<Test>::decode_smart_contract(smart_contract_v2)
             );
         }

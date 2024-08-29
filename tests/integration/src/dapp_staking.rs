@@ -21,7 +21,7 @@
 use crate::setup::*;
 
 use pallet_collator_selection::{CandidateInfo, Candidates};
-use pallet_dapp_staking_v3::*;
+use pallet_dapp_staking::*;
 
 #[test]
 fn dapp_staking_triggers_inflation_recalculation() {
@@ -93,10 +93,10 @@ fn lock_not_possible_for_collator_candidate_account() {
 
         // Now try to participate in dApp staking with Alice and expect an error
         let minimum_lock_amount =
-            <Runtime as pallet_dapp_staking_v3::Config>::MinimumLockedAmount::get();
+            <Runtime as pallet_dapp_staking::Config>::MinimumLockedAmount::get();
         assert_noop!(
             DappStaking::lock(RuntimeOrigin::signed(ALICE.clone()), minimum_lock_amount,),
-            pallet_dapp_staking_v3::Error::<Runtime>::AccountNotAvailableForDappStaking
+            pallet_dapp_staking::Error::<Runtime>::AccountNotAvailableForDappStaking
         );
     });
 }
@@ -107,7 +107,7 @@ fn collator_selection_candidacy_not_possible_for_dapp_staking_participant() {
     new_test_ext().execute_with(|| {
         // Lock some amount with Alice
         let minimum_lock_amount =
-            <Runtime as pallet_dapp_staking_v3::Config>::MinimumLockedAmount::get();
+            <Runtime as pallet_dapp_staking::Config>::MinimumLockedAmount::get();
         assert_ok!(DappStaking::lock(
             RuntimeOrigin::signed(ALICE.clone()),
             minimum_lock_amount,

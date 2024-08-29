@@ -320,7 +320,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                 matches!(
                     c,
                     RuntimeCall::DappStaking(
-                        pallet_dapp_staking_v3::Call::claim_staker_rewards { .. }
+                        pallet_dapp_staking::Call::claim_staker_rewards { .. }
                     ) | RuntimeCall::Utility(..)
                 )
             }
@@ -684,7 +684,7 @@ pub(crate) type MockSmartContract = SmartContract<AccountId>;
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
-impl pallet_dapp_staking_v3::BenchmarkHelper<MockSmartContract, AccountId>
+impl pallet_dapp_staking::BenchmarkHelper<MockSmartContract, AccountId>
     for BenchmarkHelper<MockSmartContract, AccountId>
 {
     fn get_smart_contract(id: u32) -> MockSmartContract {
@@ -702,7 +702,7 @@ parameter_types! {
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
 
-impl pallet_dapp_staking_v3::Config for Runtime {
+impl pallet_dapp_staking::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
@@ -743,7 +743,7 @@ construct_runtime!(
         Assets: pallet_assets,
         XcAssetConfig: pallet_xc_asset_config,
         CumulusXcm: cumulus_pallet_xcm,
-        DappStaking: pallet_dapp_staking_v3,
+        DappStaking: pallet_dapp_staking,
         Proxy: pallet_proxy,
         Utility: pallet_utility,
         Randomness: pallet_insecure_randomness_collective_flip,
