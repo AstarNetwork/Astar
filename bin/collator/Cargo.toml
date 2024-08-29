@@ -40,12 +40,15 @@ sp-runtime = { workspace = true, features = ["std"] }
 sp-session = { workspace = true, features = ["std"] }
 sp-transaction-pool = { workspace = true, features = ["std"] }
 
+frame-support = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-consensus = { workspace = true }
 sp-keyring = { workspace = true, optional = true }
 sp-keystore = { workspace = true }
+sp-std = { workspace = true }
 sp-timestamp = { workspace = true }
 sp-trie = { workspace = true }
+sp-version = { workspace = true }
 
 # client dependencies
 sc-basic-authorship = { workspace = true }
@@ -88,6 +91,7 @@ fc-storage = { workspace = true }
 fp-consensus = { workspace = true }
 fp-evm = { workspace = true, features = ["std"] }
 fp-storage = { workspace = true }
+frame-system-rpc-runtime-api = { workspace = true }
 
 # astar-specific dependencies
 astar-runtime = { workspace = true, features = ["std"] }
@@ -101,8 +105,9 @@ astar-primitives = { workspace = true }
 # frame dependencies
 frame-metadata-hash-extension = { workspace = true }
 frame-system = { workspace = true, features = ["std"] }
-pallet-transaction-payment = { workspace = true, features = ["std"] }
+pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc = { workspace = true }
+pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 substrate-frame-rpc-system = { workspace = true }
 
 # CLI-specific dependencies
@@ -142,13 +147,13 @@ polkadot-runtime-common = { workspace = true, features = ["std"], optional = tru
 frame-try-runtime = { workspace = true, features = ["std"], optional = true }
 
 # evm-tracing
-moonbeam-rpc-primitives-debug = { workspace = true, features = ["std"], optional = true }
-moonbeam-rpc-primitives-txpool = { workspace = true, features = ["std"], optional = true }
+moonbeam-rpc-primitives-debug = { workspace = true }
+moonbeam-rpc-primitives-txpool = { workspace = true }
 
 moonbeam-primitives-ext = { workspace = true }
-moonbeam-rpc-debug = { workspace = true, optional = true }
-moonbeam-rpc-trace = { workspace = true, optional = true }
-moonbeam-rpc-txpool = { workspace = true, optional = true }
+moonbeam-rpc-debug = { workspace = true }
+moonbeam-rpc-trace = { workspace = true }
+moonbeam-rpc-txpool = { workspace = true }
 
 [build-dependencies]
 polkadot-cli = { workspace = true, optional = true }
@@ -181,6 +186,7 @@ runtime-benchmarks = [
 	"sc-service/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"cumulus-primitives-core/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
 ]
 try-runtime = [
 	"local-runtime/try-runtime",
@@ -197,16 +203,6 @@ try-runtime = [
 	"shibuya-runtime/try-runtime",
 	"shiden-runtime/try-runtime",
 	"sp-runtime/try-runtime",
-]
-evm-tracing = [
-	"moonbeam-rpc-debug",
-	"moonbeam-rpc-primitives-debug",
-	"moonbeam-rpc-primitives-txpool",
-	"moonbeam-rpc-trace",
-	"moonbeam-rpc-txpool",
-	"shibuya-runtime/evm-tracing",
-	"shiden-runtime/evm-tracing",
-	"astar-runtime/evm-tracing",
-	"local-runtime/evm-tracing",
+	"frame-support/try-runtime",
 ]
 manual-seal = ["sc-consensus-manual-seal"]

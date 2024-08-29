@@ -262,11 +262,6 @@ try-runtime = [
 	"pallet-chain-extension-assets/try-runtime",
 	"sp-runtime/try-runtime",
 ]
-evm-tracing = [
-	"moonbeam-evm-tracer",
-	"moonbeam-rpc-primitives-debug",
-	"moonbeam-rpc-primitives-txpool",
-]
 
 # Enable metadata hash generation at compile time for the `CheckMetadataHash` extension.
 metadata-hash = ["substrate-wasm-builder?/metadata-hash"]

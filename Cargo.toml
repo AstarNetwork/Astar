@@ -38,6 +38,11 @@ exclude = ["vendor"]
 # Astar runtime requires unwinding.
 panic = "unwind"
 
+[profile.production]
+inherits = "release"
+lto = true
+codegen-units = 1
+
 [workspace.package]
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"

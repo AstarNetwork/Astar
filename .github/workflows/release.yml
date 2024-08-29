@@ -2,7 +2,7 @@ name: Release Build
 on:
   push:
     tags:
-    - v[0-9]+.[0-9]+.[0-9]+*
+      - v[0-9]+.[0-9]+.[0-9]+*
   workflow_dispatch:
 env:
   SUBWASM_VERSION: 0.16.1
@@ -10,37 +10,37 @@ jobs:
   checks-and-tests:
     runs-on: [self-hosted, Linux, X64]
     steps:
-    - name: Free disk space
-      run: |
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /usr/local/lib/android
-        sudo rm -rf /opt/ghc
-        sudo rm -rf "/usr/local/share/boost"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-        df -h
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
 
-    - name: Checkout the source code
-      uses: actions/checkout@v4
-      with:
-        submodules: true
+      - name: Checkout the source code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
 
-    - name: Install deps
-      run: sudo apt -y install protobuf-compiler
+      - name: Install deps
+        run: sudo apt -y install protobuf-compiler
 
-    - name: Install & display rust toolchain
-      run: rustup show
+      - name: Install & display rust toolchain
+        run: rustup show
 
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
 
-    - name: Install cargo-nextest
-      run: curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
+      - name: Install cargo-nextest
+        run: curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
 
-    - name: Check all features compilation
-      run: cargo check --verbose --features try-runtime,runtime-benchmarks --locked
+      - name: Check all features compilation
+        run: cargo check --features try-runtime,runtime-benchmarks --locked
 
-    - name: Run all tests
-      run: make test-all
+      - name: Run all tests
+        run: make test-all
 
   native-linux:
     needs: checks-and-tests
@@ -48,114 +48,102 @@ jobs:
     strategy:
       matrix:
         target:
-        - x86_64-unknown-linux-gnu
-        - aarch64-unknown-linux-gnu
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
 
     steps:
-    - name: Checkout the source code
-      uses: actions/checkout@v4
-      with:
-        submodules: true
+      - name: Checkout the source code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
 
-    - name: Install deps
-      run: sudo apt -y install protobuf-compiler
+      - name: Install deps
+        run: sudo apt -y install protobuf-compiler
 
-    - name: aarch64 setup
-      if: contains(matrix.target, 'aarch64')
-      shell: bash
-      run: |
-        sudo apt update
-        sudo apt install -y gcc-multilib g++-multilib
-        sudo apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+      - name: aarch64 setup
+        if: contains(matrix.target, 'aarch64')
+        shell: bash
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-multilib g++-multilib
+          sudo apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
-        mkdir -p .cargo
-        touch .cargo/config
-        printf '[target.aarch64-unknown-linux-gnu]\nlinker = "aarch64-linux-gnu-gcc"' >> .cargo/config
+          mkdir -p .cargo
+          touch .cargo/config
+          printf '[target.aarch64-unknown-linux-gnu]\nlinker = "aarch64-linux-gnu-gcc"' >> .cargo/config
 
-    - name: x86_64 setup
-      if: contains(matrix.target, 'x86_64')
-      run: |
-        mkdir -p .cargo
-        touch .cargo/config
-        printf '[target.x86_64-unknown-linux-gnu]\nrustflags = ["-Clink-arg=-fuse-ld=lld"]' >> .cargo/config
+      - name: x86_64 setup
+        if: contains(matrix.target, 'x86_64')
+        run: |
+          mkdir -p .cargo
+          touch .cargo/config
+          printf '[target.x86_64-unknown-linux-gnu]\nrustflags = ["-Clink-arg=-fuse-ld=lld"]' >> .cargo/config
 
-    - name: Install & display rust toolchain
-      run: rustup show
+      - name: Install & display rust toolchain
+        run: rustup show
 
-    - name: Add aarch64 target
-      if: contains(matrix.target, 'aarch64')
-      run: rustup target add ${{ matrix.target }}
+      - name: Add aarch64 target
+        if: contains(matrix.target, 'aarch64')
+        run: rustup target add ${{ matrix.target }}
 
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
 
-    - name: Build optimized binary
-      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target ${{ matrix.target }} --verbose --locked
+      - name: Build optimized binary
+        run: cargo build --profile production --target ${{ matrix.target }} --locked
 
-    - name: Set artifact name
-      env:
-        TARGET: ${{ matrix.target }}
-      id: artifact-name
-      run: echo "::set-output name=name::astar-ubuntu-latest-${TARGET%%-*}"
+      - name: Set artifact name
+        env:
+          TARGET: ${{ matrix.target }}
+        id: artifact-name
+        run: echo "::set-output name=name::astar-ubuntu-latest-${TARGET%%-*}"
 
-    - uses: actions/upload-artifact@v3
-      with:
-        name: ${{ steps.artifact-name.outputs.name }}
-        path: target/${{ matrix.target }}/release/astar-collator
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.artifact-name.outputs.name }}
+          path: target/${{ matrix.target }}/production/astar-collator
 
-  evm-tracing-native-linux:
+  evm-tracing-runtimes:
     needs: checks-and-tests
     runs-on: [self-hosted, Linux, X64]
     steps:
+      - name: Checkout the source code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
 
-    - name: Checkout the source code
-      uses: actions/checkout@v4
-      with:
-        submodules: true
+      - name: Install deps
+        run: sudo apt -y install protobuf-compiler
 
-    - name: Install deps
-      run: sudo apt -y install protobuf-compiler
+      - name: Install & display rust toolchain
+        run: rustup show
 
-    - name: x86_64 setup
-      run: |
-        mkdir -p .cargo
-        touch .cargo/config
-        printf '[target.x86_64-unknown-linux-gnu]\nrustflags = ["-Clink-arg=-fuse-ld=lld"]' >> .cargo/config
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
 
-    - name: Install & display rust toolchain
-      run: rustup show
+      - name: Build optimized runtimes with evm tracing
+        run: cargo build --profile production --locked --features on-chain-release-build,evm-tracing -p astar-runtime -p shiden-runtime -p shibuya-runtime
 
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
+      - name: rename evm tracing runtimes
+        run: |
+          mv target/production/wbuild/astar-runtime/astar_runtime.compact.compressed.wasm target/production/wbuild/astar-runtime/astar_evm_tracing_runtime.compact.compressed.wasm
+          mv target/production/wbuild/shiden-runtime/shiden_runtime.compact.compressed.wasm target/production/wbuild/shiden-runtime/shiden_evm_tracing_runtime.compact.compressed.wasm
+          mv target/production/wbuild/shibuya-runtime/shibuya_runtime.compact.compressed.wasm target/production/wbuild/shibuya-runtime/shibuya_evm_tracing_runtime.compact.compressed.wasm
 
-    - name: Build optimized binary with evm tracing
-      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target x86_64-unknown-linux-gnu --features on-chain-release-build,evm-tracing --verbose --locked
+      - uses: actions/upload-artifact@v3
+        with:
+          name: astar-evm-tracing-runtime
+          path: target/production/wbuild/astar-runtime/astar_evm_tracing_runtime.compact.compressed.wasm
 
-    - uses: actions/upload-artifact@v3
-      with:
-        name: astar-evm-tracing-ubuntu-latest-x86_64-unknown-linux-gnu
-        path: target/x86_64-unknown-linux-gnu/release/astar-collator
+      - uses: actions/upload-artifact@v3
+        with:
+          name: shiden-evm-tracing-runtime
+          path: target/production/wbuild/shiden-runtime/shiden_evm_tracing_runtime.compact.compressed.wasm
 
-    - name: rename evm tracing runtimes
-      run: |
-        mv target/x86_64-unknown-linux-gnu/release/wbuild/astar-runtime/astar_runtime.compact.compressed.wasm target/x86_64-unknown-linux-gnu/release/wbuild/astar-runtime/astar_evm_tracing_runtime.compact.compressed.wasm
-        mv target/x86_64-unknown-linux-gnu/release/wbuild/shiden-runtime/shiden_runtime.compact.compressed.wasm target/x86_64-unknown-linux-gnu/release/wbuild/shiden-runtime/shiden_evm_tracing_runtime.compact.compressed.wasm
-        mv target/x86_64-unknown-linux-gnu/release/wbuild/shibuya-runtime/shibuya_runtime.compact.compressed.wasm target/x86_64-unknown-linux-gnu/release/wbuild/shibuya-runtime/shibuya_evm_tracing_runtime.compact.compressed.wasm
-
-    - uses: actions/upload-artifact@v3
-      with:
-        name: astar-evm-tracing-runtime
-        path: target/x86_64-unknown-linux-gnu/release/wbuild/astar-runtime/astar_evm_tracing_runtime.compact.compressed.wasm
-
-    - uses: actions/upload-artifact@v3
-      with:
-        name: shiden-evm-tracing-runtime
-        path: target/x86_64-unknown-linux-gnu/release/wbuild/shiden-runtime/shiden_evm_tracing_runtime.compact.compressed.wasm
-
-    - uses: actions/upload-artifact@v3
-      with:
-        name: shibuya-evm-tracing-runtime
-        path: target/x86_64-unknown-linux-gnu/release/wbuild/shibuya-runtime/shibuya_evm_tracing_runtime.compact.compressed.wasm
+      - uses: actions/upload-artifact@v3
+        with:
+          name: shibuya-evm-tracing-runtime
+          path: target/production/wbuild/shibuya-runtime/shibuya_evm_tracing_runtime.compact.compressed.wasm
 
   native-macos:
     needs: checks-and-tests
@@ -169,80 +157,80 @@ jobs:
       id-token: write
       contents: read
     steps:
-    - name: Checkout the source code
-      uses: actions/checkout@v4
-      with:
-        submodules: true
+      - name: Checkout the source code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
 
-    - name: configure aws credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: ${{ secrets.SCCACHE_ROLE }}
-        role-session-name: github_astar_mac
-        aws-region: ${{ secrets.SCCACHE_REGION }}
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.SCCACHE_ROLE }}
+          role-session-name: github_astar_mac
+          aws-region: ${{ secrets.SCCACHE_REGION }}
 
-    - name: Install deps
-      run: brew install protobuf sccache
+      - name: Install deps
+        run: brew install protobuf sccache
 
-    - name: Install & display rust toolchain
-      run: rustup show
+      - name: Install & display rust toolchain
+        run: rustup show
 
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
 
-    - name: Build optimized binary
-      run: cargo build --release --verbose --locked
+      - name: Build optimized binary
+        run: cargo build --locked --profile production
 
-    - name: Show sccache stats
-      run: sccache --show-stats
+      - name: Show sccache stats
+        run: sccache --show-stats
 
-    - uses: actions/upload-artifact@v3
-      with:
-        name: astar-macOS-latest-x86_64
-        path: target/release/astar-collator
+      - uses: actions/upload-artifact@v3
+        with:
+          name: astar-macOS-latest-x86_64
+          path: target/production/astar-collator
 
   docker:
     needs: native-linux
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout the source code
-      uses: actions/checkout@v4
-      with:
-        submodules: true
+      - name: Checkout the source code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
-    - name: Login to DockerHub
-      uses: docker/login-action@v1
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Docker meta
-      id: docker_meta
-      uses: crazy-max/ghaction-docker-meta@v1
-      with:
-        images: staketechnologies/astar-collator
-        tag-custom: shiden
-        tag-sha: true # add git short SHA as Docker tag
+      - name: Docker meta
+        id: docker_meta
+        uses: crazy-max/ghaction-docker-meta@v1
+        with:
+          images: staketechnologies/astar-collator
+          tag-custom: shiden
+          tag-sha: true # add git short SHA as Docker tag
 
-    - name: Download pre-built linux collator binary
-      uses: actions/download-artifact@v3
-      with:
-        name: astar-ubuntu-latest-x86_64
+      - name: Download pre-built linux collator binary
+        uses: actions/download-artifact@v3
+        with:
+          name: astar-ubuntu-latest-x86_64
 
-    - name: Make binary executable and copy it to docker folder
-      run: chmod +x astar-collator && cp astar-collator third-party/docker
+      - name: Make binary executable and copy it to docker folder
+        run: chmod +x astar-collator && cp astar-collator third-party/docker
 
-    - name: Build & Push docker image
-      uses: docker/build-push-action@v2
-      with:
-        context: third-party/docker
-        platforms: linux/amd64
-        labels: ${{ steps.docker_meta.outputs.labels }}
-        tags: ${{ steps.docker_meta.outputs.tags }}
-        push: true
+      - name: Build & Push docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: third-party/docker
+          platforms: linux/amd64
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          push: true
 
   srtool:
     needs: checks-and-tests
@@ -251,138 +239,139 @@ jobs:
       matrix:
         chain: ["astar", "shiden", "shibuya"]
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Srtool build
-      id: srtool_build
-      uses: chevdor/srtool-actions@v0.8.0
-      env:
-        # needed to enable metadata hash generation
-        BUILD_OPTS: "--features on-chain-release-build"
-      with:
-        chain: ${{ matrix.chain }}
-        runtime_dir: runtime/${{ matrix.chain }}
+      - name: Srtool build
+        id: srtool_build
+        uses: chevdor/srtool-actions@v0.8.0
+        env:
+          # needed to enable metadata hash generation
+          BUILD_OPTS: "--features on-chain-release-build"
+        with:
+          profile: production
+          chain: ${{ matrix.chain }}
+          runtime_dir: runtime/${{ matrix.chain }}
 
-    - name: Summary
-      run: |
-        echo '${{ steps.srtool_build.outputs.json }}' | jq > ${{ matrix.chain }}-srtool-digest.json
-        cat ${{ matrix.chain }}-srtool-digest.json
-        echo "Compact Runtime: ${{ steps.srtool_build.outputs.wasm }}"
-        echo "Compressed Runtime: ${{ steps.srtool_build.outputs.wasm_compressed }}"
-        cp ${{ steps.srtool_build.outputs.wasm }} ${{ matrix.chain }}_runtime.compact.wasm
-        cp ${{ steps.srtool_build.outputs.wasm_compressed }} ${{ matrix.chain }}_runtime.compact.compressed.wasm
+      - name: Summary
+        run: |
+          echo '${{ steps.srtool_build.outputs.json }}' | jq > ${{ matrix.chain }}-srtool-digest.json
+          cat ${{ matrix.chain }}-srtool-digest.json
+          echo "Compact Runtime: ${{ steps.srtool_build.outputs.wasm }}"
+          echo "Compressed Runtime: ${{ steps.srtool_build.outputs.wasm_compressed }}"
+          cp ${{ steps.srtool_build.outputs.wasm }} ${{ matrix.chain }}_runtime.compact.wasm
+          cp ${{ steps.srtool_build.outputs.wasm_compressed }} ${{ matrix.chain }}_runtime.compact.compressed.wasm
 
-    # it takes a while to build the runtime, so let's save the artifact as soon as we have it
-    - name: Archive Artifacts for ${{ matrix.chain }}
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ matrix.chain }}-runtime
-        path: |
-          ${{ matrix.chain }}_runtime.compact.wasm
-          ${{ matrix.chain }}_runtime.compact.compressed.wasm
-          ${{ matrix.chain }}-srtool-digest.json
+      # it takes a while to build the runtime, so let's save the artifact as soon as we have it
+      - name: Archive Artifacts for ${{ matrix.chain }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.chain }}-runtime
+          path: |
+            ${{ matrix.chain }}_runtime.compact.wasm
+            ${{ matrix.chain }}_runtime.compact.compressed.wasm
+            ${{ matrix.chain }}-srtool-digest.json
 
-    # We now get extra information thanks to subwasm
-    - name: Install subwasm
-      run: |
-        wget https://github.com/chevdor/subwasm/releases/download/v${{ env.SUBWASM_VERSION }}/subwasm_linux_amd64_v${{ env.SUBWASM_VERSION }}.deb
-        sudo dpkg -i subwasm_linux_amd64_v${{ env.SUBWASM_VERSION }}.deb
-        subwasm --version
+      # We now get extra information thanks to subwasm
+      - name: Install subwasm
+        run: |
+          wget https://github.com/chevdor/subwasm/releases/download/v${{ env.SUBWASM_VERSION }}/subwasm_linux_amd64_v${{ env.SUBWASM_VERSION }}.deb
+          sudo dpkg -i subwasm_linux_amd64_v${{ env.SUBWASM_VERSION }}.deb
+          subwasm --version
 
-    - name: Show Runtime information
-      shell: bash
-      run: |
-        subwasm info ${{ steps.srtool_build.outputs.wasm }}
-        subwasm info ${{ steps.srtool_build.outputs.wasm_compressed }}
-        subwasm --json info ${{ steps.srtool_build.outputs.wasm }} > ${{ matrix.chain }}-info.json
-        subwasm --json info ${{ steps.srtool_build.outputs.wasm_compressed }} > ${{ matrix.chain }}-compressed-info.json
+      - name: Show Runtime information
+        shell: bash
+        run: |
+          subwasm info ${{ steps.srtool_build.outputs.wasm }}
+          subwasm info ${{ steps.srtool_build.outputs.wasm_compressed }}
+          subwasm --json info ${{ steps.srtool_build.outputs.wasm }} > ${{ matrix.chain }}-info.json
+          subwasm --json info ${{ steps.srtool_build.outputs.wasm_compressed }} > ${{ matrix.chain }}-compressed-info.json
 
-    - name: Extract the metadata
-      shell: bash
-      run: |
-        subwasm meta ${{ steps.srtool_build.outputs.wasm }}
-        subwasm --json meta ${{ steps.srtool_build.outputs.wasm }} > ${{ matrix.chain }}-metadata.json
+      - name: Extract the metadata
+        shell: bash
+        run: |
+          subwasm meta ${{ steps.srtool_build.outputs.wasm }}
+          subwasm --json meta ${{ steps.srtool_build.outputs.wasm }} > ${{ matrix.chain }}-metadata.json
 
-    - name: Check the metadata diff
-      shell: bash
-      # the following subwasm call will error for chains that are not known and/or live, that includes shell for instance
-      run: |
-        subwasm diff ${{ steps.srtool_build.outputs.wasm }} --chain-b ${{ matrix.chain }} || \
-          echo "Subwasm call failed, check the logs. This is likely because ${{ matrix.chain }} is not known by subwasm" | \
-          tee ${{ matrix.chain }}-diff.txt
+      - name: Check the metadata diff
+        shell: bash
+        # the following subwasm call will error for chains that are not known and/or live, that includes shell for instance
+        run: |
+          subwasm diff ${{ steps.srtool_build.outputs.wasm }} --chain-b ${{ matrix.chain }} || \
+            echo "Subwasm call failed, check the logs. This is likely because ${{ matrix.chain }} is not known by subwasm" | \
+            tee ${{ matrix.chain }}-diff.txt
 
-    - name: Archive Subwasm results
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ matrix.chain }}-runtime
-        path: |
-          ${{ matrix.chain }}-info.json
-          ${{ matrix.chain }}-compressed-info.json
-          ${{ matrix.chain }}-metadata.json
-          ${{ matrix.chain }}-diff.txt
+      - name: Archive Subwasm results
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.chain }}-runtime
+          path: |
+            ${{ matrix.chain }}-info.json
+            ${{ matrix.chain }}-compressed-info.json
+            ${{ matrix.chain }}-metadata.json
+            ${{ matrix.chain }}-diff.txt
 
   publish-release-draft:
-    needs: [native-linux, evm-tracing-native-linux, native-macOS, docker, srtool]
+    needs: [native-linux, evm-tracing-runtimes, native-macOS, docker, srtool]
     runs-on: ubuntu-latest
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
       upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Download astar runtime
-      uses: actions/download-artifact@v3
-      with:
-        name: astar-runtime
-        path: runtime-artifacts
+      - name: Download astar runtime
+        uses: actions/download-artifact@v3
+        with:
+          name: astar-runtime
+          path: runtime-artifacts
 
-    - name: Download shiden runtime
-      uses: actions/download-artifact@v3
-      with:
-        name: shiden-runtime
-        path: runtime-artifacts
+      - name: Download shiden runtime
+        uses: actions/download-artifact@v3
+        with:
+          name: shiden-runtime
+          path: runtime-artifacts
 
-    - name: Download shibuya runtime
-      uses: actions/download-artifact@v3
-      with:
-        name: shibuya-runtime
-        path: runtime-artifacts
+      - name: Download shibuya runtime
+        uses: actions/download-artifact@v3
+        with:
+          name: shibuya-runtime
+          path: runtime-artifacts
 
-    - name: Use Node.js 18.x
-      uses: actions/setup-node@v2
-      with:
-        node-version: 18.x
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18.x
 
-    - name: Get the latest release
-      id: latest-release
-      uses: pozetroninc/github-action-get-latest-release@v0.5.0
-      with:
-        repository: AstarNetwork/Astar
-        excludes: "prerelease, draft"
+      - name: Get the latest release
+        id: latest-release
+        uses: pozetroninc/github-action-get-latest-release@v0.5.0
+        with:
+          repository: AstarNetwork/Astar
+          excludes: "prerelease, draft"
 
-    - name: Generate Release Body
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      id: generate-release-body
-      run: |
-        cd .github/scripts
-        yarn
-        yarn -s run ts-node generate-release-body.ts generate --owner "${{ github.repository_owner }}" --repo "$(basename ${{ github.repository }})" --from "${{ steps.latest-release.outputs.release }}" --to "${{ github.ref_name }}" --srtool-report-folder '../../runtime-artifacts/' > ../../body.md
+      - name: Generate Release Body
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        id: generate-release-body
+        run: |
+          cd .github/scripts
+          yarn
+          yarn -s run ts-node generate-release-body.ts generate --owner "${{ github.repository_owner }}" --repo "$(basename ${{ github.repository }})" --from "${{ steps.latest-release.outputs.release }}" --to "${{ github.ref_name }}" --srtool-report-folder '../../runtime-artifacts/' > ../../body.md
 
-    - name: Create Release Draft
-      id: create-release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref_name }}
-        release_name: ${{ github.ref_name }}
-        body_path: body.md
-        draft: true
+      - name: Create Release Draft
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
+          body_path: body.md
+          draft: true
 
   upload-binaries:
     needs: publish-release-draft
@@ -392,35 +381,35 @@ jobs:
         os: ["ubuntu", "macOS"]
         arch: ["x86_64", "aarch64"]
         exclude:
-        - os: macOS
-          arch: aarch64
+          - os: macOS
+            arch: aarch64
     steps:
-    - name: Create download folder
-      run: |
-        mkdir -p ${{ matrix.os }}-${{ matrix.arch }}-bin
-        mkdir -p ubuntu-tracing-bin
+      - name: Create download folder
+        run: |
+          mkdir -p ${{ matrix.os }}-${{ matrix.arch }}-bin
+          mkdir -p ubuntu-tracing-bin
 
-    - name: Download pre-built collator binary
-      uses: actions/download-artifact@v3
-      with:
-        name: astar-${{ matrix.os }}-latest-${{ matrix.arch }}
-        path: ${{ matrix.os }}-${{ matrix.arch }}-bin
+      - name: Download pre-built collator binary
+        uses: actions/download-artifact@v3
+        with:
+          name: astar-${{ matrix.os }}-latest-${{ matrix.arch }}
+          path: ${{ matrix.os }}-${{ matrix.arch }}-bin
 
-    - name: Make binary executable and tar gzip
-      run: |
-        cd ${{ matrix.os }}-${{ matrix.arch }}-bin
-        chmod +x astar-collator
-        tar zcvf astar-collator.tar.gz astar-collator
+      - name: Make binary executable and tar gzip
+        run: |
+          cd ${{ matrix.os }}-${{ matrix.arch }}-bin
+          chmod +x astar-collator
+          tar zcvf astar-collator.tar.gz astar-collator
 
-    - name: Upload binary artifact
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: ${{ matrix.os }}-${{ matrix.arch }}-bin/astar-collator.tar.gz
-        asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
-        asset_content_type: application/gzip
+      - name: Upload binary artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+          asset_path: ${{ matrix.os }}-${{ matrix.arch }}-bin/astar-collator.tar.gz
+          asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
+          asset_content_type: application/gzip
 
   upload-runtimes:
     needs: publish-release-draft
@@ -429,60 +418,60 @@ jobs:
       matrix:
         chain: ["astar", "shiden", "shibuya"]
     steps:
-    - name: Download runtime
-      uses: actions/download-artifact@v3
-      with:
-        name: ${{ matrix.chain }}-runtime
+      - name: Download runtime
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.chain }}-runtime
 
-    - name: Get runtime version
-      id: get-runtime-version
-      run: |
-        ls -R
-        chain=${{ matrix.chain }}
-        runtime_version=$(cat $chain-compressed-info.json | jq '.core_version' | tr -d '"' | cut -d ' ' -f 1)
-        echo $runtime_version
-        echo "runtime=$(echo $runtime_version)" >> $GITHUB_ENV
-        echo "${{ matrix.chain }}=$(echo $runtime_version)" >> $GITHUB_OUTPUT
+      - name: Get runtime version
+        id: get-runtime-version
+        run: |
+          ls -R
+          chain=${{ matrix.chain }}
+          runtime_version=$(cat $chain-compressed-info.json | jq '.core_version' | tr -d '"' | cut -d ' ' -f 1)
+          echo $runtime_version
+          echo "runtime=$(echo $runtime_version)" >> $GITHUB_ENV
+          echo "${{ matrix.chain }}=$(echo $runtime_version)" >> $GITHUB_OUTPUT
 
-    - name: Upload ${{ matrix.chain }} Wasm
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: ${{ matrix.chain }}_runtime.compact.compressed.wasm
-        asset_name: ${{ env.runtime }}.wasm
-        asset_content_type: application/wasm
+      - name: Upload ${{ matrix.chain }} Wasm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+          asset_path: ${{ matrix.chain }}_runtime.compact.compressed.wasm
+          asset_name: ${{ env.runtime }}.wasm
+          asset_content_type: application/wasm
 
-    - name: Upload ${{ matrix.chain }} Metadata
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: ${{ matrix.chain }}-metadata.json
-        asset_name: ${{ matrix.chain }}-metadata.json
-        asset_content_type: application/json
+      - name: Upload ${{ matrix.chain }} Metadata
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+          asset_path: ${{ matrix.chain }}-metadata.json
+          asset_name: ${{ matrix.chain }}-metadata.json
+          asset_content_type: application/json
 
-    - name: Upload ${{ matrix.chain }} Compressed Info
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: ${{ matrix.chain }}-compressed-info.json
-        asset_name: ${{ matrix.chain }}-compressed-info.json
-        asset_content_type: application/json
+      - name: Upload ${{ matrix.chain }} Compressed Info
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+          asset_path: ${{ matrix.chain }}-compressed-info.json
+          asset_name: ${{ matrix.chain }}-compressed-info.json
+          asset_content_type: application/json
 
-    - name: Upload ${{ matrix.chain }} Srtool Digest
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: ${{ matrix.chain }}-srtool-digest.json
-        asset_name: ${{ matrix.chain }}-srtool-digest.json
-        asset_content_type: application/json
+      - name: Upload ${{ matrix.chain }} Srtool Digest
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+          asset_path: ${{ matrix.chain }}-srtool-digest.json
+          asset_name: ${{ matrix.chain }}-srtool-digest.json
+          asset_content_type: application/json
 
     outputs:
       astar_runtime_version: ${{ steps.get-runtime-version.outputs.astar }}
@@ -490,61 +479,54 @@ jobs:
       shibuya_runtime_version: ${{ steps.get-runtime-version.outputs.shibuya }}
 
   upload-evm-tracing-artifacts:
-    needs: [publish-release-draft,upload-runtimes]
+    needs: [publish-release-draft, upload-runtimes]
     runs-on: ubuntu-latest
     steps:
-    - name: Download pre-built collator binary for evm tracing
-      uses: actions/download-artifact@v3
-      with:
-        name: astar-evm-tracing-ubuntu-latest-x86_64-unknown-linux-gnu
-        path: evm-tracing-artifacts
+      - name: Download evm tracing runtime
+        uses: actions/download-artifact@v3
+        with:
+          name: astar-evm-tracing-runtime
+          path: evm-tracing-artifacts
 
-    - name: Download evm tracing runtime
-      uses: actions/download-artifact@v3
-      with:
-        name: astar-evm-tracing-runtime
-        path: evm-tracing-artifacts
+      - name: Download evm tracing runtime
+        uses: actions/download-artifact@v3
+        with:
+          name: shiden-evm-tracing-runtime
+          path: evm-tracing-artifacts
 
-    - name: Download evm tracing runtime
-      uses: actions/download-artifact@v3
-      with:
-        name: shiden-evm-tracing-runtime
-        path: evm-tracing-artifacts
+      - name: Download evm tracing runtime
+        uses: actions/download-artifact@v3
+        with:
+          name: shibuya-evm-tracing-runtime
+          path: evm-tracing-artifacts
 
-    - name: Download evm tracing runtime
-      uses: actions/download-artifact@v3
-      with:
-        name: shibuya-evm-tracing-runtime
-        path: evm-tracing-artifacts
+      - name: Rename evm tracing
+        run: |
+          cd evm-tracing-artifacts
+          mv astar_evm_tracing_runtime.compact.compressed.wasm ${{needs.upload-runtimes.outputs.astar_runtime_version}}_evm_tracing_runtime.compact.compressed.wasm
+          mv shiden_evm_tracing_runtime.compact.compressed.wasm ${{needs.upload-runtimes.outputs.shiden_runtime_version}}_evm_tracing_runtime.compact.compressed.wasm
+          mv shibuya_evm_tracing_runtime.compact.compressed.wasm ${{needs.upload-runtimes.outputs.shibuya_runtime_version}}_evm_tracing_runtime.compact.compressed.wasm
 
-    - name: Make evm tracing binary executable and rename
-      run: |
-        cd evm-tracing-artifacts
-        chmod +x astar-collator
-        mv astar_evm_tracing_runtime.compact.compressed.wasm ${{needs.upload-runtimes.outputs.astar_runtime_version}}_evm_tracing_runtime.compact.compressed.wasm
-        mv shiden_evm_tracing_runtime.compact.compressed.wasm ${{needs.upload-runtimes.outputs.shiden_runtime_version}}_evm_tracing_runtime.compact.compressed.wasm
-        mv shibuya_evm_tracing_runtime.compact.compressed.wasm ${{needs.upload-runtimes.outputs.shibuya_runtime_version}}_evm_tracing_runtime.compact.compressed.wasm
+      - name: Compress folder
+        run: |
+          tar zcvf evm-tracing-artifacts.tar.gz evm-tracing-artifacts
 
-    - name: Compress folder
-      run: |
-        tar zcvf evm-tracing-artifacts.tar.gz evm-tracing-artifacts
-
-    - name: Upload evm tracing binary artifact
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path:  evm-tracing-artifacts.tar.gz
-        asset_name: evm-tracing-artifacts-${{ github.ref_name }}.tar.gz
-        asset_content_type: application/gzip
+      - name: Upload evm tracing binary artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+          asset_path: evm-tracing-artifacts.tar.gz
+          asset_name: evm-tracing-artifacts-${{ github.ref_name }}.tar.gz
+          asset_content_type: application/gzip
 
   chain-sync-smoke:
     needs: native-linux
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        chain: [ "astar", "shiden", "shibuya" ]
+        chain: ["astar", "shiden", "shibuya"]
 
     steps:
       - name: Checkout the source code
@@ -566,7 +548,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        chain: [ "astar-dev", "shiden-dev", "shibuya-dev" ]
+        chain: ["astar-dev", "shiden-dev", "shibuya-dev"]
 
     steps:
       - name: Checkout the source code
@@ -576,12 +558,10 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: astar-ubuntu-latest-x86_64
-          path: target/release
+          path: third-party/zombienet
 
       - name: Setup
-        run: |
-          chmod +x target/release/astar-collator
-          mv target/release/astar-collator third-party/zombienet
+        run: chmod +x third-party/zombienet/astar-collator
 
       - name: Setup zombienet
         working-directory: third-party/zombienet

@@ -46,20 +46,15 @@ use sp_runtime::traits::BlakeTwo256;
 use std::sync::Arc;
 use substrate_frame_rpc_system::{System, SystemApiServer};
 
-#[cfg(feature = "evm-tracing")]
 use moonbeam_rpc_debug::{Debug, DebugServer};
-#[cfg(feature = "evm-tracing")]
 use moonbeam_rpc_trace::{Trace, TraceServer};
 // TODO: get rid of this completely now that it's part of frontier?
-#[cfg(feature = "evm-tracing")]
 use moonbeam_rpc_txpool::{TxPool as MoonbeamTxPool, TxPoolServer};
 
 use astar_primitives::*;
 
-#[cfg(feature = "evm-tracing")]
 pub mod tracing;
 
-#[cfg(feature = "evm-tracing")]
 #[derive(Clone)]
 pub struct EvmTracingConfig {
     pub tracing_requesters: tracing::RpcRequesters,
@@ -142,7 +137,6 @@ pub struct FullDeps<C, P, A: ChainApi> {
 }
 
 /// Instantiate all RPC extensions and Tracing RPC.
-#[cfg(feature = "evm-tracing")]
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
@@ -205,45 +199,6 @@ where
     }
 
     Ok(io)
-}
-
-/// Instantiate all RPC extensions.
-#[cfg(not(feature = "evm-tracing"))]
-pub fn create_full<C, P, BE, A>(
-    deps: FullDeps<C, P, A>,
-    subscription_task_executor: SubscriptionTaskExecutor,
-    pubsub_notification_sinks: Arc<
-        fc_mapping_sync::EthereumBlockNotificationSinks<
-            fc_mapping_sync::EthereumBlockNotification<Block>,
-        >,
-    >,
-) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
-where
-    C: ProvideRuntimeApi<Block>
-        + HeaderBackend<Block>
-        + UsageProvider<Block>
-        + CallApiAt<Block>
-        + AuxStore
-        + StorageProvider<Block, BE>
-        + HeaderMetadata<Block, Error = BlockChainError>
-        + BlockchainEvents<Block>
-        + Send
-        + Sync
-        + 'static,
-    C: sc_client_api::BlockBackend<Block>,
-    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-        + fp_rpc::ConvertTransactionRuntimeApi<Block>
-        + fp_rpc::EthereumRuntimeRPCApi<Block>
-        + BlockBuilder<Block>
-        + AuraApi<Block, AuraId>,
-    P: TransactionPool<Block = Block> + Sync + Send + 'static,
-    BE: Backend<Block> + 'static,
-    BE::State: StateBackend<BlakeTwo256>,
-    BE::Blockchain: BlockchainBackend<Block>,
-    A: ChainApi<Block = Block> + 'static,
-{
-    create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)
 }
 
 fn create_full_rpc<C, P, BE, A>(
