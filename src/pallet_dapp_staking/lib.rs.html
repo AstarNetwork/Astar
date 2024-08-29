@@ -2518,6 +2518,7 @@
 <a href="#2516" id="2516">2516</a>
 <a href="#2517" id="2517">2517</a>
 <a href="#2518" id="2518">2518</a>
+<a href="#2519" id="2519">2519</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3029,7 +3030,8 @@
         <span class="kw">pub </span>tier_thresholds: Vec&lt;TierThreshold&gt;,
         <span class="kw">pub </span>slots_per_tier: Vec&lt;u16&gt;,
         <span class="kw">pub </span>safeguard: <span class="prelude-ty">Option</span>&lt;bool&gt;,
-        <span class="kw">pub </span>_config: PhantomData&lt;T&gt;,
+        <span class="attr">#[serde(skip)]
+        </span><span class="kw">pub </span>_config: PhantomData&lt;T&gt;,
     }
 
     <span class="kw">impl</span>&lt;T: Config&gt; Default <span class="kw">for </span>GenesisConfig&lt;T&gt; {

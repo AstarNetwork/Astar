@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["authority_keys_from_seed","development_config","new_partial","start_node"],"struct":["RuntimeApi"],"type":["ChainSpec","HostFunctions"]};
+window.SIDEBAR_ITEMS = {"fn":["development_config","new_partial","start_node"],"struct":["RuntimeApi"],"type":["ChainSpec","HostFunctions"]};

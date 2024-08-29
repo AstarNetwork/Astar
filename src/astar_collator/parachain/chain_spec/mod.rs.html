@@ -51,15 +51,6 @@
 <a href="#49" id="49">49</a>
 <a href="#50" id="50">50</a>
 <a href="#51" id="51">51</a>
-<a href="#52" id="52">52</a>
-<a href="#53" id="53">53</a>
-<a href="#54" id="54">54</a>
-<a href="#55" id="55">55</a>
-<a href="#56" id="56">56</a>
-<a href="#57" id="57">57</a>
-<a href="#58" id="58">58</a>
-<a href="#59" id="59">59</a>
-<a href="#60" id="60">60</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -78,11 +69,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see &lt;http://www.gnu.org/licenses/&gt;.
 
-</span><span class="kw">use </span>sc_chain_spec::ChainSpecExtension;
+</span><span class="kw">use </span>astar_primitives::Block;
+<span class="kw">use </span>sc_chain_spec::ChainSpecExtension;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
-<span class="kw">use </span>sp_core::{Pair, Public};
-
-<span class="kw">use </span>astar_primitives::Block;
 
 <span class="kw">pub mod </span>astar;
 <span class="kw">pub mod </span>shibuya;
@@ -112,12 +101,5 @@
     </span><span class="kw">pub fn </span>try_get(chain_spec: <span class="kw-2">&amp;</span><span class="kw">dyn </span>sc_service::ChainSpec) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="self">Self</span>&gt; {
         sc_chain_spec::get_extension(chain_spec.extensions())
     }
-}
-
-<span class="doccomment">/// Helper function to generate a crypto pair from seed
-</span><span class="kw">fn </span>get_from_seed&lt;TPublic: Public&gt;(seed: <span class="kw-2">&amp;</span>str) -&gt; &lt;TPublic::Pair <span class="kw">as </span>Pair&gt;::Public {
-    TPublic::Pair::from_string(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"//{}"</span>, seed), <span class="prelude-val">None</span>)
-        .expect(<span class="string">"static values are valid; qed"</span>)
-        .public()
 }
 </code></pre></div></section></main></body></html>
