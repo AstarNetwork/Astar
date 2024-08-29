@@ -64,7 +64,7 @@
 //! * `DAppTierRewards` - composite of `DAppTier` objects, describing the entire reward distribution for a particular era.
 //!
 
-use frame_support::{pallet_prelude::*, BoundedBTreeMap, BoundedVec};
+use frame_support::{pallet_prelude::*, BoundedBTreeMap, BoundedVec, DefaultNoBound};
 use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::fixed_point::FixedU128;
@@ -351,6 +351,7 @@ pub struct UnlockingChunk {
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -373,21 +374,6 @@ pub struct AccountLedger<UnlockingLen: Get<u32>> {
     /// Number of contract stake entries in storage.
     #[codec(compact)]
     pub(crate) contract_stake_count: u32,
-}
-
-impl<UnlockingLen> Default for AccountLedger<UnlockingLen>
-where
-    UnlockingLen: Get<u32>,
-{
-    fn default() -> Self {
-        Self {
-            locked: Balance::zero(),
-            unlocking: BoundedVec::default(),
-            staked: StakeAmount::default(),
-            staked_future: None,
-            contract_stake_count: Zero::zero(),
-        }
-    }
 }
 
 impl<UnlockingLen> AccountLedger<UnlockingLen>
@@ -1011,7 +997,7 @@ impl SingularStakingInfo {
     ///
     /// `period` - period number for which this entry is relevant.
     /// `subperiod` - subperiod during which this entry is created.
-    pub fn new(period: PeriodNumber, subperiod: Subperiod) -> Self {
+    pub(crate) fn new(period: PeriodNumber, subperiod: Subperiod) -> Self {
         Self {
             previous_staked: Default::default(),
             staked: StakeAmount {
@@ -1393,6 +1379,7 @@ pub enum EraRewardSpanError {
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -1414,7 +1401,7 @@ where
     SL: Get<u32>,
 {
     /// Create new instance of the `EraRewardSpan`
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             span: Default::default(),
             first_era: 0,
@@ -1527,6 +1514,7 @@ impl TierThreshold {
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -1585,16 +1573,6 @@ impl<NT: Get<u32>> TierParameters<NT> {
     }
 }
 
-impl<NT: Get<u32>> Default for TierParameters<NT> {
-    fn default() -> Self {
-        Self {
-            reward_portion: BoundedVec::default(),
-            slot_distribution: BoundedVec::default(),
-            tier_thresholds: BoundedVec::default(),
-        }
-    }
-}
-
 /// Configuration of dApp tiers.
 #[derive(
     Encode,
@@ -1602,6 +1580,7 @@ impl<NT: Get<u32>> Default for TierParameters<NT> {
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -1621,17 +1600,6 @@ pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>>
     /// Phantom data to keep track of the tier slots function.
     #[codec(skip)]
     pub(crate) _phantom: PhantomData<(T, P)>,
-}
-
-impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> Default for TiersConfiguration<NT, T, P> {
-    fn default() -> Self {
-        Self {
-            slots_per_tier: BoundedVec::default(),
-            reward_portion: BoundedVec::default(),
-            tier_thresholds: BoundedVec::default(),
-            _phantom: Default::default(),
-        }
-    }
 }
 
 // Some TODOs:
@@ -1760,6 +1728,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -1777,21 +1746,10 @@ pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
     pub(crate) rank_rewards: BoundedVec<Balance, NT>,
 }
 
-impl<MD: Get<u32>, NT: Get<u32>> Default for DAppTierRewards<MD, NT> {
-    fn default() -> Self {
-        Self {
-            dapps: BoundedBTreeMap::default(),
-            rewards: BoundedVec::default(),
-            period: 0,
-            rank_rewards: BoundedVec::default(),
-        }
-    }
-}
-
 impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
     /// Attempt to construct `DAppTierRewards` struct.
     /// If the provided arguments exceed the allowed capacity, return an error.
-    pub fn new(
+    pub(crate) fn new(
         dapps: BTreeMap<DAppId, RankedTier>,
         rewards: Vec<Balance>,
         period: PeriodNumber,

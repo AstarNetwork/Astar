@@ -160,8 +160,7 @@ where
 
         // Get the appropriate era reward span
         let era_span_index = DAppStaking::<R>::era_reward_span_index(era);
-        let reward_span =
-            EraRewards::<R>::get(&era_span_index).unwrap_or(EraRewardSpanFor::<R>::new());
+        let reward_span = EraRewards::<R>::get(&era_span_index).unwrap_or_default();
 
         // Sum up staker & dApp reward pools for the era
         let reward = reward_span.get(era).map_or(Zero::zero(), |r| {
@@ -198,8 +197,7 @@ where
             handle.record_db_read::<R>(20 + EraRewardSpanFor::<R>::max_encoded_len())?;
 
             let era_span_index = DAppStaking::<R>::era_reward_span_index(era);
-            let reward_span =
-                EraRewards::<R>::get(&era_span_index).unwrap_or(EraRewardSpanFor::<R>::new());
+            let reward_span = EraRewards::<R>::get(&era_span_index).unwrap_or_default();
 
             let staked = reward_span.get(era).map_or(Zero::zero(), |r| r.staked());
 
