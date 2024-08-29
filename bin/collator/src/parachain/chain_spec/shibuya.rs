@@ -23,9 +23,6 @@ use astar_primitives::parachain::SHIBUYA_ID;
 use sc_service::ChainType;
 use shibuya_runtime::{wasm_binary_unwrap, RuntimeGenesisConfig};
 
-// TODO to use?
-// use sc_chain_spec::{ChainSpec, ChainSpecExtension, ChainSpecGroup, ChainType};
-
 /// Specialized `ChainSpec` for Shibuya testnet.
 pub type ShibuyaChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig, Extensions>;
 
