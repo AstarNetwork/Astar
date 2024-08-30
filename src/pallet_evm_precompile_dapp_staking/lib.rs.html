@@ -832,8 +832,6 @@
 <a href="#830" id="830">830</a>
 <a href="#831" id="831">831</a>
 <a href="#832" id="832">832</a>
-<a href="#833" id="833">833</a>
-<a href="#834" id="834">834</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -970,7 +968,7 @@
         // Twox64(8) + ProtocolState::max_encoded_len
         </span>handle.record_db_read::&lt;R&gt;(<span class="number">8 </span>+ ProtocolState::max_encoded_len())<span class="question-mark">?</span>;
 
-        <span class="kw">let </span>current_era = ActiveProtocolState::&lt;R&gt;::get().era;
+        <span class="kw">let </span>current_era = ActiveProtocolState::&lt;R&gt;::get().era();
 
         <span class="prelude-val">Ok</span>(current_era.into())
     }
@@ -996,12 +994,11 @@
 
         <span class="comment">// Get the appropriate era reward span
         </span><span class="kw">let </span>era_span_index = DAppStaking::&lt;R&gt;::era_reward_span_index(era);
-        <span class="kw">let </span>reward_span =
-            EraRewards::&lt;R&gt;::get(<span class="kw-2">&amp;</span>era_span_index).unwrap_or(EraRewardSpanFor::&lt;R&gt;::new());
+        <span class="kw">let </span>reward_span = EraRewards::&lt;R&gt;::get(<span class="kw-2">&amp;</span>era_span_index).unwrap_or_default();
 
         <span class="comment">// Sum up staker &amp; dApp reward pools for the era
         </span><span class="kw">let </span>reward = reward_span.get(era).map_or(Zero::zero(), |r| {
-            r.staker_reward_pool.saturating_add(r.dapp_reward_pool)
+            r.staker_reward_pool().saturating_add(r.dapp_reward_pool())
         });
 
         <span class="prelude-val">Ok</span>(reward)
@@ -1021,9 +1018,9 @@
         // Twox64(8) + ProtocolState::max_encoded_len
         </span>handle.record_db_read::&lt;R&gt;(<span class="number">8 </span>+ ProtocolState::max_encoded_len())<span class="question-mark">?</span>;
 
-        <span class="kw">let </span>current_era = ActiveProtocolState::&lt;R&gt;::get().era;
+        <span class="kw">let </span>current_era = ActiveProtocolState::&lt;R&gt;::get().era();
 
-        <span class="comment">// There are few distinct scenenarios:
+        <span class="comment">// There are few distinct scenarios:
         // 1. Era is in the past so the value might exist.
         // 2. Era is current or the next one, in which case we definitely have that information.
         // 3. Era is from the future (more than the next era), in which case we don't have that information.
@@ -1034,10 +1031,9 @@
             </span>handle.record_db_read::&lt;R&gt;(<span class="number">20 </span>+ EraRewardSpanFor::&lt;R&gt;::max_encoded_len())<span class="question-mark">?</span>;
 
             <span class="kw">let </span>era_span_index = DAppStaking::&lt;R&gt;::era_reward_span_index(era);
-            <span class="kw">let </span>reward_span =
-                EraRewards::&lt;R&gt;::get(<span class="kw-2">&amp;</span>era_span_index).unwrap_or(EraRewardSpanFor::&lt;R&gt;::new());
+            <span class="kw">let </span>reward_span = EraRewards::&lt;R&gt;::get(<span class="kw-2">&amp;</span>era_span_index).unwrap_or_default();
 
-            <span class="kw">let </span>staked = reward_span.get(era).map_or(Zero::zero(), |r| r.staked);
+            <span class="kw">let </span>staked = reward_span.get(era).map_or(Zero::zero(), |r| r.staked());
 
             <span class="prelude-val">Ok</span>(staked.into())
         } <span class="kw">else if </span>era == current_era || era == current_era.saturating_add(<span class="number">1</span>) {
@@ -1049,9 +1045,9 @@
             <span class="kw">let </span>current_era_info = CurrentEraInfo::&lt;R&gt;::get();
 
             <span class="kw">if </span>era == current_era {
-                <span class="prelude-val">Ok</span>(current_era_info.current_stake_amount.total())
+                <span class="prelude-val">Ok</span>(current_era_info.current_stake_amount().total())
             } <span class="kw">else </span>{
-                <span class="prelude-val">Ok</span>(current_era_info.next_stake_amount.total())
+                <span class="prelude-val">Ok</span>(current_era_info.next_stake_amount().total())
             }
         } <span class="kw">else </span>{
             <span class="prelude-val">Err</span>(RevertReason::custom(<span class="string">"Era is in the future"</span>).into())
@@ -1161,7 +1157,7 @@
         };
 
         <span class="comment">// call pallet-dapps-staking
-        </span><span class="kw">let </span>contract_stake = ContractStake::&lt;R&gt;::get(<span class="kw-2">&amp;</span>dapp_info.id);
+        </span><span class="kw">let </span>contract_stake = ContractStake::&lt;R&gt;::get(<span class="kw-2">&amp;</span>dapp_info.id());
 
         <span class="prelude-val">Ok</span>(contract_stake.total_staked_amount(current_period_number))
     }
@@ -1428,7 +1424,7 @@
         <span class="kw">let </span>protocol_state = ActiveProtocolState::&lt;R&gt;::get();
 
         <span class="prelude-val">Ok</span>(PrecompileProtocolState {
-            era: protocol_state.era.into(),
+            era: protocol_state.era().into(),
             period: protocol_state.period_number().into(),
             subperiod: subperiod_id(<span class="kw-2">&amp;</span>protocol_state.subperiod()),
         })

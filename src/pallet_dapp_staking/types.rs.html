@@ -1824,6 +1824,22 @@
 <a href="#1822" id="1822">1822</a>
 <a href="#1823" id="1823">1823</a>
 <a href="#1824" id="1824">1824</a>
+<a href="#1825" id="1825">1825</a>
+<a href="#1826" id="1826">1826</a>
+<a href="#1827" id="1827">1827</a>
+<a href="#1828" id="1828">1828</a>
+<a href="#1829" id="1829">1829</a>
+<a href="#1830" id="1830">1830</a>
+<a href="#1831" id="1831">1831</a>
+<a href="#1832" id="1832">1832</a>
+<a href="#1833" id="1833">1833</a>
+<a href="#1834" id="1834">1834</a>
+<a href="#1835" id="1835">1835</a>
+<a href="#1836" id="1836">1836</a>
+<a href="#1837" id="1837">1837</a>
+<a href="#1838" id="1838">1838</a>
+<a href="#1839" id="1839">1839</a>
+<a href="#1840" id="1840">1840</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1890,7 +1906,7 @@
 //! * `DAppTierRewards` - composite of `DAppTier` objects, describing the entire reward distribution for a particular era.
 //!
 
-</span><span class="kw">use </span>frame_support::{pallet_prelude::<span class="kw-2">*</span>, BoundedBTreeMap, BoundedVec};
+</span><span class="kw">use </span>frame_support::{pallet_prelude::<span class="kw-2">*</span>, BoundedBTreeMap, BoundedVec, DefaultNoBound};
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>sp_arithmetic::fixed_point::FixedU128;
@@ -1963,12 +1979,12 @@
 </span><span class="kw">pub struct </span>PeriodInfo {
     <span class="doccomment">/// Period number.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>number: PeriodNumber,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) number: PeriodNumber,
     <span class="doccomment">/// Subperiod type.
-    </span><span class="kw">pub </span>subperiod: Subperiod,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) subperiod: Subperiod,
     <span class="doccomment">/// Era in which the new subperiod starts.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>next_subperiod_start_era: EraNumber,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) next_subperiod_start_era: EraNumber,
 }
 
 <span class="kw">impl </span>PeriodInfo {
@@ -1984,13 +2000,13 @@
 </span><span class="kw">pub struct </span>PeriodEndInfo {
     <span class="doccomment">/// Bonus reward pool allocated for 'loyal' stakers
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>bonus_reward_pool: Balance,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) bonus_reward_pool: Balance,
     <span class="doccomment">/// Total amount staked (remaining) from the voting subperiod.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>total_vp_stake: Balance,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) total_vp_stake: Balance,
     <span class="doccomment">/// Final era, inclusive, in which the period ended.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>final_era: EraNumber,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) final_era: EraNumber,
 }
 
 <span class="doccomment">/// Force types to speed up the next era, and even period.
@@ -2007,23 +2023,23 @@
 </span><span class="kw">pub struct </span>ProtocolState {
     <span class="doccomment">/// Ongoing era number.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>era: EraNumber,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) era: EraNumber,
     <span class="doccomment">/// Block number at which the next era should start.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>next_era_start: BlockNumber,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) next_era_start: BlockNumber,
     <span class="doccomment">/// Information about the ongoing period.
-    </span><span class="kw">pub </span>period_info: PeriodInfo,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) period_info: PeriodInfo,
     <span class="doccomment">/// `true` if pallet is in maintenance mode (disabled), `false` otherwise.
-    </span><span class="kw">pub </span>maintenance: bool,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) maintenance: bool,
 }
 
 <span class="kw">impl </span>Default <span class="kw">for </span>ProtocolState {
     <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
-            era: <span class="number">0</span>,
-            next_era_start: <span class="number">1</span>,
+            era: <span class="number">1</span>,
+            next_era_start: <span class="number">2</span>,
             period_info: PeriodInfo {
-                number: <span class="number">0</span>,
+                number: <span class="number">1</span>,
                 subperiod: Subperiod::Voting,
                 next_subperiod_start_era: <span class="number">2</span>,
             },
@@ -2033,6 +2049,22 @@
 }
 
 <span class="kw">impl </span>ProtocolState {
+    <span class="doccomment">/// Ongoing era.
+    </span><span class="kw">pub fn </span>era(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; EraNumber {
+        <span class="self">self</span>.era
+    }
+
+    <span class="doccomment">/// Block number at which the next era should start.
+    </span><span class="kw">pub fn </span>next_era_start(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BlockNumber {
+        <span class="self">self</span>.next_era_start
+    }
+
+    <span class="doccomment">/// Set the next era start block number.
+    /// Not perfectly clean approach but helps speed up integration tests significantly.
+    </span><span class="kw">pub fn </span>set_next_era_start(<span class="kw-2">&amp;mut </span><span class="self">self</span>, next_era_start: BlockNumber) {
+        <span class="self">self</span>.next_era_start = next_era_start;
+    }
+
     <span class="doccomment">/// Current subperiod.
     </span><span class="kw">pub fn </span>subperiod(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Subperiod {
         <span class="self">self</span>.period_info.subperiod
@@ -2078,15 +2110,20 @@
 </span><span class="attr">#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 </span><span class="kw">pub struct </span>DAppInfo&lt;AccountId&gt; {
     <span class="doccomment">/// Owner of the dApp, default reward beneficiary.
-    </span><span class="kw">pub </span>owner: AccountId,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) owner: AccountId,
     <span class="doccomment">/// dApp's unique identifier in dApp staking.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>id: DAppId,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) id: DAppId,
     <span class="comment">// If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
-    </span><span class="kw">pub </span>reward_beneficiary: <span class="prelude-ty">Option</span>&lt;AccountId&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) reward_beneficiary: <span class="prelude-ty">Option</span>&lt;AccountId&gt;,
 }
 
 <span class="kw">impl</span>&lt;AccountId&gt; DAppInfo&lt;AccountId&gt; {
+    <span class="doccomment">/// dApp's unique identifier.
+    </span><span class="kw">pub fn </span>id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; DAppId {
+        <span class="self">self</span>.id
+    }
+
     <span class="doccomment">/// Reward destination account for this dApp.
     </span><span class="kw">pub fn </span>reward_beneficiary(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>AccountId {
         <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.reward_beneficiary {
@@ -2167,6 +2204,7 @@
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -2175,41 +2213,36 @@
 </span><span class="kw">pub struct </span>AccountLedger&lt;UnlockingLen: Get&lt;u32&gt;&gt; {
     <span class="doccomment">/// How much active locked amount an account has. This can be used for staking.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>locked: Balance,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) locked: Balance,
     <span class="doccomment">/// Vector of all the unlocking chunks. This is also considered _locked_ but cannot be used for staking.
-    </span><span class="kw">pub </span>unlocking: BoundedVec&lt;UnlockingChunk, UnlockingLen&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) unlocking: BoundedVec&lt;UnlockingChunk, UnlockingLen&gt;,
     <span class="doccomment">/// Primary field used to store how much was staked in a particular era.
-    </span><span class="kw">pub </span>staked: StakeAmount,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) staked: StakeAmount,
     <span class="doccomment">/// Secondary field used to store 'stake' information for the 'next era'.
     /// This is needed since stake amount is only applicable from the next era after it's been staked.
     ///
     /// Both `stake` and `staked_future` must ALWAYS refer to the same period.
     /// If `staked_future` is `Some`, it will always be **EXACTLY** one era after the `staked` field era.
-    </span><span class="kw">pub </span>staked_future: <span class="prelude-ty">Option</span>&lt;StakeAmount&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) staked_future: <span class="prelude-ty">Option</span>&lt;StakeAmount&gt;,
     <span class="doccomment">/// Number of contract stake entries in storage.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>contract_stake_count: u32,
-}
-
-<span class="kw">impl</span>&lt;UnlockingLen&gt; Default <span class="kw">for </span>AccountLedger&lt;UnlockingLen&gt;
-<span class="kw">where
-    </span>UnlockingLen: Get&lt;u32&gt;,
-{
-    <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{
-            locked: Balance::zero(),
-            unlocking: BoundedVec::default(),
-            staked: StakeAmount::default(),
-            staked_future: <span class="prelude-val">None</span>,
-            contract_stake_count: Zero::zero(),
-        }
-    }
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) contract_stake_count: u32,
 }
 
 <span class="kw">impl</span>&lt;UnlockingLen&gt; AccountLedger&lt;UnlockingLen&gt;
 <span class="kw">where
     </span>UnlockingLen: Get&lt;u32&gt;,
 {
+    <span class="doccomment">/// How much active locked amount an account has. This can be used for staking.
+    </span><span class="kw">pub fn </span>locked(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Balance {
+        <span class="self">self</span>.locked
+    }
+
+    <span class="doccomment">/// Unlocking chunks.
+    </span><span class="kw">pub fn </span>unlocking_chunks(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[UnlockingChunk] {
+        <span class="kw-2">&amp;</span><span class="self">self</span>.unlocking
+    }
+
     <span class="doccomment">/// Empty if no locked/unlocking/staked info exists.
     </span><span class="kw">pub fn </span>is_empty(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         <span class="self">self</span>.locked.is_zero()
@@ -2645,16 +2678,16 @@
 </span><span class="kw">pub struct </span>StakeAmount {
     <span class="doccomment">/// Amount of staked funds accounting for the voting subperiod.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>voting: Balance,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) voting: Balance,
     <span class="doccomment">/// Amount of staked funds accounting for the build&amp;earn subperiod.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>build_and_earn: Balance,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) build_and_earn: Balance,
     <span class="doccomment">/// Era to which this stake amount refers to.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>era: EraNumber,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) era: EraNumber,
     <span class="doccomment">/// Period to which this stake amount refers to.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>period: PeriodNumber,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) period: PeriodNumber,
 }
 
 <span class="kw">impl </span>StakeAmount {
@@ -2710,18 +2743,28 @@
     <span class="doccomment">/// How much balance is locked in dApp staking.
     /// Does not include the amount that is undergoing the unlocking period.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>total_locked: Balance,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) total_locked: Balance,
     <span class="doccomment">/// How much balance is undergoing unlocking process.
     /// This amount still counts into locked amount.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>unlocking: Balance,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) unlocking: Balance,
     <span class="doccomment">/// Stake amount valid for the ongoing era.
-    </span><span class="kw">pub </span>current_stake_amount: StakeAmount,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) current_stake_amount: StakeAmount,
     <span class="doccomment">/// Stake amount valid from the next era.
-    </span><span class="kw">pub </span>next_stake_amount: StakeAmount,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) next_stake_amount: StakeAmount,
 }
 
 <span class="kw">impl </span>EraInfo {
+    <span class="doccomment">/// Stake amount valid for the ongoing era.
+    </span><span class="kw">pub fn </span>current_stake_amount(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; StakeAmount {
+        <span class="self">self</span>.current_stake_amount
+    }
+
+    <span class="doccomment">/// Stake amount valid from the next era.
+    </span><span class="kw">pub fn </span>next_stake_amount(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; StakeAmount {
+        <span class="self">self</span>.next_stake_amount
+    }
+
     <span class="doccomment">/// Update with the new amount that has just been locked.
     </span><span class="kw">pub fn </span>add_locked(<span class="kw-2">&amp;mut </span><span class="self">self</span>, amount: Balance) {
         <span class="self">self</span>.total_locked.saturating_accrue(amount);
@@ -2812,7 +2855,7 @@
     ///
     /// `period` - period number for which this entry is relevant.
     /// `subperiod` - subperiod during which this entry is created.
-    </span><span class="kw">pub fn </span>new(period: PeriodNumber, subperiod: Subperiod) -&gt; <span class="self">Self </span>{
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(period: PeriodNumber, subperiod: Subperiod) -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
             previous_staked: Default::default(),
             staked: StakeAmount {
@@ -2978,9 +3021,9 @@
 </span><span class="attr">#[derive(Encode, Decode, MaxEncodedLen, RuntimeDebug, PartialEq, Eq, Clone, TypeInfo, Default)]
 </span><span class="kw">pub struct </span>ContractStakeAmount {
     <span class="doccomment">/// Staked amount in the 'current' era.
-    </span><span class="kw">pub </span>staked: StakeAmount,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) staked: StakeAmount,
     <span class="doccomment">/// Staked amount in the next or 'future' era.
-    </span><span class="kw">pub </span>staked_future: <span class="prelude-ty">Option</span>&lt;StakeAmount&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) staked_future: <span class="prelude-ty">Option</span>&lt;StakeAmount&gt;,
 }
 
 <span class="kw">impl </span>ContractStakeAmount {
@@ -3153,13 +3196,30 @@
 </span><span class="kw">pub struct </span>EraReward {
     <span class="doccomment">/// Total reward pool for staker rewards
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>staker_reward_pool: Balance,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) staker_reward_pool: Balance,
     <span class="doccomment">/// Total amount which was staked at the end of an era
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>staked: Balance,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) staked: Balance,
     <span class="doccomment">/// Total reward pool for dApp rewards
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>dapp_reward_pool: Balance,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) dapp_reward_pool: Balance,
+}
+
+<span class="kw">impl </span>EraReward {
+    <span class="doccomment">/// Total reward pool for staker rewards.
+    </span><span class="kw">pub fn </span>staker_reward_pool(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Balance {
+        <span class="self">self</span>.staker_reward_pool
+    }
+
+    <span class="doccomment">/// Total amount which was staked at the end of an era.
+    </span><span class="kw">pub fn </span>staked(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Balance {
+        <span class="self">self</span>.staked
+    }
+
+    <span class="doccomment">/// Total reward pool for dApp rewards
+    </span><span class="kw">pub fn </span>dapp_reward_pool(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Balance {
+        <span class="self">self</span>.dapp_reward_pool
+    }
 }
 
 <span class="attr">#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
@@ -3177,6 +3237,7 @@
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -3184,7 +3245,7 @@
 #[scale_info(skip_type_params(SL))]
 </span><span class="kw">pub struct </span>EraRewardSpan&lt;SL: Get&lt;u32&gt;&gt; {
     <span class="doccomment">/// Span of EraRewardInfo entries.
-    </span><span class="kw">pub </span>span: BoundedVec&lt;EraReward, SL&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) span: BoundedVec&lt;EraReward, SL&gt;,
     <span class="doccomment">/// The first era in the span.
     </span><span class="attr">#[codec(compact)]
     </span>first_era: EraNumber,
@@ -3198,7 +3259,7 @@
     </span>SL: Get&lt;u32&gt;,
 {
     <span class="doccomment">/// Create new instance of the `EraRewardSpan`
-    </span><span class="kw">pub fn </span>new() -&gt; <span class="self">Self </span>{
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new() -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
             span: Default::default(),
             first_era: <span class="number">0</span>,
@@ -3311,6 +3372,7 @@
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -3321,15 +3383,15 @@
     /// First entry refers to the first tier, and so on.
     /// The sum of all values must not exceed 100%.
     /// In case it is less, portion of rewards will never be distributed.
-    </span><span class="kw">pub </span>reward_portion: BoundedVec&lt;Permill, NT&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) reward_portion: BoundedVec&lt;Permill, NT&gt;,
     <span class="doccomment">/// Distribution of number of slots per tier, in percentage.
     /// First entry refers to the first tier, and so on.
     /// The sum of all values must not exceed 100%.
     /// In case it is less, slot capacity will never be fully filled.
-    </span><span class="kw">pub </span>slot_distribution: BoundedVec&lt;Permill, NT&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) slot_distribution: BoundedVec&lt;Permill, NT&gt;,
     <span class="doccomment">/// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
-    </span><span class="kw">pub </span>tier_thresholds: BoundedVec&lt;TierThreshold, NT&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) tier_thresholds: BoundedVec&lt;TierThreshold, NT&gt;,
 }
 
 <span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;&gt; TierParameters&lt;NT&gt; {
@@ -3369,16 +3431,6 @@
     }
 }
 
-<span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;&gt; Default <span class="kw">for </span>TierParameters&lt;NT&gt; {
-    <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{
-            reward_portion: BoundedVec::default(),
-            slot_distribution: BoundedVec::default(),
-            tier_thresholds: BoundedVec::default(),
-        }
-    }
-}
-
 <span class="doccomment">/// Configuration of dApp tiers.
 </span><span class="attr">#[derive(
     Encode,
@@ -3386,6 +3438,7 @@
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -3394,28 +3447,17 @@
 </span><span class="kw">pub struct </span>TiersConfiguration&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; {
     <span class="doccomment">/// Number of slots per tier.
     /// First entry refers to the first tier, and so on.
-    </span><span class="kw">pub </span>slots_per_tier: BoundedVec&lt;u16, NT&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) slots_per_tier: BoundedVec&lt;u16, NT&gt;,
     <span class="doccomment">/// Reward distribution per tier, in percentage.
     /// First entry refers to the first tier, and so on.
     /// The sum of all values must be exactly equal to 1.
-    </span><span class="kw">pub </span>reward_portion: BoundedVec&lt;Permill, NT&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) reward_portion: BoundedVec&lt;Permill, NT&gt;,
     <span class="doccomment">/// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
-    </span><span class="kw">pub </span>tier_thresholds: BoundedVec&lt;Balance, NT&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) tier_thresholds: BoundedVec&lt;Balance, NT&gt;,
     <span class="doccomment">/// Phantom data to keep track of the tier slots function.
     </span><span class="attr">#[codec(skip)]
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) _phantom: PhantomData&lt;(T, P)&gt;,
-}
-
-<span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; Default <span class="kw">for </span>TiersConfiguration&lt;NT, T, P&gt; {
-    <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{
-            slots_per_tier: BoundedVec::default(),
-            reward_portion: BoundedVec::default(),
-            tier_thresholds: BoundedVec::default(),
-            _phantom: Default::default(),
-        }
-    }
 }
 
 <span class="comment">// Some TODOs:
@@ -3544,6 +3586,7 @@
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -3551,31 +3594,20 @@
 #[scale_info(skip_type_params(MD, NT))]
 </span><span class="kw">pub struct </span>DAppTierRewards&lt;MD: Get&lt;u32&gt;, NT: Get&lt;u32&gt;&gt; {
     <span class="doccomment">/// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
-    </span><span class="kw">pub </span>dapps: BoundedBTreeMap&lt;DAppId, RankedTier, MD&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) dapps: BoundedBTreeMap&lt;DAppId, RankedTier, MD&gt;,
     <span class="doccomment">/// Rewards for each tier. First entry refers to the first tier, and so on.
-    </span><span class="kw">pub </span>rewards: BoundedVec&lt;Balance, NT&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) rewards: BoundedVec&lt;Balance, NT&gt;,
     <span class="doccomment">/// Period during which this struct was created.
     </span><span class="attr">#[codec(compact)]
-    </span><span class="kw">pub </span>period: PeriodNumber,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) period: PeriodNumber,
     <span class="doccomment">/// Rank reward for each tier. First entry refers to the first tier, and so on.
-    </span><span class="kw">pub </span>rank_rewards: BoundedVec&lt;Balance, NT&gt;,
-}
-
-<span class="kw">impl</span>&lt;MD: Get&lt;u32&gt;, NT: Get&lt;u32&gt;&gt; Default <span class="kw">for </span>DAppTierRewards&lt;MD, NT&gt; {
-    <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{
-            dapps: BoundedBTreeMap::default(),
-            rewards: BoundedVec::default(),
-            period: <span class="number">0</span>,
-            rank_rewards: BoundedVec::default(),
-        }
-    }
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) rank_rewards: BoundedVec&lt;Balance, NT&gt;,
 }
 
 <span class="kw">impl</span>&lt;MD: Get&lt;u32&gt;, NT: Get&lt;u32&gt;&gt; DAppTierRewards&lt;MD, NT&gt; {
     <span class="doccomment">/// Attempt to construct `DAppTierRewards` struct.
     /// If the provided arguments exceed the allowed capacity, return an error.
-    </span><span class="kw">pub fn </span>new(
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(
         dapps: BTreeMap&lt;DAppId, RankedTier&gt;,
         rewards: Vec&lt;Balance&gt;,
         period: PeriodNumber,
