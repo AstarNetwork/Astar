@@ -194,10 +194,10 @@ pub struct ProtocolState {
 impl Default for ProtocolState {
     fn default() -> Self {
         Self {
-            era: 0,
-            next_era_start: 1,
+            era: 1,
+            next_era_start: 2,
             period_info: PeriodInfo {
-                number: 0,
+                number: 1,
                 subperiod: Subperiod::Voting,
                 next_subperiod_start_era: 2,
             },
@@ -210,6 +210,17 @@ impl ProtocolState {
     /// Ongoing era.
     pub fn era(&self) -> EraNumber {
         self.era
+    }
+
+    /// Block number at which the next era should start.
+    pub fn next_era_start(&self) -> BlockNumber {
+        self.next_era_start
+    }
+
+    /// Set the next era start block number.
+    /// Not perfectly clean approach but helps speed up integration tests significantly.
+    pub fn set_next_era_start(&mut self, next_era_start: BlockNumber) {
+        self.next_era_start = next_era_start;
     }
 
     /// Current subperiod.
@@ -380,6 +391,11 @@ impl<UnlockingLen> AccountLedger<UnlockingLen>
 where
     UnlockingLen: Get<u32>,
 {
+    /// How much active locked amount an account has. This can be used for staking.
+    pub fn locked(&self) -> Balance {
+        self.locked
+    }
+
     /// Unlocking chunks.
     pub fn unlocking_chunks(&self) -> &[UnlockingChunk] {
         &self.unlocking

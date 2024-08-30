@@ -31,7 +31,7 @@ fn dapp_staking_triggers_inflation_recalculation() {
 
         // It's not feasible to run through all the blocks needed to trigger all the eras.
         // Instead, we force the era to change on a block by block basis.
-        while ActiveProtocolState::<Runtime>::get().era < recalculation_era - 1 {
+        while ActiveProtocolState::<Runtime>::get().era() < recalculation_era - 1 {
             assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era,));
             run_for_blocks(1);
             assert_eq!(
@@ -49,11 +49,11 @@ fn dapp_staking_triggers_inflation_recalculation() {
         // Again, hacky approach to speed things up.
         // This doesn't influence anything in the protocol essentially.
         ActiveProtocolState::<Runtime>::mutate(|state| {
-            state.next_era_start = System::block_number() + 5;
+            state.set_next_era_start(System::block_number() + 5);
         });
 
         // Another sanity check, move block by block and ensure protocol works as expected.
-        let target_block = ActiveProtocolState::<Runtime>::get().next_era_start;
+        let target_block = ActiveProtocolState::<Runtime>::get().next_era_start();
         run_to_block(target_block - 2);
         assert_eq!(
             init_inflation_config,
