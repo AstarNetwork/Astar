@@ -32,7 +32,6 @@ use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 
 pub use astar_primitives::{
-    dapp_staking::CycleConfiguration,
     governance::{
         CommunityCouncilMembershipInst, MainCouncilMembershipInst, OracleMembershipInst,
         TechnicalCommitteeMembershipInst,
@@ -195,20 +194,6 @@ impl ExtBuilder {
         ext.execute_with(|| {
             System::set_block_number(1);
 
-            let era_length = <Runtime as pallet_dapp_staking::Config>::CycleConfiguration::blocks_per_era();
-            let voting_period_length_in_eras =
-            <Runtime as pallet_dapp_staking::Config>::CycleConfiguration::eras_per_voting_subperiod();
-
-            pallet_dapp_staking::ActiveProtocolState::<Runtime>::put(pallet_dapp_staking::ProtocolState {
-                era: 1,
-                next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + 1,
-                period_info: pallet_dapp_staking::PeriodInfo {
-                    number: 1,
-                    subperiod: pallet_dapp_staking::Subperiod::Voting,
-                    next_subperiod_start_era: 2,
-                },
-                maintenance: false,
-            });
             pallet_dapp_staking::Safeguard::<Runtime>::put(false);
 
             // Ensure the initial state is set for the first block

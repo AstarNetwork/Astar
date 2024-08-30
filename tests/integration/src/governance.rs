@@ -162,7 +162,7 @@ fn community_council_can_execute_dapp_staking_calls() {
 
         // Check that the lock was successful
         assert_eq!(
-            pallet_dapp_staking::Ledger::<Runtime>::get(&proxy_account).locked,
+            pallet_dapp_staking::Ledger::<Runtime>::get(&proxy_account).locked(),
             lock_amount
         );
     })

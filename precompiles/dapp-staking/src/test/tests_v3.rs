@@ -43,7 +43,7 @@ fn protocol_state_is_ok() {
         let state = ActiveProtocolState::<Test>::get();
 
         let expected_outcome = PrecompileProtocolState {
-            era: state.era.into(),
+            era: state.era().into(),
             period: state.period_number().into(),
             subperiod: subperiod_id(&state.subperiod()),
         };
@@ -161,8 +161,9 @@ fn claim_unlocked_is_ok() {
         ));
 
         // Advance enough into time so unlocking chunk can be claimed
-        let unlock_block =
-            Ledger::<Test>::get(&AddressMapper::into_account_id(ALICE)).unlocking[0].unlock_block;
+        let unlock_block = Ledger::<Test>::get(&AddressMapper::into_account_id(ALICE))
+            .unlocking_chunks()[0]
+            .unlock_block;
         run_to_block(unlock_block);
 
         // Claim unlocked chunk and verify event

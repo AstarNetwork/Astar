@@ -220,7 +220,7 @@ fn remote_dapps_staking_staker_claim() {
         ));
 
         // advance enough blocks so we at least get to era 5 - this gives us era 2, 3 and 4 for claiming
-        while pallet_dapp_staking::ActiveProtocolState::<parachain::Runtime>::get().era < 5 {
+        while pallet_dapp_staking::ActiveProtocolState::<parachain::Runtime>::get().era() < 5 {
             advance_parachain_block_to(parachain::System::block_number() + 1);
         }
         // Ensure it's not first block so event storage is clear

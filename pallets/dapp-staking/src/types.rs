@@ -64,7 +64,7 @@
 //! * `DAppTierRewards` - composite of `DAppTier` objects, describing the entire reward distribution for a particular era.
 //!
 
-use frame_support::{pallet_prelude::*, BoundedBTreeMap, BoundedVec};
+use frame_support::{pallet_prelude::*, BoundedBTreeMap, BoundedVec, DefaultNoBound};
 use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::fixed_point::FixedU128;
@@ -137,12 +137,12 @@ impl Subperiod {
 pub struct PeriodInfo {
     /// Period number.
     #[codec(compact)]
-    pub number: PeriodNumber,
+    pub(crate) number: PeriodNumber,
     /// Subperiod type.
-    pub subperiod: Subperiod,
+    pub(crate) subperiod: Subperiod,
     /// Era in which the new subperiod starts.
     #[codec(compact)]
-    pub next_subperiod_start_era: EraNumber,
+    pub(crate) next_subperiod_start_era: EraNumber,
 }
 
 impl PeriodInfo {
@@ -158,13 +158,13 @@ impl PeriodInfo {
 pub struct PeriodEndInfo {
     /// Bonus reward pool allocated for 'loyal' stakers
     #[codec(compact)]
-    pub bonus_reward_pool: Balance,
+    pub(crate) bonus_reward_pool: Balance,
     /// Total amount staked (remaining) from the voting subperiod.
     #[codec(compact)]
-    pub total_vp_stake: Balance,
+    pub(crate) total_vp_stake: Balance,
     /// Final era, inclusive, in which the period ended.
     #[codec(compact)]
-    pub final_era: EraNumber,
+    pub(crate) final_era: EraNumber,
 }
 
 /// Force types to speed up the next era, and even period.
@@ -181,23 +181,23 @@ pub enum ForcingType {
 pub struct ProtocolState {
     /// Ongoing era number.
     #[codec(compact)]
-    pub era: EraNumber,
+    pub(crate) era: EraNumber,
     /// Block number at which the next era should start.
     #[codec(compact)]
-    pub next_era_start: BlockNumber,
+    pub(crate) next_era_start: BlockNumber,
     /// Information about the ongoing period.
-    pub period_info: PeriodInfo,
+    pub(crate) period_info: PeriodInfo,
     /// `true` if pallet is in maintenance mode (disabled), `false` otherwise.
-    pub maintenance: bool,
+    pub(crate) maintenance: bool,
 }
 
 impl Default for ProtocolState {
     fn default() -> Self {
         Self {
-            era: 0,
-            next_era_start: 1,
+            era: 1,
+            next_era_start: 2,
             period_info: PeriodInfo {
-                number: 0,
+                number: 1,
                 subperiod: Subperiod::Voting,
                 next_subperiod_start_era: 2,
             },
@@ -207,6 +207,22 @@ impl Default for ProtocolState {
 }
 
 impl ProtocolState {
+    /// Ongoing era.
+    pub fn era(&self) -> EraNumber {
+        self.era
+    }
+
+    /// Block number at which the next era should start.
+    pub fn next_era_start(&self) -> BlockNumber {
+        self.next_era_start
+    }
+
+    /// Set the next era start block number.
+    /// Not perfectly clean approach but helps speed up integration tests significantly.
+    pub fn set_next_era_start(&mut self, next_era_start: BlockNumber) {
+        self.next_era_start = next_era_start;
+    }
+
     /// Current subperiod.
     pub fn subperiod(&self) -> Subperiod {
         self.period_info.subperiod
@@ -252,15 +268,20 @@ impl ProtocolState {
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct DAppInfo<AccountId> {
     /// Owner of the dApp, default reward beneficiary.
-    pub owner: AccountId,
+    pub(crate) owner: AccountId,
     /// dApp's unique identifier in dApp staking.
     #[codec(compact)]
-    pub id: DAppId,
+    pub(crate) id: DAppId,
     // If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
-    pub reward_beneficiary: Option<AccountId>,
+    pub(crate) reward_beneficiary: Option<AccountId>,
 }
 
 impl<AccountId> DAppInfo<AccountId> {
+    /// dApp's unique identifier.
+    pub fn id(&self) -> DAppId {
+        self.id
+    }
+
     /// Reward destination account for this dApp.
     pub fn reward_beneficiary(&self) -> &AccountId {
         match &self.reward_beneficiary {
@@ -341,6 +362,7 @@ pub struct UnlockingChunk {
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -349,41 +371,36 @@ pub struct UnlockingChunk {
 pub struct AccountLedger<UnlockingLen: Get<u32>> {
     /// How much active locked amount an account has. This can be used for staking.
     #[codec(compact)]
-    pub locked: Balance,
+    pub(crate) locked: Balance,
     /// Vector of all the unlocking chunks. This is also considered _locked_ but cannot be used for staking.
-    pub unlocking: BoundedVec<UnlockingChunk, UnlockingLen>,
+    pub(crate) unlocking: BoundedVec<UnlockingChunk, UnlockingLen>,
     /// Primary field used to store how much was staked in a particular era.
-    pub staked: StakeAmount,
+    pub(crate) staked: StakeAmount,
     /// Secondary field used to store 'stake' information for the 'next era'.
     /// This is needed since stake amount is only applicable from the next era after it's been staked.
     ///
     /// Both `stake` and `staked_future` must ALWAYS refer to the same period.
     /// If `staked_future` is `Some`, it will always be **EXACTLY** one era after the `staked` field era.
-    pub staked_future: Option<StakeAmount>,
+    pub(crate) staked_future: Option<StakeAmount>,
     /// Number of contract stake entries in storage.
     #[codec(compact)]
-    pub contract_stake_count: u32,
-}
-
-impl<UnlockingLen> Default for AccountLedger<UnlockingLen>
-where
-    UnlockingLen: Get<u32>,
-{
-    fn default() -> Self {
-        Self {
-            locked: Balance::zero(),
-            unlocking: BoundedVec::default(),
-            staked: StakeAmount::default(),
-            staked_future: None,
-            contract_stake_count: Zero::zero(),
-        }
-    }
+    pub(crate) contract_stake_count: u32,
 }
 
 impl<UnlockingLen> AccountLedger<UnlockingLen>
 where
     UnlockingLen: Get<u32>,
 {
+    /// How much active locked amount an account has. This can be used for staking.
+    pub fn locked(&self) -> Balance {
+        self.locked
+    }
+
+    /// Unlocking chunks.
+    pub fn unlocking_chunks(&self) -> &[UnlockingChunk] {
+        &self.unlocking
+    }
+
     /// Empty if no locked/unlocking/staked info exists.
     pub fn is_empty(&self) -> bool {
         self.locked.is_zero()
@@ -819,16 +836,16 @@ impl Iterator for EraStakePairIter {
 pub struct StakeAmount {
     /// Amount of staked funds accounting for the voting subperiod.
     #[codec(compact)]
-    pub voting: Balance,
+    pub(crate) voting: Balance,
     /// Amount of staked funds accounting for the build&earn subperiod.
     #[codec(compact)]
-    pub build_and_earn: Balance,
+    pub(crate) build_and_earn: Balance,
     /// Era to which this stake amount refers to.
     #[codec(compact)]
-    pub era: EraNumber,
+    pub(crate) era: EraNumber,
     /// Period to which this stake amount refers to.
     #[codec(compact)]
-    pub period: PeriodNumber,
+    pub(crate) period: PeriodNumber,
 }
 
 impl StakeAmount {
@@ -884,18 +901,28 @@ pub struct EraInfo {
     /// How much balance is locked in dApp staking.
     /// Does not include the amount that is undergoing the unlocking period.
     #[codec(compact)]
-    pub total_locked: Balance,
+    pub(crate) total_locked: Balance,
     /// How much balance is undergoing unlocking process.
     /// This amount still counts into locked amount.
     #[codec(compact)]
-    pub unlocking: Balance,
+    pub(crate) unlocking: Balance,
     /// Stake amount valid for the ongoing era.
-    pub current_stake_amount: StakeAmount,
+    pub(crate) current_stake_amount: StakeAmount,
     /// Stake amount valid from the next era.
-    pub next_stake_amount: StakeAmount,
+    pub(crate) next_stake_amount: StakeAmount,
 }
 
 impl EraInfo {
+    /// Stake amount valid for the ongoing era.
+    pub fn current_stake_amount(&self) -> StakeAmount {
+        self.current_stake_amount
+    }
+
+    /// Stake amount valid from the next era.
+    pub fn next_stake_amount(&self) -> StakeAmount {
+        self.next_stake_amount
+    }
+
     /// Update with the new amount that has just been locked.
     pub fn add_locked(&mut self, amount: Balance) {
         self.total_locked.saturating_accrue(amount);
@@ -986,7 +1013,7 @@ impl SingularStakingInfo {
     ///
     /// `period` - period number for which this entry is relevant.
     /// `subperiod` - subperiod during which this entry is created.
-    pub fn new(period: PeriodNumber, subperiod: Subperiod) -> Self {
+    pub(crate) fn new(period: PeriodNumber, subperiod: Subperiod) -> Self {
         Self {
             previous_staked: Default::default(),
             staked: StakeAmount {
@@ -1152,9 +1179,9 @@ impl SingularStakingInfo {
 #[derive(Encode, Decode, MaxEncodedLen, RuntimeDebug, PartialEq, Eq, Clone, TypeInfo, Default)]
 pub struct ContractStakeAmount {
     /// Staked amount in the 'current' era.
-    pub staked: StakeAmount,
+    pub(crate) staked: StakeAmount,
     /// Staked amount in the next or 'future' era.
-    pub staked_future: Option<StakeAmount>,
+    pub(crate) staked_future: Option<StakeAmount>,
 }
 
 impl ContractStakeAmount {
@@ -1327,13 +1354,30 @@ impl ContractStakeAmount {
 pub struct EraReward {
     /// Total reward pool for staker rewards
     #[codec(compact)]
-    pub staker_reward_pool: Balance,
+    pub(crate) staker_reward_pool: Balance,
     /// Total amount which was staked at the end of an era
     #[codec(compact)]
-    pub staked: Balance,
+    pub(crate) staked: Balance,
     /// Total reward pool for dApp rewards
     #[codec(compact)]
-    pub dapp_reward_pool: Balance,
+    pub(crate) dapp_reward_pool: Balance,
+}
+
+impl EraReward {
+    /// Total reward pool for staker rewards.
+    pub fn staker_reward_pool(&self) -> Balance {
+        self.staker_reward_pool
+    }
+
+    /// Total amount which was staked at the end of an era.
+    pub fn staked(&self) -> Balance {
+        self.staked
+    }
+
+    /// Total reward pool for dApp rewards
+    pub fn dapp_reward_pool(&self) -> Balance {
+        self.dapp_reward_pool
+    }
 }
 
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
@@ -1351,6 +1395,7 @@ pub enum EraRewardSpanError {
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -1358,7 +1403,7 @@ pub enum EraRewardSpanError {
 #[scale_info(skip_type_params(SL))]
 pub struct EraRewardSpan<SL: Get<u32>> {
     /// Span of EraRewardInfo entries.
-    pub span: BoundedVec<EraReward, SL>,
+    pub(crate) span: BoundedVec<EraReward, SL>,
     /// The first era in the span.
     #[codec(compact)]
     first_era: EraNumber,
@@ -1372,7 +1417,7 @@ where
     SL: Get<u32>,
 {
     /// Create new instance of the `EraRewardSpan`
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             span: Default::default(),
             first_era: 0,
@@ -1485,6 +1530,7 @@ impl TierThreshold {
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -1495,15 +1541,15 @@ pub struct TierParameters<NT: Get<u32>> {
     /// First entry refers to the first tier, and so on.
     /// The sum of all values must not exceed 100%.
     /// In case it is less, portion of rewards will never be distributed.
-    pub reward_portion: BoundedVec<Permill, NT>,
+    pub(crate) reward_portion: BoundedVec<Permill, NT>,
     /// Distribution of number of slots per tier, in percentage.
     /// First entry refers to the first tier, and so on.
     /// The sum of all values must not exceed 100%.
     /// In case it is less, slot capacity will never be fully filled.
-    pub slot_distribution: BoundedVec<Permill, NT>,
+    pub(crate) slot_distribution: BoundedVec<Permill, NT>,
     /// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
-    pub tier_thresholds: BoundedVec<TierThreshold, NT>,
+    pub(crate) tier_thresholds: BoundedVec<TierThreshold, NT>,
 }
 
 impl<NT: Get<u32>> TierParameters<NT> {
@@ -1543,16 +1589,6 @@ impl<NT: Get<u32>> TierParameters<NT> {
     }
 }
 
-impl<NT: Get<u32>> Default for TierParameters<NT> {
-    fn default() -> Self {
-        Self {
-            reward_portion: BoundedVec::default(),
-            slot_distribution: BoundedVec::default(),
-            tier_thresholds: BoundedVec::default(),
-        }
-    }
-}
-
 /// Configuration of dApp tiers.
 #[derive(
     Encode,
@@ -1560,6 +1596,7 @@ impl<NT: Get<u32>> Default for TierParameters<NT> {
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -1568,28 +1605,17 @@ impl<NT: Get<u32>> Default for TierParameters<NT> {
 pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> {
     /// Number of slots per tier.
     /// First entry refers to the first tier, and so on.
-    pub slots_per_tier: BoundedVec<u16, NT>,
+    pub(crate) slots_per_tier: BoundedVec<u16, NT>,
     /// Reward distribution per tier, in percentage.
     /// First entry refers to the first tier, and so on.
     /// The sum of all values must be exactly equal to 1.
-    pub reward_portion: BoundedVec<Permill, NT>,
+    pub(crate) reward_portion: BoundedVec<Permill, NT>,
     /// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
-    pub tier_thresholds: BoundedVec<Balance, NT>,
+    pub(crate) tier_thresholds: BoundedVec<Balance, NT>,
     /// Phantom data to keep track of the tier slots function.
     #[codec(skip)]
     pub(crate) _phantom: PhantomData<(T, P)>,
-}
-
-impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> Default for TiersConfiguration<NT, T, P> {
-    fn default() -> Self {
-        Self {
-            slots_per_tier: BoundedVec::default(),
-            reward_portion: BoundedVec::default(),
-            tier_thresholds: BoundedVec::default(),
-            _phantom: Default::default(),
-        }
-    }
 }
 
 // Some TODOs:
@@ -1718,6 +1744,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,
+    DefaultNoBound,
     EqNoBound,
     CloneNoBound,
     TypeInfo,
@@ -1725,31 +1752,20 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
 #[scale_info(skip_type_params(MD, NT))]
 pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
     /// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
-    pub dapps: BoundedBTreeMap<DAppId, RankedTier, MD>,
+    pub(crate) dapps: BoundedBTreeMap<DAppId, RankedTier, MD>,
     /// Rewards for each tier. First entry refers to the first tier, and so on.
-    pub rewards: BoundedVec<Balance, NT>,
+    pub(crate) rewards: BoundedVec<Balance, NT>,
     /// Period during which this struct was created.
     #[codec(compact)]
-    pub period: PeriodNumber,
+    pub(crate) period: PeriodNumber,
     /// Rank reward for each tier. First entry refers to the first tier, and so on.
-    pub rank_rewards: BoundedVec<Balance, NT>,
-}
-
-impl<MD: Get<u32>, NT: Get<u32>> Default for DAppTierRewards<MD, NT> {
-    fn default() -> Self {
-        Self {
-            dapps: BoundedBTreeMap::default(),
-            rewards: BoundedVec::default(),
-            period: 0,
-            rank_rewards: BoundedVec::default(),
-        }
-    }
+    pub(crate) rank_rewards: BoundedVec<Balance, NT>,
 }
 
 impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
     /// Attempt to construct `DAppTierRewards` struct.
     /// If the provided arguments exceed the allowed capacity, return an error.
-    pub fn new(
+    pub(crate) fn new(
         dapps: BTreeMap<DAppId, RankedTier>,
         rewards: Vec<Balance>,
         period: PeriodNumber,

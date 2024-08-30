@@ -431,15 +431,15 @@ pub(crate) fn run_for_blocks(n: BlockNumber) {
 ///
 /// Function has no effect if era is already passed.
 pub(crate) fn advance_to_era(era: EraNumber) {
-    assert!(era >= ActiveProtocolState::<Test>::get().era);
-    while ActiveProtocolState::<Test>::get().era < era {
+    assert!(era >= ActiveProtocolState::<Test>::get().era());
+    while ActiveProtocolState::<Test>::get().era() < era {
         run_for_blocks(1);
     }
 }
 
 /// Advance blocks until next era has been reached.
 pub(crate) fn advance_to_next_era() {
-    advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+    advance_to_era(ActiveProtocolState::<Test>::get().era() + 1);
 }
 
 /// Advance blocks until next period type has been reached.

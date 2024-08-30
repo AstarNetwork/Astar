@@ -134,7 +134,7 @@ where
         // Twox64(8) + ProtocolState::max_encoded_len
         handle.record_db_read::<R>(8 + ProtocolState::max_encoded_len())?;
 
-        let current_era = ActiveProtocolState::<R>::get().era;
+        let current_era = ActiveProtocolState::<R>::get().era();
 
         Ok(current_era.into())
     }
@@ -160,12 +160,11 @@ where
 
         // Get the appropriate era reward span
         let era_span_index = DAppStaking::<R>::era_reward_span_index(era);
-        let reward_span =
-            EraRewards::<R>::get(&era_span_index).unwrap_or(EraRewardSpanFor::<R>::new());
+        let reward_span = EraRewards::<R>::get(&era_span_index).unwrap_or_default();
 
         // Sum up staker & dApp reward pools for the era
         let reward = reward_span.get(era).map_or(Zero::zero(), |r| {
-            r.staker_reward_pool.saturating_add(r.dapp_reward_pool)
+            r.staker_reward_pool().saturating_add(r.dapp_reward_pool())
         });
 
         Ok(reward)
@@ -185,9 +184,9 @@ where
         // Twox64(8) + ProtocolState::max_encoded_len
         handle.record_db_read::<R>(8 + ProtocolState::max_encoded_len())?;
 
-        let current_era = ActiveProtocolState::<R>::get().era;
+        let current_era = ActiveProtocolState::<R>::get().era();
 
-        // There are few distinct scenenarios:
+        // There are few distinct scenarios:
         // 1. Era is in the past so the value might exist.
         // 2. Era is current or the next one, in which case we definitely have that information.
         // 3. Era is from the future (more than the next era), in which case we don't have that information.
@@ -198,10 +197,9 @@ where
             handle.record_db_read::<R>(20 + EraRewardSpanFor::<R>::max_encoded_len())?;
 
             let era_span_index = DAppStaking::<R>::era_reward_span_index(era);
-            let reward_span =
-                EraRewards::<R>::get(&era_span_index).unwrap_or(EraRewardSpanFor::<R>::new());
+            let reward_span = EraRewards::<R>::get(&era_span_index).unwrap_or_default();
 
-            let staked = reward_span.get(era).map_or(Zero::zero(), |r| r.staked);
+            let staked = reward_span.get(era).map_or(Zero::zero(), |r| r.staked());
 
             Ok(staked.into())
         } else if era == current_era || era == current_era.saturating_add(1) {
@@ -213,9 +211,9 @@ where
             let current_era_info = CurrentEraInfo::<R>::get();
 
             if era == current_era {
-                Ok(current_era_info.current_stake_amount.total())
+                Ok(current_era_info.current_stake_amount().total())
             } else {
-                Ok(current_era_info.next_stake_amount.total())
+                Ok(current_era_info.next_stake_amount().total())
             }
         } else {
             Err(RevertReason::custom("Era is in the future").into())
@@ -325,7 +323,7 @@ where
         };
 
         // call pallet-dapps-staking
-        let contract_stake = ContractStake::<R>::get(&dapp_info.id);
+        let contract_stake = ContractStake::<R>::get(&dapp_info.id());
 
         Ok(contract_stake.total_staked_amount(current_period_number))
     }
@@ -592,7 +590,7 @@ where
         let protocol_state = ActiveProtocolState::<R>::get();
 
         Ok(PrecompileProtocolState {
-            era: protocol_state.era.into(),
+            era: protocol_state.era().into(),
             period: protocol_state.period_number().into(),
             subperiod: subperiod_id(&protocol_state.subperiod()),
         })
