@@ -175,6 +175,13 @@
 <a href="#173" id="173">173</a>
 <a href="#174" id="174">174</a>
 <a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -198,6 +205,7 @@
     evm::EVM_REVERT_CODE,
     genesis::{get_from_seed, GenesisAccount},
 };
+<span class="kw">use </span>sp_core::crypto::Ss58Codec;
 
 <span class="doccomment">/// Provides the JSON representation of predefined genesis config for given `id`.
 </span><span class="kw">pub fn </span>get_preset(id: <span class="kw-2">&amp;</span>sp_genesis_builder::PresetId) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
@@ -229,6 +237,12 @@
         ),
         (
             CommunityTreasuryPalletId::get().into_account_truncating(),
+            <span class="number">1_000_000_000 </span>* AST,
+        ),
+        (
+            <span class="comment">// Private key: 0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391
+            // H160 public address: 0xaaafB3972B05630fCceE866eC69CdADd9baC2771
+            </span>AccountId::from_ss58check(<span class="string">"5FQedkNQcF2fJPwkB6Z1ZcMgGti4vcJQNs6x85YPv3VhjBBT"</span>).unwrap(),
             <span class="number">1_000_000_000 </span>* AST,
         ),
     ];
