@@ -124,7 +124,7 @@ std = [
 	"xcm/std",
 	"xcm-fee-payment-runtime-api/std",
 	"pallet-session/std",
-	"sp-consensus-aura/std"
+	"sp-consensus-aura/std",
 ]
 shibuya = ["shibuya-runtime"]
 shiden = ["shiden-runtime"]
