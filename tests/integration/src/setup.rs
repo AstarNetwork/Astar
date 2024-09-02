@@ -24,21 +24,21 @@ pub use frame_support::{
     weights::Weight,
 };
 use parity_scale_codec::Encode;
-pub use sp_core::{Get, H160};
-pub use sp_runtime::{AccountId32, MultiAddress};
+pub use sp_core::{sr25519, Get, H160};
+pub use sp_runtime::{AccountId32, Digest, DigestItem, MultiAddress};
 
 use cumulus_primitives_core::{relay_chain::HeadData, PersistedValidationData};
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+use sp_consensus_aura::{Slot, SlotDuration, AURA_ENGINE_ID};
 
+#[cfg(feature = "shibuya")]
+pub use astar_primitives::governance::{
+    CommunityCouncilMembershipInst, MainCouncilMembershipInst, TechnicalCommitteeMembershipInst,
+};
 pub use astar_primitives::{
-    dapp_staking::CycleConfiguration,
-    governance::{
-        CommunityCouncilMembershipInst, MainCouncilMembershipInst, OracleMembershipInst,
-        TechnicalCommitteeMembershipInst,
-    },
-    oracle::Price,
-    BlockNumber,
+    dapp_staking::CycleConfiguration, genesis::GenesisAccount, governance::OracleMembershipInst,
+    oracle::Price, BlockNumber,
 };
 
 #[cfg(feature = "shibuya")]
@@ -105,11 +105,13 @@ pub const INITIAL_AMOUNT: u128 = 100_000 * UNIT;
 pub const INIT_PRICE: Price = Price::from_rational(1, 10);
 
 pub type SystemError = frame_system::Error<Runtime>;
+use cumulus_pallet_parachain_system::RelaychainDataProvider;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_dapp_staking as DappStakingCall;
 pub use pallet_proxy::Event as ProxyEvent;
 pub use pallet_utility::{Call as UtilityCall, Event as UtilityEvent};
 use parity_scale_codec::Decode;
+use sp_runtime::traits::BlockNumberProvider;
 
 pub struct ExtBuilder {
     balances: Vec<(AccountId32, Balance)>,
@@ -136,6 +138,16 @@ impl ExtBuilder {
             balances: self.balances,
         }
         .assimilate_storage(&mut t)
+        .unwrap();
+
+        <pallet_aura::GenesisConfig<Runtime> as BuildStorage>::assimilate_storage(
+            &pallet_aura::GenesisConfig::<Runtime> {
+                authorities: vec![GenesisAccount::<sr25519::Public>::from_seed("Alice")
+                    .pub_key()
+                    .into()],
+            },
+            &mut t,
+        )
         .unwrap();
 
         // Setup initial oracle members
@@ -193,7 +205,13 @@ impl ExtBuilder {
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| {
-            System::set_block_number(1);
+            // Ensure the initial state is set for the first block
+            System::initialize(&1, &Default::default(), &Digest {
+                logs: vec![DigestItem::PreRuntime(AURA_ENGINE_ID, Slot::from(1).encode())],
+            });
+            AllPalletsWithoutSystem::on_initialize(1);
+            set_timestamp();
+            set_validation_data();
 
             let era_length = <Runtime as pallet_dapp_staking::Config>::CycleConfiguration::blocks_per_era();
             let voting_period_length_in_eras =
@@ -210,11 +228,6 @@ impl ExtBuilder {
                 maintenance: false,
             });
             pallet_dapp_staking::Safeguard::<Runtime>::put(false);
-
-            // Ensure the initial state is set for the first block
-            AllPalletsWithSystem::on_initialize(1);
-            set_timestamp();
-            set_validation_data();
         });
         ext
     }
@@ -238,20 +251,23 @@ fn set_timestamp() {
 }
 
 fn set_validation_data() {
-    let block_number = System::block_number();
     let para_id = <Runtime as cumulus_pallet_parachain_system::Config>::SelfParaId::get();
 
     let parent_head = HeadData(b"deadbeef".into());
     let sproof_builder = RelayStateSproofBuilder {
         para_id,
         included_para_head: Some(parent_head.clone()),
+        current_slot: Slot::from_timestamp(
+            pallet_timestamp::Now::<Runtime>::get().into(),
+            SlotDuration::from_millis(6_000),
+        ),
         ..Default::default()
     };
     let (relay_parent_storage_root, relay_chain_state) = sproof_builder.into_state_root_and_proof();
     let para_inherent_data = ParachainInherentData {
         validation_data: PersistedValidationData {
             parent_head,
-            relay_parent_number: block_number,
+            relay_parent_number: RelaychainDataProvider::<Runtime>::current_block_number() + 1,
             relay_parent_storage_root,
             max_pov_size: 5_000_000,
         },
@@ -286,8 +302,18 @@ pub fn run_to_block(n: BlockNumber) {
         );
 
         // initialize block
-        System::set_block_number(block_number + 1);
-        AllPalletsWithSystem::on_initialize(block_number + 1);
+        let slot = Slot::from_timestamp(
+            (pallet_timestamp::Now::<Runtime>::get() + SLOT_DURATION).into(),
+            SlotDuration::from_millis(SLOT_DURATION),
+        );
+        System::initialize(
+            &(block_number + 1),
+            &Default::default(),
+            &Digest {
+                logs: vec![DigestItem::PreRuntime(AURA_ENGINE_ID, slot.encode())],
+            },
+        );
+        AllPalletsWithoutSystem::on_initialize(block_number + 1);
         // apply inherent
         set_timestamp();
         set_validation_data();
