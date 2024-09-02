@@ -123,6 +123,8 @@ std = [
 	"unified-accounts-chain-extension-types/std",
 	"xcm/std",
 	"xcm-fee-payment-runtime-api/std",
+	"pallet-session/std",
+	"sp-consensus-aura/std"
 ]
 shibuya = ["shibuya-runtime"]
 shiden = ["shiden-runtime"]
