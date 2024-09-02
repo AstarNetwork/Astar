@@ -2473,52 +2473,6 @@
 <a href="#2471" id="2471">2471</a>
 <a href="#2472" id="2472">2472</a>
 <a href="#2473" id="2473">2473</a>
-<a href="#2474" id="2474">2474</a>
-<a href="#2475" id="2475">2475</a>
-<a href="#2476" id="2476">2476</a>
-<a href="#2477" id="2477">2477</a>
-<a href="#2478" id="2478">2478</a>
-<a href="#2479" id="2479">2479</a>
-<a href="#2480" id="2480">2480</a>
-<a href="#2481" id="2481">2481</a>
-<a href="#2482" id="2482">2482</a>
-<a href="#2483" id="2483">2483</a>
-<a href="#2484" id="2484">2484</a>
-<a href="#2485" id="2485">2485</a>
-<a href="#2486" id="2486">2486</a>
-<a href="#2487" id="2487">2487</a>
-<a href="#2488" id="2488">2488</a>
-<a href="#2489" id="2489">2489</a>
-<a href="#2490" id="2490">2490</a>
-<a href="#2491" id="2491">2491</a>
-<a href="#2492" id="2492">2492</a>
-<a href="#2493" id="2493">2493</a>
-<a href="#2494" id="2494">2494</a>
-<a href="#2495" id="2495">2495</a>
-<a href="#2496" id="2496">2496</a>
-<a href="#2497" id="2497">2497</a>
-<a href="#2498" id="2498">2498</a>
-<a href="#2499" id="2499">2499</a>
-<a href="#2500" id="2500">2500</a>
-<a href="#2501" id="2501">2501</a>
-<a href="#2502" id="2502">2502</a>
-<a href="#2503" id="2503">2503</a>
-<a href="#2504" id="2504">2504</a>
-<a href="#2505" id="2505">2505</a>
-<a href="#2506" id="2506">2506</a>
-<a href="#2507" id="2507">2507</a>
-<a href="#2508" id="2508">2508</a>
-<a href="#2509" id="2509">2509</a>
-<a href="#2510" id="2510">2510</a>
-<a href="#2511" id="2511">2511</a>
-<a href="#2512" id="2512">2512</a>
-<a href="#2513" id="2513">2513</a>
-<a href="#2514" id="2514">2514</a>
-<a href="#2515" id="2515">2515</a>
-<a href="#2516" id="2516">2516</a>
-<a href="#2517" id="2517">2517</a>
-<a href="#2518" id="2518">2518</a>
-<a href="#2519" id="2519">2519</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2913,9 +2867,7 @@
         </span>NoExpiredEntries,
         <span class="doccomment">/// Force call is not allowed in production.
         </span>ForceNotAllowed,
-        <span class="doccomment">/// Account doesn't have the freeze inconsistency
-        </span>AccountNotInconsistent, <span class="comment">// TODO: can be removed after call `fix_account` is removed
-    </span>}
+    }
 
     <span class="doccomment">/// General information about dApp staking protocol state.
     </span><span class="attr">#[pallet::storage]
@@ -4040,50 +3992,6 @@
             ensure_signed(origin)<span class="question-mark">?</span>;
 
             <span class="self">Self</span>::internal_claim_bonus_reward_for(account, smart_contract)
-        }
-
-        <span class="doccomment">/// A call used to fix accounts with inconsistent state, where frozen balance is actually higher than what's available.
-        ///
-        /// The approach is as simple as possible:
-        /// 1. Caller provides an account to fix.
-        /// 2. If account is eligible for the fix, all unlocking chunks are modified to be claimable immediately.
-        /// 3. The `claim_unlocked` call is executed using the provided account as the origin.
-        /// 4. All states are updated accordingly, and the account is no longer in an inconsistent state.
-        ///
-        /// The benchmarked weight of the `claim_unlocked` call is used as a base, and additional overestimated weight is added.
-        /// Call doesn't touch any storage items that aren't already touched by the `claim_unlocked` call, hence the simplified approach.
-        </span><span class="attr">#[pallet::call_index(<span class="number">100</span>)]
-        #[pallet::weight(T::DbWeight::get().reads_writes(<span class="number">4</span>, <span class="number">1</span>))]
-        </span><span class="kw">pub fn </span>fix_account(
-            origin: OriginFor&lt;T&gt;,
-            account: T::AccountId,
-        ) -&gt; DispatchResultWithPostInfo {
-            <span class="self">Self</span>::ensure_pallet_enabled()<span class="question-mark">?</span>;
-            ensure_signed(origin)<span class="question-mark">?</span>;
-
-            <span class="kw">let </span><span class="kw-2">mut </span>ledger = Ledger::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account);
-            <span class="kw">let </span>locked_amount_ledger = ledger.total_locked_amount();
-            <span class="kw">let </span>total_balance = T::Currency::total_balance(<span class="kw-2">&amp;</span>account);
-
-            <span class="kw">if </span>locked_amount_ledger &gt; total_balance {
-                <span class="comment">// 1. Modify all unlocking chunks so they can be unlocked immediately.
-                </span><span class="kw">let </span>current_block: BlockNumber =
-                    frame_system::Pallet::&lt;T&gt;::block_number().saturated_into();
-                ledger
-                    .unlocking
-                    .iter_mut()
-                    .for_each(|chunk| chunk.unlock_block = current_block);
-                Ledger::&lt;T&gt;::insert(<span class="kw-2">&amp;</span>account, ledger);
-
-                <span class="comment">// 2. Execute the unlock call, clearing all of the unlocking chunks.
-                </span><span class="self">Self</span>::internal_claim_unlocked(account)<span class="question-mark">?</span>;
-
-                <span class="comment">// 3. In case of success, ensure no fee is paid.
-                </span><span class="prelude-val">Ok</span>(Pays::No.into())
-            } <span class="kw">else </span>{
-                <span class="comment">// The above logic is designed for a specific scenario and cannot be used otherwise.
-                </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::AccountNotInconsistent.into())
-            }
         }
     }
 

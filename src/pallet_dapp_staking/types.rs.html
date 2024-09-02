@@ -1835,11 +1835,6 @@
 <a href="#1833" id="1833">1833</a>
 <a href="#1834" id="1834">1834</a>
 <a href="#1835" id="1835">1835</a>
-<a href="#1836" id="1836">1836</a>
-<a href="#1837" id="1837">1837</a>
-<a href="#1838" id="1838">1838</a>
-<a href="#1839" id="1839">1839</a>
-<a href="#1840" id="1840">1840</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3460,12 +3455,7 @@
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) _phantom: PhantomData&lt;(T, P)&gt;,
 }
 
-<span class="comment">// Some TODOs:
-// Some parts regarding tiers should be refactored.
-// * There's no need to keep thresholds in two separate storage items since the calculation can always be done compared to the
-//    anchor value of 5 cents. This still needs to be checked &amp; investigated, but it's worth a try.
-
-</span><span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; TiersConfiguration&lt;NT, T, P&gt; {
+<span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; TiersConfiguration&lt;NT, T, P&gt; {
     <span class="doccomment">/// Check if parameters are valid.
     </span><span class="kw">pub fn </span>is_valid(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         <span class="kw">let </span>number_of_tiers: usize = NT::get() <span class="kw">as </span>usize;
