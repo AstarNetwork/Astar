@@ -147,7 +147,7 @@ pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
 }
 
 /// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = 12000;
+pub const MILLISECS_PER_BLOCK: u64 = 6000;
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
 // Time is measured by number of blocks.
@@ -157,7 +157,7 @@ pub const DAYS: BlockNumber = HOURS * 24;
 
 /// Maximum number of blocks simultaneously accepted by the Runtime, not yet included into the
 /// relay chain.
-pub const UNINCLUDED_SEGMENT_CAPACITY: u32 = 1;
+pub const UNINCLUDED_SEGMENT_CAPACITY: u32 = 3;
 /// How many parachain blocks are processed by the relay chain per parent. Limits the number of
 /// blocks authored per slot.
 pub const BLOCK_PROCESSING_VELOCITY: u32 = 1;
@@ -232,9 +232,9 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-/// We allow for 0.5 seconds of compute with a 6 second average block time.
+/// We allow for 2 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
-    WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
+    WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2),
     polkadot_primitives::MAX_POV_SIZE as u64,
 );
 
@@ -332,15 +332,10 @@ impl frame_system::Config for Runtime {
     type PostTransactions = ();
 }
 
-parameter_types! {
-    pub const MinimumPeriod: u64 = MILLISECS_PER_BLOCK / 2;
-}
-
 impl pallet_timestamp::Config for Runtime {
-    /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
-    type OnTimestampSet = ();
-    type MinimumPeriod = MinimumPeriod;
+    type OnTimestampSet = Aura;
+    type MinimumPeriod = ConstU64<0>;
     type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
 
@@ -572,8 +567,7 @@ impl pallet_aura::Config for Runtime {
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<250>;
     type SlotDuration = ConstU64<SLOT_DURATION>;
-    // Set to `true` once async backing is enabled.
-    type AllowMultipleBlocksPerSlot = ConstBool<false>;
+    type AllowMultipleBlocksPerSlot = ConstBool<true>;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -929,8 +923,8 @@ parameter_types! {
     /// max_gas_limit = max_tx_ref_time / WEIGHT_PER_GAS = max_pov_size * gas_limit_pov_size_ratio
     /// gas_limit_pov_size_ratio = ceil((max_tx_ref_time / WEIGHT_PER_GAS) / max_pov_size)
     ///
-    /// Equals 4 for values used by Shibuya runtime.
-    pub const GasLimitPovSizeRatio: u64 = 4;
+    /// Equals 16 for values used by Shibuya runtime.
+    pub const GasLimitPovSizeRatio: u64 = 16;
 }
 
 impl pallet_evm::Config for Runtime {
@@ -1190,7 +1184,7 @@ parameter_types! {
     // Of course it's not true for Shibuya, but SBY is worthless, a test token.
     pub const NativeCurrencyId: CurrencyId = CurrencyId::ASTR;
     // Aggregate values for one day.
-    pub const AggregationDuration: BlockNumber = 7200;
+    pub const AggregationDuration: BlockNumber = DAYS;
 }
 
 impl pallet_price_aggregator::Config for Runtime {
