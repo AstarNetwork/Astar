@@ -37,8 +37,7 @@ pub use astar_primitives::governance::{
     CommunityCouncilMembershipInst, MainCouncilMembershipInst, TechnicalCommitteeMembershipInst,
 };
 pub use astar_primitives::{
-    dapp_staking::CycleConfiguration, genesis::GenesisAccount, governance::OracleMembershipInst,
-    oracle::Price, BlockNumber,
+    genesis::GenesisAccount, governance::OracleMembershipInst, oracle::Price, BlockNumber,
 };
 
 #[cfg(feature = "shibuya")]
@@ -206,27 +205,20 @@ impl ExtBuilder {
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| {
             // Ensure the initial state is set for the first block
-            System::initialize(&1, &Default::default(), &Digest {
-                logs: vec![DigestItem::PreRuntime(AURA_ENGINE_ID, Slot::from(1).encode())],
-            });
+            System::initialize(
+                &1,
+                &Default::default(),
+                &Digest {
+                    logs: vec![DigestItem::PreRuntime(
+                        AURA_ENGINE_ID,
+                        Slot::from(1).encode(),
+                    )],
+                },
+            );
             AllPalletsWithoutSystem::on_initialize(1);
             set_timestamp();
             set_validation_data();
 
-            let era_length = <Runtime as pallet_dapp_staking::Config>::CycleConfiguration::blocks_per_era();
-            let voting_period_length_in_eras =
-            <Runtime as pallet_dapp_staking::Config>::CycleConfiguration::eras_per_voting_subperiod();
-
-            pallet_dapp_staking::ActiveProtocolState::<Runtime>::put(pallet_dapp_staking::ProtocolState {
-                era: 1,
-                next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + 1,
-                period_info: pallet_dapp_staking::PeriodInfo {
-                    number: 1,
-                    subperiod: pallet_dapp_staking::Subperiod::Voting,
-                    next_subperiod_start_era: 2,
-                },
-                maintenance: false,
-            });
             pallet_dapp_staking::Safeguard::<Runtime>::put(false);
         });
         ext

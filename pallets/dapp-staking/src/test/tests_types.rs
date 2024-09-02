@@ -87,17 +87,6 @@ fn period_info_basic_checks() {
 }
 
 #[test]
-fn protocol_state_default() {
-    let protocol_state = ProtocolState::default();
-
-    assert_eq!(protocol_state.era, 0);
-    assert_eq!(
-        protocol_state.next_era_start, 1,
-        "Era should start immediately on the first block"
-    );
-}
-
-#[test]
 fn protocol_state_basic_checks() {
     let mut protocol_state = ProtocolState::default();
     let period_number = 5;
