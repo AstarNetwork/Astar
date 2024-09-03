@@ -8487,6 +8487,7 @@ dependencies = [
  "log",
  "num-traits",
  "pallet-balances",
+ "pallet-migrations",
  "parity-scale-codec",
  "scale-info",
  "serde",

@@ -23,7 +23,9 @@ use crate::{
 };
 
 use frame_support::{
-    construct_runtime, ord_parameter_types, parameter_types,
+    construct_runtime, derive_impl,
+    migrations::MultiStepMigrator,
+    ord_parameter_types, parameter_types,
     traits::{fungible::Mutate as FunMutate, ConstBool, ConstU128, ConstU32, EitherOfDiverse},
     weights::Weight,
 };
@@ -54,6 +56,7 @@ construct_runtime!(
         System: frame_system,
         Balances: pallet_balances,
         DappStaking: pallet_dapp_staking,
+        MultiBlockMigrations: pallet_migrations,
     }
 );
 
@@ -89,7 +92,7 @@ impl frame_system::Config for Test {
     type MaxConsumers = frame_support::traits::ConstU32<16>;
     type RuntimeTask = RuntimeTask;
     type SingleBlockMigrations = ();
-    type MultiBlockMigrator = ();
+    type MultiBlockMigrator = MultiBlockMigrations;
     type PreInherents = ();
     type PostInherents = ();
     type PostTransactions = ();
@@ -109,6 +112,21 @@ impl pallet_balances::Config for Test {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type MaxFreezes = ConstU32<1>;
     type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const MaxServiceWeight: Weight = Weight::from_parts(1_000_000_000, 1_000_000);
+}
+
+#[derive_impl(pallet_migrations::config_preludes::TestDefaultConfig)]
+impl pallet_migrations::Config for Test {
+    #[cfg(not(feature = "runtime-benchmarks"))]
+    type Migrations =
+        (crate::migration::LazyMigration<Test, crate::weights::SubstrateWeight<Test>>,);
+    #[cfg(feature = "runtime-benchmarks")]
+    type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
+    type MigrationStatusHandler = ();
+    type MaxServiceWeight = MaxServiceWeight;
 }
 
 pub struct DummyPriceProvider;
@@ -396,6 +414,9 @@ pub(crate) fn run_to_block(n: BlockNumber) {
         assert_on_idle_cleanup();
         System::set_block_number(System::block_number() + 1);
         // This is performed outside of dapps staking but we expect it before on_initialize
+
+        // Done by Executive:
+        <Test as frame_system::Config>::MultiBlockMigrator::step();
 
         let pre_snapshot = MemorySnapshot::new();
         DappStaking::on_initialize(System::block_number());

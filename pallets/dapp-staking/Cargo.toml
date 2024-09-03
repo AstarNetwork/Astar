@@ -29,6 +29,7 @@ frame-benchmarking = { workspace = true, optional = true }
 
 [dev-dependencies]
 pallet-balances = { workspace = true }
+pallet-migrations = { workspace = true }
 
 [features]
 default = ["std"]

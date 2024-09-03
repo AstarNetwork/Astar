@@ -42,10 +42,7 @@ const PALLET_MIGRATIONS_ID: &[u8; 18] = b"pallet-vesting-mbm";
 
 pub struct LazyMigration<T, W: weights::WeightInfo>(core::marker::PhantomData<(T, W)>);
 
-impl<T, W: weights::WeightInfo> SteppedMigration for LazyMigration<T, W>
-where
-    T: frame_system::Config + pallet_vesting::Config,
-{
+impl<T: pallet_vesting::Config, W: weights::WeightInfo> SteppedMigration for LazyMigration<T, W> {
     type Cursor = <T as frame_system::Config>::AccountId;
     // Without the explicit length here the construction of the ID would not be infallible.
     type Identifier = MigrationId<18>;

@@ -17,7 +17,12 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use frame_support::{storage_alias, traits::UncheckedOnRuntimeUpgrade};
+use frame_support::{
+    migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
+    storage_alias,
+    traits::UncheckedOnRuntimeUpgrade,
+    weights::WeightMeter,
+};
 
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
@@ -410,5 +415,82 @@ pub mod v6 {
         /// Period during which this struct was created.
         #[codec(compact)]
         pub period: PeriodNumber,
+    }
+}
+
+const PALLET_MIGRATIONS_ID: &[u8; 16] = b"dapp-staking-mbm";
+
+pub struct LazyMigration<T, W: WeightInfo>(PhantomData<(T, W)>);
+
+impl<T: Config, W: WeightInfo> SteppedMigration for LazyMigration<T, W> {
+    type Cursor = <T as frame_system::Config>::AccountId;
+    // Without the explicit length here the construction of the ID would not be infallible.
+    type Identifier = MigrationId<16>;
+
+    /// The identifier of this migration. Which should be globally unique.
+    fn id() -> Self::Identifier {
+        MigrationId {
+            pallet_id: *PALLET_MIGRATIONS_ID,
+            version_from: 0,
+            version_to: 1,
+        }
+    }
+
+    fn step(
+        mut cursor: Option<Self::Cursor>,
+        meter: &mut WeightMeter,
+    ) -> Result<Option<Self::Cursor>, SteppedMigrationError> {
+        let required = W::step();
+        // If there is not enough weight for a single step, return an error. This case can be
+        // problematic if it is the first migration that ran in this block. But there is nothing
+        // that we can do about it here.
+        if meter.remaining().any_lt(required) {
+            return Err(SteppedMigrationError::InsufficientWeight { required });
+        }
+
+        let mut count = 0u32;
+        let current_block_number =
+            frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
+
+        // We loop here to do as much progress as possible per step.
+        loop {
+            if meter.try_consume(required).is_err() {
+                break;
+            }
+
+            let mut iter = if let Some(last_key) = cursor {
+                // If a cursor is provided, start iterating from the stored value
+                // corresponding to the last key processed in the previous step.
+                // Note that this only works if the old and the new map use the same way to hash
+                // storage keys.
+                Ledger::<T>::iter_from(Ledger::<T>::hashed_key_for(last_key))
+            } else {
+                // If no cursor is provided, start iterating from the beginning.
+                Ledger::<T>::iter()
+            };
+
+            // If there's a next item in the iterator, perform the migration.
+            if let Some((ref last_key, mut ledger)) = iter.next() {
+                for chunk in ledger.unlocking.iter_mut() {
+                    let remaining_blocks = chunk.unlock_block.saturating_sub(current_block_number);
+                    chunk.unlock_block.saturating_accrue(remaining_blocks);
+                }
+
+                // Override ledger
+                Ledger::<T>::insert(last_key, ledger);
+
+                // inc counter
+                count.saturating_inc();
+
+                // Return the processed key as the new cursor.
+                cursor = Some(last_key.clone())
+            } else {
+                // Signal that the migration is complete (no more items to process).
+                cursor = None;
+                break;
+            }
+        }
+        log::debug!(target: LOG_TARGET, "migrated {count:?} entries");
+        Ok(cursor)
     }
 }

@@ -1518,8 +1518,13 @@ parameter_types! {
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations =
-        (vesting_mbm::LazyMigration<Runtime, vesting_mbm::weights::SubstrateWeight<Runtime>>,);
+    type Migrations = (
+        pallet_dapp_staking::migration::LazyMigration<
+            Runtime,
+            pallet_dapp_staking::weights::SubstrateWeight<Runtime>,
+        >,
+        vesting_mbm::LazyMigration<Runtime, vesting_mbm::weights::SubstrateWeight<Runtime>>,
+    );
     // Benchmarks need mocked migrations to guarantee that they succeed.
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
