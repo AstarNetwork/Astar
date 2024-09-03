@@ -478,9 +478,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
-
+	/// Storage: `DappStaking::Ledger` (r:2 w:1)
+	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
 	fn step() -> Weight {
-		Weight::default()
+		// Proof Size summary in bytes:
+		//  Measured:  `76`
+		//  Estimated: `6560`
+		// Minimum execution time: 10_060_000 picoseconds.
+		Weight::from_parts(10_314_000, 6560)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 
@@ -885,8 +892,15 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
-
+	/// Storage: `DappStaking::Ledger` (r:2 w:1)
+	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
 	fn step() -> Weight {
-		Weight::default()
+		// Proof Size summary in bytes:
+		//  Measured:  `76`
+		//  Estimated: `6560`
+		// Minimum execution time: 10_060_000 picoseconds.
+		Weight::from_parts(10_314_000, 6560)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }
