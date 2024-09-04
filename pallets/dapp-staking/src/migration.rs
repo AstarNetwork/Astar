@@ -471,7 +471,15 @@ impl<T: Config, W: WeightInfo> SteppedMigration for LazyMigration<T, W> {
 
             // If there's a next item in the iterator, perform the migration.
             if let Some((ref last_key, mut ledger)) = iter.next() {
+                if ledger.unlocking.is_empty() {
+                    // no unlocking for this account, nothing to update
+                    cursor = Some(last_key.clone()); // Return the processed key as the new cursor.
+                    continue;
+                }
                 for chunk in ledger.unlocking.iter_mut() {
+                    if current_block_number >= chunk.unlock_block {
+                        continue; // chunk already unlocked
+                    }
                     let remaining_blocks = chunk.unlock_block.saturating_sub(current_block_number);
                     chunk.unlock_block.saturating_accrue(remaining_blocks);
                 }
