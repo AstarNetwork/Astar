@@ -20,7 +20,7 @@ use super::*;
 use frame_support::{
     migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
     storage_alias,
-    traits::UncheckedOnRuntimeUpgrade,
+    traits::{OnRuntimeUpgrade, UncheckedOnRuntimeUpgrade},
     weights::WeightMeter,
 };
 
@@ -449,6 +449,7 @@ impl<T: Config, W: WeightInfo> SteppedMigration for LazyMigration<T, W> {
         }
 
         let mut count = 0u32;
+        let mut migrated = 0u32;
         let current_block_number =
             frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
 
@@ -471,9 +472,13 @@ impl<T: Config, W: WeightInfo> SteppedMigration for LazyMigration<T, W> {
 
             // If there's a next item in the iterator, perform the migration.
             if let Some((ref last_key, mut ledger)) = iter.next() {
+                // inc count
+                count.saturating_inc();
+
                 if ledger.unlocking.is_empty() {
                     // no unlocking for this account, nothing to update
-                    cursor = Some(last_key.clone()); // Return the processed key as the new cursor.
+                    // Return the processed key as the new cursor.
+                    cursor = Some(last_key.clone());
                     continue;
                 }
                 for chunk in ledger.unlocking.iter_mut() {
@@ -487,8 +492,8 @@ impl<T: Config, W: WeightInfo> SteppedMigration for LazyMigration<T, W> {
                 // Override ledger
                 Ledger::<T>::insert(last_key, ledger);
 
-                // inc counter
-                count.saturating_inc();
+                // inc migrated
+                migrated.saturating_inc();
 
                 // Return the processed key as the new cursor.
                 cursor = Some(last_key.clone())
@@ -498,7 +503,25 @@ impl<T: Config, W: WeightInfo> SteppedMigration for LazyMigration<T, W> {
                 break;
             }
         }
-        log::debug!(target: LOG_TARGET, "migrated {count:?} entries");
+        log::info!(target: LOG_TARGET, "🚚 iterated {count} entries, migrated {migrated}");
         Ok(cursor)
+    }
+}
+
+/// Double the remaining block for next era start
+pub struct AdjustEraMigration<T>(PhantomData<T>);
+
+impl<T: Config> OnRuntimeUpgrade for AdjustEraMigration<T> {
+    fn on_runtime_upgrade() -> Weight {
+        log::info!("🚚 migrated to async backing, adjust next era start");
+        ActiveProtocolState::<T>::mutate_exists(|maybe| {
+            if let Some(state) = maybe {
+                let current_block_number =
+                    frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
+                let remaining = state.next_era_start.saturating_sub(current_block_number);
+                state.next_era_start.saturating_accrue(2 * remaining);
+            }
+        });
+        T::DbWeight::get().reads_writes(1, 1)
     }
 }

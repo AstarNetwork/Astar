@@ -1646,33 +1646,6 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-parameter_types! {
-    // Threshold amount variation allowed for this migration - 150%
-    pub const ThresholdVariationPercentage: u32 = 150;
-    // percentages below are calculated based on a total issuance at the time when dApp staking v3 was launched (147M)
-    pub const TierThresholds: [TierThreshold; 4] = [
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(20_000), // 0.0020%
-            minimum_required_percentage: Perbill::from_parts(17_000), // 0.0017%
-        },
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(13_000), // 0.0013%
-            minimum_required_percentage: Perbill::from_parts(10_000), // 0.0010%
-        },
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(5_400), // 0.00054%
-            minimum_required_percentage: Perbill::from_parts(3_400), // 0.00034%
-        },
-        TierThreshold::FixedPercentage {
-            required_percentage: Perbill::from_parts(1_400), // 0.00014%
-        },
-    ];
-}
-
-parameter_types! {
-    pub const DmpQueuePalletName: &'static str = "DmpQueue";
-}
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// __NOTE:__ THE ORDER IS IMPORTANT.
@@ -1680,17 +1653,8 @@ pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased = (
-    // dApp-staking dyn tier threshold migrations
-    pallet_dapp_staking::migration::versioned_migrations::V7ToV8<
-        Runtime,
-        TierThresholds,
-        ThresholdVariationPercentage,
-    >,
-    frame_support::migrations::RemovePallet<
-        DmpQueuePalletName,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
-    pallet_contracts::Migration<Runtime>,
+    pallet_dapp_staking::migration::AdjustEraMigration<Runtime>,
+    pallet_inflation::migration::AdjustBlockRewardMigration<Runtime>,
 );
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
