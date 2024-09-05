@@ -204,12 +204,12 @@ jobs:
         with:
           node-version: 20.x
 
-      - name: Get the latest release
+      - name: Get the latest client release
         id: latest-release
-        uses: pozetroninc/github-action-get-latest-release@v0.5.0
-        with:
-          repository: AstarNetwork/Astar
-          excludes: "prerelease, draft"
+       run: |
+          latest_client_tag=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases | \
+           jq -r 'map(select(.name | test("^v\\d+\\.\\d+\\.\\d+$"; "i")))[0] | .tag_name')
+          echo "::set-output name=latest_client_tag::$latest_client_tag"
 
       - name: Generate Release Body
         env:
@@ -221,7 +221,7 @@ jobs:
           yarn -s run ts-node generate-release-body.ts generate \
             --owner "${{ github.repository_owner }}" \
             --repo "$(basename ${{ github.repository }})" \
-            --from "${{ steps.latest-release.outputs.release }}" \
+            --from "${{ steps.latest-release.outputs.latest_client_tag }}" \
             --to "${{ github.ref_name }}" \
             --type client \
             > ../../body.md
