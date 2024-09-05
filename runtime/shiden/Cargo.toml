@@ -77,7 +77,7 @@ pallet-xcm-benchmarks = { workspace = true, optional = true }
 
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }
-cumulus-pallet-parachain-system = { workspace = true, features = ["parameterized-consensus-hook"] }
+cumulus-pallet-parachain-system = { workspace = true }
 cumulus-pallet-xcm = { workspace = true }
 cumulus-pallet-xcmp-queue = { workspace = true }
 cumulus-primitives-aura = { workspace = true }
