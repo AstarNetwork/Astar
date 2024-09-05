@@ -277,7 +277,13 @@ impl<T: Config> Pallet<T> {
         let balance = T::Currency::reducible_balance(who, Preserve, Polite);
         let fee = T::AccountMappingStorageFee::get();
         ensure!(balance >= fee, Error::<T>::FundsUnavailable);
-        T::Currency::burn_from(who, T::AccountMappingStorageFee::get(), Exact, Polite)
+        T::Currency::burn_from(
+            who,
+            T::AccountMappingStorageFee::get(),
+            Protect,
+            Exact,
+            Polite,
+        )
     }
 }
 
