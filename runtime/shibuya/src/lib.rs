@@ -84,10 +84,10 @@ use astar_primitives::{
     governance::{
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
-        EnsureRootOrTwoThirdsCommunityCouncil, EnsureRootOrTwoThirdsMainCouncil,
-        EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
-        MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
-        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+        EnsureRootOrHalfCommunityCouncil, EnsureRootOrHalfMainCouncil,
+        EnsureRootOrHalfTechnicalCommittee, MainCouncilCollectiveInst, MainCouncilMembershipInst,
+        MainTreasuryInst, OracleMembershipInst, TechnicalCommitteeCollectiveInst,
+        TechnicalCommitteeMembershipInst,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -467,9 +467,9 @@ impl pallet_dapp_staking::Config for Runtime {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
-    type ContractRegisterOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
+    type ContractRegisterOrigin = EnsureRootOrHalfCommunityCouncil;
     type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
-    type ManagerOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
+    type ManagerOrigin = EnsureRootOrHalfTechnicalCommittee;
     type NativePriceProvider = PriceAggregator;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
@@ -1243,11 +1243,11 @@ impl orml_oracle::Config for Runtime {
 
 impl pallet_membership::Config<OracleMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type AddOrigin = EnsureRootOrHalfMainCouncil;
+    type RemoveOrigin = EnsureRootOrHalfMainCouncil;
+    type SwapOrigin = EnsureRootOrHalfMainCouncil;
+    type ResetOrigin = EnsureRootOrHalfMainCouncil;
+    type PrimeOrigin = EnsureRootOrHalfMainCouncil;
     type MembershipInitialized = ();
     type MembershipChanged = ();
     type MaxMembers = ConstU32<16>;
@@ -1280,11 +1280,11 @@ parameter_types! {
 
 impl pallet_membership::Config<MainCouncilMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type AddOrigin = EnsureRootOrHalfMainCouncil;
+    type RemoveOrigin = EnsureRootOrHalfMainCouncil;
+    type SwapOrigin = EnsureRootOrHalfMainCouncil;
+    type ResetOrigin = EnsureRootOrHalfMainCouncil;
+    type PrimeOrigin = EnsureRootOrHalfMainCouncil;
     type MembershipInitialized = Council;
     type MembershipChanged = Council;
     type MaxMembers = CouncilMaxMembers;
@@ -1293,11 +1293,11 @@ impl pallet_membership::Config<MainCouncilMembershipInst> for Runtime {
 
 impl pallet_membership::Config<TechnicalCommitteeMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type AddOrigin = EnsureRootOrHalfMainCouncil;
+    type RemoveOrigin = EnsureRootOrHalfMainCouncil;
+    type SwapOrigin = EnsureRootOrHalfMainCouncil;
+    type ResetOrigin = EnsureRootOrHalfMainCouncil;
+    type PrimeOrigin = EnsureRootOrHalfMainCouncil;
     type MembershipInitialized = TechnicalCommittee;
     type MembershipChanged = TechnicalCommittee;
     type MaxMembers = TechnicalCommitteeMaxMembers;
@@ -1306,11 +1306,11 @@ impl pallet_membership::Config<TechnicalCommitteeMembershipInst> for Runtime {
 
 impl pallet_membership::Config<CommunityCouncilMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type AddOrigin = EnsureRootOrHalfMainCouncil;
+    type RemoveOrigin = EnsureRootOrHalfMainCouncil;
+    type SwapOrigin = EnsureRootOrHalfMainCouncil;
+    type ResetOrigin = EnsureRootOrHalfMainCouncil;
+    type PrimeOrigin = EnsureRootOrHalfMainCouncil;
     type MembershipInitialized = CommunityCouncil;
     type MembershipChanged = CommunityCouncil;
     type MaxMembers = CommunityCouncilMaxMembers;
@@ -1325,7 +1325,7 @@ impl pallet_collective::Config<MainCouncilCollectiveInst> for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type Proposal = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
-    type MotionDuration = ConstU32<{ 2 * DAYS }>;
+    type MotionDuration = ConstU32<{ 5 * DAYS }>;
     type MaxProposals = ConstU32<16>;
     type MaxMembers = CouncilMaxMembers;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
@@ -1338,7 +1338,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollectiveInst> for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type Proposal = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
-    type MotionDuration = ConstU32<{ 2 * DAYS }>;
+    type MotionDuration = ConstU32<{ 5 * DAYS }>;
     type MaxProposals = ConstU32<16>;
     type MaxMembers = TechnicalCommitteeMaxMembers;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
@@ -1351,7 +1351,7 @@ impl pallet_collective::Config<CommunityCouncilCollectiveInst> for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type Proposal = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
-    type MotionDuration = ConstU32<{ 2 * DAYS }>;
+    type MotionDuration = ConstU32<{ 5 * DAYS }>;
     type MaxProposals = ConstU32<16>;
     type MaxMembers = CommunityCouncilMaxMembers;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
@@ -1363,9 +1363,9 @@ impl pallet_collective::Config<CommunityCouncilCollectiveInst> for Runtime {
 impl pallet_democracy::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type EnactmentPeriod = ConstU32<{ 2 * HOURS }>;
-    type LaunchPeriod = ConstU32<{ 3 * DAYS }>;
-    type VotingPeriod = ConstU32<{ 3 * DAYS }>;
+    type EnactmentPeriod = ConstU32<{ 2 * DAYS }>;
+    type LaunchPeriod = ConstU32<{ 4 * DAYS }>;
+    type VotingPeriod = ConstU32<{ 4 * DAYS }>;
     type VoteLockingPeriod = ConstU32<{ 1 * DAYS }>;
     type MinimumDeposit = ConstU128<{ 10 * SBY }>;
     type FastTrackVotingPeriod = ConstU32<{ 1 * HOURS }>;
@@ -1377,21 +1377,21 @@ impl pallet_democracy::Config for Runtime {
     type MaxBlacklisted = ConstU32<128>;
 
     /// A two third majority of the Council can choose the next external "super majority approve" proposal.
-    type ExternalOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ExternalOrigin = EnsureRootOrHalfMainCouncil;
     /// A two third majority of the Council can choose the next external "majority approve" proposal. Also bypasses blacklist filter.
-    type ExternalMajorityOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ExternalMajorityOrigin = EnsureRootOrHalfMainCouncil;
     /// Unanimous approval of the Council can choose the next external "super majority against" proposal.
     type ExternalDefaultOrigin = EnsureRootOrAllMainCouncil;
     /// A two third majority of the Technical Committee can have an external proposal tabled immediately
     /// for a _fast track_ vote, and a custom enactment period.
-    type FastTrackOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
+    type FastTrackOrigin = EnsureRootOrHalfTechnicalCommittee;
     /// Unanimous approval of the Technical Committee can have an external proposal tabled immediately
     /// for a completely custom _voting period length_ vote, and a custom enactment period.
     type InstantOrigin = EnsureRootOrAllTechnicalCommittee;
     type InstantAllowed = ConstBool<true>;
 
     /// A two third majority of the Council can cancel a passed proposal. Can happen only once per unique proposal.
-    type CancellationOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type CancellationOrigin = EnsureRootOrHalfMainCouncil;
     /// Only a passed public referendum can permanently blacklist a proposal.
     type BlacklistOrigin = EnsureRoot<AccountId>;
     /// An unanimous Technical Committee can cancel a public proposal, slashing the deposit(s).
@@ -1418,8 +1418,8 @@ impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
 
     // Two origins which can either approve or reject the spending proposal
-    type ApproveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type RejectOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ApproveOrigin = EnsureRootOrHalfMainCouncil;
+    type RejectOrigin = EnsureRootOrHalfMainCouncil;
 
     type OnSlash = Treasury;
     type ProposalBond = ProposalBond;
@@ -1458,8 +1458,8 @@ impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
 
     // Two origins which can either approve or reject the spending proposal
-    type ApproveOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
-    type RejectOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
+    type ApproveOrigin = EnsureRootOrHalfCommunityCouncil;
+    type RejectOrigin = EnsureRootOrHalfCommunityCouncil;
 
     type OnSlash = CommunityTreasury;
     type ProposalBond = ProposalBond;
@@ -1508,7 +1508,7 @@ impl InstanceFilter<RuntimeCall> for CommunityCouncilCallFilter {
 impl pallet_collective_proxy::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
-    type CollectiveProxy = EnsureRootOrTwoThirdsCommunityCouncil;
+    type CollectiveProxy = EnsureRootOrHalfCommunityCouncil;
     type ProxyAccountId = CommunityTreasuryAccountId;
     type CallFilter = CommunityCouncilCallFilter;
     type WeightInfo = pallet_collective_proxy::weights::SubstrateWeight<Runtime>;
