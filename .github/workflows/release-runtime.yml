@@ -200,6 +200,7 @@ jobs:
 
       - name: Get the latest runtime release
         id: latest-release
+        # We're making an assumption that the latest runtime release will be within the last 30 releases
        run: |
           latest_runtime_tag=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases | \
            jq -r 'map(select(.name | test("(^runtime-\\d{4,}$)|(^v\\d+\\.\\d+\\.\\d+$)"; "i")))[0] | .tag_name')
@@ -231,43 +232,6 @@ jobs:
           release_name: ${{ github.ref_name }}
           body_path: body.md
           draft: true
-
-  upload-binaries:
-    needs: publish-release-draft
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        os: ["ubuntu", "macOS"]
-        arch: ["x86_64", "aarch64"]
-        exclude:
-          - os: macOS
-            arch: aarch64
-    steps:
-      - name: Create download folder
-        run: |
-          mkdir -p ${{ matrix.os }}-${{ matrix.arch }}-bin
-
-      - name: Download pre-built collator binary
-        uses: actions/download-artifact@v3
-        with:
-          name: astar-${{ matrix.os }}-latest-${{ matrix.arch }}
-          path: ${{ matrix.os }}-${{ matrix.arch }}-bin
-
-      - name: Make binary executable and tar gzip
-        run: |
-          cd ${{ matrix.os }}-${{ matrix.arch }}-bin
-          chmod +x astar-collator
-          tar zcvf astar-collator.tar.gz astar-collator
-
-      - name: Upload binary artifact
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-          asset_path: ${{ matrix.os }}-${{ matrix.arch }}-bin/astar-collator.tar.gz
-          asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
-          asset_content_type: application/gzip
 
   upload-runtimes:
     needs: publish-release-draft
@@ -378,55 +342,3 @@ jobs:
           asset_path: evm-tracing-artifacts.tar.gz
           asset_name: evm-tracing-artifacts-${{ github.ref_name }}.tar.gz
           asset_content_type: application/gzip
-
-  chain-sync-smoke:
-    needs: native-linux
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        chain: ["astar", "shiden", "shibuya"]
-
-    steps:
-      - name: Checkout the source code
-        uses: actions/checkout@v4
-
-      - name: Download pre-built collator binary
-        uses: actions/download-artifact@v3
-        with:
-          name: astar-ubuntu-latest-x86_64
-          path: target/release
-
-      - name: Sync chain ${{ matrix.chain }}
-        run: |
-          chmod +x target/release/astar-collator
-          ./scripts/sync-smoke.sh ${{ matrix.chain }}
-
-  zombienet-smoke:
-    needs: native-linux
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        chain: ["astar-dev", "shiden-dev", "shibuya-dev"]
-
-    steps:
-      - name: Checkout the source code
-        uses: actions/checkout@v4
-
-      - name: Download pre-built collator binary
-        uses: actions/download-artifact@v3
-        with:
-          name: astar-ubuntu-latest-x86_64
-          path: third-party/zombienet
-
-      - name: Setup
-        run: chmod +x third-party/zombienet/astar-collator
-
-      - name: Setup zombienet
-        working-directory: third-party/zombienet
-        run: ./setup.sh
-
-      - name: ${{ matrix.chain }} build blocks
-        working-directory: third-party/zombienet
-        env:
-          CHAIN: ${{ matrix.chain }}
-        run: zombienet -p native test smoke.zndsl

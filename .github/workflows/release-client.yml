@@ -206,6 +206,7 @@ jobs:
 
       - name: Get the latest client release
         id: latest-release
+        # We're making an assumption that the latest client release will be within the last 30 releases
        run: |
           latest_client_tag=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases | \
            jq -r 'map(select(.name | test("^v\\d+\\.\\d+\\.\\d+$"; "i")))[0] | .tag_name')
