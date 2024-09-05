@@ -519,7 +519,7 @@ impl<T: Config> OnRuntimeUpgrade for AdjustEraMigration<T> {
                 let current_block_number =
                     frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
                 let remaining = state.next_era_start.saturating_sub(current_block_number);
-                state.next_era_start.saturating_accrue(2 * remaining);
+                state.next_era_start.saturating_accrue(remaining);
             }
         });
         T::DbWeight::get().reads_writes(1, 1)
