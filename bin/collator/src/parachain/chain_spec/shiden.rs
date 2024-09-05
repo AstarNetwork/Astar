@@ -25,7 +25,7 @@ use shiden_runtime::wasm_binary_unwrap;
 
 /// Specialized `ChainSpec` for Shiden Network.
 pub type ShidenChainSpec =
-    sc_service::GenericChainSpec<shiden_runtime::RuntimeGenesisConfig, Extensions>;
+    sc_service::GenericChainSpec<Extensions>;
 
 /// Gen Shiden chain specification.
 pub fn get_chain_spec() -> ShidenChainSpec {

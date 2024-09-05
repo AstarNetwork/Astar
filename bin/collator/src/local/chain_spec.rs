@@ -20,7 +20,7 @@ use local_runtime::wasm_binary_unwrap;
 use sc_service::ChainType;
 
 /// Specialized `ChainSpec` for local network.
-pub type ChainSpec = sc_service::GenericChainSpec<local_runtime::RuntimeGenesisConfig>;
+pub type ChainSpec = sc_service::GenericChainSpec;
 
 /// Development config.
 pub fn development_config() -> ChainSpec {

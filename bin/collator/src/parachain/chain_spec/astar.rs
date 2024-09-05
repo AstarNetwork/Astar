@@ -25,7 +25,7 @@ use sc_service::ChainType;
 
 /// Specialized `ChainSpec` for Astar Network.
 pub type AstarChainSpec =
-    sc_service::GenericChainSpec<astar_runtime::RuntimeGenesisConfig, Extensions>;
+    sc_service::GenericChainSpec<Extensions>;
 
 /// Get Astar chain specification.
 pub fn get_chain_spec() -> AstarChainSpec {
