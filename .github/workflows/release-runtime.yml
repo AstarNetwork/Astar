@@ -1,8 +1,8 @@
-name: Release Build
+name: Release Runtime Build
 on:
   push:
     tags:
-      - runtime-[0-9]{4,}*
+      - runtime-[0-9]+*
   workflow_dispatch:
 env:
   SUBWASM_VERSION: 0.16.1
@@ -201,10 +201,10 @@ jobs:
       - name: Get the latest runtime release
         id: latest-release
         # We're making an assumption that the latest runtime release will be within the last 30 releases
-       run: |
+        run: |
           latest_runtime_tag=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases | \
            jq -r 'map(select(.name | test("(^runtime-\\d{4,}$)|(^v\\d+\\.\\d+\\.\\d+$)"; "i")))[0] | .tag_name')
-          echo "::set-output name=latest_runtime_tag::$latest_runtime_tag"
+          echo "latest_runtime_tag=$latest_runtime_tag" >> $GITHUB_OUTPUT
 
       - name: Generate Release Body
         env:

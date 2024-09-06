@@ -1,4 +1,4 @@
-name: Release Build
+name: Release Client Build
 on:
   push:
     tags:
@@ -94,7 +94,7 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
         id: artifact-name
-        run: echo "::set-output name=name::astar-ubuntu-latest-${TARGET%%-*}"
+        run: echo "name=astar-ubuntu-latest-${TARGET%%-*}" >> $GITHUB_OUTPUT
 
       - uses: actions/upload-artifact@v3
         with:
@@ -189,7 +189,7 @@ jobs:
           push: true
 
   publish-release-draft:
-    needs: [native-linux, native-macOS, docker]
+    needs: [native-linux, native-macos, docker]
     runs-on: ubuntu-latest
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
@@ -207,10 +207,10 @@ jobs:
       - name: Get the latest client release
         id: latest-release
         # We're making an assumption that the latest client release will be within the last 30 releases
-       run: |
+        run: |
           latest_client_tag=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases | \
            jq -r 'map(select(.name | test("^v\\d+\\.\\d+\\.\\d+$"; "i")))[0] | .tag_name')
-          echo "::set-output name=latest_client_tag::$latest_client_tag"
+          echo "latest_client_tag=$latest_client_tag" >> $GITHUB_OUTPUT
 
       - name: Generate Release Body
         env:
