@@ -697,11 +697,13 @@ dependencies = [
  "sp-transaction-pool",
  "sp-trie",
  "sp-version",
+ "staging-xcm",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
  "tokio",
  "url",
+ "xcm-fee-payment-runtime-api",
 ]
 
 [[package]]
