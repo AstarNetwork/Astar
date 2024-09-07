@@ -21,11 +21,14 @@
 pub use frame_support::{
     assert_noop, assert_ok,
     traits::{OnFinalize, OnIdle, OnInitialize},
-    weights::Weight,
+    weights::{
+        constants::ExtrinsicBaseWeight, Weight, WeightToFee as WeightToFeeT,
+        WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
+    },
 };
 use parity_scale_codec::Encode;
 pub use sp_core::{sr25519, Get, H160};
-pub use sp_runtime::{AccountId32, Digest, DigestItem, MultiAddress};
+pub use sp_runtime::{AccountId32, Digest, DigestItem, MultiAddress, Perbill};
 
 use cumulus_primitives_core::{relay_chain::HeadData, PersistedValidationData};
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
@@ -370,4 +373,22 @@ pub fn call_wasm_contract_method<V: Decode>(
         false,
     );
     value
+}
+
+/// TODO: improve WeightToFee later once code is more accessible.
+
+/// Same `WeightToFee` implementation as runtime
+pub struct WeightToFee;
+impl WeightToFeePolynomial for WeightToFee {
+    type Balance = Balance;
+    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+        let p = WeightFeeFactor::get();
+        let q = Balance::from(ExtrinsicBaseWeight::get().ref_time());
+        smallvec::smallvec![WeightToFeeCoefficient {
+            degree: 1,
+            negative: false,
+            coeff_frac: Perbill::from_rational(p % q, q),
+            coeff_integer: p / q,
+        }]
+    }
 }

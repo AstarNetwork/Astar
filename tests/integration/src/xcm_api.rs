@@ -18,6 +18,7 @@
 
 use crate::setup::*;
 
+pub use astar_primitives::xcm::WeightToForeignAssetFee;
 use sp_runtime::traits::Zero;
 use xcm::{
     v4::{
@@ -26,7 +27,8 @@ use xcm::{
     },
     VersionedLocation, VersionedXcm,
 };
-use xcm_fee_payment_runtime_api::runtime_decl_for_xcm_payment_api::XcmPaymentApi;
+use xcm_fee_payment_runtime_api::dry_run::runtime_decl_for_dry_run_api::DryRunApiV1;
+use xcm_fee_payment_runtime_api::fees::runtime_decl_for_xcm_payment_api::XcmPaymentApiV1;
 
 /// Register an asset into `pallet-assets` instance, and register as as cross-chain asset.
 ///
@@ -115,30 +117,38 @@ fn query_weight_to_asset_fee_is_ok() {
         // 1. Native asset payment
         {
             let weight = Weight::from_parts(1000, 1000);
+            let expected_fee = WeightToFee::weight_to_fee(&weight);
             let fee =
                 Runtime::query_weight_to_asset_fee(weight, XcmAssetId(Location::here()).into())
                     .expect("Must return fee for native asset.");
 
-            // TODO: improve the check later once _weight-to-fee_ code is more accessible.
-            assert!(!fee.is_zero(), "Fee must be greater than zero.");
+            assert_eq!(
+                fee, expected_fee,
+                "Fee must match the expected weight-to-fee conversion."
+            );
         }
 
         // 2. Foreign asset payment
         {
             let payable_location = Location::new(2, Here);
+            let units_per_second = 1_000_000_000_000;
+
             prepare_asset(
                 2,
                 payable_location.clone().into_versioned(),
-                Some(1_000_000_000_000),
+                Some(units_per_second),
             );
 
             let weight = Weight::from_parts(1_000_000_000, 1_000_000);
+            let expected_fee = WeightToForeignAssetFee::weight_to_fee(weight, units_per_second);
             let fee =
                 Runtime::query_weight_to_asset_fee(weight, XcmAssetId(payable_location).into())
                     .expect("Must return fee for payable asset.");
 
-            // TODO: improve the check later once _weight-to-fee_ code is more accessible.
-            assert!(!fee.is_zero(), "Fee must be greater than zero.");
+            assert_eq!(
+                fee, expected_fee,
+                "Fee must match the expected weight-to-fee conversion."
+            );
         }
     })
 }
@@ -186,5 +196,39 @@ fn query_delivery_fees_is_ok() {
             Runtime::query_delivery_fees(location, VersionedXcm::V4(xcm_sequence)).is_err(),
             "At the moment, `PriceForMessageDelivery` is not implemented."
         );
+    })
+}
+
+// Minimal tests to make sur DryRunAPi methods are callable in a runtime isolated environement
+#[test]
+fn dry_run_call_is_ok() {
+    new_test_ext().execute_with(|| {
+        // Prepare a dummy origin and call
+        let origin = OriginCaller::system(frame_system::RawOrigin::Root.into());
+        let call = RuntimeCall::System(frame_system::Call::remark {
+            remark: vec![0u8; 32],
+        });
+
+        let result = Runtime::dry_run_call(origin, call).expect("Must return some effects.");
+        assert_eq!(result.forwarded_xcms.len(), 1);
+    })
+}
+
+#[test]
+fn dry_run_xcm_is_ok() {
+    new_test_ext().execute_with(|| {
+        // Prepare a dummy location and xcm sequence
+        let location = VersionedLocation::V4(Location::here());
+        let xcm_sequence = Xcm::<()>::builder_unsafe()
+            .clear_error()
+            .unsubscribe_version()
+            .build();
+        let dummy_message =
+            Xcm::<RuntimeCall>::from(VersionedXcm::V4(xcm_sequence).try_into().unwrap());
+        let versioned_xcm = VersionedXcm::V4(dummy_message);
+
+        let result =
+            Runtime::dry_run_xcm(location, versioned_xcm).expect("Must return some effects.");
+        assert_eq!(result.forwarded_xcms.len(), 1);
     })
 }

@@ -93,7 +93,7 @@ use astar_primitives::{
         TechnicalCommitteeMembershipInst,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
-    xcm::AssetLocationIdConverter,
+    xcm::{AssetLocationIdConverter, WeightToForeignAssetFee},
     Address, AssetId, BlockNumber, Hash, Header, Nonce, UnfreezeChainOnFailedMigration,
 };
 pub use astar_primitives::{AccountId, Balance, Signature};
@@ -2274,10 +2274,7 @@ impl_runtime_apis! {
                     let versioned_location = VersionedLocation::V4(asset_id.0.clone());
 
                     match pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::get(versioned_location) {
-                        Some(units_per_sec) => {
-                            Ok(units_per_sec.saturating_mul(weight.ref_time() as u128)
-                                / (WEIGHT_REF_TIME_PER_SECOND as u128))
-                        },
+                        Some(units_per_sec) => Ok(WeightToForeignAssetFee::weight_to_fee(weight, units_per_sec)),
                         None => Err(XcmPaymentApiError::AssetNotFound),
                     }
                 },
