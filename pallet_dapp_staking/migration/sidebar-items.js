@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["v6","versioned_migrations"]};
+window.SIDEBAR_ITEMS = {"mod":["v6","versioned_migrations"],"struct":["AdjustEraMigration","LazyMigration"]};

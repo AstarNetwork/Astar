@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["pallet","weights"],"struct":["InflationConfiguration","InflationParameters"],"trait":["PayoutPerBlock"]};
+window.SIDEBAR_ITEMS = {"mod":["migration","pallet","weights"],"struct":["InflationConfiguration","InflationParameters"],"trait":["PayoutPerBlock"]};

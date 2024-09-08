@@ -35,7 +35,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["pallet_evm_precompile_substrate_ecdsa",["",[],["lib.rs"]]],\
 ["pallet_evm_precompile_unified_accounts",["",[],["lib.rs"]]],\
 ["pallet_evm_precompile_xcm",["",[],["lib.rs"]]],\
-["pallet_inflation",["",[],["lib.rs","weights.rs"]]],\
+["pallet_inflation",["",[],["lib.rs","migration.rs","weights.rs"]]],\
 ["pallet_price_aggregator",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_static_price_provider",["",[],["lib.rs"]]],\
 ["pallet_unified_accounts",["",[],["lib.rs","weights.rs"]]],\
@@ -43,6 +43,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["shibuya_runtime",["",[["weights",[["xcm",[],["fungible.rs","generic.rs","mod.rs"]]],["mod.rs","orml_oracle.rs","pallet_assets.rs","pallet_balances.rs","pallet_dapp_staking.rs","pallet_inflation.rs","pallet_xcm.rs"]]],["chain_extensions.rs","genesis_config.rs","lib.rs","precompiles.rs","xcm_config.rs"]]],\
 ["shiden_runtime",["",[["weights",[["xcm",[],["fungible.rs","generic.rs","mod.rs"]]],["mod.rs","orml_oracle.rs","pallet_assets.rs","pallet_dapp_staking.rs","pallet_inflation.rs","pallet_xcm.rs"]]],["chain_extensions.rs","genesis_config.rs","lib.rs","precompiles.rs","xcm_config.rs"]]],\
 ["unified_accounts_chain_extension_types",["",[],["lib.rs"]]],\
+["vesting_mbm",["",[],["lib.rs","weights.rs"]]],\
 ["xcm_simulator_tests",["",[],["lib.rs"]]],\
 ["xcm_tools",["",[],["cli.rs","command.rs","main.rs"]]]\
 ]'));
