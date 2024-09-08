@@ -2411,18 +2411,6 @@
 <a href="#2409" id="2409">2409</a>
 <a href="#2410" id="2410">2410</a>
 <a href="#2411" id="2411">2411</a>
-<a href="#2412" id="2412">2412</a>
-<a href="#2413" id="2413">2413</a>
-<a href="#2414" id="2414">2414</a>
-<a href="#2415" id="2415">2415</a>
-<a href="#2416" id="2416">2416</a>
-<a href="#2417" id="2417">2417</a>
-<a href="#2418" id="2418">2418</a>
-<a href="#2419" id="2419">2419</a>
-<a href="#2420" id="2420">2420</a>
-<a href="#2421" id="2421">2421</a>
-<a href="#2422" id="2422">2422</a>
-<a href="#2423" id="2423">2423</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2597,7 +2585,7 @@
     spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">"astar"</span>),
     impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">"astar"</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">94</span>,
+    spec_version: <span class="number">95</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">3</span>,
@@ -3143,7 +3131,7 @@
     <span class="kw">type </span>CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
     <span class="kw">type </span>Debug = ();
     <span class="kw">type </span>Environment = ();
-    <span class="kw">type </span>Migrations = (pallet_contracts::migration::v16::Migration&lt;Runtime&gt;,);
+    <span class="kw">type </span>Migrations = ();
     <span class="kw">type </span>Xcm = ();
     <span class="kw">type </span>UploadOrigin = EnsureSigned&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;;
     <span class="kw">type </span>InstantiateOrigin = EnsureSigned&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;;
@@ -3754,19 +3742,7 @@
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = (
-    <span class="comment">// dApp-staking dyn tier threshold migrations
-    </span>pallet_dapp_staking::migration::versioned_migrations::V7ToV8&lt;
-        Runtime,
-        TierThresholds,
-        ThresholdVariationPercentage,
-    &gt;,
-    frame_support::migrations::RemovePallet&lt;
-        DmpQueuePalletName,
-        &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight,
-    &gt;,
-    pallet_contracts::Migration&lt;Runtime&gt;,
-);
+</span><span class="kw">pub type </span>Unreleased = ();
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);
