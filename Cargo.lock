@@ -5579,6 +5579,7 @@ dependencies = [
  "pallet-membership",
  "pallet-price-aggregator",
  "pallet-proxy",
+ "pallet-session",
  "pallet-timestamp",
  "pallet-unified-accounts",
  "pallet-utility",
@@ -5587,6 +5588,7 @@ dependencies = [
  "sha3",
  "shibuya-runtime",
  "shiden-runtime",
+ "sp-consensus-aura",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -8485,6 +8487,7 @@ dependencies = [
  "log",
  "num-traits",
  "pallet-balances",
+ "pallet-migrations",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -14481,6 +14484,7 @@ dependencies = [
  "staging-xcm-builder",
  "staging-xcm-executor",
  "substrate-wasm-builder",
+ "vesting-mbm",
  "xcm-fee-payment-runtime-api",
 ]
 
@@ -17029,6 +17033,27 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
+name = "vesting-mbm"
+version = "1.0.0"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-migrations",
+ "pallet-vesting",
+ "parity-scale-codec",
+ "scale-info",
+ "serde_json",
+ "sp-arithmetic",
+ "sp-io",
+ "sp-runtime",
+ "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
+]
 
 [[package]]
 name = "void"

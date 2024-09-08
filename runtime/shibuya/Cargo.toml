@@ -78,6 +78,7 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
+vesting-mbm = { workspace = true }
 
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }
@@ -264,6 +265,7 @@ std = [
 	"pallet-xcm-benchmarks?/std",
 	"precompile-utils/std",
 	"scale-info/std",
+	"vesting-mbm/std",
 ]
 runtime-benchmarks = [
 	"astar-xcm-benchmarks/runtime-benchmarks",
@@ -321,6 +323,7 @@ runtime-benchmarks = [
 	"cumulus-primitives-core/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
 	"orml-oracle/runtime-benchmarks",
+	"vesting-mbm/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -377,6 +380,7 @@ try-runtime = [
 	"pallet-chain-extension-assets/try-runtime",
 	"polkadot-runtime-common/try-runtime",
 	"sp-runtime/try-runtime",
+	"vesting-mbm/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",
