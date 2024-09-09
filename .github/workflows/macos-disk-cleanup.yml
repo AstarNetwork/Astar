@@ -10,6 +10,7 @@ jobs:
       # https://github.com/actions/runner-images/issues/10511
       - name: Disk Cleanup
         run: |
+          df -h
           xcrun simctl delete all || true
           sudo rm -rf ~/Library/Developer/CoreSimulator/Caches/* || true
           sudo rm -rfv /Users/runner/Library/Android/sdk || true
