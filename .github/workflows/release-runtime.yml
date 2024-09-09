@@ -202,8 +202,15 @@ jobs:
         id: latest-release
         # We're making an assumption that the latest runtime release will be within the last 30 releases
         run: |
-          latest_runtime_tag=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases | \
-           jq -r 'map(select(.name | test("(^runtime-\\d{4,}$)|(^v\\d+\\.\\d+\\.\\d+$)"; "i")))[0] | .tag_name')
+          releases=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
+          
+          latest_runtime_tag=$(echo "$releases" | jq -r '
+            [
+              .[] | select(.name | test("^runtime-\\d{4,}$"; "i")) | .tag_name,
+              .[] | select(.name | test("^v\\d+\\.\\d+\\.\\d+$"; "i")) | .tag_name
+            ] | first
+          ')
+          
           echo "latest_runtime_tag=$latest_runtime_tag" >> $GITHUB_OUTPUT
 
       - name: Generate Release Body
