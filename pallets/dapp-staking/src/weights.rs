@@ -73,6 +73,7 @@ pub trait WeightInfo {
 	fn on_initialize_build_and_earn_to_build_and_earn() -> Weight;
 	fn dapp_tier_assignment(x: u32, ) -> Weight;
 	fn on_idle_cleanup() -> Weight;
+	fn step() -> Weight;
 }
 
 /// Weights for pallet_dapp_staking using the Substrate node and recommended hardware.
@@ -477,6 +478,17 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
+	/// Storage: `DappStaking::Ledger` (r:2 w:1)
+	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
+	fn step() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `76`
+		//  Estimated: `6560`
+		// Minimum execution time: 10_060_000 picoseconds.
+		Weight::from_parts(10_314_000, 6560)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests
@@ -879,5 +891,16 @@ impl WeightInfo for () {
 		Weight::from_parts(8_772_000, 4254)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
+	}
+	/// Storage: `DappStaking::Ledger` (r:2 w:1)
+	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
+	fn step() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `76`
+		//  Estimated: `6560`
+		// Minimum execution time: 10_060_000 picoseconds.
+		Weight::from_parts(10_314_000, 6560)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

@@ -84,10 +84,10 @@ use astar_primitives::{
     governance::{
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
-        EnsureRootOrTwoThirdsCommunityCouncil, EnsureRootOrTwoThirdsMainCouncil,
-        EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
-        MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
-        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+        EnsureRootOrHalfCommunityCouncil, EnsureRootOrHalfMainCouncil,
+        EnsureRootOrHalfTechnicalCommittee, MainCouncilCollectiveInst, MainCouncilMembershipInst,
+        MainTreasuryInst, OracleMembershipInst, TechnicalCommitteeCollectiveInst,
+        TechnicalCommitteeMembershipInst,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -147,7 +147,7 @@ pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
 }
 
 /// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = 12000;
+pub const MILLISECS_PER_BLOCK: u64 = 6000;
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
 // Time is measured by number of blocks.
@@ -157,7 +157,7 @@ pub const DAYS: BlockNumber = HOURS * 24;
 
 /// Maximum number of blocks simultaneously accepted by the Runtime, not yet included into the
 /// relay chain.
-pub const UNINCLUDED_SEGMENT_CAPACITY: u32 = 1;
+pub const UNINCLUDED_SEGMENT_CAPACITY: u32 = 3;
 /// How many parachain blocks are processed by the relay chain per parent. Limits the number of
 /// blocks authored per slot.
 pub const BLOCK_PROCESSING_VELOCITY: u32 = 1;
@@ -204,7 +204,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 136,
+    spec_version: 137,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -232,9 +232,9 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-/// We allow for 0.5 seconds of compute with a 6 second average block time.
+/// We allow for 2 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
-    WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
+    WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2),
     polkadot_primitives::MAX_POV_SIZE as u64,
 );
 
@@ -332,15 +332,10 @@ impl frame_system::Config for Runtime {
     type PostTransactions = ();
 }
 
-parameter_types! {
-    pub const MinimumPeriod: u64 = MILLISECS_PER_BLOCK / 2;
-}
-
 impl pallet_timestamp::Config for Runtime {
-    /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
-    type OnTimestampSet = ();
-    type MinimumPeriod = MinimumPeriod;
+    type OnTimestampSet = Aura;
+    type MinimumPeriod = ConstU64<0>;
     type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
 
@@ -467,9 +462,9 @@ impl pallet_dapp_staking::Config for Runtime {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
-    type ContractRegisterOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
+    type ContractRegisterOrigin = EnsureRootOrHalfCommunityCouncil;
     type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
-    type ManagerOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
+    type ManagerOrigin = EnsureRootOrHalfTechnicalCommittee;
     type NativePriceProvider = PriceAggregator;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
@@ -572,8 +567,7 @@ impl pallet_aura::Config for Runtime {
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<250>;
     type SlotDuration = ConstU64<SLOT_DURATION>;
-    // Set to `true` once async backing is enabled.
-    type AllowMultipleBlocksPerSlot = ConstBool<false>;
+    type AllowMultipleBlocksPerSlot = ConstBool<true>;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -714,6 +708,9 @@ impl pallet_vesting::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type BlockNumberToBalance = ConvertInto;
+    #[cfg(feature = "runtime-benchmarks")]
+    type MinVestedTransfer = ConstU128<1>;
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type MinVestedTransfer = MinVestedTransfer;
     type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
     type UnvestedFundsAllowedWithdrawReasons = UnvestedFundsAllowedWithdrawReasons;
@@ -764,7 +761,7 @@ impl pallet_contracts::Config for Runtime {
     type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
     type Debug = ();
     type Environment = ();
-    type Migrations = (pallet_contracts::migration::v16::Migration<Runtime>,);
+    type Migrations = ();
     type Xcm = ();
     type UploadOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
     type InstantiateOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
@@ -926,8 +923,8 @@ parameter_types! {
     /// max_gas_limit = max_tx_ref_time / WEIGHT_PER_GAS = max_pov_size * gas_limit_pov_size_ratio
     /// gas_limit_pov_size_ratio = ceil((max_tx_ref_time / WEIGHT_PER_GAS) / max_pov_size)
     ///
-    /// Equals 4 for values used by Shibuya runtime.
-    pub const GasLimitPovSizeRatio: u64 = 4;
+    /// Equals 16 for values used by Shibuya runtime.
+    pub const GasLimitPovSizeRatio: u64 = 16;
 }
 
 impl pallet_evm::Config for Runtime {
@@ -1187,7 +1184,7 @@ parameter_types! {
     // Of course it's not true for Shibuya, but SBY is worthless, a test token.
     pub const NativeCurrencyId: CurrencyId = CurrencyId::ASTR;
     // Aggregate values for one day.
-    pub const AggregationDuration: BlockNumber = 7200;
+    pub const AggregationDuration: BlockNumber = DAYS;
 }
 
 impl pallet_price_aggregator::Config for Runtime {
@@ -1243,11 +1240,11 @@ impl orml_oracle::Config for Runtime {
 
 impl pallet_membership::Config<OracleMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type AddOrigin = EnsureRootOrHalfMainCouncil;
+    type RemoveOrigin = EnsureRootOrHalfMainCouncil;
+    type SwapOrigin = EnsureRootOrHalfMainCouncil;
+    type ResetOrigin = EnsureRootOrHalfMainCouncil;
+    type PrimeOrigin = EnsureRootOrHalfMainCouncil;
     type MembershipInitialized = ();
     type MembershipChanged = ();
     type MaxMembers = ConstU32<16>;
@@ -1280,11 +1277,11 @@ parameter_types! {
 
 impl pallet_membership::Config<MainCouncilMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type AddOrigin = EnsureRootOrHalfMainCouncil;
+    type RemoveOrigin = EnsureRootOrHalfMainCouncil;
+    type SwapOrigin = EnsureRootOrHalfMainCouncil;
+    type ResetOrigin = EnsureRootOrHalfMainCouncil;
+    type PrimeOrigin = EnsureRootOrHalfMainCouncil;
     type MembershipInitialized = Council;
     type MembershipChanged = Council;
     type MaxMembers = CouncilMaxMembers;
@@ -1293,11 +1290,11 @@ impl pallet_membership::Config<MainCouncilMembershipInst> for Runtime {
 
 impl pallet_membership::Config<TechnicalCommitteeMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type AddOrigin = EnsureRootOrHalfMainCouncil;
+    type RemoveOrigin = EnsureRootOrHalfMainCouncil;
+    type SwapOrigin = EnsureRootOrHalfMainCouncil;
+    type ResetOrigin = EnsureRootOrHalfMainCouncil;
+    type PrimeOrigin = EnsureRootOrHalfMainCouncil;
     type MembershipInitialized = TechnicalCommittee;
     type MembershipChanged = TechnicalCommittee;
     type MaxMembers = TechnicalCommitteeMaxMembers;
@@ -1306,11 +1303,11 @@ impl pallet_membership::Config<TechnicalCommitteeMembershipInst> for Runtime {
 
 impl pallet_membership::Config<CommunityCouncilMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type AddOrigin = EnsureRootOrHalfMainCouncil;
+    type RemoveOrigin = EnsureRootOrHalfMainCouncil;
+    type SwapOrigin = EnsureRootOrHalfMainCouncil;
+    type ResetOrigin = EnsureRootOrHalfMainCouncil;
+    type PrimeOrigin = EnsureRootOrHalfMainCouncil;
     type MembershipInitialized = CommunityCouncil;
     type MembershipChanged = CommunityCouncil;
     type MaxMembers = CommunityCouncilMaxMembers;
@@ -1325,7 +1322,7 @@ impl pallet_collective::Config<MainCouncilCollectiveInst> for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type Proposal = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
-    type MotionDuration = ConstU32<{ 2 * DAYS }>;
+    type MotionDuration = ConstU32<{ 5 * DAYS }>;
     type MaxProposals = ConstU32<16>;
     type MaxMembers = CouncilMaxMembers;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
@@ -1338,7 +1335,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollectiveInst> for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type Proposal = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
-    type MotionDuration = ConstU32<{ 2 * DAYS }>;
+    type MotionDuration = ConstU32<{ 5 * DAYS }>;
     type MaxProposals = ConstU32<16>;
     type MaxMembers = TechnicalCommitteeMaxMembers;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
@@ -1351,7 +1348,7 @@ impl pallet_collective::Config<CommunityCouncilCollectiveInst> for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type Proposal = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
-    type MotionDuration = ConstU32<{ 2 * DAYS }>;
+    type MotionDuration = ConstU32<{ 5 * DAYS }>;
     type MaxProposals = ConstU32<16>;
     type MaxMembers = CommunityCouncilMaxMembers;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
@@ -1363,9 +1360,9 @@ impl pallet_collective::Config<CommunityCouncilCollectiveInst> for Runtime {
 impl pallet_democracy::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type EnactmentPeriod = ConstU32<{ 2 * HOURS }>;
-    type LaunchPeriod = ConstU32<{ 3 * DAYS }>;
-    type VotingPeriod = ConstU32<{ 3 * DAYS }>;
+    type EnactmentPeriod = ConstU32<{ 2 * DAYS }>;
+    type LaunchPeriod = ConstU32<{ 4 * DAYS }>;
+    type VotingPeriod = ConstU32<{ 4 * DAYS }>;
     type VoteLockingPeriod = ConstU32<{ 1 * DAYS }>;
     type MinimumDeposit = ConstU128<{ 10 * SBY }>;
     type FastTrackVotingPeriod = ConstU32<{ 1 * HOURS }>;
@@ -1377,21 +1374,21 @@ impl pallet_democracy::Config for Runtime {
     type MaxBlacklisted = ConstU32<128>;
 
     /// A two third majority of the Council can choose the next external "super majority approve" proposal.
-    type ExternalOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ExternalOrigin = EnsureRootOrHalfMainCouncil;
     /// A two third majority of the Council can choose the next external "majority approve" proposal. Also bypasses blacklist filter.
-    type ExternalMajorityOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ExternalMajorityOrigin = EnsureRootOrHalfMainCouncil;
     /// Unanimous approval of the Council can choose the next external "super majority against" proposal.
     type ExternalDefaultOrigin = EnsureRootOrAllMainCouncil;
     /// A two third majority of the Technical Committee can have an external proposal tabled immediately
     /// for a _fast track_ vote, and a custom enactment period.
-    type FastTrackOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
+    type FastTrackOrigin = EnsureRootOrHalfTechnicalCommittee;
     /// Unanimous approval of the Technical Committee can have an external proposal tabled immediately
     /// for a completely custom _voting period length_ vote, and a custom enactment period.
     type InstantOrigin = EnsureRootOrAllTechnicalCommittee;
     type InstantAllowed = ConstBool<true>;
 
     /// A two third majority of the Council can cancel a passed proposal. Can happen only once per unique proposal.
-    type CancellationOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type CancellationOrigin = EnsureRootOrHalfMainCouncil;
     /// Only a passed public referendum can permanently blacklist a proposal.
     type BlacklistOrigin = EnsureRoot<AccountId>;
     /// An unanimous Technical Committee can cancel a public proposal, slashing the deposit(s).
@@ -1418,8 +1415,8 @@ impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
 
     // Two origins which can either approve or reject the spending proposal
-    type ApproveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    type RejectOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ApproveOrigin = EnsureRootOrHalfMainCouncil;
+    type RejectOrigin = EnsureRootOrHalfMainCouncil;
 
     type OnSlash = Treasury;
     type ProposalBond = ProposalBond;
@@ -1458,8 +1455,8 @@ impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
 
     // Two origins which can either approve or reject the spending proposal
-    type ApproveOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
-    type RejectOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
+    type ApproveOrigin = EnsureRootOrHalfCommunityCouncil;
+    type RejectOrigin = EnsureRootOrHalfCommunityCouncil;
 
     type OnSlash = CommunityTreasury;
     type ProposalBond = ProposalBond;
@@ -1508,7 +1505,7 @@ impl InstanceFilter<RuntimeCall> for CommunityCouncilCallFilter {
 impl pallet_collective_proxy::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
-    type CollectiveProxy = EnsureRootOrTwoThirdsCommunityCouncil;
+    type CollectiveProxy = EnsureRootOrHalfCommunityCouncil;
     type ProxyAccountId = CommunityTreasuryAccountId;
     type CallFilter = CommunityCouncilCallFilter;
     type WeightInfo = pallet_collective_proxy::weights::SubstrateWeight<Runtime>;
@@ -1521,7 +1518,13 @@ parameter_types! {
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations = ();
+    type Migrations = (
+        pallet_dapp_staking::migration::LazyMigration<
+            Runtime,
+            pallet_dapp_staking::weights::SubstrateWeight<Runtime>,
+        >,
+        vesting_mbm::LazyMigration<Runtime, vesting_mbm::weights::SubstrateWeight<Runtime>>,
+    );
     // Benchmarks need mocked migrations to guarantee that they succeed.
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -1532,6 +1535,9 @@ impl pallet_migrations::Config for Runtime {
     type MaxServiceWeight = MbmServiceWeight;
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
 }
+
+#[cfg(feature = "runtime-benchmarks")]
+impl vesting_mbm::Config for Runtime {}
 
 construct_runtime!(
     pub struct Runtime
@@ -1599,6 +1605,9 @@ construct_runtime!(
         CollectiveProxy: pallet_collective_proxy = 109,
 
         MultiBlockMigrations: pallet_migrations = 120,
+
+        #[cfg(feature = "runtime-benchmarks")]
+        VestingMBM: vesting_mbm = 250,
     }
 );
 
@@ -1637,33 +1646,6 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-parameter_types! {
-    // Threshold amount variation allowed for this migration - 150%
-    pub const ThresholdVariationPercentage: u32 = 150;
-    // percentages below are calculated based on a total issuance at the time when dApp staking v3 was launched (147M)
-    pub const TierThresholds: [TierThreshold; 4] = [
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(20_000), // 0.0020%
-            minimum_required_percentage: Perbill::from_parts(17_000), // 0.0017%
-        },
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(13_000), // 0.0013%
-            minimum_required_percentage: Perbill::from_parts(10_000), // 0.0010%
-        },
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(5_400), // 0.00054%
-            minimum_required_percentage: Perbill::from_parts(3_400), // 0.00034%
-        },
-        TierThreshold::FixedPercentage {
-            required_percentage: Perbill::from_parts(1_400), // 0.00014%
-        },
-    ];
-}
-
-parameter_types! {
-    pub const DmpQueuePalletName: &'static str = "DmpQueue";
-}
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// __NOTE:__ THE ORDER IS IMPORTANT.
@@ -1671,17 +1653,8 @@ pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased = (
-    // dApp-staking dyn tier threshold migrations
-    pallet_dapp_staking::migration::versioned_migrations::V7ToV8<
-        Runtime,
-        TierThresholds,
-        ThresholdVariationPercentage,
-    >,
-    frame_support::migrations::RemovePallet<
-        DmpQueuePalletName,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
-    pallet_contracts::Migration<Runtime>,
+    pallet_dapp_staking::migration::AdjustEraMigration<Runtime>,
+    pallet_inflation::migration::AdjustBlockRewardMigration<Runtime>,
 );
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
@@ -1776,6 +1749,7 @@ mod benches {
         [pallet_price_aggregator, PriceAggregator]
         [pallet_collective_proxy, CollectiveProxy]
         [orml_oracle, Oracle]
+        [vesting_mbm, VestingMBM]
     );
 }
 
