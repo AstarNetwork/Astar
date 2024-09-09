@@ -23,7 +23,7 @@ jobs:
           submodules: true
 
       - name: Install deps
-        run: sudo apt -y install protobuf-compiler
+        run: sudo apt -y install protobuf-compiler lld
 
       - name: Install & display rust toolchain
         run: rustup show
