@@ -236,28 +236,28 @@ async function main() {
       from: {
         type: "string",
         describe: "previous tag to retrieve commits from",
-        required: true,
+        requiresArg: true,
       },
       to: {
         type: "string",
         describe: "current tag being drafted",
-        required: true,
+        requiresArg: true,
       },
       owner: {
         type: "string",
         describe: "Repository owner (Ex: AstarNetwork)",
-        required: true,
+        requiresArg: true,
       },
       repo: {
         type: "string",
         describe: "Repository name (Ex: Astar)",
-        required: true,
+        requiresArg: true,
       },
       type: {
         type: "string",
         describe: "Type of release - runtime or client",
         choices: ["runtime", "client"],
-        required: true,
+        requiresArg: true,
       }
     })
     .help().argv;
