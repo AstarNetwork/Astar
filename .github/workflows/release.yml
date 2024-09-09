@@ -178,7 +178,7 @@ jobs:
         run: |
           xcrun simctl delete all || true
           sudo rm -rf ~/Library/Developer/CoreSimulator/Caches/* || true
-          sudo rm -rfv /Users/runner/Library/Android/sdk || true
+          sudo rm -rf /Users/runner/Library/Android/sdk || true
           sudo rm -rf /Applications/Xcode_14.3.1.app || true
           sudo rm -rf /Applications/Xcode_15.0.1.app || true
           sudo rm -rf /Applications/Xcode_15.1.app || true
