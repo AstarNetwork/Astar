@@ -128,6 +128,20 @@ jobs:
       - name: Install deps
         run: brew install protobuf sccache
 
+      # Temporary dirty fix
+      # https://github.com/actions/runner-images/issues/10511
+      - name: Disk Cleanup
+        run: |
+          xcrun simctl delete all || true
+          sudo rm -rf ~/Library/Developer/CoreSimulator/Caches/* || true
+          sudo rm -rf /Users/runner/Library/Android/sdk || true
+          sudo rm -rf /Applications/Xcode_14.3.1.app || true
+          sudo rm -rf /Applications/Xcode_15.0.1.app || true
+          sudo rm -rf /Applications/Xcode_15.1.app || true
+          sudo rm -rf /Applications/Xcode_15.2.app || true
+          sudo rm -rf /Applications/Xcode_15.3.app || true
+          df -h
+
       - name: Install & display rust toolchain
         run: rustup show
 
