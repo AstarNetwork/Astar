@@ -2829,10 +2829,10 @@
     governance::{
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
-        EnsureRootOrTwoThirdsCommunityCouncil, EnsureRootOrTwoThirdsMainCouncil,
-        EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
-        MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
-        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+        EnsureRootOrHalfCommunityCouncil, EnsureRootOrHalfMainCouncil,
+        EnsureRootOrHalfTechnicalCommittee, MainCouncilCollectiveInst, MainCouncilMembershipInst,
+        MainTreasuryInst, OracleMembershipInst, TechnicalCommitteeCollectiveInst,
+        TechnicalCommitteeMembershipInst,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -3207,9 +3207,9 @@
     <span class="kw">type </span>RuntimeFreezeReason = RuntimeFreezeReason;
     <span class="kw">type </span>Currency = Balances;
     <span class="kw">type </span>SmartContract = SmartContract&lt;AccountId&gt;;
-    <span class="kw">type </span>ContractRegisterOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
+    <span class="kw">type </span>ContractRegisterOrigin = EnsureRootOrHalfCommunityCouncil;
     <span class="kw">type </span>ContractUnregisterOrigin = frame_system::EnsureRoot&lt;AccountId&gt;;
-    <span class="kw">type </span>ManagerOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
+    <span class="kw">type </span>ManagerOrigin = EnsureRootOrHalfTechnicalCommittee;
     <span class="kw">type </span>NativePriceProvider = PriceAggregator;
     <span class="kw">type </span>StakingRewardHandler = Inflation;
     <span class="kw">type </span>CycleConfiguration = InflationCycleConfig;
@@ -3985,11 +3985,11 @@
 
 <span class="kw">impl </span>pallet_membership::Config&lt;OracleMembershipInst&gt; <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    <span class="kw">type </span>AddOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>RemoveOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>SwapOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>ResetOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>PrimeOrigin = EnsureRootOrHalfMainCouncil;
     <span class="kw">type </span>MembershipInitialized = ();
     <span class="kw">type </span>MembershipChanged = ();
     <span class="kw">type </span>MaxMembers = ConstU32&lt;<span class="number">16</span>&gt;;
@@ -4022,11 +4022,11 @@
 
 <span class="kw">impl </span>pallet_membership::Config&lt;MainCouncilMembershipInst&gt; <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    <span class="kw">type </span>AddOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>RemoveOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>SwapOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>ResetOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>PrimeOrigin = EnsureRootOrHalfMainCouncil;
     <span class="kw">type </span>MembershipInitialized = Council;
     <span class="kw">type </span>MembershipChanged = Council;
     <span class="kw">type </span>MaxMembers = CouncilMaxMembers;
@@ -4035,11 +4035,11 @@
 
 <span class="kw">impl </span>pallet_membership::Config&lt;TechnicalCommitteeMembershipInst&gt; <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    <span class="kw">type </span>AddOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>RemoveOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>SwapOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>ResetOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>PrimeOrigin = EnsureRootOrHalfMainCouncil;
     <span class="kw">type </span>MembershipInitialized = TechnicalCommittee;
     <span class="kw">type </span>MembershipChanged = TechnicalCommittee;
     <span class="kw">type </span>MaxMembers = TechnicalCommitteeMaxMembers;
@@ -4048,11 +4048,11 @@
 
 <span class="kw">impl </span>pallet_membership::Config&lt;CommunityCouncilMembershipInst&gt; <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    <span class="kw">type </span>AddOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>RemoveOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>SwapOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>ResetOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>PrimeOrigin = EnsureRootOrHalfMainCouncil;
     <span class="kw">type </span>MembershipInitialized = CommunityCouncil;
     <span class="kw">type </span>MembershipChanged = CommunityCouncil;
     <span class="kw">type </span>MaxMembers = CommunityCouncilMaxMembers;
@@ -4067,7 +4067,7 @@
     <span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
     <span class="kw">type </span>Proposal = RuntimeCall;
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>MotionDuration = ConstU32&lt;{ <span class="number">2 </span>* DAYS }&gt;;
+    <span class="kw">type </span>MotionDuration = ConstU32&lt;{ <span class="number">5 </span>* DAYS }&gt;;
     <span class="kw">type </span>MaxProposals = ConstU32&lt;<span class="number">16</span>&gt;;
     <span class="kw">type </span>MaxMembers = CouncilMaxMembers;
     <span class="kw">type </span>DefaultVote = pallet_collective::PrimeDefaultVote;
@@ -4080,7 +4080,7 @@
     <span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
     <span class="kw">type </span>Proposal = RuntimeCall;
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>MotionDuration = ConstU32&lt;{ <span class="number">2 </span>* DAYS }&gt;;
+    <span class="kw">type </span>MotionDuration = ConstU32&lt;{ <span class="number">5 </span>* DAYS }&gt;;
     <span class="kw">type </span>MaxProposals = ConstU32&lt;<span class="number">16</span>&gt;;
     <span class="kw">type </span>MaxMembers = TechnicalCommitteeMaxMembers;
     <span class="kw">type </span>DefaultVote = pallet_collective::PrimeDefaultVote;
@@ -4093,7 +4093,7 @@
     <span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
     <span class="kw">type </span>Proposal = RuntimeCall;
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>MotionDuration = ConstU32&lt;{ <span class="number">2 </span>* DAYS }&gt;;
+    <span class="kw">type </span>MotionDuration = ConstU32&lt;{ <span class="number">5 </span>* DAYS }&gt;;
     <span class="kw">type </span>MaxProposals = ConstU32&lt;<span class="number">16</span>&gt;;
     <span class="kw">type </span>MaxMembers = CommunityCouncilMaxMembers;
     <span class="kw">type </span>DefaultVote = pallet_collective::PrimeDefaultVote;
@@ -4105,9 +4105,9 @@
 <span class="kw">impl </span>pallet_democracy::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="kw">type </span>Currency = Balances;
-    <span class="kw">type </span>EnactmentPeriod = ConstU32&lt;{ <span class="number">2 </span>* HOURS }&gt;;
-    <span class="kw">type </span>LaunchPeriod = ConstU32&lt;{ <span class="number">3 </span>* DAYS }&gt;;
-    <span class="kw">type </span>VotingPeriod = ConstU32&lt;{ <span class="number">3 </span>* DAYS }&gt;;
+    <span class="kw">type </span>EnactmentPeriod = ConstU32&lt;{ <span class="number">2 </span>* DAYS }&gt;;
+    <span class="kw">type </span>LaunchPeriod = ConstU32&lt;{ <span class="number">4 </span>* DAYS }&gt;;
+    <span class="kw">type </span>VotingPeriod = ConstU32&lt;{ <span class="number">4 </span>* DAYS }&gt;;
     <span class="kw">type </span>VoteLockingPeriod = ConstU32&lt;{ <span class="number">1 </span>* DAYS }&gt;;
     <span class="kw">type </span>MinimumDeposit = ConstU128&lt;{ <span class="number">10 </span>* SBY }&gt;;
     <span class="kw">type </span>FastTrackVotingPeriod = ConstU32&lt;{ <span class="number">1 </span>* HOURS }&gt;;
@@ -4119,21 +4119,21 @@
     <span class="kw">type </span>MaxBlacklisted = ConstU32&lt;<span class="number">128</span>&gt;;
 
     <span class="doccomment">/// A two third majority of the Council can choose the next external "super majority approve" proposal.
-    </span><span class="kw">type </span>ExternalOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    </span><span class="kw">type </span>ExternalOrigin = EnsureRootOrHalfMainCouncil;
     <span class="doccomment">/// A two third majority of the Council can choose the next external "majority approve" proposal. Also bypasses blacklist filter.
-    </span><span class="kw">type </span>ExternalMajorityOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    </span><span class="kw">type </span>ExternalMajorityOrigin = EnsureRootOrHalfMainCouncil;
     <span class="doccomment">/// Unanimous approval of the Council can choose the next external "super majority against" proposal.
     </span><span class="kw">type </span>ExternalDefaultOrigin = EnsureRootOrAllMainCouncil;
     <span class="doccomment">/// A two third majority of the Technical Committee can have an external proposal tabled immediately
     /// for a _fast track_ vote, and a custom enactment period.
-    </span><span class="kw">type </span>FastTrackOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
+    </span><span class="kw">type </span>FastTrackOrigin = EnsureRootOrHalfTechnicalCommittee;
     <span class="doccomment">/// Unanimous approval of the Technical Committee can have an external proposal tabled immediately
     /// for a completely custom _voting period length_ vote, and a custom enactment period.
     </span><span class="kw">type </span>InstantOrigin = EnsureRootOrAllTechnicalCommittee;
     <span class="kw">type </span>InstantAllowed = ConstBool&lt;<span class="bool-val">true</span>&gt;;
 
     <span class="doccomment">/// A two third majority of the Council can cancel a passed proposal. Can happen only once per unique proposal.
-    </span><span class="kw">type </span>CancellationOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    </span><span class="kw">type </span>CancellationOrigin = EnsureRootOrHalfMainCouncil;
     <span class="doccomment">/// Only a passed public referendum can permanently blacklist a proposal.
     </span><span class="kw">type </span>BlacklistOrigin = EnsureRoot&lt;AccountId&gt;;
     <span class="doccomment">/// An unanimous Technical Committee can cancel a public proposal, slashing the deposit(s).
@@ -4160,8 +4160,8 @@
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 
     <span class="comment">// Two origins which can either approve or reject the spending proposal
-    </span><span class="kw">type </span>ApproveOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="kw">type </span>RejectOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    </span><span class="kw">type </span>ApproveOrigin = EnsureRootOrHalfMainCouncil;
+    <span class="kw">type </span>RejectOrigin = EnsureRootOrHalfMainCouncil;
 
     <span class="kw">type </span>OnSlash = Treasury;
     <span class="kw">type </span>ProposalBond = ProposalBond;
@@ -4200,8 +4200,8 @@
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 
     <span class="comment">// Two origins which can either approve or reject the spending proposal
-    </span><span class="kw">type </span>ApproveOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
-    <span class="kw">type </span>RejectOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
+    </span><span class="kw">type </span>ApproveOrigin = EnsureRootOrHalfCommunityCouncil;
+    <span class="kw">type </span>RejectOrigin = EnsureRootOrHalfCommunityCouncil;
 
     <span class="kw">type </span>OnSlash = CommunityTreasury;
     <span class="kw">type </span>ProposalBond = ProposalBond;
@@ -4250,7 +4250,7 @@
 <span class="kw">impl </span>pallet_collective_proxy::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="kw">type </span>RuntimeCall = RuntimeCall;
-    <span class="kw">type </span>CollectiveProxy = EnsureRootOrTwoThirdsCommunityCouncil;
+    <span class="kw">type </span>CollectiveProxy = EnsureRootOrHalfCommunityCouncil;
     <span class="kw">type </span>ProxyAccountId = CommunityTreasuryAccountId;
     <span class="kw">type </span>CallFilter = CommunityCouncilCallFilter;
     <span class="kw">type </span>WeightInfo = pallet_collective_proxy::weights::SubstrateWeight&lt;Runtime&gt;;
