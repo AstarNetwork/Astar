@@ -23,7 +23,7 @@ jobs:
           submodules: true
 
       - name: Install deps
-        run: sudo apt -y install protobuf-compiler lld
+        run: sudo apt -y install protobuf-compiler
 
       - name: Install & display rust toolchain
         run: rustup show
@@ -56,7 +56,7 @@ jobs:
           submodules: true
 
       - name: Install deps
-        run: sudo apt -y install protobuf-compiler
+        run: sudo apt -y install protobuf-compiler lld
 
       - name: aarch64 setup
         if: contains(matrix.target, 'aarch64')
