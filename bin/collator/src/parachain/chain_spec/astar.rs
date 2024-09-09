@@ -24,8 +24,7 @@ use astar_runtime::wasm_binary_unwrap;
 use sc_service::ChainType;
 
 /// Specialized `ChainSpec` for Astar Network.
-pub type AstarChainSpec =
-    sc_service::GenericChainSpec<Extensions>;
+pub type AstarChainSpec = sc_service::GenericChainSpec<Extensions>;
 
 /// Get Astar chain specification.
 pub fn get_chain_spec() -> AstarChainSpec {
