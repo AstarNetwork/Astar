@@ -172,6 +172,11 @@ jobs:
       - name: Install deps
         run: brew install protobuf sccache
 
+      - name: Disk Cleanup
+        run: |
+          sudo rm -rfv /Users/runner/Library/Android/sdk
+          df -h
+
       - name: Install & display rust toolchain
         run: rustup show
 
