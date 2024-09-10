@@ -88,7 +88,7 @@ jobs:
         run: rustup target list --installed
 
       - name: Build optimized binary
-        run: cargo build --profile production --target ${{ matrix.target }} --locked
+        run: cargo build --profile production --target ${{ matrix.target }} --locked --bin astar-collator
 
       - name: Set artifact name
         env:
@@ -149,7 +149,7 @@ jobs:
         run: rustup target list --installed
 
       - name: Build optimized binary
-        run: cargo build --locked --profile production
+        run: cargo build --locked --profile production --bin astar-collator
 
       - name: Show sccache stats
         run: sccache --show-stats
