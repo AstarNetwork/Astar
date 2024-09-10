@@ -31,11 +31,6 @@ use sp_runtime::{
     ApplyExtrinsicResult, Permill,
 };
 use sp_version::RuntimeVersion;
-use xcm::{VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm};
-use xcm_fee_payment_runtime_api::{
-    dry_run::{CallDryRunEffects, Error as XcmDryRunApiError, XcmDryRunEffects},
-    fees::Error as XcmPaymentApiError,
-};
 
 pub struct Runtime;
 
@@ -138,34 +133,6 @@ impl_runtime_apis! {
             unimplemented!()
         }
         fn query_length_to_fee(_length: u32) -> Balance {
-            unimplemented!()
-        }
-    }
-
-    impl xcm_fee_payment_runtime_api::fees::XcmPaymentApi<Block> for Runtime {
-        fn query_acceptable_payment_assets(_: xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
-            unimplemented!()
-        }
-
-        fn query_weight_to_asset_fee(_: Weight, _: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
-            unimplemented!()
-        }
-
-        fn query_xcm_weight(_: VersionedXcm<()>) -> Result<Weight, XcmPaymentApiError> {
-            unimplemented!()
-        }
-
-        fn query_delivery_fees(_: VersionedLocation, _: VersionedXcm<()>) -> Result<VersionedAssets, XcmPaymentApiError> {
-            unimplemented!()
-        }
-    }
-
-    impl xcm_fee_payment_runtime_api::dry_run::DryRunApi<Block, (), (), ()> for Runtime {
-        fn dry_run_call(_: (), _: ()) -> Result<CallDryRunEffects<()>, XcmDryRunApiError> {
-            unimplemented!()
-        }
-
-        fn dry_run_xcm(_: VersionedLocation, _: VersionedXcm<()>) -> Result<XcmDryRunEffects<()>, XcmDryRunApiError> {
             unimplemented!()
         }
     }

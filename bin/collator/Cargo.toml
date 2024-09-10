@@ -139,10 +139,6 @@ polkadot-parachain = { workspace = true, features = ["std"] }
 polkadot-primitives = { workspace = true, features = ["std"] }
 polkadot-service = { workspace = true }
 
-# xcm dependencies
-xcm = { workspace = true }
-xcm-fee-payment-runtime-api = { workspace = true }
-
 # benchmark dependencies
 frame-benchmarking = { workspace = true, features = ["std"] }
 frame-benchmarking-cli = { workspace = true }
@@ -192,7 +188,6 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 	"cumulus-primitives-core/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
-	"xcm-fee-payment-runtime-api/runtime-benchmarks",
 ]
 try-runtime = [
 	"local-runtime/try-runtime",
