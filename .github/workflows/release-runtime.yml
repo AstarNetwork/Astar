@@ -206,12 +206,13 @@ jobs:
           
           latest_runtime_tag=$(echo "$releases" | jq -r '
             [
-              .[] | select(.name | test("^runtime-\\d{4,}$"; "i")) | .tag_name,
-              .[] | select(.name | test("^v\\d+\\.\\d+\\.\\d+$"; "i")) | .tag_name
+              (.[] | select(.name | test("^runtime-\\d{4,}$"; "i")) | .tag_name),
+              (.[] | select(.name | test("^v\\d+\\.\\d+\\.\\d+$"; "i")) | .tag_name)
             ] | first
           ')
-          
           echo "latest_runtime_tag=$latest_runtime_tag" >> $GITHUB_OUTPUT
+
+          echo "$latest_runtime_tag"
 
       - name: Generate Release Body
         env:
