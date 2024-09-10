@@ -69,17 +69,17 @@ jobs:
           mv target/production/wbuild/shiden-runtime/shiden_runtime.compact.compressed.wasm target/production/wbuild/shiden-runtime/shiden_evm_tracing_runtime.compact.compressed.wasm
           mv target/production/wbuild/shibuya-runtime/shibuya_runtime.compact.compressed.wasm target/production/wbuild/shibuya-runtime/shibuya_evm_tracing_runtime.compact.compressed.wasm
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         with:
           name: astar-evm-tracing-runtime
           path: target/production/wbuild/astar-runtime/astar_evm_tracing_runtime.compact.compressed.wasm
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         with:
           name: shiden-evm-tracing-runtime
           path: target/production/wbuild/shiden-runtime/shiden_evm_tracing_runtime.compact.compressed.wasm
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         with:
           name: shibuya-evm-tracing-runtime
           path: target/production/wbuild/shibuya-runtime/shibuya_evm_tracing_runtime.compact.compressed.wasm
@@ -117,7 +117,7 @@ jobs:
 
       # it takes a while to build the runtime, so let's save the artifact as soon as we have it
       - name: Archive Artifacts for ${{ matrix.chain }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.chain }}-runtime
           path: |
@@ -155,7 +155,7 @@ jobs:
             tee ${{ matrix.chain }}-diff.txt
 
       - name: Archive Subwasm results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.chain }}-runtime
           path: |
@@ -176,19 +176,19 @@ jobs:
           fetch-depth: 0
 
       - name: Download astar runtime
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: astar-runtime
           path: runtime-artifacts
 
       - name: Download shiden runtime
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: shiden-runtime
           path: runtime-artifacts
 
       - name: Download shibuya runtime
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: shibuya-runtime
           path: runtime-artifacts
@@ -249,7 +249,7 @@ jobs:
         chain: ["astar", "shiden", "shibuya"]
     steps:
       - name: Download runtime
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: ${{ matrix.chain }}-runtime
 
@@ -313,19 +313,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download evm tracing runtime
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: astar-evm-tracing-runtime
           path: evm-tracing-artifacts
 
       - name: Download evm tracing runtime
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: shiden-evm-tracing-runtime
           path: evm-tracing-artifacts
 
       - name: Download evm tracing runtime
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: shibuya-evm-tracing-runtime
           path: evm-tracing-artifacts
