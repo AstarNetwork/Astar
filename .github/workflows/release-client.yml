@@ -104,29 +104,14 @@ jobs:
   native-macos:
     needs: checks-and-tests
     runs-on: macos-latest
-    env:
-      RUSTC_WRAPPER: "sccache"
-      SCCACHE_BUCKET: ${{ secrets.SCCACHE_BUCKET }}
-      SCCACHE_REGION: ${{ secrets.SCCACHE_REGION }}
-      SCCACHE_S3_KEY_PREFIX: "astar-macos"
-    permissions:
-      id-token: write
-      contents: read
     steps:
       - name: Checkout the source code
         uses: actions/checkout@v4
         with:
           submodules: true
 
-      - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.SCCACHE_ROLE }}
-          role-session-name: github_astar_mac
-          aws-region: ${{ secrets.SCCACHE_REGION }}
-
       - name: Install deps
-        run: brew install protobuf sccache
+        run: brew install protobuf
 
       # Temporary dirty fix
       # https://github.com/actions/runner-images/issues/10511
@@ -150,9 +135,6 @@ jobs:
 
       - name: Build optimized binary
         run: cargo build --locked --profile production --bin astar-collator
-
-      - name: Show sccache stats
-        run: sccache --show-stats
 
       - uses: actions/upload-artifact@v3
         with:
