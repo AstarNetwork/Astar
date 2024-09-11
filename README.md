@@ -43,7 +43,7 @@ $ cd Astar
 $ cargo build --profile production
 
 # show list of available commands
-$ ./target/release/astar-collator --help
+$ ./target/production/astar-collator --help
 ```
 
 ### Building with Nix
