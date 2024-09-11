@@ -279,7 +279,7 @@ impl xcm_executor::Config for XcmConfig {
     type HrmpNewChannelOpenRequestHandler = ();
     type HrmpChannelAcceptedHandler = ();
     type HrmpChannelClosingHandler = ();
-    type XcmRecorder = ();
+    type XcmRecorder = PolkadotXcm;
 }
 
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.
