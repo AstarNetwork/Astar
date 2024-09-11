@@ -68,7 +68,7 @@ use sp_runtime::{
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use xcm::{
     v4::{AssetId as XcmAssetId, Location as XcmLocation},
-    VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm,
+    IntoVersion, VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm,
 };
 use xcm_fee_payment_runtime_api::{
     dry_run::{CallDryRunEffects, Error as XcmDryRunApiError, XcmDryRunEffects},
@@ -1934,22 +1934,23 @@ impl_runtime_apis! {
         }
 
         fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
-            match asset.try_as::<XcmAssetId>() {
-                // for native token
-                Ok(asset_id) if asset_id.0 == xcm_config::ShidenLocation::get() => {
-                    Ok(WeightToFee::weight_to_fee(&weight))
-                }
-                // for foreign assets that have 'units per second' configured
-                Ok(asset_id) => {
-                    let versioned_location = VersionedLocation::V4(asset_id.0.clone());
+            let asset = asset.into_version(xcm::v4::VERSION).map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+            let asset_id: XcmAssetId = asset.try_into().map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
 
-                    match pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::get(versioned_location) {
-                        Some(units_per_sec) => Ok(WeightToForeignAssetFee::weight_to_fee(weight, units_per_sec)),
-                        None => Err(XcmPaymentApiError::AssetNotFound),
+            // for native token
+            if asset_id.0 == xcm_config::ShidenLocation::get() {
+                Ok(WeightToFee::weight_to_fee(&weight))
+            }
+            // for foreign assets that have 'units per second' configures
+            else {
+                let versioned_location = VersionedLocation::V4(asset_id.0);
+
+                match pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::get(versioned_location) {
+                    Some(units_per_sec) => {
+                        Ok(WeightToForeignAssetFee::weight_to_fee(weight, units_per_sec))
                     }
-                },
-                // for failed asset conversion
-                Err(_) => Err(XcmPaymentApiError::VersionedConversionFailed)
+                    None => Err(XcmPaymentApiError::AssetNotFound),
+                }
             }
         }
 
