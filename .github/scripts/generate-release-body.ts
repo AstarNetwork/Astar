@@ -236,25 +236,30 @@ async function main() {
       from: {
         type: "string",
         describe: "previous tag to retrieve commits from",
-        required: true,
+        requiresArg: true,
       },
       to: {
         type: "string",
         describe: "current tag being drafted",
-        required: true,
+        requiresArg: true,
       },
       owner: {
         type: "string",
         describe: "Repository owner (Ex: AstarNetwork)",
-        required: true,
+        requiresArg: true,
       },
       repo: {
         type: "string",
         describe: "Repository name (Ex: Astar)",
-        required: true,
+        requiresArg: true,
       },
+      type: {
+        type: "string",
+        describe: "Type of release - runtime or client",
+        choices: ["runtime", "client"],
+        requiresArg: true,
+      }
     })
-    .demandOption(["from", "to"])
     .help().argv;
 
   const octokit = new Octokit({
@@ -263,10 +268,6 @@ async function main() {
 
   const previousTag = argv.from;
   const newTag = argv.to;
-
-  const runtimes = ["shibuya", "shiden", "astar"].map((runtimeName) =>
-    getRuntimeInfo(argv["srtool-report-folder"], runtimeName)
-  );
 
   const moduleLinks = ["polkadot-sdk", "frontier"].map((repoName) => ({
     name: repoName,
@@ -297,7 +298,8 @@ async function main() {
     }
   };
 
-  const template = `
+  if (argv.type === "client") {
+    const template = `
 ## Description
 (Placeholder for release descriptions, please freely write explanations for this release here.)
 
@@ -308,31 +310,12 @@ async function main() {
 > MEDIUM - some minor changes to the client
 > LOW - no client changes
 
-${runtimes.length > 0 ? `## Runtimes
-${runtimes
-        .map(
-          (runtime) => `### ${capitalize(runtime.name)}
-\`\`\`
-✨ spec_version:                ${runtime.version}
-🏋 Runtime Size:                ${runtime.srtool.runtimes.compressed.size}
-🗜 Compressed:                  ${runtime.srtool.runtimes.compressed.subwasm.compression.compressed ? "Yes" : "No"}
-🎁 Metadata version:            ${runtime.srtool.runtimes.compressed.subwasm.metadata_version}
-🗳️ sha256:                      ${runtime.srtool.runtimes.compressed.sha256}
-🗳️ blake2-256:                  ${runtime.srtool.runtimes.compressed.blake2_256}
-🗳️ proposal (authorizeUpgrade): ${runtime.srtool.runtimes.compressed.subwasm.parachain_authorize_upgrade_hash}
-📦 IPFS:                        ${runtime.srtool.runtimes.compressed.subwasm.ipfs_hash}
-\`\`\`
-`).join(`\n`)}` : ""}
-
-## Build Info
-WASM runtime built using \`${runtimes[0]?.srtool.info.rustc}\`
-
 ## Changes
 ### Client
 ${clientPRs.length > 0 ? `
 ${clientPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : "None"}
-### Runtime
+### Runtime (impacts built-in runtimes)
 ${runtimePRs.length > 0 ? `
 ${runtimePRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : "None"}
@@ -353,9 +336,53 @@ ${moduleLinks.map((modules) => `${capitalize(modules.name)}: ${modules.link}`).j
 | \`Ubuntu aarch64\` | [Download](https://github.com/AstarNetwork/Astar/releases/download/${newTag}/astar-collator-${newTag}-ubuntu-aarch64.tar.gz) |
 
 [<img src="https://github.com/AstarNetwork/Astar/blob/master/.github/images/docker.webp" height="200px">](https://hub.docker.com/r/staketechnologies/astar-collator/tags)
-`
+    `
+    console.log(template);    
+  } else if (argv.type === "runtime") {
+    const runtimes = ["shibuya", "shiden", "astar"].map((runtimeName) =>
+      getRuntimeInfo(argv["srtool-report-folder"], runtimeName)
+    );
+    
+    const template = `
+## Description
+(Placeholder for release descriptions, please freely write explanations for this release here.)
 
-  console.log(template);
+${runtimes.length > 0 ? `## Runtimes
+${runtimes
+        .map(
+          (runtime) => `### ${capitalize(runtime.name)}
+\`\`\`
+✨ spec_version:                ${runtime.version}
+🏋 Runtime Size:                ${runtime.srtool.runtimes.compressed.size}
+🗜 Compressed:                  ${runtime.srtool.runtimes.compressed.subwasm.compression.compressed ? "Yes" : "No"}
+🎁 Metadata version:            ${runtime.srtool.runtimes.compressed.subwasm.metadata_version}
+🗳️ sha256:                      ${runtime.srtool.runtimes.compressed.sha256}
+🗳️ blake2-256:                  ${runtime.srtool.runtimes.compressed.blake2_256}
+📦 IPFS:                        ${runtime.srtool.runtimes.compressed.subwasm.ipfs_hash}
+\`\`\`
+`).join(`\n`)}` : ""}
+
+## Build Info
+WASM runtime built using \`${runtimes[0]?.srtool.info.rustc}\`
+
+## Changes
+### Runtime
+${runtimePRs.length > 0 ? `
+${runtimePRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
+` : "None"}
+### Others
+${remainingPRs.length > 0 ? `
+${remainingPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
+` : "None"}
+
+## Dependency Changes
+Astar: https://github.com/${argv.owner}/${argv.repo}/compare/${previousTag}...${newTag}
+${moduleLinks.map((modules) => `${capitalize(modules.name)}: ${modules.link}`).join("\n")}
+    `
+    console.log(template);
+  } else {
+    console.log("Invalid type - should not happen.");
+  }
 }
 
 main();
