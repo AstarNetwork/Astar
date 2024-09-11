@@ -26,7 +26,6 @@
 //! - `FixedRateOfForeignAsset` - weight trader for execution payment in foreign asset
 //! - `ReserveAssetFilter` - used to check whether asset/origin are a valid reserve location
 //! - `XcmFungibleFeeHandler` - used to handle XCM fee execution fees
-//! - `WeightToForeignAssetFee` - used to convert weight to fee based on units per second and weight.
 //!
 //! Please refer to implementation below for more info.
 //!
@@ -354,14 +353,5 @@ impl<T: Contains<Location>> ShouldExecute for AllowTopLevelPaidExecutionFrom<T> 
                 _ => Err(ProcessMessageError::Overweight(max_weight)),
             })?;
         Ok(())
-    }
-}
-
-pub struct WeightToForeignAssetFee;
-impl WeightToForeignAssetFee {
-    /// Convert weight to fee based on units per second and weight.
-    pub fn weight_to_fee(weight: Weight, units_per_second: u128) -> u128 {
-        units_per_second.saturating_mul(weight.ref_time() as u128)
-            / (WEIGHT_REF_TIME_PER_SECOND as u128)
     }
 }

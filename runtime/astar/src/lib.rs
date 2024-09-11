@@ -83,7 +83,7 @@ use astar_primitives::{
     },
     evm::EvmRevertCodeHandler,
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
-    xcm::{AssetLocationIdConverter, WeightToForeignAssetFee},
+    xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce, UnfreezeChainOnFailedMigration,
 };
 pub use astar_primitives::{governance::OracleMembershipInst, AccountId, Balance, Signature};
@@ -1946,7 +1946,7 @@ impl_runtime_apis! {
 
                 match pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::get(versioned_location) {
                     Some(units_per_sec) => {
-                        Ok(WeightToForeignAssetFee::weight_to_fee(weight, units_per_sec))
+                        Ok(pallet_xc_asset_config::Pallet::<Runtime>::weight_to_fee(weight, units_per_sec))
                     }
                     None => Err(XcmPaymentApiError::AssetNotFound),
                 }

@@ -18,7 +18,6 @@
 
 use crate::setup::*;
 
-pub use astar_primitives::xcm::WeightToForeignAssetFee;
 use sp_runtime::traits::Zero;
 use xcm::{
     v4::{
@@ -140,7 +139,7 @@ fn query_weight_to_asset_fee_is_ok() {
             );
 
             let weight = Weight::from_parts(1_000_000_000, 1_000_000);
-            let expected_fee = WeightToForeignAssetFee::weight_to_fee(weight, units_per_second);
+            let expected_fee = XcAssetConfig::weight_to_fee(weight, units_per_second);
             let fee =
                 Runtime::query_weight_to_asset_fee(weight, XcmAssetId(payable_location).into())
                     .expect("Must return fee for payable asset.");
