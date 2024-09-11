@@ -121,7 +121,7 @@ for chain in ${chains//,/ }; do
 
       OUTPUT=$(
         $ASTAR_COLLATOR benchmark pallet \
-        --runtime="./target/release/wbuild/$chain-runtime/$chain_runtime.compact.compressed.wasm" \
+        --runtime="./target/release/wbuild/$chain-runtime/$chain_runtime.wasm" \
         --genesis-builder=runtime \
         --steps=50 \
         --repeat=20 \
