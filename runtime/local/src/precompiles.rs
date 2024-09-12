@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! The Local Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
+//! The Local Network EVM precompiles. This can be compiled with `#[no_std]`, ready for Wasm.
 
 use crate::{RuntimeCall, UnifiedAccounts};
 use astar_primitives::precompiles::DispatchFilterValidate;
