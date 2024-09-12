@@ -116,6 +116,7 @@ std = [
 	"pallet-proxy/std",
 	"pallet-unified-accounts/std",
 	"pallet-utility/std",
+	"pallet-xcm/std",
 	"parity-scale-codec/std",
 	"precompile-utils/std",
 	"pallet-aura/std",
@@ -126,6 +127,7 @@ std = [
 	"unified-accounts-chain-extension-types/std",
 	"xcm/std",
 	"xcm-fee-payment-runtime-api/std",
+	"xcm-executor/std",
 	"pallet-session/std",
 	"sp-consensus-aura/std",
 ]
