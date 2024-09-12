@@ -109,7 +109,7 @@ mod chain_extensions;
 pub mod genesis_config;
 mod precompiles;
 mod weights;
-mod xcm_config;
+pub mod xcm_config;
 
 pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 

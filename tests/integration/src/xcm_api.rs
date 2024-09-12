@@ -236,14 +236,14 @@ fn dry_run_xcm_is_ok() {
 #[test]
 fn xcm_recorder_configuration_is_ok() {
     new_test_ext().execute_with(|| {
-        let result = pallet_xcm::Pallet::<Runtime>::should_record();
+        let result = <xcm_config::XcmConfig as xcm_executor::Config>::XcmRecorder::should_record();
         assert!(
             !result,
             "XCM recorder should NOT record incoming XCMs by default."
         );
 
-        pallet_xcm::Pallet::<Runtime>::set_record_xcm(true);
-        let result = pallet_xcm::Pallet::<Runtime>::should_record();
+        <xcm_config::XcmConfig as xcm_executor::Config>::XcmRecorder::set_record_xcm(true);
+        let result = <xcm_config::XcmConfig as xcm_executor::Config>::XcmRecorder::should_record();
         assert!(
             result,
             "XCM recorder must be ready to record incoming XCMs."
