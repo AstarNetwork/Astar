@@ -1940,7 +1940,7 @@ impl_runtime_apis! {
             if asset_id.0 == xcm_config::AstarLocation::get() {
                 Ok(WeightToFee::weight_to_fee(&weight))
             }
-            // for foreign assets that have 'units per second' configures
+            // for foreign assets with “units per second” configurations
             else {
                 let versioned_location = VersionedLocation::V4(asset_id.0);
 
