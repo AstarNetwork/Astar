@@ -26,6 +26,7 @@ use xcm::{
     },
     VersionedLocation, VersionedXcm,
 };
+use xcm_executor::RecordXcm;
 use xcm_fee_payment_runtime_api::dry_run::runtime_decl_for_dry_run_api::DryRunApiV1;
 use xcm_fee_payment_runtime_api::fees::runtime_decl_for_xcm_payment_api::XcmPaymentApiV1;
 
@@ -198,7 +199,6 @@ fn query_delivery_fees_is_ok() {
     })
 }
 
-// Minimal tests to make sur DryRunAPi methods are callable in a runtime isolated environement
 #[test]
 fn dry_run_call_is_ok() {
     new_test_ext().execute_with(|| {
@@ -213,6 +213,7 @@ fn dry_run_call_is_ok() {
     })
 }
 
+// Minimal test in a runtime isolated environment to make sure `dry_run_xcm` is callable
 #[test]
 fn dry_run_xcm_is_ok() {
     new_test_ext().execute_with(|| {
@@ -229,5 +230,23 @@ fn dry_run_xcm_is_ok() {
         let result =
             Runtime::dry_run_xcm(location, versioned_xcm).expect("Must return some effects.");
         assert_eq!(result.forwarded_xcms.len(), 1);
+    })
+}
+
+#[test]
+fn xcm_recorder_configuration_is_ok() {
+    new_test_ext().execute_with(|| {
+        let result = pallet_xcm::Pallet::<Runtime>::should_record();
+        assert!(
+            !result,
+            "XCM recorder should NOT record incoming XCMs by default."
+        );
+
+        pallet_xcm::Pallet::<Runtime>::set_record_xcm(true);
+        let result = pallet_xcm::Pallet::<Runtime>::should_record();
+        assert!(
+            result,
+            "XCM recorder must be ready to record incoming XCMs."
+        );
     })
 }

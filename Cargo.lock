@@ -5542,6 +5542,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-unified-accounts",
  "pallet-utility",
+ "pallet-xcm",
  "parity-scale-codec",
  "precompile-utils",
  "sha3",
@@ -5554,6 +5555,7 @@ dependencies = [
  "sp-runtime",
  "sp-trie",
  "staging-xcm",
+ "staging-xcm-executor",
  "unified-accounts-chain-extension-types",
  "xcm-fee-payment-runtime-api",
 ]
