@@ -18,6 +18,8 @@
 
 use crate::setup::*;
 
+use cumulus_primitives_core::Parent;
+use cumulus_primitives_core::Unlimited;
 use sp_runtime::traits::Zero;
 use xcm::{
     v4::{
@@ -26,7 +28,6 @@ use xcm::{
     },
     VersionedLocation, VersionedXcm,
 };
-use xcm_executor::RecordXcm;
 use xcm_fee_payment_runtime_api::dry_run::runtime_decl_for_dry_run_api::DryRunApiV1;
 use xcm_fee_payment_runtime_api::fees::runtime_decl_for_xcm_payment_api::XcmPaymentApiV1;
 
@@ -209,32 +210,68 @@ fn dry_run_call_is_ok() {
         });
 
         let result = Runtime::dry_run_call(origin, call).expect("Must return some effects.");
-        assert_eq!(result.forwarded_xcms.len(), 1);
+        assert_eq!(
+            result.forwarded_xcms,
+            vec![(VersionedLocation::from((Parent, Here)), vec![],),]
+        );
     })
 }
 
-// Minimal test in a runtime isolated environment to make sure `dry_run_xcm` is callable
 #[test]
 fn dry_run_xcm_is_ok() {
     new_test_ext().execute_with(|| {
-        // Prepare a dummy location and xcm sequence
-        let location = VersionedLocation::V4(Location::here());
+        let transfer_amount = 10_000 * UNIT;
+        let native_asset: XcmAsset =
+            XcmAssetId(Location::here()).into_asset(Fungibility::Fungible(transfer_amount.clone()));
+
+        // Prepare an xcm sequence
         let xcm_sequence = Xcm::<()>::builder_unsafe()
-            .clear_error()
-            .unsubscribe_version()
+            .withdraw_asset(native_asset.clone())
+            .clear_origin()
+            .buy_execution((Here, 1 * UNIT), Unlimited) // TODO: This can be improved by estimating real execution fees
+            .deposit_asset(
+                native_asset,
+                Junction::AccountId32 {
+                    network: None,
+                    id: BOB.clone().into(),
+                },
+            )
             .build();
+
+        // ALICE location origin
+        let origin_location = VersionedLocation::V4(
+            Junction::AccountId32 {
+                id: ALICE.into(),
+                network: None,
+            }
+            .into(),
+        );
         let dummy_message =
             Xcm::<RuntimeCall>::from(VersionedXcm::V4(xcm_sequence).try_into().unwrap());
         let versioned_xcm = VersionedXcm::V4(dummy_message);
 
-        let result =
-            Runtime::dry_run_xcm(location, versioned_xcm).expect("Must return some effects.");
-        assert_eq!(result.forwarded_xcms.len(), 1);
+        let result = Runtime::dry_run_xcm(origin_location, versioned_xcm)
+            .expect("Must return some effects.");
+
+        assert_eq!(
+            result.forwarded_xcms,
+            vec![(VersionedLocation::from((Parent, Here)), vec![],),]
+        );
+
+        assert_eq!(
+            result.emitted_events[0],
+            RuntimeEvent::Balances(pallet_balances::Event::Burned {
+                who: ALICE.into(),
+                amount: transfer_amount
+            }),
+        );
     })
 }
 
 #[test]
 fn xcm_recorder_configuration_is_ok() {
+    use xcm_executor::RecordXcm;
+
     new_test_ext().execute_with(|| {
         let result = <xcm_config::XcmConfig as xcm_executor::Config>::XcmRecorder::should_record();
         assert!(
@@ -250,3 +287,53 @@ fn xcm_recorder_configuration_is_ok() {
         );
     })
 }
+
+// Ideal test dry-running XCM. However the execution emits a "SendFailure" error.
+
+// #[test]
+// fn dry_run_call_is_ok() {
+//     use cumulus_primitives_core::{Parachain, Parent};
+//     use xcm::VersionedAssets;
+//     use xcm_executor::RecordXcm;
+
+//     new_test_ext().execute_with(|| {
+//         let origin = OriginCaller::system(frame_system::RawOrigin::Signed(ALICE.into()));
+//         let native_asset: XcmAsset =
+//             XcmAssetId(Location::here()).into_asset(Fungibility::Fungible(10_000 * UNIT));
+
+//         // let call = RuntimeCall::PolkadotXcm(pallet_xcm::Call::limited_reserve_transfer_assets {
+//         //     dest: Box::new(Here.into()),
+//         //     beneficiary: Box::new(BOB.clone().into()),
+//         //     assets: Box::new(native_asset.into()),
+//         //     fee_asset_item: 0,
+//         //     weight_limit: Unlimited,
+//         // });
+
+//         let call = RuntimeCall::PolkadotXcm(pallet_xcm::Call::limited_reserve_transfer_assets {
+//             dest: Box::new(VersionedLocation::from((
+//                 Parent,
+//                 Parachain(ParachainInfo::parachain_id().into()),
+//             ))),
+//             beneficiary: Box::new(VersionedLocation::from(Junction::AccountId32 {
+//                 id: BOB.clone().into(),
+//                 network: None,
+//             })),
+//             assets: Box::new(VersionedAssets::from(native_asset)),
+//             fee_asset_item: 0,
+//             weight_limit: Unlimited,
+//         });
+
+//         let result = Runtime::dry_run_call(origin, call).expect("Must return some effects.");
+//         println!("{:?}", result);
+
+//         // ensure XcmRecorder is properly configured in XcmConfig
+//         let expected_local_xcm =
+//             <xcm_config::XcmConfig as xcm_executor::Config>::XcmRecorder::recorded_xcm()
+//                 .map(VersionedXcm::<()>::from);
+
+//         assert_eq!(result.local_xcm, expected_local_xcm);
+
+//         // test result.emitted_events
+//         // test result.forwarded_xcms
+//     })
+// }
