@@ -115,7 +115,7 @@ jobs:
         chmod +x ./scripts/run_benchmarks.sh
         ./scripts/run_benchmarks.sh -o ./benchmark-results -c ${{ steps.bench-input.outputs.chain }} -p ${{ steps.bench-input.outputs.pallets }}
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
         path: ./benchmark-results
