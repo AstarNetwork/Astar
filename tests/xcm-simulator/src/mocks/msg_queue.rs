@@ -146,7 +146,7 @@ pub mod mock_msg_queue {
                 let _ = XcmpMessageFormat::decode(&mut data_ref)
                     .expect("Simulator encodes with versioned xcm format; qed");
 
-                let mut remaining_fragments = &data_ref[..];
+                let mut remaining_fragments = data_ref;
                 while !remaining_fragments.is_empty() {
                     if let Ok(xcm) =
                         VersionedXcm::<T::RuntimeCall>::decode(&mut remaining_fragments)
