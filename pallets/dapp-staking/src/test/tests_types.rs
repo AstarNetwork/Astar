@@ -2913,7 +2913,6 @@ fn tier_configuration_basic_tests() {
             },
         ])
         .unwrap(),
-        ..TierParameters::default()
     };
     assert!(params.is_valid(), "Example params must be valid!");
 

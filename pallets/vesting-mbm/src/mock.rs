@@ -123,7 +123,7 @@ impl ExtBuilder {
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    ExtBuilder::default().build()
+    ExtBuilder.build()
 }
 
 #[allow(dead_code)]
