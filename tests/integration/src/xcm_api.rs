@@ -203,8 +203,8 @@ fn query_delivery_fees_is_ok() {
 #[test]
 fn dry_run_call_is_ok() {
     new_test_ext().execute_with(|| {
-        // Prepare a dummy origin and call
         let origin = OriginCaller::system(frame_system::RawOrigin::Root.into());
+        // TODO: Improve this test using an XCM call with more side effects and compare local_xcm with recorded one to get ride of `xcm_recorder_configuration_is_ok` test
         let call = RuntimeCall::System(frame_system::Call::remark {
             remark: vec![0u8; 32],
         });
@@ -287,53 +287,3 @@ fn xcm_recorder_configuration_is_ok() {
         );
     })
 }
-
-// Ideal test dry-running XCM. However the execution emits a "SendFailure" error.
-
-// #[test]
-// fn dry_run_call_is_ok() {
-//     use cumulus_primitives_core::{Parachain, Parent};
-//     use xcm::VersionedAssets;
-//     use xcm_executor::RecordXcm;
-
-//     new_test_ext().execute_with(|| {
-//         let origin = OriginCaller::system(frame_system::RawOrigin::Signed(ALICE.into()));
-//         let native_asset: XcmAsset =
-//             XcmAssetId(Location::here()).into_asset(Fungibility::Fungible(10_000 * UNIT));
-
-//         // let call = RuntimeCall::PolkadotXcm(pallet_xcm::Call::limited_reserve_transfer_assets {
-//         //     dest: Box::new(Here.into()),
-//         //     beneficiary: Box::new(BOB.clone().into()),
-//         //     assets: Box::new(native_asset.into()),
-//         //     fee_asset_item: 0,
-//         //     weight_limit: Unlimited,
-//         // });
-
-//         let call = RuntimeCall::PolkadotXcm(pallet_xcm::Call::limited_reserve_transfer_assets {
-//             dest: Box::new(VersionedLocation::from((
-//                 Parent,
-//                 Parachain(ParachainInfo::parachain_id().into()),
-//             ))),
-//             beneficiary: Box::new(VersionedLocation::from(Junction::AccountId32 {
-//                 id: BOB.clone().into(),
-//                 network: None,
-//             })),
-//             assets: Box::new(VersionedAssets::from(native_asset)),
-//             fee_asset_item: 0,
-//             weight_limit: Unlimited,
-//         });
-
-//         let result = Runtime::dry_run_call(origin, call).expect("Must return some effects.");
-//         println!("{:?}", result);
-
-//         // ensure XcmRecorder is properly configured in XcmConfig
-//         let expected_local_xcm =
-//             <xcm_config::XcmConfig as xcm_executor::Config>::XcmRecorder::recorded_xcm()
-//                 .map(VersionedXcm::<()>::from);
-
-//         assert_eq!(result.local_xcm, expected_local_xcm);
-
-//         // test result.emitted_events
-//         // test result.forwarded_xcms
-//     })
-// }
