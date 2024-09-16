@@ -167,6 +167,16 @@
 <a href="#165" id="165">165</a>
 <a href="#166" id="166">166</a>
 <a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -325,13 +335,23 @@
 		// Minimum execution time: 5_975_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">6_179_000</span>, <span class="number">0</span>)
 	}
-
-	<span class="kw">fn </span>burn() -&gt; Weight {
+	
+	<span class="doccomment">/// Storage: `UnifiedAccounts::NativeToEvm` (r:1 w:0)
+	/// Proof: `UnifiedAccounts::NativeToEvm` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
+	</span><span class="kw">fn </span>burn_allow_death() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `3533`
+		// Minimum execution time: 35_000_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">36_000_000</span>, <span class="number">3533</span>)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">1_u64</span>))
+	}
+	<span class="kw">fn </span>burn_keep_alive() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 30_151_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">30_968_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 22_000_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">22_000_000</span>, <span class="number">0</span>)
 	}
 }
 </code></pre></div></section></main></body></html>

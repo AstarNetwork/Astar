@@ -451,7 +451,7 @@ for when changes are scheduled and the corresponding delay has passed. <a>Read m
     &amp;self,
     __runtime_api_at_param__: &lt;Block as Block&gt;::Hash,
     equivocation_proof: EquivocationProof&lt;&lt;Block as Block&gt;::Hash, &lt;&lt;Block as Block&gt;::Header as Header&gt;::Number&gt;,
-    key_owner_proof: OpaqueKeyOwnershipProof
+    key_owner_proof: OpaqueValue
 ) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.77.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="enum" href="https://doc.rust-lang.org/1.77.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.77.0/std/primitive.unit.html">()</a>&gt;, ApiError&gt;</h4></section></summary><div class='docblock'>Submits an unsigned extrinsic to report an equivocation. The caller
 must provide the equivocation proof and a key ownership proof
 (should be obtained using <code>generate_key_ownership_proof</code>). The
@@ -464,7 +464,7 @@ hardcoded to return <code>None</code>). Only useful in an offchain context.</div
     __runtime_api_at_param__: &lt;Block as Block&gt;::Hash,
     set_id: <a class="primitive" href="https://doc.rust-lang.org/1.77.0/std/primitive.u64.html">u64</a>,
     authority_id: Public
-) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.77.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="enum" href="https://doc.rust-lang.org/1.77.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;OpaqueKeyOwnershipProof&gt;, ApiError&gt;</h4></section></summary><div class='docblock'>Generates a proof of key ownership for the given authority in the
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.77.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="enum" href="https://doc.rust-lang.org/1.77.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;OpaqueValue&gt;, ApiError&gt;</h4></section></summary><div class='docblock'>Generates a proof of key ownership for the given authority in the
 given set. An example usage of this module is coupled with the
 session historical module to prove that a given authority key is
 tied to a given staking identity during a specific session. Proofs
@@ -563,11 +563,11 @@ externalities. <a>Read more</a></div></details><details class="toggle method-tog
     __runtime_api_at_param__: &lt;Block as Block&gt;::Hash,
     uxt: &lt;Block as Block&gt;::Extrinsic,
     len: <a class="primitive" href="https://doc.rust-lang.org/1.77.0/std/primitive.u32.html">u32</a>
-) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.77.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;FeeDetails&lt;Balance&gt;, ApiError&gt;</h4></section><section id="method.query_weight_to_fee" class="method trait-impl"><a href="#method.query_weight_to_fee" class="anchor">§</a><h4 class="code-header">fn <a class="fn">query_weight_to_fee</a>(
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.77.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;FeeDetails&lt;Balance&gt;, ApiError&gt;</h4></section><section id="method.query_weight_to_fee-1" class="method trait-impl"><a href="#method.query_weight_to_fee-1" class="anchor">§</a><h4 class="code-header">fn <a class="fn">query_weight_to_fee</a>(
     &amp;self,
     __runtime_api_at_param__: &lt;Block as Block&gt;::Hash,
     weight: Weight
-) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.77.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;Balance, ApiError&gt;</h4></section><section id="method.query_length_to_fee" class="method trait-impl"><a href="#method.query_length_to_fee" class="anchor">§</a><h4 class="code-header">fn <a class="fn">query_length_to_fee</a>(
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.77.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;Balance, ApiError&gt;</h4></section><section id="method.query_length_to_fee-1" class="method trait-impl"><a href="#method.query_length_to_fee-1" class="anchor">§</a><h4 class="code-header">fn <a class="fn">query_length_to_fee</a>(
     &amp;self,
     __runtime_api_at_param__: &lt;Block as Block&gt;::Hash,
     length: <a class="primitive" href="https://doc.rust-lang.org/1.77.0/std/primitive.u32.html">u32</a>
@@ -590,11 +590,11 @@ externalities. <a>Read more</a></div></details><details class="toggle method-tog
     __runtime_api_at_param__: &lt;Block as Block&gt;::Hash,
     call: Call,
     len: <a class="primitive" href="https://doc.rust-lang.org/1.77.0/std/primitive.u32.html">u32</a>
-) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.77.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;FeeDetails&lt;Balance&gt;, ApiError&gt;</h4></section></summary><div class='docblock'>Query fee details of a given encoded <code>Call</code>.</div></details><details class="toggle method-toggle" open><summary><section id="method.query_weight_to_fee-1" class="method trait-impl"><a href="#method.query_weight_to_fee-1" class="anchor">§</a><h4 class="code-header">fn <a class="fn">query_weight_to_fee</a>(
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.77.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;FeeDetails&lt;Balance&gt;, ApiError&gt;</h4></section></summary><div class='docblock'>Query fee details of a given encoded <code>Call</code>.</div></details><details class="toggle method-toggle" open><summary><section id="method.query_weight_to_fee" class="method trait-impl"><a href="#method.query_weight_to_fee" class="anchor">§</a><h4 class="code-header">fn <a class="fn">query_weight_to_fee</a>(
     &amp;self,
     __runtime_api_at_param__: &lt;Block as Block&gt;::Hash,
     weight: Weight
-) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.77.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;Balance, ApiError&gt;</h4></section></summary><div class='docblock'>Query the output of the current <code>WeightToFee</code> given some input.</div></details><details class="toggle method-toggle" open><summary><section id="method.query_length_to_fee-1" class="method trait-impl"><a href="#method.query_length_to_fee-1" class="anchor">§</a><h4 class="code-header">fn <a class="fn">query_length_to_fee</a>(
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.77.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;Balance, ApiError&gt;</h4></section></summary><div class='docblock'>Query the output of the current <code>WeightToFee</code> given some input.</div></details><details class="toggle method-toggle" open><summary><section id="method.query_length_to_fee" class="method trait-impl"><a href="#method.query_length_to_fee" class="anchor">§</a><h4 class="code-header">fn <a class="fn">query_length_to_fee</a>(
     &amp;self,
     __runtime_api_at_param__: &lt;Block as Block&gt;::Hash,
     length: <a class="primitive" href="https://doc.rust-lang.org/1.77.0/std/primitive.u32.html">u32</a>

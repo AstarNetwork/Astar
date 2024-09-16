@@ -340,6 +340,17 @@
 <a href="#338" id="338">338</a>
 <a href="#339" id="339">339</a>
 <a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -391,6 +402,7 @@
 //! `ExecutionPaymentRate` interface for fetching `units per second` if asset is supported payment asset
 //! - `get_units_per_second`
 //!
+//! - `weight_to_fee` method is used to convert weight to fee based on units per second and weight.
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
@@ -414,7 +426,9 @@
 </span><span class="kw">pub mod </span>pallet {
 
     <span class="kw">use </span><span class="kw">crate</span>::weights::WeightInfo;
-    <span class="kw">use </span>frame_support::{pallet_prelude::<span class="kw-2">*</span>, traits::EnsureOrigin};
+    <span class="kw">use </span>frame_support::{
+        pallet_prelude::<span class="kw-2">*</span>, traits::EnsureOrigin, weights::constants::WEIGHT_REF_TIME_PER_SECOND,
+    };
     <span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
     <span class="kw">use </span>parity_scale_codec::HasCompact;
     <span class="kw">use </span>sp_std::boxed::Box;
@@ -455,6 +469,14 @@
     <span class="kw">impl</span>&lt;T: Config&gt; ExecutionPaymentRate <span class="kw">for </span>Pallet&lt;T&gt; {
         <span class="kw">fn </span>get_units_per_second(asset_location: Location) -&gt; <span class="prelude-ty">Option</span>&lt;u128&gt; {
             AssetLocationUnitsPerSecond::&lt;T&gt;::get(asset_location.into_versioned())
+        }
+    }
+
+    <span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
+        <span class="doccomment">/// Convert weight to fee based on units per second and weight.
+        </span><span class="kw">pub fn </span>weight_to_fee(weight: Weight, units_per_second: u128) -&gt; u128 {
+            units_per_second.saturating_mul(weight.ref_time() <span class="kw">as </span>u128)
+                / (WEIGHT_REF_TIME_PER_SECOND <span class="kw">as </span>u128)
         }
     }
 

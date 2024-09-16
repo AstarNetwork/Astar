@@ -72,10 +72,10 @@
 </span><span class="kw">use </span><span class="kw">super</span>::Extensions;
 <span class="kw">use </span>astar_primitives::parachain::SHIBUYA_ID;
 <span class="kw">use </span>sc_service::ChainType;
-<span class="kw">use </span>shibuya_runtime::{wasm_binary_unwrap, RuntimeGenesisConfig};
+<span class="kw">use </span>shibuya_runtime::wasm_binary_unwrap;
 
 <span class="doccomment">/// Specialized `ChainSpec` for Shibuya testnet.
-</span><span class="kw">pub type </span>ShibuyaChainSpec = sc_service::GenericChainSpec&lt;RuntimeGenesisConfig, Extensions&gt;;
+</span><span class="kw">pub type </span>ShibuyaChainSpec = sc_service::GenericChainSpec&lt;Extensions&gt;;
 
 <span class="doccomment">/// Gen Shibuya chain specification.
 </span><span class="kw">pub fn </span>get_chain_spec() -&gt; ShibuyaChainSpec {

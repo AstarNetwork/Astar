@@ -71,7 +71,7 @@
 <span class="kw">use </span>sc_service::ChainType;
 
 <span class="doccomment">/// Specialized `ChainSpec` for local network.
-</span><span class="kw">pub type </span>ChainSpec = sc_service::GenericChainSpec&lt;local_runtime::RuntimeGenesisConfig&gt;;
+</span><span class="kw">pub type </span>ChainSpec = sc_service::GenericChainSpec;
 
 <span class="doccomment">/// Development config.
 </span><span class="kw">pub fn </span>development_config() -&gt; ChainSpec {
