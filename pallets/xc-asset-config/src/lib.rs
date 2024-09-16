@@ -49,6 +49,7 @@
 //! `ExecutionPaymentRate` interface for fetching `units per second` if asset is supported payment asset
 //! - `get_units_per_second`
 //!
+//! - `weight_to_fee` method is used to convert weight to fee based on units per second and weight.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -72,7 +73,9 @@ pub use weights::WeightInfo;
 pub mod pallet {
 
     use crate::weights::WeightInfo;
-    use frame_support::{pallet_prelude::*, traits::EnsureOrigin};
+    use frame_support::{
+        pallet_prelude::*, traits::EnsureOrigin, weights::constants::WEIGHT_REF_TIME_PER_SECOND,
+    };
     use frame_system::pallet_prelude::*;
     use parity_scale_codec::HasCompact;
     use sp_std::boxed::Box;
@@ -113,6 +116,14 @@ pub mod pallet {
     impl<T: Config> ExecutionPaymentRate for Pallet<T> {
         fn get_units_per_second(asset_location: Location) -> Option<u128> {
             AssetLocationUnitsPerSecond::<T>::get(asset_location.into_versioned())
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        /// Convert weight to fee based on units per second and weight.
+        pub fn weight_to_fee(weight: Weight, units_per_second: u128) -> u128 {
+            units_per_second.saturating_mul(weight.ref_time() as u128)
+                / (WEIGHT_REF_TIME_PER_SECOND as u128)
         }
     }
 

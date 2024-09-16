@@ -70,7 +70,10 @@ use xcm::{
     v4::{AssetId as XcmAssetId, Location as XcmLocation},
     IntoVersion, VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm,
 };
-use xcm_fee_payment_runtime_api::Error as XcmPaymentApiError;
+use xcm_fee_payment_runtime_api::{
+    dry_run::{CallDryRunEffects, Error as XcmDryRunApiError, XcmDryRunEffects},
+    fees::Error as XcmPaymentApiError,
+};
 
 use astar_primitives::{
     dapp_staking::{
@@ -106,7 +109,7 @@ mod chain_extensions;
 pub mod genesis_config;
 mod precompiles;
 mod weights;
-mod xcm_config;
+pub mod xcm_config;
 
 pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
@@ -1908,49 +1911,43 @@ impl_runtime_apis! {
         }
     }
 
-    impl xcm_fee_payment_runtime_api::XcmPaymentApi<Block> for Runtime {
+    impl xcm_fee_payment_runtime_api::fees::XcmPaymentApi<Block> for Runtime {
         fn query_acceptable_payment_assets(xcm_version: xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
             if !matches!(xcm_version, xcm::v3::VERSION | xcm::v4::VERSION) {
                 return Err(XcmPaymentApiError::UnhandledXcmVersion);
             }
 
             // Native asset is always supported
-            let native_asset_location: XcmLocation = XcmLocation::try_from(xcm_config::ShidenLocation::get())
-            .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+            let mut acceptable_assets = vec![XcmAssetId::from(xcm_config::ShidenLocation::get())];
 
-            Ok([VersionedAssetId::V4(native_asset_location.into())]
-                .into_iter()
-                // Acquire foreign assets which have 'units per second' configured
-                .chain(
-                    pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::iter_keys().filter_map(|asset_location| {
+            // Add foreign assets that have 'units per second' configured
+            acceptable_assets.extend(
+                pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::iter_keys().filter_map(
+                    |asset_location| match XcmLocation::try_from(asset_location) {
+                        Ok(location) => Some(XcmAssetId::from(location)),
+                        Err(_) => None,
+                    },
+                ),
+            );
 
-                        match XcmLocation::try_from(asset_location) {
-                            Ok(asset) => Some(VersionedAssetId::V4(asset.into())),
-                            Err(_) => None,
-                        }
-                    })
-            ).filter_map(|asset| asset.into_version(xcm_version).ok()).collect())
+            PolkadotXcm::query_acceptable_payment_assets(xcm_version, acceptable_assets)
         }
 
         fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
-            let native_asset_location = XcmLocation::try_from(xcm_config::ShidenLocation::get())
-                .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
-            let native_asset = VersionedAssetId::V4(native_asset_location.into());
+            let asset = asset.into_version(xcm::v4::VERSION).map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+            let asset_id: XcmAssetId = asset.try_into().map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
 
-            let asset = asset
-                .into_version(xcm::v4::VERSION)
-                .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
-
-            if native_asset == asset {
-                Ok(XcmWeightToFee::weight_to_fee(&weight))
-            } else {
-                let asset_id: XcmAssetId = asset.try_into().map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+            // for native token
+            if asset_id.0 == xcm_config::ShidenLocation::get() {
+                Ok(WeightToFee::weight_to_fee(&weight))
+            }
+            // for foreign assets with “units per second” configurations
+            else {
                 let versioned_location = VersionedLocation::V4(asset_id.0);
 
                 match pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::get(versioned_location) {
                     Some(units_per_sec) => {
-                        Ok(units_per_sec.saturating_mul(weight.ref_time() as u128)
-                            / (WEIGHT_REF_TIME_PER_SECOND as u128))
+                        Ok(pallet_xc_asset_config::Pallet::<Runtime>::weight_to_fee(weight, units_per_sec))
                     }
                     None => Err(XcmPaymentApiError::AssetNotFound),
                 }
@@ -1963,6 +1960,16 @@ impl_runtime_apis! {
 
         fn query_delivery_fees(destination: VersionedLocation, message: VersionedXcm<()>) -> Result<VersionedAssets, XcmPaymentApiError> {
             PolkadotXcm::query_delivery_fees(destination, message)
+        }
+    }
+
+    impl xcm_fee_payment_runtime_api::dry_run::DryRunApi<Block, RuntimeCall, RuntimeEvent, OriginCaller> for Runtime {
+        fn dry_run_call(origin: OriginCaller, call: RuntimeCall) -> Result<CallDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
+            PolkadotXcm::dry_run_call::<Runtime, xcm_config::XcmRouter, OriginCaller, RuntimeCall>(origin, call)
+        }
+
+        fn dry_run_xcm(origin_location: VersionedLocation, xcm: VersionedXcm<RuntimeCall>) -> Result<XcmDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
+            PolkadotXcm::dry_run_xcm::<Runtime, xcm_config::XcmRouter, RuntimeCall, xcm_config::XcmConfig>(origin_location, xcm)
         }
     }
 

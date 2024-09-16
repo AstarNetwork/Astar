@@ -18,6 +18,8 @@
 
 use crate::setup::*;
 
+use cumulus_primitives_core::Parent;
+use cumulus_primitives_core::Unlimited;
 use sp_runtime::traits::Zero;
 use xcm::{
     v4::{
@@ -26,7 +28,8 @@ use xcm::{
     },
     VersionedLocation, VersionedXcm,
 };
-use xcm_fee_payment_runtime_api::runtime_decl_for_xcm_payment_api::XcmPaymentApi;
+use xcm_fee_payment_runtime_api::dry_run::runtime_decl_for_dry_run_api::DryRunApiV1;
+use xcm_fee_payment_runtime_api::fees::runtime_decl_for_xcm_payment_api::XcmPaymentApiV1;
 
 /// Register an asset into `pallet-assets` instance, and register as as cross-chain asset.
 ///
@@ -115,30 +118,38 @@ fn query_weight_to_asset_fee_is_ok() {
         // 1. Native asset payment
         {
             let weight = Weight::from_parts(1000, 1000);
+            let expected_fee = WeightToFee::weight_to_fee(&weight);
             let fee =
                 Runtime::query_weight_to_asset_fee(weight, XcmAssetId(Location::here()).into())
                     .expect("Must return fee for native asset.");
 
-            // TODO: improve the check later once _weight-to-fee_ code is more accessible.
-            assert!(!fee.is_zero(), "Fee must be greater than zero.");
+            assert_eq!(
+                fee, expected_fee,
+                "Fee must match the expected weight-to-fee conversion."
+            );
         }
 
         // 2. Foreign asset payment
         {
             let payable_location = Location::new(2, Here);
+            let units_per_second = 1_000_000_000_000;
+
             prepare_asset(
                 2,
                 payable_location.clone().into_versioned(),
-                Some(1_000_000_000_000),
+                Some(units_per_second),
             );
 
             let weight = Weight::from_parts(1_000_000_000, 1_000_000);
+            let expected_fee = XcAssetConfig::weight_to_fee(weight, units_per_second);
             let fee =
                 Runtime::query_weight_to_asset_fee(weight, XcmAssetId(payable_location).into())
                     .expect("Must return fee for payable asset.");
 
-            // TODO: improve the check later once _weight-to-fee_ code is more accessible.
-            assert!(!fee.is_zero(), "Fee must be greater than zero.");
+            assert_eq!(
+                fee, expected_fee,
+                "Fee must match the expected weight-to-fee conversion."
+            );
         }
     })
 }
@@ -185,6 +196,94 @@ fn query_delivery_fees_is_ok() {
         assert!(
             Runtime::query_delivery_fees(location, VersionedXcm::V4(xcm_sequence)).is_err(),
             "At the moment, `PriceForMessageDelivery` is not implemented."
+        );
+    })
+}
+
+#[test]
+fn dry_run_call_is_ok() {
+    new_test_ext().execute_with(|| {
+        let origin = OriginCaller::system(frame_system::RawOrigin::Root.into());
+        // TODO: Improve this test using an XCM call with more side effects and compare local_xcm with recorded one to get ride of `xcm_recorder_configuration_is_ok` test
+        let call = RuntimeCall::System(frame_system::Call::remark {
+            remark: vec![0u8; 32],
+        });
+
+        let result = Runtime::dry_run_call(origin, call).expect("Must return some effects.");
+        assert_eq!(
+            result.forwarded_xcms,
+            vec![(VersionedLocation::from((Parent, Here)), vec![],),]
+        );
+    })
+}
+
+#[test]
+fn dry_run_xcm_is_ok() {
+    new_test_ext().execute_with(|| {
+        let transfer_amount = 10_000 * UNIT;
+        let native_asset: XcmAsset =
+            XcmAssetId(Location::here()).into_asset(Fungibility::Fungible(transfer_amount.clone()));
+
+        // Prepare an xcm sequence
+        let xcm_sequence = Xcm::<()>::builder_unsafe()
+            .withdraw_asset(native_asset.clone())
+            .clear_origin()
+            .buy_execution((Here, 1 * UNIT), Unlimited) // TODO: This can be improved by estimating real execution fees
+            .deposit_asset(
+                native_asset,
+                Junction::AccountId32 {
+                    network: None,
+                    id: BOB.clone().into(),
+                },
+            )
+            .build();
+
+        // ALICE location origin
+        let origin_location = VersionedLocation::V4(
+            Junction::AccountId32 {
+                id: ALICE.into(),
+                network: None,
+            }
+            .into(),
+        );
+        let dummy_message =
+            Xcm::<RuntimeCall>::from(VersionedXcm::V4(xcm_sequence).try_into().unwrap());
+        let versioned_xcm = VersionedXcm::V4(dummy_message);
+
+        let result = Runtime::dry_run_xcm(origin_location, versioned_xcm)
+            .expect("Must return some effects.");
+
+        assert_eq!(
+            result.forwarded_xcms,
+            vec![(VersionedLocation::from((Parent, Here)), vec![],),]
+        );
+
+        assert_eq!(
+            result.emitted_events[0],
+            RuntimeEvent::Balances(pallet_balances::Event::Burned {
+                who: ALICE.into(),
+                amount: transfer_amount
+            }),
+        );
+    })
+}
+
+#[test]
+fn xcm_recorder_configuration_is_ok() {
+    use xcm_executor::RecordXcm;
+
+    new_test_ext().execute_with(|| {
+        let result = <xcm_config::XcmConfig as xcm_executor::Config>::XcmRecorder::should_record();
+        assert!(
+            !result,
+            "XCM recorder should NOT record incoming XCMs by default."
+        );
+
+        <xcm_config::XcmConfig as xcm_executor::Config>::XcmRecorder::set_record_xcm(true);
+        let result = <xcm_config::XcmConfig as xcm_executor::Config>::XcmRecorder::should_record();
+        assert!(
+            result,
+            "XCM recorder must be ready to record incoming XCMs."
         );
     })
 }

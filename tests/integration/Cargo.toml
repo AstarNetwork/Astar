@@ -13,6 +13,7 @@ hex = { workspace = true }
 libsecp256k1 = { workspace = true, features = ["hmac", "static-context"] }
 parity-scale-codec = { workspace = true }
 sha3 = { workspace = true }
+smallvec = { workspace = true }
 
 # frontier
 fp-evm = { workspace = true }
@@ -37,12 +38,14 @@ pallet-proxy = { workspace = true }
 pallet-session = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-utility = { workspace = true }
+pallet-xcm = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-trie = { workspace = true }
 xcm = { workspace = true }
+xcm-executor = { workspace = true }
 xcm-fee-payment-runtime-api = { workspace = true }
 
 # astar dependencies
@@ -113,6 +116,7 @@ std = [
 	"pallet-proxy/std",
 	"pallet-unified-accounts/std",
 	"pallet-utility/std",
+	"pallet-xcm/std",
 	"parity-scale-codec/std",
 	"precompile-utils/std",
 	"pallet-aura/std",
@@ -123,6 +127,7 @@ std = [
 	"unified-accounts-chain-extension-types/std",
 	"xcm/std",
 	"xcm-fee-payment-runtime-api/std",
+	"xcm-executor/std",
 	"pallet-session/std",
 	"sp-consensus-aura/std",
 ]

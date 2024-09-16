@@ -157,11 +157,21 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for SubstrateWeight<T>
 		Weight::from_parts(5_975_000, 0)
 	}
 
-	fn burn() -> Weight {
+	/// Storage: `UnifiedAccounts::NativeToEvm` (r:1 w:0)
+	/// Proof: `UnifiedAccounts::NativeToEvm` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
+	fn burn_allow_death() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `3533`
+		// Minimum execution time: 35_000_000 picoseconds.
+		Weight::from_parts(37_000_000, 3533)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+	}
+	fn burn_keep_alive() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 30_151_000 picoseconds.
-		Weight::from_parts(30_968_000, 0)
+		// Minimum execution time: 22_000_000 picoseconds.
+		Weight::from_parts(22_000_000, 0)
 	}
 }
