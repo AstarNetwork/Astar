@@ -87,10 +87,10 @@ use astar_primitives::{
     governance::{
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
-        EnsureRootOrHalfCommunityCouncil, EnsureRootOrHalfMainCouncil,
-        EnsureRootOrHalfTechnicalCommittee, MainCouncilCollectiveInst, MainCouncilMembershipInst,
-        MainTreasuryInst, OracleMembershipInst, TechnicalCommitteeCollectiveInst,
-        TechnicalCommitteeMembershipInst,
+        EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrHalfCommunityCouncil,
+        EnsureRootOrHalfMainCouncil, EnsureRootOrHalfTechnicalCommittee, MainCouncilCollectiveInst,
+        MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
+        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -466,7 +466,7 @@ impl pallet_dapp_staking::Config for Runtime {
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
     type ContractRegisterOrigin = EnsureRootOrHalfCommunityCouncil;
-    type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
+    type ContractUnregisterOrigin = EnsureRootOrFourFifthsCommunityCouncil;
     type ManagerOrigin = EnsureRootOrHalfTechnicalCommittee;
     type NativePriceProvider = PriceAggregator;
     type StakingRewardHandler = Inflation;
