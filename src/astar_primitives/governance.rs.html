@@ -82,6 +82,11 @@
 <a href="#80" id="80">80</a>
 <a href="#81" id="81">81</a>
 <a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -163,5 +168,10 @@
 <span class="kw">pub type </span>EnsureRootOrHalfCommunityCouncil = EitherOfDiverse&lt;
     EnsureRoot&lt;AccountId&gt;,
     pallet_collective::EnsureProportionAtLeast&lt;AccountId, CommunityCouncilCollectiveInst, <span class="number">1</span>, <span class="number">2</span>&gt;,
+&gt;;
+
+<span class="kw">pub type </span>EnsureRootOrFourFifthsCommunityCouncil = EitherOfDiverse&lt;
+    EnsureRoot&lt;AccountId&gt;,
+    pallet_collective::EnsureProportionAtLeast&lt;AccountId, CommunityCouncilCollectiveInst, <span class="number">4</span>, <span class="number">5</span>&gt;,
 &gt;;
 </code></pre></div></section></main></body></html>

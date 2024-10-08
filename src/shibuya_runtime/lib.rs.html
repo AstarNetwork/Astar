@@ -2838,10 +2838,10 @@
     governance::{
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
-        EnsureRootOrHalfCommunityCouncil, EnsureRootOrHalfMainCouncil,
-        EnsureRootOrHalfTechnicalCommittee, MainCouncilCollectiveInst, MainCouncilMembershipInst,
-        MainTreasuryInst, OracleMembershipInst, TechnicalCommitteeCollectiveInst,
-        TechnicalCommitteeMembershipInst,
+        EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrHalfCommunityCouncil,
+        EnsureRootOrHalfMainCouncil, EnsureRootOrHalfTechnicalCommittee, MainCouncilCollectiveInst,
+        MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
+        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -3217,7 +3217,7 @@
     <span class="kw">type </span>Currency = Balances;
     <span class="kw">type </span>SmartContract = SmartContract&lt;AccountId&gt;;
     <span class="kw">type </span>ContractRegisterOrigin = EnsureRootOrHalfCommunityCouncil;
-    <span class="kw">type </span>ContractUnregisterOrigin = frame_system::EnsureRoot&lt;AccountId&gt;;
+    <span class="kw">type </span>ContractUnregisterOrigin = EnsureRootOrFourFifthsCommunityCouncil;
     <span class="kw">type </span>ManagerOrigin = EnsureRootOrHalfTechnicalCommittee;
     <span class="kw">type </span>NativePriceProvider = PriceAggregator;
     <span class="kw">type </span>StakingRewardHandler = Inflation;
