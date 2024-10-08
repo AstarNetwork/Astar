@@ -80,3 +80,8 @@ pub type EnsureRootOrHalfCommunityCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, CommunityCouncilCollectiveInst, 1, 2>,
 >;
+
+pub type EnsureRootOrFourFifthsCommunityCouncil = EitherOfDiverse<
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, CommunityCouncilCollectiveInst, 4, 5>,
+>;
