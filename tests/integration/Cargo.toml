@@ -46,7 +46,7 @@ sp-runtime = { workspace = true }
 sp-trie = { workspace = true }
 xcm = { workspace = true }
 xcm-executor = { workspace = true }
-xcm-fee-payment-runtime-api = { workspace = true }
+xcm-runtime-apis = { workspace = true }
 
 # astar dependencies
 assets-chain-extension-types = { workspace = true }
@@ -126,7 +126,7 @@ std = [
 	"sp-runtime/std",
 	"unified-accounts-chain-extension-types/std",
 	"xcm/std",
-	"xcm-fee-payment-runtime-api/std",
+	"xcm-runtime-apis/std",
 	"xcm-executor/std",
 	"pallet-session/std",
 	"sp-consensus-aura/std",

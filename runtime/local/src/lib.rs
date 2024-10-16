@@ -748,6 +748,7 @@ impl pallet_contracts::Config for Runtime {
     type UploadOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
     type InstantiateOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
     type ApiVersion = ();
+    type MaxTransientStorageSize = ConstU32<{ 1 * 1024 * 1024 }>;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -1027,14 +1028,9 @@ impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
 
-    // Two origins which can either approve or reject the spending proposal
-    type ApproveOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    // Origin to reject the spending proposal
     type RejectOrigin = EnsureRootOrTwoThirdsMainCouncil;
 
-    type OnSlash = Treasury;
-    type ProposalBond = ProposalBond;
-    type ProposalBondMinimum = ConstU128<{ 10 * AST }>;
-    type ProposalBondMaximum = ConstU128<{ 100 * AST }>;
     type SpendPeriod = ConstU32<{ 1 * MINUTES }>;
 
     // We don't do periodic burns of the treasury
@@ -1067,14 +1063,9 @@ impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
 
-    // Two origins which can either approve or reject the spending proposal
-    type ApproveOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
+    // Origin to reject the spending proposal
     type RejectOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
 
-    type OnSlash = CommunityTreasury;
-    type ProposalBond = ProposalBond;
-    type ProposalBondMinimum = ConstU128<{ 10 * AST }>;
-    type ProposalBondMaximum = ConstU128<{ 100 * AST }>;
     type SpendPeriod = ConstU32<{ 1 * MINUTES }>;
 
     // We don't do periodic burns of the community treasury
@@ -1697,6 +1688,10 @@ impl_runtime_apis! {
                 pallet_ethereum::CurrentBlock::<Runtime>::get(),
                 pallet_ethereum::CurrentTransactionStatuses::<Runtime>::get()
             )
+        }
+
+        fn initialize_pending_block(header: &<Block as BlockT>::Header) {
+            Executive::initialize_block(header);
         }
     }
 

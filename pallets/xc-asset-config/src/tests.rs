@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+#![allow(deprecated)]
 use super::{pallet::Error, pallet::Event, *};
 use frame_support::{assert_noop, assert_ok, WeakBoundedVec};
 use mock::*;
@@ -87,7 +88,7 @@ fn register_asset_location_and_units_per_sec_is_ok() {
         ));
         System::assert_last_event(mock::RuntimeEvent::XcAssetConfig(Event::AssetRegistered {
             asset_location: asset_location.clone().into_versioned(),
-            asset_id: asset_id,
+            asset_id,
         }));
 
         // Assert storage state after registering asset
