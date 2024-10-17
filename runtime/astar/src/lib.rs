@@ -1212,6 +1212,11 @@ impl pallet_migrations::Config for Runtime {
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
 }
 
+impl cumulus_pallet_xcmp_queue::migration::v5::V5Config for Runtime {
+    // This must be the same as the `ChannelInfo` from the `Config`:
+    type ChannelList = ParachainSystem;
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1333,7 +1338,7 @@ parameter_types! {
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased = (cumulus_pallet_xcmp_queue::migration::v5::MigrateV4ToV5<Runtime>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);

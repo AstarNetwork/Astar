@@ -1530,6 +1530,11 @@ impl pallet_migrations::Config for Runtime {
 #[cfg(feature = "runtime-benchmarks")]
 impl vesting_mbm::Config for Runtime {}
 
+impl cumulus_pallet_xcmp_queue::migration::v5::V5Config for Runtime {
+    // This must be the same as the `ChannelInfo` from the `Config`:
+    type ChannelList = ParachainSystem;
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1643,10 +1648,7 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (
-    pallet_dapp_staking::migration::AdjustEraMigration<Runtime>,
-    pallet_inflation::migration::AdjustBlockRewardMigration<Runtime>,
-);
+pub type Unreleased = (cumulus_pallet_xcmp_queue::migration::v5::MigrateV4ToV5<Runtime>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
