@@ -75,7 +75,7 @@ use astar_primitives::{
         EnsureRootOrTwoThirdsCommunityCouncil, EnsureRootOrTwoThirdsMainCouncil,
         EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
         MainCouncilMembershipInst, MainTreasuryInst, TechnicalCommitteeCollectiveInst,
-        TechnicalCommitteeMembershipInst,
+        TechnicalCommitteeMembershipInst, TreasurySpender,
     },
     Address, AssetId, Balance, BlockNumber, Hash, Header, Nonce,
 };
@@ -96,6 +96,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+
 #[cfg(feature = "std")]
 /// Wasm binary unwrapped. If built with `BUILD_DUMMY_WASM_BINARY`, the function panics.
 pub fn wasm_binary_unwrap() -> &'static [u8] {
@@ -1019,8 +1020,8 @@ impl pallet_democracy::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ProposalBond: Permill = Permill::from_percent(5);
     pub MainTreasuryAccount: AccountId = Treasury::account_id();
+    pub const MaxBalance: Balance = Balance::MAX;
 }
 
 impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
@@ -1045,10 +1046,8 @@ impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type Paymaster = PayFromAccount<Balances, MainTreasuryAccount>;
     type BalanceConverter = UnityAssetBalanceConversion;
 
-    // New approach to using treasury, useful for OpenGov but not necessarily for us.
-    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
-    // Only used by 'spend' approach which is disabled
-    type PayoutPeriod = ConstU32<0>;
+    type SpendOrigin = TreasurySpender<EnsureRootOrTwoThirdsMainCouncil, MaxBalance>;
+    type PayoutPeriod = ConstU32<{ 30 * MINUTES }>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
@@ -1081,9 +1080,8 @@ impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
     type BalanceConverter = UnityAssetBalanceConversion;
 
     // New approach to using treasury, useful for OpenGov but not necessarily for us.
-    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
-    // Only used by 'spend' approach which is disabled
-    type PayoutPeriod = ConstU32<0>;
+    type SpendOrigin = TreasurySpender<EnsureRootOrTwoThirdsMainCouncil, MaxBalance>;
+    type PayoutPeriod = ConstU32<{ 30 * MINUTES }>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;

@@ -90,7 +90,7 @@ use astar_primitives::{
         EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrHalfCommunityCouncil,
         EnsureRootOrHalfMainCouncil, EnsureRootOrHalfTechnicalCommittee, MainCouncilCollectiveInst,
         MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
-        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst, TreasurySpender,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -1409,8 +1409,8 @@ impl pallet_democracy::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ProposalBond: Permill = Permill::from_percent(5);
     pub MainTreasuryAccount: AccountId = Treasury::account_id();
+    pub const MaxBalance: Balance = Balance::MAX;
 }
 
 impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
@@ -1436,9 +1436,8 @@ impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type BalanceConverter = UnityAssetBalanceConversion;
 
     // New approach to using treasury, useful for OpenGov but not necessarily for us.
-    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
-    // Only used by 'spend' approach which is disabled
-    type PayoutPeriod = ConstU32<0>;
+    type SpendOrigin = TreasurySpender<EnsureRootOrHalfMainCouncil, MaxBalance>;
+    type PayoutPeriod = ConstU32<{ 3 * DAYS }>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
@@ -1470,10 +1469,8 @@ impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
     type Paymaster = PayFromAccount<Balances, MainTreasuryAccount>;
     type BalanceConverter = UnityAssetBalanceConversion;
 
-    // New approach to using treasury, useful for OpenGov but not necessarily for us.
-    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
-    // Only used by 'spend' approach which is disabled
-    type PayoutPeriod = ConstU32<0>;
+    type SpendOrigin = TreasurySpender<EnsureRootOrHalfMainCouncil, MaxBalance>;
+    type PayoutPeriod = ConstU32<{ 3 * DAYS }>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
