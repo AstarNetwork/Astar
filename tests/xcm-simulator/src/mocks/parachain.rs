@@ -276,6 +276,7 @@ impl pallet_contracts::Config for Runtime {
     type UploadOrigin = EnsureSigned<AccountId32>;
     type InstantiateOrigin = EnsureSigned<AccountId32>;
     type ApiVersion = ();
+    type MaxTransientStorageSize = ConstU32<{ 1 * 1024 * 1024 }>;
 }
 
 /// The type used to represent the kinds of proxying allowed.

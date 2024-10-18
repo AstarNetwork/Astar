@@ -126,6 +126,7 @@ impl pallet_contracts::Config for Test {
     type UploadOrigin = EnsureSigned<AccountId32>;
     type InstantiateOrigin = EnsureSigned<AccountId32>;
     type ApiVersion = ();
+    type MaxTransientStorageSize = ConstU32<{ 1 * 1024 * 1024 }>;
 }
 
 impl RegisteredChainExtension<Test> for AssetsExtension<Test> {

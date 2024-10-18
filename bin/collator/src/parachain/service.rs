@@ -620,7 +620,6 @@ fn start_aura_consensus(
                     .map(|c| ValidationCode::from(c).hash())
             }
         },
-        sync_oracle: sync_oracle.clone(),
         keystore,
         collator_key,
         para_id,
@@ -634,7 +633,7 @@ fn start_aura_consensus(
 
     let fut = async move {
         wait_for_aura(client).await;
-        aura::run::<Block, AuraPair, _, _, _, _, _, _, _, _, _>(params).await
+        aura::run::<Block, AuraPair, _, _, _, _, _, _, _, _>(params).await
     };
 
     task_manager

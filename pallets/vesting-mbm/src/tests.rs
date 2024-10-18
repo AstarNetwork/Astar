@@ -45,15 +45,15 @@ fn migrate_to_new_block_time() {
         assert_eq!(Vesting::vesting_balance(&DAVE), Some(300)); // starts vesting at block 5, 20 per block
 
         assert_eq!(
-            Vesting::vesting(&BOB).unwrap().to_vec(),
+            Vesting::vesting(BOB).unwrap().to_vec(),
             vec![VestingInfo::new(100, 10, 10)]
         );
         assert_eq!(
-            Vesting::vesting(&CHARLIE).unwrap().to_vec(),
+            Vesting::vesting(CHARLIE).unwrap().to_vec(),
             vec![VestingInfo::new(1000, 100, 20)]
         );
         assert_eq!(
-            Vesting::vesting(&DAVE).unwrap().to_vec(),
+            Vesting::vesting(DAVE).unwrap().to_vec(),
             vec![VestingInfo::new(400, 20, 5)]
         );
 
@@ -67,15 +67,15 @@ fn migrate_to_new_block_time() {
         assert_eq!(Vesting::vesting_balance(&DAVE), Some(290)); // 10 unlocked
 
         assert_eq!(
-            Vesting::vesting(&BOB).unwrap().to_vec(),
+            Vesting::vesting(BOB).unwrap().to_vec(),
             vec![VestingInfo::new(100, 5, 10)]
         );
         assert_eq!(
-            Vesting::vesting(&CHARLIE).unwrap().to_vec(),
+            Vesting::vesting(CHARLIE).unwrap().to_vec(),
             vec![VestingInfo::new(1000, 50, 30)]
         );
         assert_eq!(
-            Vesting::vesting(&DAVE).unwrap().to_vec(),
+            Vesting::vesting(DAVE).unwrap().to_vec(),
             vec![VestingInfo::new(300, 10, 10)]
         );
 

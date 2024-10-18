@@ -73,7 +73,7 @@ use xcm::{
     v4::{AssetId as XcmAssetId, Location as XcmLocation},
     IntoVersion, VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm,
 };
-use xcm_fee_payment_runtime_api::{
+use xcm_runtime_apis::{
     dry_run::{CallDryRunEffects, Error as XcmDryRunApiError, XcmDryRunEffects},
     fees::Error as XcmPaymentApiError,
 };
@@ -90,7 +90,7 @@ use astar_primitives::{
         EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrHalfCommunityCouncil,
         EnsureRootOrHalfMainCouncil, EnsureRootOrHalfTechnicalCommittee, MainCouncilCollectiveInst,
         MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
-        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst, TreasurySpender,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -769,6 +769,7 @@ impl pallet_contracts::Config for Runtime {
     type UploadOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
     type InstantiateOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
     type ApiVersion = ();
+    type MaxTransientStorageSize = ConstU32<{ 1 * 1024 * 1024 }>;
 }
 
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
@@ -1408,8 +1409,8 @@ impl pallet_democracy::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ProposalBond: Permill = Permill::from_percent(5);
     pub MainTreasuryAccount: AccountId = Treasury::account_id();
+    pub const MaxBalance: Balance = Balance::MAX;
 }
 
 impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
@@ -1417,14 +1418,9 @@ impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
 
-    // Two origins which can either approve or reject the spending proposal
-    type ApproveOrigin = EnsureRootOrHalfMainCouncil;
+    // Origin to reject the spending proposal
     type RejectOrigin = EnsureRootOrHalfMainCouncil;
 
-    type OnSlash = Treasury;
-    type ProposalBond = ProposalBond;
-    type ProposalBondMinimum = ConstU128<{ 100 * SBY }>;
-    type ProposalBondMaximum = ConstU128<{ 10000 * SBY }>;
     type SpendPeriod = ConstU32<{ 3 * DAYS }>;
 
     // We don't do periodic burns of the treasury
@@ -1440,9 +1436,8 @@ impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type BalanceConverter = UnityAssetBalanceConversion;
 
     // New approach to using treasury, useful for OpenGov but not necessarily for us.
-    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
-    // Only used by 'spend' approach which is disabled
-    type PayoutPeriod = ConstU32<0>;
+    type SpendOrigin = TreasurySpender<EnsureRootOrHalfMainCouncil, MaxBalance>;
+    type PayoutPeriod = ConstU32<{ 3 * DAYS }>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
@@ -1457,14 +1452,9 @@ impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
 
-    // Two origins which can either approve or reject the spending proposal
-    type ApproveOrigin = EnsureRootOrHalfCommunityCouncil;
+    // Origin to reject the spending proposal
     type RejectOrigin = EnsureRootOrHalfCommunityCouncil;
 
-    type OnSlash = CommunityTreasury;
-    type ProposalBond = ProposalBond;
-    type ProposalBondMinimum = ConstU128<{ 100 * SBY }>;
-    type ProposalBondMaximum = ConstU128<{ 10000 * SBY }>;
     type SpendPeriod = ConstU32<{ 3 * DAYS }>;
 
     // We don't do periodic burns of the community treasury
@@ -1479,10 +1469,8 @@ impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
     type Paymaster = PayFromAccount<Balances, MainTreasuryAccount>;
     type BalanceConverter = UnityAssetBalanceConversion;
 
-    // New approach to using treasury, useful for OpenGov but not necessarily for us.
-    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
-    // Only used by 'spend' approach which is disabled
-    type PayoutPeriod = ConstU32<0>;
+    type SpendOrigin = TreasurySpender<EnsureRootOrHalfCommunityCouncil, MaxBalance>;
+    type PayoutPeriod = ConstU32<{ 3 * DAYS }>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
@@ -1541,6 +1529,11 @@ impl pallet_migrations::Config for Runtime {
 
 #[cfg(feature = "runtime-benchmarks")]
 impl vesting_mbm::Config for Runtime {}
+
+impl cumulus_pallet_xcmp_queue::migration::v5::V5Config for Runtime {
+    // This must be the same as the `ChannelInfo` from the `Config`:
+    type ChannelList = ParachainSystem;
+}
 
 construct_runtime!(
     pub struct Runtime
@@ -1655,10 +1648,7 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (
-    pallet_dapp_staking::migration::AdjustEraMigration<Runtime>,
-    pallet_inflation::migration::AdjustBlockRewardMigration<Runtime>,
-);
+pub type Unreleased = (cumulus_pallet_xcmp_queue::migration::v5::MigrateV4ToV5<Runtime>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
@@ -2143,6 +2133,10 @@ impl_runtime_apis! {
                 pallet_ethereum::CurrentTransactionStatuses::<Runtime>::get()
             )
         }
+
+        fn initialize_pending_block(header: &<Block as BlockT>::Header) {
+            Executive::initialize_block(header);
+        }
     }
 
     impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
@@ -2241,7 +2235,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl xcm_fee_payment_runtime_api::fees::XcmPaymentApi<Block> for Runtime {
+    impl xcm_runtime_apis::fees::XcmPaymentApi<Block> for Runtime {
         fn query_acceptable_payment_assets(xcm_version: xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
             if !matches!(xcm_version, xcm::v3::VERSION | xcm::v4::VERSION) {
                 return Err(XcmPaymentApiError::UnhandledXcmVersion);
@@ -2293,7 +2287,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl xcm_fee_payment_runtime_api::dry_run::DryRunApi<Block, RuntimeCall, RuntimeEvent, OriginCaller> for Runtime {
+    impl xcm_runtime_apis::dry_run::DryRunApi<Block, RuntimeCall, RuntimeEvent, OriginCaller> for Runtime {
         fn dry_run_call(origin: OriginCaller, call: RuntimeCall) -> Result<CallDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
             PolkadotXcm::dry_run_call::<Runtime, xcm_config::XcmRouter, OriginCaller, RuntimeCall>(origin, call)
         }

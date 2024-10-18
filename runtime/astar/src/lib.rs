@@ -71,7 +71,7 @@ use xcm::{
     v4::{AssetId as XcmAssetId, Location as XcmLocation},
     IntoVersion, VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm,
 };
-use xcm_fee_payment_runtime_api::{
+use xcm_runtime_apis::{
     dry_run::{CallDryRunEffects, Error as XcmDryRunApiError, XcmDryRunEffects},
     fees::Error as XcmPaymentApiError,
 };
@@ -726,6 +726,7 @@ impl pallet_contracts::Config for Runtime {
     type UploadOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
     type InstantiateOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
     type ApiVersion = ();
+    type MaxTransientStorageSize = ConstU32<{ 1 * 1024 * 1024 }>;
 }
 
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
@@ -1211,6 +1212,11 @@ impl pallet_migrations::Config for Runtime {
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
 }
 
+impl cumulus_pallet_xcmp_queue::migration::v5::V5Config for Runtime {
+    // This must be the same as the `ChannelInfo` from the `Config`:
+    type ChannelList = ParachainSystem;
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1332,7 +1338,7 @@ parameter_types! {
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased = (cumulus_pallet_xcmp_queue::migration::v5::MigrateV4ToV5<Runtime>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
@@ -1812,6 +1818,10 @@ impl_runtime_apis! {
                 pallet_ethereum::CurrentTransactionStatuses::<Runtime>::get()
             )
         }
+
+        fn initialize_pending_block(header: &<Block as BlockT>::Header) {
+            Executive::initialize_block(header);
+        }
     }
 
     impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
@@ -1910,7 +1920,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl xcm_fee_payment_runtime_api::fees::XcmPaymentApi<Block> for Runtime {
+    impl xcm_runtime_apis::fees::XcmPaymentApi<Block> for Runtime {
         fn query_acceptable_payment_assets(xcm_version: xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
             if !matches!(xcm_version, xcm::v3::VERSION | xcm::v4::VERSION) {
                 return Err(XcmPaymentApiError::UnhandledXcmVersion);
@@ -1962,7 +1972,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl xcm_fee_payment_runtime_api::dry_run::DryRunApi<Block, RuntimeCall, RuntimeEvent, OriginCaller> for Runtime {
+    impl xcm_runtime_apis::dry_run::DryRunApi<Block, RuntimeCall, RuntimeEvent, OriginCaller> for Runtime {
         fn dry_run_call(origin: OriginCaller, call: RuntimeCall) -> Result<CallDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
             PolkadotXcm::dry_run_call::<Runtime, xcm_config::XcmRouter, OriginCaller, RuntimeCall>(origin, call)
         }

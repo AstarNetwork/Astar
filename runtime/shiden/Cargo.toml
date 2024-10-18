@@ -93,7 +93,7 @@ polkadot-runtime-common = { workspace = true }
 xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
-xcm-fee-payment-runtime-api = { workspace = true }
+xcm-runtime-apis = { workspace = true }
 
 # orml dependencies
 orml-oracle = { workspace = true }
@@ -180,7 +180,7 @@ std = [
 	"pallet-evm-precompile-dispatch-lockdrop/std",
 	"pallet-evm-precompile-ed25519/std",
 	"pallet-evm-precompile-modexp/std",
-	"xcm-fee-payment-runtime-api/std",
+	"xcm-runtime-apis/std",
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-dapp-staking/std",
 	"dapp-staking-runtime-api/std",
@@ -289,7 +289,7 @@ runtime-benchmarks = [
 	"polkadot-primitives/runtime-benchmarks",
 	"polkadot-runtime-common/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",
-	"xcm-fee-payment-runtime-api/runtime-benchmarks",
+	"xcm-runtime-apis/runtime-benchmarks",
 	"cumulus-primitives-core/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",

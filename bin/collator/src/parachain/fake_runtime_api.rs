@@ -224,6 +224,10 @@ impl_runtime_apis! {
         fn pending_block(_xts: Vec<<Block as BlockT>::Extrinsic>) -> (Option<pallet_ethereum::Block>, Option<Vec<fp_rpc::TransactionStatus>>) {
             unimplemented!()
         }
+
+        fn initialize_pending_block(_header: &<Block as BlockT>::Header) {
+            unimplemented!()
+        }
     }
 
     impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
