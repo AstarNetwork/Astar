@@ -1469,7 +1469,7 @@ impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
     type Paymaster = PayFromAccount<Balances, MainTreasuryAccount>;
     type BalanceConverter = UnityAssetBalanceConversion;
 
-    type SpendOrigin = TreasurySpender<EnsureRootOrHalfMainCouncil, MaxBalance>;
+    type SpendOrigin = TreasurySpender<EnsureRootOrHalfCommunityCouncil, MaxBalance>;
     type PayoutPeriod = ConstU32<{ 3 * DAYS }>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
