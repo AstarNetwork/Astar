@@ -18,9 +18,8 @@
 
 use crate::setup::*;
 
-use cumulus_primitives_core::Parent;
 use cumulus_primitives_core::Unlimited;
-use sp_runtime::traits::Zero;
+use sp_runtime::traits::{BlakeTwo256, Hash, Zero};
 use xcm::{
     v4::{
         Asset as XcmAsset, AssetId as XcmAssetId, Fungibility, Junction, Junctions::*, Location,
@@ -203,16 +202,20 @@ fn query_delivery_fees_is_ok() {
 #[test]
 fn dry_run_call_is_ok() {
     new_test_ext().execute_with(|| {
-        let origin = OriginCaller::system(frame_system::RawOrigin::Root.into());
+        let origin = OriginCaller::system(frame_system::RawOrigin::Signed(ALICE.clone()).into());
         // TODO: Improve this test using an XCM call with more side effects and compare local_xcm with recorded one to get ride of `xcm_recorder_configuration_is_ok` test
-        let call = RuntimeCall::System(frame_system::Call::remark {
+        let call = RuntimeCall::System(frame_system::Call::remark_with_event {
             remark: vec![0u8; 32],
         });
 
         let result = Runtime::dry_run_call(origin, call).expect("Must return some effects.");
+        assert_eq!(result.forwarded_xcms, vec![]);
         assert_eq!(
-            result.forwarded_xcms,
-            vec![(VersionedLocation::from((Parent, Here)), vec![],),]
+            result.emitted_events[0],
+            RuntimeEvent::System(frame_system::Event::Remarked {
+                sender: ALICE.into(),
+                hash: BlakeTwo256::hash_of(&[0u8; 32]).into(),
+            }),
         );
     })
 }
@@ -253,10 +256,7 @@ fn dry_run_xcm_is_ok() {
         let result = Runtime::dry_run_xcm(origin_location, versioned_xcm)
             .expect("Must return some effects.");
 
-        assert_eq!(
-            result.forwarded_xcms,
-            vec![(VersionedLocation::from((Parent, Here)), vec![],),]
-        );
+        assert_eq!(result.forwarded_xcms, vec![]);
 
         assert_eq!(
             result.emitted_events[0],
