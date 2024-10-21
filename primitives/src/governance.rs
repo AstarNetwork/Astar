@@ -18,7 +18,7 @@
 
 use crate::AccountId;
 use frame_support::traits::EitherOfDiverse;
-use frame_system::{EnsureRoot, EnsureWithSuccess};
+use frame_system::EnsureRoot;
 
 pub type OracleMembershipInst = pallet_membership::Instance1;
 pub type MainCouncilMembershipInst = pallet_membership::Instance2;
@@ -43,9 +43,6 @@ pub type EnsureRootOrTwoThirdsMainCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, MainCouncilCollectiveInst, 2, 3>,
 >;
-
-pub type TreasurySpender<EnsureOrigin, Balance> =
-    EnsureWithSuccess<EnsureOrigin, AccountId, Balance>;
 
 pub type EnsureRootOrHalfMainCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,

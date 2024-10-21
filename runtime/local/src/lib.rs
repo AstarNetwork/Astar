@@ -75,7 +75,7 @@ use astar_primitives::{
         EnsureRootOrTwoThirdsCommunityCouncil, EnsureRootOrTwoThirdsMainCouncil,
         EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
         MainCouncilMembershipInst, MainTreasuryInst, TechnicalCommitteeCollectiveInst,
-        TechnicalCommitteeMembershipInst, TreasurySpender,
+        TechnicalCommitteeMembershipInst,
     },
     Address, AssetId, Balance, BlockNumber, Hash, Header, Nonce,
 };
@@ -1020,8 +1020,8 @@ impl pallet_democracy::Config for Runtime {
 }
 
 parameter_types! {
+    pub const ProposalBond: Permill = Permill::from_percent(5);
     pub MainTreasuryAccount: AccountId = Treasury::account_id();
-    pub const MaxBalance: Balance = Balance::MAX;
 }
 
 impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
@@ -1029,9 +1029,14 @@ impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
 
-    // Origin to reject the spending proposal
+    // Two origins which can either approve or reject the spending proposal
+    type ApproveOrigin = EnsureRootOrTwoThirdsMainCouncil;
     type RejectOrigin = EnsureRootOrTwoThirdsMainCouncil;
 
+    type OnSlash = Treasury;
+    type ProposalBond = ProposalBond;
+    type ProposalBondMinimum = ConstU128<{ 10 * AST }>;
+    type ProposalBondMaximum = ConstU128<{ 100 * AST }>;
     type SpendPeriod = ConstU32<{ 1 * MINUTES }>;
 
     // We don't do periodic burns of the treasury
@@ -1046,8 +1051,10 @@ impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type Paymaster = PayFromAccount<Balances, MainTreasuryAccount>;
     type BalanceConverter = UnityAssetBalanceConversion;
 
-    type SpendOrigin = TreasurySpender<EnsureRootOrTwoThirdsMainCouncil, MaxBalance>;
-    type PayoutPeriod = ConstU32<{ 30 * MINUTES }>;
+    // New approach to using treasury, useful for OpenGov but not necessarily for us.
+    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+    // Only used by 'spend' approach which is disabled
+    type PayoutPeriod = ConstU32<0>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
@@ -1062,9 +1069,14 @@ impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
 
-    // Origin to reject the spending proposal
+    // Two origins which can either approve or reject the spending proposal
+    type ApproveOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
     type RejectOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
 
+    type OnSlash = CommunityTreasury;
+    type ProposalBond = ProposalBond;
+    type ProposalBondMinimum = ConstU128<{ 10 * AST }>;
+    type ProposalBondMaximum = ConstU128<{ 100 * AST }>;
     type SpendPeriod = ConstU32<{ 1 * MINUTES }>;
 
     // We don't do periodic burns of the community treasury
@@ -1080,8 +1092,9 @@ impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
     type BalanceConverter = UnityAssetBalanceConversion;
 
     // New approach to using treasury, useful for OpenGov but not necessarily for us.
-    type SpendOrigin = TreasurySpender<EnsureRootOrTwoThirdsMainCouncil, MaxBalance>;
-    type PayoutPeriod = ConstU32<{ 30 * MINUTES }>;
+    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+    // Only used by 'spend' approach which is disabled
+    type PayoutPeriod = ConstU32<0>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
