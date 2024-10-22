@@ -6,7 +6,6 @@
         "exclude": [
             "pallets/collator-selection/**",
             "pallets/custom-signatures/**",
-            "pallets/treasury/**",
             "precompiles/utils/**",
             "precompiles/utils_v2/**",
             "vendor/**"
