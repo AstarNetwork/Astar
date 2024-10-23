@@ -38,6 +38,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["pallet_inflation",["",[],["lib.rs","migration.rs","weights.rs"]]],\
 ["pallet_price_aggregator",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_static_price_provider",["",[],["lib.rs"]]],\
+["pallet_treasury",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_unified_accounts",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_xc_asset_config",["",[],["lib.rs","migrations.rs","weights.rs"]]],\
 ["shibuya_runtime",["",[["weights",[["xcm",[],["fungible.rs","generic.rs","mod.rs"]]],["mod.rs","orml_oracle.rs","pallet_assets.rs","pallet_balances.rs","pallet_dapp_staking.rs","pallet_inflation.rs","pallet_xcm.rs"]]],["chain_extensions.rs","genesis_config.rs","lib.rs","precompiles.rs","xcm_config.rs"]]],\

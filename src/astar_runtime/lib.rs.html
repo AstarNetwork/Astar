@@ -2418,6 +2418,16 @@
 <a href="#2416" id="2416">2416</a>
 <a href="#2417" id="2417">2417</a>
 <a href="#2418" id="2418">2418</a>
+<a href="#2419" id="2419">2419</a>
+<a href="#2420" id="2420">2420</a>
+<a href="#2421" id="2421">2421</a>
+<a href="#2422" id="2422">2422</a>
+<a href="#2423" id="2423">2423</a>
+<a href="#2424" id="2424">2424</a>
+<a href="#2425" id="2425">2425</a>
+<a href="#2426" id="2426">2426</a>
+<a href="#2427" id="2427">2427</a>
+<a href="#2428" id="2428">2428</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2491,7 +2501,7 @@
     v4::{AssetId <span class="kw">as </span>XcmAssetId, Location <span class="kw">as </span>XcmLocation},
     IntoVersion, VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm,
 };
-<span class="kw">use </span>xcm_fee_payment_runtime_api::{
+<span class="kw">use </span>xcm_runtime_apis::{
     dry_run::{CallDryRunEffects, Error <span class="kw">as </span>XcmDryRunApiError, XcmDryRunEffects},
     fees::Error <span class="kw">as </span>XcmPaymentApiError,
 };
@@ -3146,6 +3156,7 @@
     <span class="kw">type </span>UploadOrigin = EnsureSigned&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;;
     <span class="kw">type </span>InstantiateOrigin = EnsureSigned&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;;
     <span class="kw">type </span>ApiVersion = ();
+    <span class="kw">type </span>MaxTransientStorageSize = ConstU32&lt;{ <span class="number">1 </span>* <span class="number">1024 </span>* <span class="number">1024 </span>}&gt;;
 }
 
 <span class="comment">// These values are based on the Astar 2.0 Tokenomics Modeling report.
@@ -3631,6 +3642,11 @@
     <span class="kw">type </span>WeightInfo = pallet_migrations::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
+<span class="kw">impl </span>cumulus_pallet_xcmp_queue::migration::v5::V5Config <span class="kw">for </span>Runtime {
+    <span class="comment">// This must be the same as the `ChannelInfo` from the `Config`:
+    </span><span class="kw">type </span>ChannelList = ParachainSystem;
+}
+
 <span class="macro">construct_runtime!</span>(
     <span class="kw">pub struct </span>Runtime
     {
@@ -3752,7 +3768,7 @@
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = ();
+</span><span class="kw">pub type </span>Unreleased = (cumulus_pallet_xcmp_queue::migration::v5::MigrateV4ToV5&lt;Runtime&gt;,);
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);
@@ -4232,6 +4248,10 @@
                 pallet_ethereum::CurrentTransactionStatuses::&lt;Runtime&gt;::get()
             )
         }
+
+        <span class="kw">fn </span>initialize_pending_block(header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header) {
+            Executive::initialize_block(header);
+        }
     }
 
     <span class="kw">impl </span>fp_rpc::ConvertTransactionRuntimeApi&lt;Block&gt; <span class="kw">for </span>Runtime {
@@ -4330,7 +4350,7 @@
         }
     }
 
-    <span class="kw">impl </span>xcm_fee_payment_runtime_api::fees::XcmPaymentApi&lt;Block&gt; <span class="kw">for </span>Runtime {
+    <span class="kw">impl </span>xcm_runtime_apis::fees::XcmPaymentApi&lt;Block&gt; <span class="kw">for </span>Runtime {
         <span class="kw">fn </span>query_acceptable_payment_assets(xcm_version: xcm::Version) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;VersionedAssetId&gt;, XcmPaymentApiError&gt; {
             <span class="kw">if </span>!<span class="macro">matches!</span>(xcm_version, xcm::v3::VERSION | xcm::v4::VERSION) {
                 <span class="kw">return </span><span class="prelude-val">Err</span>(XcmPaymentApiError::UnhandledXcmVersion);
@@ -4382,7 +4402,7 @@
         }
     }
 
-    <span class="kw">impl </span>xcm_fee_payment_runtime_api::dry_run::DryRunApi&lt;Block, RuntimeCall, RuntimeEvent, OriginCaller&gt; <span class="kw">for </span>Runtime {
+    <span class="kw">impl </span>xcm_runtime_apis::dry_run::DryRunApi&lt;Block, RuntimeCall, RuntimeEvent, OriginCaller&gt; <span class="kw">for </span>Runtime {
         <span class="kw">fn </span>dry_run_call(origin: OriginCaller, call: RuntimeCall) -&gt; <span class="prelude-ty">Result</span>&lt;CallDryRunEffects&lt;RuntimeEvent&gt;, XcmDryRunApiError&gt; {
             PolkadotXcm::dry_run_call::&lt;Runtime, xcm_config::XcmRouter, OriginCaller, RuntimeCall&gt;(origin, call)
         }

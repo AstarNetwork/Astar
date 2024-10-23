@@ -256,7 +256,7 @@
     Client::Api: AuraApi&lt;Block, AuraId&gt;,
 {
     <span class="kw">async fn </span>verify(
-        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
         block_import: BlockImportParams&lt;Block&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;BlockImportParams&lt;Block&gt;, String&gt; {
         <span class="kw">if </span><span class="self">self

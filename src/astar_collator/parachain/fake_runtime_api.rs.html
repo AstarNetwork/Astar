@@ -299,6 +299,10 @@
 <a href="#297" id="297">297</a>
 <a href="#298" id="298">298</a>
 <a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -523,6 +527,10 @@
         <span class="kw">fn </span>gas_limit_multiplier_support() {}
 
         <span class="kw">fn </span>pending_block(_xts: Vec&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic&gt;) -&gt; (<span class="prelude-ty">Option</span>&lt;pallet_ethereum::Block&gt;, <span class="prelude-ty">Option</span>&lt;Vec&lt;fp_rpc::TransactionStatus&gt;&gt;) {
+            <span class="macro">unimplemented!</span>()
+        }
+
+        <span class="kw">fn </span>initialize_pending_block(_header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header) {
             <span class="macro">unimplemented!</span>()
         }
     }
