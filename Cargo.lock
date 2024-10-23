@@ -459,7 +459,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.44.0"
+version = "5.45.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
