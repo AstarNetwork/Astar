@@ -96,6 +96,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+
 #[cfg(feature = "std")]
 /// Wasm binary unwrapped. If built with `BUILD_DUMMY_WASM_BINARY`, the function panics.
 pub fn wasm_binary_unwrap() -> &'static [u8] {
@@ -748,6 +749,7 @@ impl pallet_contracts::Config for Runtime {
     type UploadOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
     type InstantiateOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
     type ApiVersion = ();
+    type MaxTransientStorageSize = ConstU32<{ 1 * 1024 * 1024 }>;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -1697,6 +1699,10 @@ impl_runtime_apis! {
                 pallet_ethereum::CurrentBlock::<Runtime>::get(),
                 pallet_ethereum::CurrentTransactionStatuses::<Runtime>::get()
             )
+        }
+
+        fn initialize_pending_block(header: &<Block as BlockT>::Header) {
+            Executive::initialize_block(header);
         }
     }
 

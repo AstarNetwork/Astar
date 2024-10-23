@@ -236,8 +236,9 @@ pub mod pallet {
                 .invulnerables
                 .iter()
                 .collect::<sp_std::collections::btree_set::BTreeSet<_>>();
-            assert!(
-                duplicate_invulnerables.len() == self.invulnerables.len(),
+            assert_eq!(
+                duplicate_invulnerables.len(),
+                self.invulnerables.len(),
                 "duplicate invulnerables in genesis."
             );
 

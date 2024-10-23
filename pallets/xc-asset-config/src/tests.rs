@@ -87,7 +87,7 @@ fn register_asset_location_and_units_per_sec_is_ok() {
         ));
         System::assert_last_event(mock::RuntimeEvent::XcAssetConfig(Event::AssetRegistered {
             asset_location: asset_location.clone().into_versioned(),
-            asset_id: asset_id,
+            asset_id,
         }));
 
         // Assert storage state after registering asset
@@ -182,7 +182,7 @@ fn change_asset_location_is_ok() {
         System::assert_last_event(mock::RuntimeEvent::XcAssetConfig(
             Event::AssetLocationChanged {
                 previous_asset_location: asset_location.clone().into_versioned(),
-                asset_id: asset_id,
+                asset_id,
                 new_asset_location: new_asset_location.clone().into_versioned(),
             },
         ));
@@ -275,7 +275,7 @@ fn remove_asset_is_ok() {
         assert_ok!(XcAssetConfig::remove_asset(RuntimeOrigin::root(), asset_id,));
         System::assert_last_event(mock::RuntimeEvent::XcAssetConfig(Event::AssetRemoved {
             asset_location: asset_location.clone().into_versioned(),
-            asset_id: asset_id,
+            asset_id,
         }));
 
         // Assert that storage is empty after successful removal
@@ -351,7 +351,7 @@ fn public_interfaces_are_ok() {
         );
         assert!(XcAssetConfig::get_units_per_second(asset_location.clone()).is_none());
 
-        // Register ups and expect value value to be returned
+        // Register ups and expect value to be returned
         assert_ok!(XcAssetConfig::set_asset_units_per_second(
             RuntimeOrigin::root(),
             Box::new(asset_location.clone().into_versioned()),
@@ -388,6 +388,7 @@ fn different_xcm_versions_are_ok() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn incompatible_versioned_multilocations_are_not_ok() {
     ExternalityBuilder::build().execute_with(|| {
         // Location that cannot be converted from v2 to v4

@@ -1,0 +1,59 @@
+[package]
+name = "pallet-treasury"
+version = "36.0.1"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+homepage = "https://paritytech.github.io/polkadot-sdk/"
+license = "GPL-3.0-only"
+repository = "https://github.com/paritytech/polkadot-sdk.git"
+description = "FRAME pallet to manage treasury (polkadot v1.15.0)"
+readme = "README.md"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+docify = { workspace = true }
+frame-benchmarking = { optional = true, workspace = true }
+frame-support.workspace = true
+frame-system.workspace = true
+impl-trait-for-tuples = { workspace = true }
+pallet-balances.workspace = true
+parity-scale-codec = { features = ["derive", "max-encoded-len"], workspace = true }
+scale-info = { features = ["derive"], workspace = true }
+serde = { features = ["derive"], optional = true, workspace = true, default-features = true }
+sp-core = { optional = true, workspace = true }
+sp-runtime.workspace = true
+
+[dev-dependencies]
+pallet-utility = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"frame-benchmarking?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-balances/std",
+	"scale-info/std",
+	"serde",
+	"sp-core?/std",
+	"sp-runtime/std",
+]
+runtime-benchmarks = [
+	"dep:sp-core",
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-balances/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-balances/try-runtime",
+	"sp-runtime/try-runtime",
+]
