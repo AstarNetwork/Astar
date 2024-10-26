@@ -123,6 +123,7 @@ pallet-inflation = { workspace = true }
 pallet-price-aggregator = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
+vesting-mbm = { workspace = true }
 
 dapp-staking-runtime-api = { workspace = true }
 
@@ -243,6 +244,7 @@ std = [
 	"pallet-xcm-benchmarks?/std",
 	"precompile-utils/std",
 	"scale-info/std",
+	"vesting-mbm/std"
 ]
 runtime-benchmarks = [
 	"log",
@@ -294,6 +296,7 @@ runtime-benchmarks = [
 	"pallet-message-queue/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
 	"orml-oracle/runtime-benchmarks",
+	"vesting-mbm/runtime-benchmarks"
 ]
 try-runtime = [
 	"astar-primitives/try-runtime",
@@ -341,6 +344,7 @@ try-runtime = [
 	"pallet-chain-extension-assets/try-runtime",
 	"polkadot-runtime-common/try-runtime",
 	"sp-runtime/try-runtime",
+	"vesting-mbm/try-runtime"
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

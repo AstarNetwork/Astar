@@ -14536,6 +14536,7 @@ dependencies = [
  "staging-xcm-builder",
  "staging-xcm-executor",
  "substrate-wasm-builder",
+ "vesting-mbm",
  "xcm-runtime-apis",
 ]
 
