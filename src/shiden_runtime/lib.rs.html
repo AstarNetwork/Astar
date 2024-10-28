@@ -2432,6 +2432,11 @@
 <a href="#2430" id="2430">2430</a>
 <a href="#2431" id="2431">2431</a>
 <a href="#2432" id="2432">2432</a>
+<a href="#2433" id="2433">2433</a>
+<a href="#2434" id="2434">2434</a>
+<a href="#2435" id="2435">2435</a>
+<a href="#2436" id="2436">2436</a>
+<a href="#2437" id="2437">2437</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2574,7 +2579,7 @@
 }
 
 <span class="doccomment">/// Change this to adjust the block time.
-</span><span class="kw">pub const </span>MILLISECS_PER_BLOCK: u64 = <span class="number">12000</span>;
+</span><span class="kw">pub const </span>MILLISECS_PER_BLOCK: u64 = <span class="number">6000</span>;
 <span class="kw">pub const </span>SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
 <span class="comment">// Time is measured by number of blocks.
@@ -2584,7 +2589,7 @@
 
 <span class="doccomment">/// Maximum number of blocks simultaneously accepted by the Runtime, not yet included into the
 /// relay chain.
-</span><span class="kw">pub const </span>UNINCLUDED_SEGMENT_CAPACITY: u32 = <span class="number">1</span>;
+</span><span class="kw">pub const </span>UNINCLUDED_SEGMENT_CAPACITY: u32 = <span class="number">3</span>;
 <span class="doccomment">/// How many parachain blocks are processed by the relay chain per parent. Limits the number of
 /// blocks authored per slot.
 </span><span class="kw">pub const </span>BLOCK_PROCESSING_VELOCITY: u32 = <span class="number">1</span>;
@@ -2639,9 +2644,9 @@
 <span class="doccomment">/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
 /// by  Operational  extrinsics.
 </span><span class="kw">const </span>NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(<span class="number">75</span>);
-<span class="doccomment">/// We allow for 0.5 seconds of compute with a 6 second average block time.
+<span class="doccomment">/// We allow for 2 seconds of compute with a 6 second average block time.
 </span><span class="kw">const </span>MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
-    WEIGHT_REF_TIME_PER_SECOND.saturating_div(<span class="number">2</span>),
+    WEIGHT_REF_TIME_PER_SECOND.saturating_mul(<span class="number">2</span>),
     polkadot_primitives::MAX_POV_SIZE <span class="kw">as </span>u64,
 );
 
@@ -2734,15 +2739,10 @@
     <span class="kw">type </span>PostTransactions = ();
 }
 
-<span class="macro">parameter_types! </span>{
-    <span class="kw">pub const </span>MinimumPeriod: u64 = MILLISECS_PER_BLOCK / <span class="number">2</span>;
-}
-
 <span class="kw">impl </span>pallet_timestamp::Config <span class="kw">for </span>Runtime {
-    <span class="doccomment">/// A timestamp: milliseconds since the unix epoch.
-    </span><span class="kw">type </span>Moment = u64;
-    <span class="kw">type </span>OnTimestampSet = ();
-    <span class="kw">type </span>MinimumPeriod = MinimumPeriod;
+    <span class="kw">type </span>Moment = u64;
+    <span class="kw">type </span>OnTimestampSet = Aura;
+    <span class="kw">type </span>MinimumPeriod = ConstU64&lt;<span class="number">0</span>&gt;;
     <span class="kw">type </span>WeightInfo = pallet_timestamp::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
@@ -2972,7 +2972,7 @@
     <span class="kw">type </span>AuthorityId = AuraId;
     <span class="kw">type </span>DisabledValidators = ();
     <span class="kw">type </span>MaxAuthorities = ConstU32&lt;<span class="number">250</span>&gt;;
-    <span class="kw">type </span>AllowMultipleBlocksPerSlot = ConstBool&lt;<span class="bool-val">false</span>&gt;;
+    <span class="kw">type </span>AllowMultipleBlocksPerSlot = ConstBool&lt;<span class="bool-val">true</span>&gt;;
     <span class="kw">type </span>SlotDuration = ConstU64&lt;SLOT_DURATION&gt;;
 }
 
@@ -3341,8 +3341,8 @@
     /// max_gas_limit = max_tx_ref_time / WEIGHT_PER_GAS = max_pov_size * gas_limit_pov_size_ratio
     /// gas_limit_pov_size_ratio = ceil((max_tx_ref_time / WEIGHT_PER_GAS) / max_pov_size)
     ///
-    /// Equals 4 for values used by Shiden runtime.
-    </span><span class="kw">pub const </span>GasLimitPovSizeRatio: u64 = <span class="number">4</span>;
+    /// Equals 16 for values used by Shiden runtime.
+    </span><span class="kw">pub const </span>GasLimitPovSizeRatio: u64 = <span class="number">16</span>;
 }
 
 <span class="kw">impl </span>pallet_evm::Config <span class="kw">for </span>Runtime {
@@ -3540,7 +3540,7 @@
 <span class="macro">parameter_types! </span>{
     <span class="kw">pub const </span>NativeCurrencyId: CurrencyId = CurrencyId::SDN;
     <span class="comment">// Aggregate values for one day.
-    </span><span class="kw">pub const </span>AggregationDuration: BlockNumber = <span class="number">7200</span>;
+    </span><span class="kw">pub const </span>AggregationDuration: BlockNumber = DAYS;
 }
 
 <span class="kw">impl </span>pallet_price_aggregator::Config <span class="kw">for </span>Runtime {
@@ -3633,7 +3633,13 @@
 <span class="kw">impl </span>pallet_migrations::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
-    </span><span class="kw">type </span>Migrations = ();
+    </span><span class="kw">type </span>Migrations = (
+        pallet_dapp_staking::migration::LazyMigration&lt;
+            Runtime,
+            pallet_dapp_staking::weights::SubstrateWeight&lt;Runtime&gt;,
+        &gt;,
+        vesting_mbm::LazyMigration&lt;Runtime, vesting_mbm::weights::SubstrateWeight&lt;Runtime&gt;&gt;,
+    );
     <span class="comment">// Benchmarks need mocked migrations to guarantee that they succeed.
     </span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
     </span><span class="kw">type </span>Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -3772,7 +3778,11 @@
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = (cumulus_pallet_xcmp_queue::migration::v5::MigrateV4ToV5&lt;Runtime&gt;,);
+</span><span class="kw">pub type </span>Unreleased = (
+    cumulus_pallet_xcmp_queue::migration::v5::MigrateV4ToV5&lt;Runtime&gt;,
+    pallet_dapp_staking::migration::AdjustEraMigration&lt;Runtime&gt;,
+    pallet_inflation::migration::AdjustBlockRewardMigration&lt;Runtime&gt;,
+);
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);
