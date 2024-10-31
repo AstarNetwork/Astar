@@ -8,58 +8,49 @@ import path from "path";
 type Await<T> = T extends PromiseLike<infer U> ? U : T;
 type Commits = Await<ReturnType<Octokit["rest"]["repos"]["compareCommits"]>>["data"]["commits"];
 
+function getPackageInfo(tag: string, packageName: string) {
+  let packageInfo: string;
+  try {
+    packageInfo = execSync(
+      `git show ${tag}:../../Cargo.lock | grep ${packageName}? | grep source | head -1 | grep -o '".*"'`
+    ).toString();
+  } catch (error) {
+    console.error('An error occurred while executing the shell command:', error);
+    return null;
+  }
+
+  const commitMatch = /#([0-9a-f]*)/g.exec(packageInfo);
+  if (commitMatch == null) {
+    return null;
+  }
+  const commit = commitMatch[1].slice(0, 8);
+
+  const repoMatch = /(https:\/\/.*)\?/g.exec(packageInfo);
+  if (repoMatch == null) {
+    return null;
+  }
+  const repo = repoMatch[1];
+
+  return { commit, repo };
+}
+
 function getCompareLink(packageName: string, previousTag: string, newTag: string) {
-  // Previous
-  let previousPackage: string;
-  try {
-    previousPackage = execSync(
-      `git show ${previousTag}:../../Cargo.lock | grep ${packageName}? | head -1 | grep -o '".*"'`
-    ).toString();
-  } catch (error) {
-    console.error('An error occurred while executing the shell command:', error);
-    return ""
+  const previousPackageInfo = getPackageInfo(previousTag, packageName);
+  if (previousPackageInfo == null) {
+    return "";
   }
 
-  const previousCommitTmp = /#([0-9a-f]*)/g.exec(previousPackage);
-  if (previousCommitTmp == null) { // regexp didn't match
-    return ""
-  };
-  const previousCommit = previousCommitTmp[1].slice(0, 8);
-
-  const previousRepoTmp = /(https:\/\/.*)\?/g.exec(previousPackage);
-  if (previousRepoTmp == null) {
-    return ""
-  };
-  const previousRepo = previousRepoTmp[1];
-
-  // New
-  let newPackage: string;
-  try {
-    newPackage = execSync(
-      `git show ${newTag}:../../Cargo.lock | grep ${packageName}? | head -1 | grep -o '".*"'`
-    ).toString();
-  } catch (error) {
-    console.error('An error occurred while executing the shell command:', error);
-    return ""
+  const newPackageInfo = getPackageInfo(newTag, packageName);
+  if (newPackageInfo == null) {
+    return "";
   }
 
-  const newCommitTmp = /#([0-9a-f]*)/g.exec(newPackage)
-  if (newCommitTmp == null) {
-    return ""
-  };
-  const newCommit = newCommitTmp[1].slice(0, 8);
-
-  const newRepoTmp = /(https:\/\/.*)\?/g.exec(newPackage);
-  if (newRepoTmp == null) {
-    return ""
-  }
-  const newRepo = newRepoTmp[1];
-  const newRepoOrganization = /github.com\/([^\/]*)/g.exec(newRepo)[1];
+  const newRepoOrganization = /github.com\/([^\/]*)/g.exec(newPackageInfo.repo)[1];
 
   const diffLink =
-    previousRepo !== newRepo
-      ? `${previousRepo}/compare/${previousCommit}...${newRepoOrganization}:${newCommit}`
-      : `${previousRepo}/compare/${previousCommit}...${newCommit}`;
+  previousPackageInfo.repo !== newPackageInfo.repo
+      ? `${previousPackageInfo.repo}/compare/${previousPackageInfo.commit}...${newRepoOrganization}:${newPackageInfo.commit}`
+      : `${previousPackageInfo.repo}/compare/${previousPackageInfo.commit}...${newPackageInfo.commit}`;
 
   return diffLink;
 }
