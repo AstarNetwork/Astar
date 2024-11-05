@@ -1194,13 +1194,7 @@ parameter_types! {
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations = (
-        pallet_dapp_staking::migration::LazyMigration<
-            Runtime,
-            pallet_dapp_staking::weights::SubstrateWeight<Runtime>,
-        >,
-        vesting_mbm::LazyMigration<Runtime, vesting_mbm::weights::SubstrateWeight<Runtime>>,
-    );
+    type Migrations = ();
     // Benchmarks need mocked migrations to guarantee that they succeed.
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -1339,11 +1333,7 @@ parameter_types! {
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (
-    cumulus_pallet_xcmp_queue::migration::v5::MigrateV4ToV5<Runtime>,
-    pallet_dapp_staking::migration::AdjustEraMigration<Runtime>,
-    pallet_inflation::migration::AdjustBlockRewardMigration<Runtime>,
-);
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
