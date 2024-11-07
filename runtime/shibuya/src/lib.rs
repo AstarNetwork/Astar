@@ -129,6 +129,10 @@ pub type Precompiles = ShibuyaPrecompiles<Runtime, ShibuyaAssetLocationIdConvert
 
 use chain_extensions::ShibuyaChainExtensions;
 
+use frame_system::EnsureRootWithSuccess;
+use pallet_safe_mode;
+use pallet_tx_pause;
+
 /// Constant values used within the runtime.
 pub const MICROSBY: Balance = 1_000_000_000_000;
 pub const MILLISBY: Balance = 1_000 * MICROSBY;
@@ -1522,7 +1526,13 @@ parameter_types! {
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations = ();
+    type Migrations = (
+        pallet_dapp_staking::migration::LazyMigration<
+            Runtime,
+            pallet_dapp_staking::weights::SubstrateWeight<Runtime>,
+        >,
+        vesting_mbm::LazyMigration<Runtime, vesting_mbm::weights::SubstrateWeight<Runtime>>,
+    );
     // Benchmarks need mocked migrations to guarantee that they succeed.
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -1608,6 +1618,8 @@ construct_runtime!(
         CollectiveProxy: pallet_collective_proxy = 109,
 
         MultiBlockMigrations: pallet_migrations = 120,
+        TxPause: pallet_tx_pause = 200,
+        SafeMode: pallet_safe_mode = 201,
 
         #[cfg(feature = "runtime-benchmarks")]
         VestingMBM: vesting_mbm = 250,
@@ -1655,7 +1667,7 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased = (cumulus_pallet_xcmp_queue::migration::v5::MigrateV4ToV5<Runtime>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
@@ -1664,6 +1676,52 @@ type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
     <Runtime as frame_system::Config>::Hash,
 >;
+
+parameter_types! {
+    pub const EnterDuration: BlockNumber = 4 * HOURS;
+    pub const EnterDepositAmount: Balance = 2_000_000 * SBY;
+    pub const ExtendDuration: BlockNumber = 2 * HOURS;
+    pub const ExtendDepositAmount: Balance = 1_000_000 * SBY;
+    pub const ReleaseDelay: u32 = 2 * DAYS;
+}
+
+pub struct SafeModeWhitelistedCalls;
+impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
+    fn contains(call: &RuntimeCall) -> bool {
+        match call {
+            RuntimeCall::System(_) | RuntimeCall::SafeMode(_) | RuntimeCall::TxPause(_) => true,
+            _ => false,
+        }
+    }
+}
+
+impl pallet_safe_mode::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type WhitelistedCalls = SafeModeWhitelistedCalls;
+    type EnterDuration = EnterDuration;
+    type EnterDepositAmount = EnterDepositAmount;
+    type ExtendDuration = ExtendDuration;
+    type ExtendDepositAmount = ExtendDepositAmount;
+    type ForceEnterOrigin = EnsureRootWithSuccess<AccountId, ConstU32<9>>;
+    type ForceExtendOrigin = EnsureRootWithSuccess<AccountId, ConstU32<11>>;
+    type ForceExitOrigin = EnsureRoot<AccountId>;
+    type ForceDepositOrigin = EnsureRoot<AccountId>;
+    type ReleaseDelay = ReleaseDelay;
+    type Notify = ();
+    type WeightInfo = pallet_safe_mode::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_tx_pause::Config for Runtime {
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type PauseOrigin = EnsureRoot<AccountId>; // Authority required to pause transactions.
+    type UnpauseOrigin = EnsureRoot<AccountId>; // Authority required to unpause transactions.
+    type WhitelistedCalls = ();
+    type MaxNameLen = ConstU32<32>; // Maximum length of name, adjust as needed.
+    type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>; // Weight information.
+}
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
     type SignedInfo = H160;

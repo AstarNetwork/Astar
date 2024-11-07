@@ -79,7 +79,8 @@ pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 vesting-mbm = { workspace = true }
-
+pallet-tx-pause = { workspace = true, default-features = false }
+pallet-safe-mode = { workspace = true, default-features = false }
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }
 cumulus-pallet-parachain-system = { workspace = true }
@@ -153,6 +154,8 @@ substrate-wasm-builder = { workspace = true, optional = true }
 [features]
 default = ["std"]
 std = [
+	"pallet-tx-pause/std",
+	"pallet-safe-mode/std",
 	"parity-scale-codec/std",
 	"serde_json/std",
 	"fp-rpc/std",
