@@ -15,9 +15,6 @@
     "typescript": "5.6",
     "vitest": "^2.1"
   },
-  "resolutions": {
-    "lru-cache": "10"
-  },
   "prettier": {
     "tabWidth": 2,
     "singleQuote": true
