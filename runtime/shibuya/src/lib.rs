@@ -132,6 +132,9 @@ use chain_extensions::ShibuyaChainExtensions;
 use frame_system::EnsureRootWithSuccess;
 use pallet_safe_mode;
 use pallet_tx_pause;
+type SafeModeTxPauseFilter = InsideBoth<SafeModeWhitelistedCalls, TxPauseWhitelistedCalls>;
+type BaseCallFilter = InsideBoth<BaseFilter, SafeModeTxPauseFilter>;
+use frame_support::traits::InsideBoth;
 
 /// Constant values used within the runtime.
 pub const MICROSBY: Balance = 1_000_000_000_000;
@@ -1618,8 +1621,9 @@ construct_runtime!(
         CollectiveProxy: pallet_collective_proxy = 109,
 
         MultiBlockMigrations: pallet_migrations = 120,
-        TxPause: pallet_tx_pause = 200,
-        SafeMode: pallet_safe_mode = 201,
+        SafeMode: pallet_safe_mode = 130,
+TxPause: pallet_tx_pause = 131,
+
 
         #[cfg(feature = "runtime-benchmarks")]
         VestingMBM: vesting_mbm = 250,
@@ -1685,11 +1689,25 @@ parameter_types! {
     pub const ReleaseDelay: u32 = 2 * DAYS;
 }
 
+pub struct TxPauseWhitelistedCalls;
+impl Contains<pallet_tx_pause::RuntimeCallNameOf<Runtime>> for TxPauseWhitelistedCalls {
+    fn contains(full_name: &pallet_tx_pause::RuntimeCallNameOf<Runtime>) -> bool {
+        matches!(
+            full_name.0.as_slice(),
+            b"Sudo" | b"System" | b"Timestamp" | b"TxPause"
+        )
+    }
+}
 pub struct SafeModeWhitelistedCalls;
 impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
     fn contains(call: &RuntimeCall) -> bool {
         match call {
             RuntimeCall::System(_) | RuntimeCall::SafeMode(_) | RuntimeCall::TxPause(_) => true,
+            _ => false,
+            RuntimeCall::System(_)
+            | RuntimeCall::SafeMode(_)
+            | RuntimeCall::TxPause(_)
+            | RuntimeCall::Sudo(_) => true,
             _ => false,
         }
     }
@@ -1719,7 +1737,7 @@ impl pallet_tx_pause::Config for Runtime {
     type PauseOrigin = EnsureRoot<AccountId>; // Authority required to pause transactions.
     type UnpauseOrigin = EnsureRoot<AccountId>; // Authority required to unpause transactions.
     type WhitelistedCalls = ();
-    type MaxNameLen = ConstU32<32>; // Maximum length of name, adjust as needed.
+    type MaxNameLen = ConstU32<256>; // Maximum length of name, adjust as needed.
     type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>; // Weight information.
 }
 
