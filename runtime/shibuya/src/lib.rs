@@ -135,7 +135,9 @@ use pallet_tx_pause;
 type SafeModeTxPauseFilter = InsideBoth<SafeModeWhitelistedCalls, TxPauseWhitelistedCalls>;
 type BaseCallFilter = InsideBoth<BaseFilter, SafeModeTxPauseFilter>;
 use frame_support::traits::InsideBoth;
-
+use frame_system::EnsureWithSuccess;
+use frame_system::pallet_prelude::BlockNumberFor;
+use frame_support::traits::EitherOfDiverse;
 /// Constant values used within the runtime.
 pub const MICROSBY: Balance = 1_000_000_000_000;
 pub const MILLISBY: Balance = 1_000 * MICROSBY;
@@ -1530,11 +1532,7 @@ impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     #[cfg(not(feature = "runtime-benchmarks"))]
     type Migrations = (
-        pallet_dapp_staking::migration::LazyMigration<
-            Runtime,
-            pallet_dapp_staking::weights::SubstrateWeight<Runtime>,
-        >,
-        vesting_mbm::LazyMigration<Runtime, vesting_mbm::weights::SubstrateWeight<Runtime>>,
+       
     );
     // Benchmarks need mocked migrations to guarantee that they succeed.
     #[cfg(feature = "runtime-benchmarks")]
@@ -1671,10 +1669,10 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (cumulus_pallet_xcmp_queue::migration::v5::MigrateV4ToV5<Runtime>,);
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
-pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
+pub type Permanent = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1688,6 +1686,7 @@ parameter_types! {
     pub const ExtendDepositAmount: Balance = 1_000_000 * SBY;
     pub const ReleaseDelay: u32 = 2 * DAYS;
 }
+// OpsMaintainer origins
 
 pub struct TxPauseWhitelistedCalls;
 impl Contains<pallet_tx_pause::RuntimeCallNameOf<Runtime>> for TxPauseWhitelistedCalls {

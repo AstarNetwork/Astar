@@ -271,6 +271,8 @@ std = [
 	"vesting-mbm/std",
 ]
 runtime-benchmarks = [
+	"pallet-tx-pause/runtime-benchmarks",
+	"pallet-safe-mode/runtime-benchmarks",
 	"astar-xcm-benchmarks/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"pallet-collective-proxy/runtime-benchmarks",
@@ -330,6 +332,8 @@ runtime-benchmarks = [
 	"vesting-mbm/runtime-benchmarks",
 ]
 try-runtime = [
+	"pallet-tx-pause/try-runtime",
+	"pallet-safe-mode/try-runtime",
 	"fp-self-contained/try-runtime",
 	"log",
 	"frame-try-runtime/try-runtime",
