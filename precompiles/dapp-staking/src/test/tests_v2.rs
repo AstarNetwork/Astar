@@ -17,6 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 extern crate alloc;
+use super::*;
 use crate::{test::mock::*, *};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;

@@ -125,7 +125,7 @@ pub const MILLISDN: Balance = 1_000 * MICROSDN;
 pub const SDN: Balance = 1_000 * MILLISDN;
 
 pub const STORAGE_BYTE_FEE: Balance = 200 * NANOSDN;
-
+use pallet_dapp_staking::migration::versioned_migrations;
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
     items as Balance * MILLISDN + (bytes as Balance) * STORAGE_BYTE_FEE
@@ -425,6 +425,10 @@ parameter_types! {
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
 
+parameter_types! {
+    pub const MaxBonusMovesPerPeriod: u8 = 5;
+}
+
 impl pallet_dapp_staking::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -453,6 +457,7 @@ impl pallet_dapp_staking::Config for Runtime {
     type WeightInfo = weights::pallet_dapp_staking::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>;
+    type MaxBonusMovesPerPeriod = MaxBonusMovesPerPeriod;
 }
 
 pub struct InflationPayoutPerBlock;
@@ -1333,7 +1338,7 @@ parameter_types! {
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased = (versioned_migrations::V8ToV9<Runtime>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);

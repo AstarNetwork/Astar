@@ -48,7 +48,65 @@ mod benchmarks {
 
         assert_last_event::<T>(Event::<T>::MaintenanceMode { enabled: true }.into());
     }
+    #[benchmark]
+    fn move_stake() {
+        initial_config::<T>();
 
+        // Set up a staker account and required funds
+        let staker: T::AccountId = whitelisted_caller();
+        let amount = T::MinimumLockedAmount::get() * 2;
+        T::BenchmarkHelper::set_balance(&staker, amount);
+
+        // Register the source contract
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let from_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            from_contract.clone(),
+        ));
+
+        // Register the destination contract
+        let to_contract = T::BenchmarkHelper::get_smart_contract(2);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            to_contract.clone(),
+        ));
+
+        // Lock funds and stake on source contract
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            from_contract.clone(),
+            amount,
+        ));
+
+        // Move to build and earn period to ensure move operation has worst case complexity
+        force_advance_to_next_subperiod::<T>();
+        assert_eq!(
+            ActiveProtocolState::<T>::get().subperiod(),
+            Subperiod::BuildAndEarn,
+            "Sanity check - we need to be in build&earn period."
+        );
+
+        let move_amount = amount / 2;
+
+        #[extrinsic_call]
+        _(
+            RawOrigin::Signed(staker.clone()),
+            from_contract.clone(),
+            to_contract.clone(),
+            move_amount,
+        );
+
+        // Verify that an event was emitted
+        let last_events = dapp_staking_events::<T>();
+        assert!(!last_events.is_empty(), "No events found");
+    }
     #[benchmark]
     fn register() {
         initial_config::<T>();

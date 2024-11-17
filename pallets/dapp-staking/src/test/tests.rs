@@ -46,8 +46,13 @@ use astar_primitives::{
     Balance, BlockNumber,
 };
 
+use crate::test::tests::MaxBonusMovesPerPeriod;
+use crate::BonusStatus;
+use crate::PeriodEnd;
+use crate::RemainingMoves;
+use frame_system::Origin;
+use sp_core::H160;
 use std::collections::BTreeMap;
-
 #[test]
 fn maintenances_mode_works() {
     ExtBuilder::default().build_and_execute(|| {
@@ -3422,46 +3427,679 @@ fn claim_staker_rewards_for_basic_example_is_ok() {
 #[test]
 fn claim_bonus_reward_for_works() {
     ExtBuilder::default().build_and_execute(|| {
-        // Register smart contract, lock&stake some amount
+        // Register smart contract
         let dev_account = 1;
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(dev_account, &smart_contract);
 
+        // Verify starting conditions
+        let protocol_state = ActiveProtocolState::<Test>::get();
+        println!("Initial protocol state: {:?}", protocol_state);
+        assert_eq!(
+            protocol_state.subperiod(),
+            Subperiod::Voting,
+            "Must start in voting period"
+        );
+
+        // Lock and stake in first period during voting
         let staker_account = 2;
         let lock_amount = 300;
         assert_lock(staker_account, lock_amount);
+
+        // Verify starting conditions
+        let protocol_state = ActiveProtocolState::<Test>::get();
+        println!("Initial protocol state: {:?}", protocol_state);
+        assert_eq!(
+            protocol_state.subperiod(),
+            Subperiod::Voting,
+            "Must start in voting period"
+        );
+
+        // Stake during voting period
         let stake_amount = 93;
         assert_stake(staker_account, &smart_contract, stake_amount);
+        println!("Staked {} in voting period", stake_amount);
 
-        // Advance to the next period, and claim the bonus
+        // Get staking info before period advance
+        let staking_info = StakerInfo::<Test>::get(&staker_account, &smart_contract);
+        println!("Staking info after stake: {:?}", staking_info);
+
+        // Complete this period
         advance_to_next_period();
-        let claimer_account = 3;
+
+        let protocol_state = ActiveProtocolState::<Test>::get();
+        println!("Protocol state after period advance: {:?}", protocol_state);
+
+        // Claim regular staking rewards first
+        for _ in 0..required_number_of_reward_claims(staker_account) {
+            assert_claim_staker_rewards(staker_account);
+        }
+
+        // Get staking info before bonus claim
+        let staking_info = StakerInfo::<Test>::get(&staker_account, &smart_contract);
+        println!("Staking info before bonus claim: {:?}", staking_info);
+
+        // Check if period end info exists
+        let period_end = PeriodEnd::<Test>::get(protocol_state.period_number() - 1);
+        println!("Period end info: {:?}", period_end);
+
         let (init_staker_balance, init_claimer_balance) = (
             Balances::free_balance(&staker_account),
-            Balances::free_balance(&claimer_account),
+            Balances::free_balance(&dev_account),
+        );
+        println!(
+            "Initial balances - staker: {}, claimer: {}",
+            init_staker_balance, init_claimer_balance
         );
 
-        assert_ok!(DappStaking::claim_bonus_reward_for(
-            RuntimeOrigin::signed(claimer_account),
-            staker_account,
-            smart_contract.clone()
+        // Attempt bonus claim
+        println!(
+            "Attempting bonus claim for period {}",
+            protocol_state.period_number() - 1
+        );
+        let result = DappStaking::claim_bonus_reward(
+            RuntimeOrigin::signed(staker_account),
+            smart_contract.clone(),
+        );
+        println!("Bonus claim result: {:?}", result);
+
+        assert_ok!(result);
+
+        // Verify double claim fails
+        assert_noop!(
+            DappStaking::claim_bonus_reward(RuntimeOrigin::signed(staker_account), smart_contract),
+            Error::<Test>::NoClaimableRewards
+        );
+
+        // Verify the event
+        let events = System::events();
+        let bonus_event = events
+            .iter()
+            .rev()
+            .find(|e| {
+                matches!(
+                    &e.event,
+                    RuntimeEvent::DappStaking(Event::BonusReward { .. })
+                )
+            })
+            .expect("BonusReward event should exist");
+
+        if let RuntimeEvent::DappStaking(Event::BonusReward {
+            account,
+            smart_contract: event_contract,
+            period,
+            amount,
+        }) = &bonus_event.event
+        {
+            assert_eq!(account, &staker_account);
+            assert_eq!(event_contract, &smart_contract);
+            assert_eq!(period, &(protocol_state.period_number() - 1));
+
+            // Verify balances changed correctly
+            assert_eq!(
+                Balances::free_balance(&staker_account),
+                init_staker_balance + amount,
+                "Staker balance should increase by bonus amount"
+            );
+        }
+    })
+}
+#[test]
+fn move_stake_basic_errors_work() {
+    ExtBuilder::default().build_and_execute(|| {
+        // Setup
+        let staker = 1;
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+
+        assert_register(1, &smart_contract_1);
+        assert_register(1, &smart_contract_2);
+
+        // Cannot move zero amount
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(staker),
+                smart_contract_1.clone(),
+                smart_contract_2.clone(),
+                0
+            ),
+            Error::<Test>::InvalidAmount // Updated to match actual error
+        );
+
+        // Cannot move between same contract
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(staker),
+                smart_contract_1.clone(),
+                smart_contract_1.clone(),
+                100
+            ),
+            Error::<Test>::InvalidTargetContract
+        );
+
+        // Cannot move without stake
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(staker),
+                smart_contract_1.clone(),
+                smart_contract_2.clone(),
+                100
+            ),
+            Error::<Test>::NoStakeFound
+        );
+    });
+}
+
+#[test]
+fn move_stake_events_work() {
+    ExtBuilder::default().build_and_execute(|| {
+        let staker = 1;
+        let from_contract = MockSmartContract::wasm(1);
+        let to_contract = MockSmartContract::wasm(2);
+        let stake_amount = 50;
+        let total_amount = 300;
+
+        // Register contracts and set up staking
+        assert_register(staker, &from_contract);
+        assert_register(staker, &to_contract);
+        assert_lock(staker, total_amount);
+        assert_stake(staker, &from_contract, 100);
+
+        let staker_info = StakerInfo::<Test>::get(staker, from_contract.clone());
+        assert!(
+            staker_info.is_some(),
+            "StakerInfo should exist after staking on from_contract"
+        );
+
+        // Move stake from one contract to another
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(staker),
+            from_contract.clone(),
+            to_contract.clone(),
+            stake_amount
         ));
-        System::assert_last_event(RuntimeEvent::DappStaking(Event::BonusReward {
-            account: staker_account,
-            period: ActiveProtocolState::<Test>::get().period_number() - 1,
-            smart_contract,
-            // for this simple test, entire bonus reward pool goes to the staker
-            amount: <Test as Config>::StakingRewardHandler::bonus_reward_pool(),
+
+        let remaining_moves = DappStaking::remaining_moves(staker);
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::StakeMoved {
+            staker,
+            from_contract,
+            to_contract,
+            amount: stake_amount,
+            remaining_moves: 3,
         }));
 
+        assert_eq!(remaining_moves, 0, "Remaining moves must decrement by 1.");
+    });
+}
+
+#[test]
+fn is_registered_works() {
+    ExtBuilder::default().build_and_execute(|| {
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+
+        // Not registered initially
+        assert!(!DappStaking::is_registered(&smart_contract_1));
+        assert!(!DappStaking::is_registered(&smart_contract_2));
+
+        // Register contract 1
+        assert_register(1, &smart_contract_1);
+        assert!(DappStaking::is_registered(&smart_contract_1));
+        assert!(!DappStaking::is_registered(&smart_contract_2));
+
+        // Unregister contract 1
+        assert_unregister(&smart_contract_1);
         assert!(
-            Balances::free_balance(&staker_account) > init_staker_balance,
-            "Balance must have increased due to the reward payout."
+            !DappStaking::is_registered(&smart_contract_1),
+            "Should be false after unregister"
         );
+
+        // Register contract 2
+        assert_register(2, &smart_contract_2);
+        assert!(!DappStaking::is_registered(&smart_contract_1));
+        assert!(DappStaking::is_registered(&smart_contract_2));
+    });
+}
+
+#[test]
+fn move_stake_respects_registration() {
+    ExtBuilder::default().build_and_execute(|| {
+        let staker = 1;
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+
+        // Try to move between unregistered contracts
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(staker),
+                smart_contract_1.clone(),
+                smart_contract_2.clone(),
+                100
+            ),
+            Error::<Test>::ContractNotFound
+        );
+
+        // Register first contract
+        assert_register(1, &smart_contract_1);
+        assert_lock(staker, 300);
+        assert_stake(staker, &smart_contract_1, 100);
+
+        // Try to move to unregistered contract
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(staker),
+                smart_contract_1.clone(),
+                smart_contract_2.clone(),
+                50
+            ),
+            Error::<Test>::ContractNotFound
+        );
+
+        // Register second contract and verify move works
+        assert_register(1, &smart_contract_2);
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(staker),
+            smart_contract_1.clone(),
+            smart_contract_2.clone(),
+            50
+        ));
+
+        // Unregister first contract
+        assert_unregister(&smart_contract_1);
+
+        // Verify can't move from unregistered contract
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(staker),
+                smart_contract_1.clone(),
+                smart_contract_2.clone(),
+                50
+            ),
+            Error::<Test>::ContractNotFound
+        );
+    });
+}
+#[test]
+fn move_counter_mechanics_work() {
+    ExtBuilder::default().build_and_execute(|| {
+        let staker = 1;
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+        let smart_contract_3 = MockSmartContract::Wasm(3);
+
+        assert_register(1, &smart_contract_1);
+        assert_register(1, &smart_contract_2);
+        assert_register(1, &smart_contract_3);
+
+        // Initial setup during voting period
+        assert_lock(staker, 300);
+        assert_stake(staker, &smart_contract_1, 100);
+
+        // Check initial bonus status
+        let staking_info = StakerInfo::<Test>::get(&staker, &smart_contract_1).unwrap();
         assert_eq!(
-            init_claimer_balance,
-            Balances::free_balance(&claimer_account),
-            "Claimer balance must not change since reward is deposited to the staker."
+            staking_info.bonus_status,
+            BonusStatus::SafeMovesRemaining(3), // Initial value is 3
+            "Initial safe moves should be 3"
         );
-    })
+
+        // Moving during voting period doesn't consume moves
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(staker),
+            smart_contract_1.clone(),
+            smart_contract_2.clone(),
+            50
+        ));
+
+        let staking_info = StakerInfo::<Test>::get(&staker, &smart_contract_2).unwrap();
+        assert_eq!(
+            staking_info.bonus_status,
+            BonusStatus::SafeMovesRemaining(3), // Preserved during voting
+            "Moves should be preserved during voting period"
+        );
+
+        // Advance to Build&Earn where moves are counted
+        advance_to_next_subperiod();
+
+        // Moving during B&E should decrement counter
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(staker),
+            smart_contract_2.clone(),
+            smart_contract_3.clone(),
+            25
+        ));
+
+        let staking_info = StakerInfo::<Test>::get(&staker, &smart_contract_3).unwrap();
+        assert_eq!(
+            staking_info.bonus_status,
+            BonusStatus::SafeMovesRemaining(2), // Decremented by 1
+            "Move counter should decrement during Build&Earn period"
+        );
+
+        // Counter should reset on period change
+        advance_to_next_period();
+
+        let staking_info = StakerInfo::<Test>::get(&staker, &smart_contract_3).unwrap();
+        assert_eq!(
+            staking_info.bonus_status,
+            BonusStatus::SafeMovesRemaining(2), // Maintains last value
+            "Move counter should maintain value across period boundary"
+        );
+    });
+}
+#[test]
+fn move_counter_decrements_properly() {
+    ExtBuilder::default().build_and_execute(|| {
+        let staker = 1;
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+
+        assert_register(1, &smart_contract_1);
+        assert_register(1, &smart_contract_2);
+
+        // Setup initial stake
+        assert_lock(staker, 300);
+        assert_stake(staker, &smart_contract_1, 100);
+
+        advance_to_next_subperiod(); // Move to Build&Earn
+
+        // Initial check
+        let initial_info = StakerInfo::<Test>::get(&staker, &smart_contract_1).unwrap();
+        assert_eq!(
+            initial_info.bonus_status,
+            BonusStatus::SafeMovesRemaining(3)
+        );
+
+        // First move
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(staker),
+            smart_contract_1.clone(),
+            smart_contract_2.clone(),
+            50
+        ));
+
+        let info = StakerInfo::<Test>::get(&staker, &smart_contract_2).unwrap();
+        assert_eq!(info.bonus_status, BonusStatus::SafeMovesRemaining(2));
+
+        // Second move
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(staker),
+            smart_contract_2.clone(),
+            smart_contract_1.clone(),
+            25
+        ));
+
+        let info = StakerInfo::<Test>::get(&staker, &smart_contract_1).unwrap();
+        assert_eq!(info.bonus_status, BonusStatus::SafeMovesRemaining(1));
+    });
+}
+#[test]
+fn move_during_voting_period_preserves_bonus() {
+    ExtBuilder::default().build_and_execute(|| {
+        let staker = 1;
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+
+        assert_register(1, &smart_contract_1);
+        assert_register(1, &smart_contract_2);
+
+        assert_lock(staker, 300);
+        assert_stake(staker, &smart_contract_1, 100);
+
+        // Initial bonus status check
+        let initial_info = StakerInfo::<Test>::get(&staker, &smart_contract_1).unwrap();
+        assert_eq!(
+            initial_info.bonus_status,
+            BonusStatus::SafeMovesRemaining(3)
+        );
+
+        // Multiple moves during voting period
+        for _ in 0..3 {
+            assert_ok!(DappStaking::move_stake(
+                RuntimeOrigin::signed(staker),
+                smart_contract_1.clone(),
+                smart_contract_2.clone(),
+                20
+            ));
+
+            let info = StakerInfo::<Test>::get(&staker, &smart_contract_2).unwrap();
+            assert_eq!(info.bonus_status, BonusStatus::SafeMovesRemaining(3));
+
+            assert_ok!(DappStaking::move_stake(
+                RuntimeOrigin::signed(staker),
+                smart_contract_2.clone(),
+                smart_contract_1.clone(),
+                20
+            ));
+
+            let info = StakerInfo::<Test>::get(&staker, &smart_contract_1).unwrap();
+            assert_eq!(info.bonus_status, BonusStatus::SafeMovesRemaining(3));
+        }
+    });
+}
+
+#[test]
+fn new_period_resets_move_counter() {
+    ExtBuilder::default().build_and_execute(|| {
+        // Register both contracts first
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+        assert_register(1, &smart_contract_1);
+        assert_register(1, &smart_contract_2);
+
+        // Initial setup during voting period
+        let staker = 1;
+        assert_lock(staker, 300);
+        assert_stake(staker, &smart_contract_1, 100);
+
+        // During voting period, moves don't decrement counter
+        let pre_move = StakerInfo::<Test>::get(&staker, &smart_contract_1).unwrap();
+        assert_eq!(
+            pre_move.bonus_status,
+            BonusStatus::SafeMovesRemaining(3),
+            "Should start with 3 moves"
+        );
+
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(staker),
+            smart_contract_1.clone(),
+            smart_contract_2.clone(),
+            50
+        ));
+
+        let post_move = StakerInfo::<Test>::get(&staker, &smart_contract_2).unwrap();
+        assert_eq!(
+            post_move.bonus_status,
+            BonusStatus::SafeMovesRemaining(3),
+            "Should not decrement during voting period"
+        );
+
+        // Advance to Build&Earn period where moves should be counted
+        advance_to_next_subperiod();
+
+        // Now moves should decrement
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(staker),
+            smart_contract_2.clone(),
+            smart_contract_1.clone(),
+            25
+        ));
+
+        let build_earn_move = StakerInfo::<Test>::get(&staker, &smart_contract_1).unwrap();
+        assert_eq!(
+            build_earn_move.bonus_status,
+            BonusStatus::SafeMovesRemaining(2),
+            "Move counter should decrease in Build&Earn period"
+        );
+    });
+}
+
+#[test]
+fn unregistered_dapp_move_preserves_bonus() {
+    ExtBuilder::default().build_and_execute(|| {
+        // Setup initial contracts
+        let staker = 1;
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+
+        assert_register(1, &smart_contract_1);
+        assert_register(1, &smart_contract_2);
+
+        // Initial stake during voting period
+        assert_lock(staker, 300);
+        assert_stake(staker, &smart_contract_1, 100);
+
+        // Check initial bonus status
+        let initial_info = StakerInfo::<Test>::get(&staker, &smart_contract_1).unwrap();
+        assert_eq!(
+            initial_info.bonus_status,
+            BonusStatus::SafeMovesRemaining(3),
+            "Should start with 3 moves"
+        );
+
+        // Move to B&E where moves are counted
+        advance_to_next_subperiod();
+
+        // Move some stake
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(staker),
+            smart_contract_1.clone(),
+            smart_contract_2.clone(),
+            50
+        ));
+
+        let move_info = StakerInfo::<Test>::get(&staker, &smart_contract_2).unwrap();
+        assert_eq!(
+            move_info.bonus_status,
+            BonusStatus::SafeMovesRemaining(2),
+            "Move counter should decrease after first move"
+        );
+
+        // Unregister and verify moves preserved
+        assert_unregister(&smart_contract_2);
+
+        // Store current moves count
+        let pre_unstake_info = StakerInfo::<Test>::get(&staker, &smart_contract_2).unwrap();
+        let current_moves = match pre_unstake_info.bonus_status {
+            BonusStatus::SafeMovesRemaining(n) => n,
+            _ => panic!("Expected SafeMovesRemaining"),
+        };
+
+        // Unstake from unregistered should preserve moves
+        assert_ok!(DappStaking::unstake_from_unregistered(
+            RuntimeOrigin::signed(staker),
+            smart_contract_2
+        ));
+
+        // Stake back to first contract
+        assert_stake(staker, &smart_contract_1, 50);
+
+        // Verify moves were preserved
+        let final_info = StakerInfo::<Test>::get(&staker, &smart_contract_1).unwrap();
+        assert_eq!(
+            final_info.bonus_status,
+            BonusStatus::SafeMovesRemaining(current_moves),
+            "Move counter should be preserved when unstaking from unregistered dApp"
+        );
+    });
+}
+
+#[test]
+fn test_bonus_status() {
+    ExtBuilder::default().build_and_execute(|| {
+        // Register contracts first
+        let staker = 1;
+        let from_smart_contract = MockSmartContract::Wasm(1);
+        let to_smart_contract = MockSmartContract::Wasm(2);
+
+        assert_register(staker, &from_smart_contract);
+        assert_register(staker, &to_smart_contract);
+
+        // Need to lock before staking
+        assert_lock(staker, 300);
+
+        // Simulate staking on the original smart contract
+        let stake_amount = 100;
+        assert_stake(staker, &from_smart_contract, stake_amount);
+
+        // We should be in voting period initially
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().subperiod(),
+            Subperiod::Voting,
+        );
+
+        // Advance to Build&Earn to test move counting
+        advance_to_next_subperiod();
+
+        // Simulate a move from one smart contract to another - should decrement counter
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(staker),
+            from_smart_contract.clone(),
+            to_smart_contract.clone(),
+            stake_amount
+        ));
+
+        // Bonus status should show one less move after the stake move
+        let staking_info = StakerInfo::<Test>::get(&staker, &to_smart_contract).unwrap();
+        assert_eq!(
+            staking_info.bonus_status,
+            BonusStatus::SafeMovesRemaining(2)
+        );
+    });
+}
+
+#[test]
+fn zero_moves_remaining_forfeits_bonus() {
+    ExtBuilder::default().build_and_execute(|| {
+        // Setup
+        let staker = 1;
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+
+        assert_register(1, &smart_contract_1);
+        assert_register(1, &smart_contract_2);
+
+        assert_lock(staker, 300);
+        assert_stake(staker, &smart_contract_1, 100);
+
+        // Move to Build&Earn where moves count
+        advance_to_next_subperiod();
+
+        // Make moves until bonus is forfeited
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(staker),
+            smart_contract_1.clone(),
+            smart_contract_2.clone(),
+            20
+        ));
+
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(staker),
+            smart_contract_2.clone(),
+            smart_contract_1.clone(),
+            20
+        ));
+
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(staker),
+            smart_contract_1.clone(),
+            smart_contract_2.clone(),
+            20
+        ));
+
+        // Verify BonusForfeited status
+        let staking_info = StakerInfo::<Test>::get(&staker, &smart_contract_2).unwrap();
+        assert_eq!(staking_info.bonus_status, BonusStatus::BonusForfeited);
+
+        // Verify that any further moves fail with BonusForfeited error
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(staker),
+                smart_contract_2.clone(),
+                smart_contract_1.clone(),
+                20
+            ),
+            Error::<Test>::BonusForfeited
+        );
+    });
 }

@@ -74,6 +74,7 @@ pub trait WeightInfo {
 	fn dapp_tier_assignment(x: u32, ) -> Weight;
 	fn on_idle_cleanup() -> Weight;
 	fn step() -> Weight;
+	fn move_stake() -> Weight;
 }
 
 /// Weights for pallet_dapp_staking using the Substrate node and recommended hardware.
@@ -489,6 +490,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	fn move_stake() -> Weight {
+        Weight::from_parts(36_000, 378)  // 36 microseconds from benchmark, 378 bytes proof size
+            .saturating_add(T::DbWeight::get().reads(6))  // 6 storage reads
+            .saturating_add(T::DbWeight::get().writes(4)) // 4 storage writes
+    }
 }
 
 // For backwards compatibility and tests
@@ -903,4 +909,12 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
+	
+	
+	fn move_stake() -> Weight {
+        Weight::from_parts(36_000, 378)
+            .saturating_add(RocksDbWeight::get().reads(6))
+            .saturating_add(RocksDbWeight::get().writes(4))
+    }
+	
 }

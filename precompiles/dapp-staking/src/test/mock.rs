@@ -253,6 +253,9 @@ impl pallet_dapp_staking::BenchmarkHelper<MockSmartContract, AccountId>
 parameter_types! {
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
+parameter_types! {
+    pub const MaxBonusMovesPerPeriod: u8 = 5;
+}
 
 impl pallet_dapp_staking::Config for Test {
     type RuntimeEvent = RuntimeEvent;
@@ -282,6 +285,7 @@ impl pallet_dapp_staking::Config for Test {
     type WeightInfo = pallet_dapp_staking::weights::SubstrateWeight<Test>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
+    type MaxBonusMovesPerPeriod = MaxBonusMovesPerPeriod;
 }
 
 construct_runtime!(

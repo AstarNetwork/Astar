@@ -23,7 +23,7 @@ use frame_support::{
     traits::{OnRuntimeUpgrade, UncheckedOnRuntimeUpgrade},
     weights::WeightMeter,
 };
-
+use frame_support::StorageDoubleMap;
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
 
@@ -33,7 +33,13 @@ use sp_runtime::TryRuntimeError;
 /// Exports for versioned migration `type`s for this pallet.
 pub mod versioned_migrations {
     use super::*;
-
+    pub type V8ToV9<T> = frame_support::migrations::VersionedMigration<
+        8,
+        9,
+        v9::VersionMigrateV8ToV9<T>,
+        Pallet<T>,
+        <T as frame_system::Config>::DbWeight,
+    >;
     /// Migration V6 to V7 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
     /// the migration is only performed when on-chain version is 6.
     pub type V6ToV7<T> = frame_support::migrations::VersionedMigration<
@@ -54,6 +60,83 @@ pub mod versioned_migrations {
             Pallet<T>,
             <T as frame_system::Config>::DbWeight,
         >;
+}
+
+pub mod v9 {
+    use super::*;
+    use crate::{BonusStatus, Config, Pallet, StakeAmount};
+
+    #[derive(Encode, Decode, Clone, Debug)]
+    pub struct OldSingularStakingInfo {
+        pub(crate) previous_staked: StakeAmount,
+        pub(crate) staked: StakeAmount,
+        pub(crate) loyal_staker: bool,
+    }
+
+    #[derive(Encode, Decode, Clone, Debug)]
+    pub struct NewSingularStakingInfo {
+        pub(crate) previous_staked: StakeAmount,
+        pub(crate) staked: StakeAmount,
+        pub(crate) bonus_status: BonusStatus,
+    }
+
+    #[storage_alias]
+    pub type StakerInfo<T: Config> = StorageDoubleMap<
+        Pallet<T>,
+        Blake2_128Concat,
+        <T as frame_system::Config>::AccountId,
+        Blake2_128Concat,
+        <T as Config>::SmartContract,
+        NewSingularStakingInfo,  // Changed to NewSingularStakingInfo
+        OptionQuery,
+    >;
+
+    pub struct VersionMigrateV8ToV9<T>(PhantomData<T>);
+
+    impl<T: Config> UncheckedOnRuntimeUpgrade for VersionMigrateV8ToV9<T> {
+        fn on_runtime_upgrade() -> Weight {
+            let current = Pallet::<T>::in_code_storage_version();
+
+            let mut translated = 0usize;
+
+            StakerInfo::<T>::translate(|_account, _contract, old_value: OldSingularStakingInfo| {
+                translated.saturating_inc();
+                
+                let bonus_status = if old_value.loyal_staker {
+                    BonusStatus::SafeMovesRemaining(T::MaxBonusMovesPerPeriod::get().into())
+                } else {
+                    BonusStatus::NoBonus
+                };
+
+                Some(NewSingularStakingInfo {
+                    previous_staked: old_value.previous_staked,
+                    staked: old_value.staked,
+                    bonus_status,
+                })
+            });
+
+            current.put::<Pallet<T>>();
+
+            log::info!("Upgraded {translated} StakerInfo entries to {current:?}");
+
+            T::DbWeight::get().reads_writes(1 + translated as u64, 1 + translated as u64)
+        }
+
+        #[cfg(feature = "try-runtime")]
+        fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
+            Ok(Vec::new())
+        }
+
+        #[cfg(feature = "try-runtime")]
+        fn post_upgrade(_: Vec<u8>) -> Result<(), TryRuntimeError> {
+            ensure!(
+                Pallet::<T>::on_chain_storage_version() >= 9,
+                "dapp-staking::migration::v9: Wrong storage version"
+            );
+
+            Ok(())
+        }
+    }
 }
 
 // TierThreshold as percentage of the total issuance

@@ -37,7 +37,7 @@ When `Voting` subperiod starts, all _stakes_ are reset to **zero**.
 Projects participating in dApp staking are expected to market themselves to (re)attract stakers.
 
 Stakers must assess whether the project they want to stake on brings value to the ecosystem, and then `vote` for it.
-Casting a vote, or staking, during the `Voting` subperiod makes the staker eligible for bonus rewards. so they are encouraged to participate.
+Casting a vote, or staking, during the `Voting` subperiod makes the staker eligible for bonus rewards, so they are encouraged to participate.
 
 `Voting` subperiod length is expressed in _standard_ era lengths, even though the entire voting subperiod is treated as a single _voting era_.
 E.g. if `voting` subperiod lasts for **5 eras**, and each era lasts for **100** blocks, total length of the `voting` subperiod will be **500** blocks.
@@ -143,6 +143,25 @@ It is not possible to stake on a dApp that has been unregistered.
 However, if dApp is unregistered after user has staked on it, user will keep earning
 rewards for the staked amount.
 
+#### Moving Stake Between Contracts
+
+During a period, stakers have the ability to move their staked tokens between different contracts. This feature allows for greater flexibility in managing stakes without having to unstake and re-stake tokens. Here are the key points about stake movement:
+
+* Each staker has a limited number of safe moves per period (`MaxBonusMovesPerPeriod`)
+* Moving stake during the Build&Earn subperiod consumes one of these moves
+* Moves during the Voting subperiod don't count against the move limit
+* Once all safe moves are used, any additional moves will forfeit the bonus reward
+* The target contract must be registered and active
+* Cannot move stake between the same contract
+* Cannot move more tokens than currently staked on the source contract
+* Cannot move zero amount
+* Move counter resets at period boundaries
+
+This feature is particularly useful for:
+* Adjusting strategy during a period without unstaking
+* Responding to changes in dApp performance or status
+* Optimizing reward potential while maintaining bonus eligibility
+
 #### Unstaking Tokens
 
 User can at any time decide to unstake staked tokens. There's no _unstaking_ process associated with this action.
@@ -176,6 +195,11 @@ Rewards are calculated using a simple formula: `staker_reward_pool * staker_stak
 #### Claiming Bonus Reward
 
 If staker staked on a dApp during the voting subperiod, and didn't reduce their staked amount below what was staked at the end of the voting subperiod, this makes them eligible for the bonus reward.
+
+To maintain bonus reward eligibility when moving stake during the Build&Earn subperiod, stakers must:
+* Have remaining safe moves available
+* Not reduce their total staked amount below the voting period amount
+* Only move stake between registered contracts
 
 Bonus rewards need to be claimed per contract, unlike staker rewards.
 
@@ -230,14 +254,4 @@ others will be left out. There is no strict rule which defines this behavior - i
 having a larger stake than the other dApp(s). Tehnically, at the moment, the dApp with the lower `dApp Id` will have the advantage over a dApp with
 the larger Id.
 
-### Reward Expiry
-
-Unclaimed rewards aren't kept indefinitely in storage. Eventually, they expire.
-Stakers & developers should make sure they claim those rewards before this happens.
-
-In case they don't, they will simply miss on the earnings.
-
-However, this should not be a problem given how the system is designed.
-There is no longer _stake&forger_ - users are expected to revisit dApp staking at least at the
-beginning of each new period to pick out old or new dApps on which to stake on.
-If they don't do that, they miss out on the bonus reward & won't earn staker rewards.
+###

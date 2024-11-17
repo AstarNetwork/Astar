@@ -96,7 +96,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-
+use pallet_dapp_staking::migration::versioned_migrations;
 #[cfg(feature = "std")]
 /// Wasm binary unwrapped. If built with `BUILD_DUMMY_WASM_BINARY`, the function panics.
 pub fn wasm_binary_unwrap() -> &'static [u8] {
@@ -462,6 +462,10 @@ parameter_types! {
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
 
+parameter_types! {
+    pub const MaxBonusMovesPerPeriod: u8 = 5;
+}
+
 impl pallet_dapp_staking::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -490,6 +494,7 @@ impl pallet_dapp_staking::Config for Runtime {
     type WeightInfo = pallet_dapp_staking::weights::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
+    type MaxBonusMovesPerPeriod = MaxBonusMovesPerPeriod;
 }
 
 pub struct InflationPayoutPerBlock;
@@ -1209,7 +1214,7 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-pub type Migrations = ();
+pub type Migrations = (versioned_migrations::V8ToV9<Runtime>,);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

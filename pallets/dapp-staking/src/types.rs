@@ -832,7 +832,9 @@ impl Iterator for EraStakePairIter {
 }
 
 /// Describes stake amount in an particular era/period.
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+#[derive(
+    Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default, PartialOrd,
+)]
 pub struct StakeAmount {
     /// Amount of staked funds accounting for the voting subperiod.
     #[codec(compact)]
@@ -996,14 +998,25 @@ impl EraInfo {
 /// Information about how much a particular staker staked on a particular smart contract.
 ///
 /// Keeps track of amount staked in the 'voting subperiod', as well as 'build&earn subperiod'.
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct SingularStakingInfo {
-    /// Amount staked before, if anything.
-    pub(crate) previous_staked: StakeAmount,
-    /// Staked amount
-    pub(crate) staked: StakeAmount,
-    /// Indicates whether a staker is a loyal staker or not.
-    pub(crate) loyal_staker: bool,
+    pub(crate) previous_staked: StakeAmount, // Amount staked before, if anything.
+    pub(crate) staked: StakeAmount,          // Currently staked amount.
+    pub(crate) bonus_status: BonusStatus,    // New field for tracking bonus status.
+}
+
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+
+pub enum BonusStatus {
+    SafeMovesRemaining(u32),
+    NoBonus,
+    BonusForfeited,
+}
+
+impl Default for BonusStatus {
+    fn default() -> Self {
+        BonusStatus::NoBonus
+    }
 }
 
 impl SingularStakingInfo {
@@ -1020,8 +1033,12 @@ impl SingularStakingInfo {
                 period,
                 ..Default::default()
             },
-            // Loyalty staking is only possible if stake is first made during the voting subperiod.
-            loyal_staker: subperiod == Subperiod::Voting,
+            bonus_status: match subperiod {
+                // Start with safe moves during voting period
+                Subperiod::Voting => BonusStatus::SafeMovesRemaining(3), // Or whatever initial value
+                // No bonus during build & earn period
+                Subperiod::BuildAndEarn => BonusStatus::NoBonus,
+            },
         }
     }
 
@@ -1060,6 +1077,8 @@ impl SingularStakingInfo {
     ) -> Vec<(EraNumber, Balance)> {
         let mut result = Vec::new();
         let staked_snapshot = self.staked;
+        // Track initial voting amount before unstake
+        let initial_voting = self.staked.voting;
 
         // 1. Modify 'current' staked amount, and update the result.
         self.staked.subtract(amount);
@@ -1067,12 +1086,25 @@ impl SingularStakingInfo {
         self.staked.era = self.staked.era.max(current_era);
         result.push((self.staked.era, unstaked_amount));
 
-        // 2. Update loyal staker flag accordingly.
-        self.loyal_staker = self.loyal_staker
-            && match subperiod {
-                Subperiod::Voting => !self.staked.voting.is_zero(),
-                Subperiod::BuildAndEarn => self.staked.voting == staked_snapshot.voting,
-            };
+        // Update bonus status based on refined rules:
+        // Now using match on copied values to avoid ownership issues
+        let current_status = self.bonus_status;
+        self.bonus_status = match (subperiod, current_status) {
+            // During voting period, maintain loyalty until full unstake
+            (Subperiod::Voting, status) => {
+                if self.staked.total().is_zero() {
+                    BonusStatus::NoBonus
+                } else {
+                    status
+                }
+            }
+            // During B&E period, lose loyalty if voting amount is reduced
+            (Subperiod::BuildAndEarn, _) if self.staked.voting < initial_voting => {
+                BonusStatus::NoBonus
+            }
+            // Otherwise keep current status
+            (_, status) => status,
+        };
 
         // 3. Determine what was the previous staked amount.
         // This is done by simply comparing where does the _previous era_ fit in the current context.
@@ -1147,11 +1179,6 @@ impl SingularStakingInfo {
         self.staked.for_type(subperiod)
     }
 
-    /// If `true` staker has staked during voting subperiod and has never reduced their sta
-    pub fn is_loyal(&self) -> bool {
-        self.loyal_staker
-    }
-
     /// Period for which this entry is relevant.
     pub fn period_number(&self) -> PeriodNumber {
         self.staked.period
@@ -1165,6 +1192,9 @@ impl SingularStakingInfo {
     /// `true` if no stake exists, `false` otherwise.
     pub fn is_empty(&self) -> bool {
         self.staked.is_empty()
+    }
+    pub fn is_loyal(&self) -> bool {
+        matches!(self.bonus_status, BonusStatus::SafeMovesRemaining(_))
     }
 }
 

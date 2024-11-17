@@ -94,7 +94,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(8);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(9);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -210,6 +210,8 @@ pub mod pallet {
         /// Tier ranking enabled.
         #[pallet::constant]
         type RankingEnabled: Get<bool>;
+        #[pallet::constant]
+        type MaxBonusMovesPerPeriod: Get<u8>;
 
         /// Weight info for various calls & operations in the pallet.
         type WeightInfo: WeightInfo;
@@ -316,6 +318,21 @@ pub mod pallet {
         ExpiredEntriesRemoved { account: T::AccountId, count: u16 },
         /// Privileged origin has forced a new era and possibly a subperiod to start from next block.
         Force { forcing_type: ForcingType },
+        /// Stake was moved between contracts
+        StakeMoved {
+            staker: T::AccountId,
+            from_contract: T::SmartContract,
+            to_contract: T::SmartContract,
+            amount: Balance,
+            remaining_moves: u8,
+        },
+
+        /// Move counter was reset at period boundary
+        MovesReset {
+            staker: T::AccountId,
+            contract: T::SmartContract,
+            new_count: u8,
+        },
     }
 
     #[pallet::error]
@@ -392,6 +409,21 @@ pub mod pallet {
         NoExpiredEntries,
         /// Force call is not allowed in production.
         ForceNotAllowed,
+        InvalidTargetContract,
+        InvalidAmount,
+        NoStakeFound,
+        /// No safe moves remaining for this period
+        NoSafeMovesRemaining,
+
+        /// Cannot move stake between same contract
+        SameContract,
+
+        /// Cannot move zero amount
+        ZeroMoveAmount,
+
+        /// Cannot move more than currently staked
+        InsufficientStakedAmount,
+        BonusForfeited,
     }
 
     /// General information about dApp staking protocol state.
@@ -499,6 +531,10 @@ pub mod pallet {
     /// chain-fork debugging if required.
     #[pallet::storage]
     pub type Safeguard<T: Config> = StorageValue<_, bool, ValueQuery, DefaultSafeguard<T>>;
+    #[pallet::storage]
+    #[pallet::getter(fn remaining_moves)]
+    pub type RemainingMoves<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, u32, ValueQuery>;
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T> {
@@ -1336,22 +1372,27 @@ pub mod pallet {
             let account = ensure_signed(origin)?;
 
             ensure!(
-                !IntegratedDApps::<T>::contains_key(&smart_contract),
+                !Self::is_registered(&smart_contract),
                 Error::<T>::ContractStillActive
             );
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let current_era = protocol_state.era;
 
-            // Extract total staked amount on the specified unregistered contract
-            let amount = match StakerInfo::<T>::get(&account, &smart_contract) {
+            // Capture staking info and moves before unstaking
+            let (amount, current_moves) = match StakerInfo::<T>::get(&account, &smart_contract) {
                 Some(staking_info) => {
                     ensure!(
                         staking_info.period_number() == protocol_state.period_number(),
                         Error::<T>::UnstakeFromPastPeriod
                     );
 
-                    staking_info.total_staked_amount()
+                    let moves = match staking_info.bonus_status {
+                        BonusStatus::SafeMovesRemaining(n) => Some(n),
+                        _ => None,
+                    };
+
+                    (staking_info.total_staked_amount(), moves)
                 }
                 None => {
                     return Err(Error::<T>::NoStakingInfo.into());
@@ -1362,17 +1403,9 @@ pub mod pallet {
             let mut ledger = Ledger::<T>::get(&account);
             ledger
                 .unstake_amount(amount, current_era, protocol_state.period_info)
-                .map_err(|err| match err {
-                    // These are all defensive checks, which should never fail since we already checked them above.
-                    AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
-                        Error::<T>::UnclaimedRewards
-                    }
-                    _ => Error::<T>::InternalUnstakeError,
-                })?;
+                .map_err(|_| Error::<T>::InternalUnstakeError)?;
 
             // Update total staked amount for the next era.
-            // This means 'fake' stake total amount has been kept until now, even though contract was unregistered.
-            // Although strange, it's been requested to keep it like this from the team.
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.unstake_amount(amount);
             });
@@ -1380,6 +1413,11 @@ pub mod pallet {
             // Update remaining storage entries
             Self::update_ledger(&account, ledger)?;
             StakerInfo::<T>::remove(&account, &smart_contract);
+
+            // Preserve moves count for future stake operations
+            if let Some(moves) = current_moves {
+                RemainingMoves::<T>::insert(&account, moves);
+            }
 
             Self::deposit_event(Event::<T>::UnstakeFromUnregistered {
                 account,
@@ -1506,21 +1544,143 @@ pub mod pallet {
         }
 
         /// Used to claim bonus reward for a smart contract on behalf of the specified account, if eligible.
-        #[pallet::call_index(20)]
-        #[pallet::weight(T::WeightInfo::claim_bonus_reward())]
-        pub fn claim_bonus_reward_for(
+        #[pallet::call_index(21)]
+        #[pallet::weight(T::WeightInfo::move_stake())]
+        pub fn move_stake(
             origin: OriginFor<T>,
-            account: T::AccountId,
-            smart_contract: T::SmartContract,
+            from_smart_contract: T::SmartContract,
+            to_smart_contract: T::SmartContract,
+            amount: Balance,
         ) -> DispatchResult {
-            Self::ensure_pallet_enabled()?;
-            ensure_signed(origin)?;
+            let who = ensure_signed(origin)?;
 
-            Self::internal_claim_bonus_reward_for(account, smart_contract)
+            ensure!(
+                from_smart_contract != to_smart_contract,
+                Error::<T>::InvalidTargetContract
+            );
+            ensure!(!amount.is_zero(), Error::<T>::InvalidAmount);
+
+            // First check if contracts exist
+            let from_registered = Self::is_registered(&from_smart_contract);
+            ensure!(from_registered, Error::<T>::ContractNotFound);
+
+            let to_registered = Self::is_registered(&to_smart_contract);
+            ensure!(to_registered, Error::<T>::ContractNotFound);
+
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let current_era = protocol_state.era;
+            let period_info = protocol_state.period_info;
+
+            // Handle source contract staking
+            let mut bonus_status = StakerInfo::<T>::try_mutate_exists(
+                &who,
+                &from_smart_contract,
+                |maybe_staker_info| -> Result<BonusStatus, DispatchError> {
+                    let mut staker_info =
+                        maybe_staker_info.take().ok_or(Error::<T>::NoStakeFound)?;
+
+                    ensure!(
+                        staker_info.staked.total() >= amount,
+                        Error::<T>::InsufficientStakedAmount
+                    );
+
+                    let status = match staker_info.bonus_status {
+                        BonusStatus::BonusForfeited => {
+                            return Err(Error::<T>::BonusForfeited.into())
+                        }
+                        BonusStatus::NoBonus => BonusStatus::NoBonus,
+                        BonusStatus::SafeMovesRemaining(n) => {
+                            if protocol_state.subperiod() == Subperiod::BuildAndEarn {
+                                if n <= 1 {
+                                    // Changed condition here - will forfeit when this move depletes remaining move
+                                    BonusStatus::BonusForfeited
+                                } else {
+                                    BonusStatus::SafeMovesRemaining(n - 1)
+                                }
+                            } else {
+                                BonusStatus::SafeMovesRemaining(n)
+                            }
+                        }
+                    };
+
+                    staker_info.staked.subtract(amount);
+
+                    if staker_info.staked.total().is_zero() {
+                        *maybe_staker_info = None;
+                    } else {
+                        staker_info.bonus_status = status.clone();
+                        *maybe_staker_info = Some(staker_info);
+                    }
+
+                    Ok(status)
+                },
+            )?;
+
+            // Apply stake to target contract
+            StakerInfo::<T>::try_mutate(
+                &who,
+                &to_smart_contract,
+                |maybe_staker_info| -> Result<(), DispatchError> {
+                    match maybe_staker_info {
+                        Some(info) => {
+                            info.staked.add(amount, protocol_state.subperiod());
+                            info.bonus_status = bonus_status.clone();
+                        }
+                        None => {
+                            let mut new_info = SingularStakingInfo::new(
+                                period_info.number,
+                                protocol_state.subperiod(),
+                            );
+                            new_info.staked.add(amount, protocol_state.subperiod());
+                            new_info.bonus_status = bonus_status.clone();
+                            *maybe_staker_info = Some(new_info);
+                        }
+                    }
+                    Ok(())
+                },
+            )?;
+
+            // Update contract stake accounting
+            if let Some(from_info) = IntegratedDApps::<T>::get(&from_smart_contract) {
+                ContractStake::<T>::try_mutate(
+                    from_info.id,
+                    |stake| -> Result<(), DispatchError> {
+                        stake.staked.subtract(amount);
+                        Ok(())
+                    },
+                )?;
+            }
+
+            if let Some(to_info) = IntegratedDApps::<T>::get(&to_smart_contract) {
+                ContractStake::<T>::try_mutate(to_info.id, |stake| -> Result<(), DispatchError> {
+                    stake.stake(amount, period_info, current_era);
+                    Ok(())
+                })?;
+            }
+
+            // Get the remaining moves for the event
+            let remaining_moves = match bonus_status {
+                BonusStatus::SafeMovesRemaining(n) => n.try_into().unwrap_or(0),
+                BonusStatus::BonusForfeited => 0,
+                BonusStatus::NoBonus => 0,
+            };
+
+            Self::deposit_event(Event::StakeMoved {
+                staker: who,
+                from_contract: from_smart_contract,
+                to_contract: to_smart_contract,
+                amount,
+                remaining_moves,
+            });
+
+            Ok(())
         }
     }
 
     impl<T: Config> Pallet<T> {
+        pub fn is_registered(contract: &T::SmartContract) -> bool {
+            IntegratedDApps::<T>::contains_key(contract)
+        }
         /// `true` if the account is a staker, `false` otherwise.
         pub fn is_staker(account: &T::AccountId) -> bool {
             Ledger::<T>::contains_key(account)
@@ -2150,43 +2310,44 @@ pub mod pallet {
             .into())
         }
 
-        /// Internal function that executes the `claim_bonus_reward` logic for the specified account & smart contract.
         fn internal_claim_bonus_reward_for(
             account: T::AccountId,
             smart_contract: T::SmartContract,
         ) -> DispatchResult {
             let staker_info = StakerInfo::<T>::get(&account, &smart_contract)
                 .ok_or(Error::<T>::NoClaimableRewards)?;
-            let protocol_state = ActiveProtocolState::<T>::get();
 
-            // Ensure:
-            // 1. Period for which rewards are being claimed has ended.
-            // 2. Account has been a loyal staker.
-            // 3. Rewards haven't expired.
+            let protocol_state = ActiveProtocolState::<T>::get();
             let staked_period = staker_info.period_number();
-            ensure!(
-                staked_period < protocol_state.period_number(),
-                Error::<T>::NoClaimableRewards
-            );
-            ensure!(
-                staker_info.is_loyal(),
-                Error::<T>::NotEligibleForBonusReward
-            );
-            ensure!(
-                staker_info.period_number()
-                    >= Self::oldest_claimable_period(protocol_state.period_number()),
-                Error::<T>::RewardExpired
-            );
+            let oldest_claimable_period =
+                Self::oldest_claimable_period(protocol_state.period_number());
+
+            log::debug!("Account: {:?}", account);
+            log::debug!("Smart Contract: {:?}", smart_contract);
+            log::debug!("Staked Period: {:?}", staked_period);
+            log::debug!("Oldest Claimable Period: {:?}", oldest_claimable_period);
+
+            // Check if reward has expired
+            if staked_period < oldest_claimable_period {
+                return Err(Error::<T>::RewardExpired.into());
+            }
+
+            // Check if loyalty is required and not met
+            if !staker_info.is_loyal() {
+                return Err(Error::<T>::NotEligibleForBonusReward.into());
+            }
 
             let period_end_info =
-                PeriodEnd::<T>::get(&staked_period).ok_or(Error::<T>::InternalClaimBonusError)?;
-            // Defensive check - we should never get this far in function if no voting period stake exists.
-            ensure!(
-                !period_end_info.total_vp_stake.is_zero(),
-                Error::<T>::InternalClaimBonusError
-            );
+                PeriodEnd::<T>::get(&staked_period).ok_or(Error::<T>::NoClaimableRewards)?;
 
+            log::debug!("Period End Info: {:?}", period_end_info);
+
+            // Ensure rewards are non-zero
             let eligible_amount = staker_info.staked_amount(Subperiod::Voting);
+            if period_end_info.total_vp_stake.is_zero() || eligible_amount.is_zero() {
+                return Err(Error::<T>::NoClaimableRewards.into());
+            }
+
             let bonus_reward =
                 Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)
                     * period_end_info.bonus_reward_pool;
@@ -2194,7 +2355,6 @@ pub mod pallet {
             T::StakingRewardHandler::payout_reward(&account, bonus_reward)
                 .map_err(|_| Error::<T>::RewardPayoutFailed)?;
 
-            // Cleanup entry since the reward has been claimed
             StakerInfo::<T>::remove(&account, &smart_contract);
             Ledger::<T>::mutate(&account, |ledger| {
                 ledger.contract_stake_count.saturating_dec();

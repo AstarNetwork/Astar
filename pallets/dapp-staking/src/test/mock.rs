@@ -227,7 +227,9 @@ ord_parameter_types! {
     pub const ContractUnregisterAccount: AccountId = 1779;
     pub const ManagerAccount: AccountId = 25711;
 }
-
+parameter_types! {
+    pub const MaxBonusMovesPerPeriod: u8 = 5;
+}
 impl pallet_dapp_staking::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -261,6 +263,7 @@ impl pallet_dapp_staking::Config for Test {
     type WeightInfo = weights::SubstrateWeight<Test>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
+    type MaxBonusMovesPerPeriod = MaxBonusMovesPerPeriod;
 }
 
 pub struct ExtBuilder {}

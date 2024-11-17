@@ -20,3 +20,4 @@ mod mock;
 mod tests_v2;
 mod tests_v3;
 mod types;
+pub use mock::*;

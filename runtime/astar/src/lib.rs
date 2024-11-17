@@ -124,6 +124,7 @@ pub mod xcm_config;
 pub type AstarAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
 pub use precompiles::{AstarPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
+use pallet_dapp_staking::migration::versioned_migrations;
 pub type Precompiles = AstarPrecompiles<Runtime, AstarAssetLocationIdConverter>;
 
 use chain_extensions::AstarChainExtensions;
@@ -436,6 +437,9 @@ impl DappStakingAccountCheck<AccountId> for AccountCheck {
         !CollatorSelection::is_account_candidate(account)
     }
 }
+parameter_types! {
+    pub const MaxBonusMovesPerPeriod: u8 = 5;
+}
 
 impl pallet_dapp_staking::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -465,6 +469,7 @@ impl pallet_dapp_staking::Config for Runtime {
     type WeightInfo = weights::pallet_dapp_staking::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>;
+    type MaxBonusMovesPerPeriod = MaxBonusMovesPerPeriod;
 }
 
 pub struct InflationPayoutPerBlock;
@@ -1643,7 +1648,7 @@ parameter_types! {
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (cumulus_pallet_xcmp_queue::migration::v5::MigrateV4ToV5<Runtime>,);
+pub type Unreleased = (versioned_migrations::V8ToV9<Runtime>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
