@@ -36,17 +36,28 @@ pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
 pub fn default_config(para_id: u32) -> serde_json::Value {
     let alice = GenesisAccount::<sr25519::Public>::from_seed("Alice");
     let bob = GenesisAccount::<sr25519::Public>::from_seed("Bob");
+    let charlie = GenesisAccount::<sr25519::Public>::from_seed("Charlie");
+    let dave = GenesisAccount::<sr25519::Public>::from_seed("Dave");
+    let eve = GenesisAccount::<sr25519::Public>::from_seed("Eve");
 
     let balances: Vec<(AccountId, Balance)> = vec![
-        (alice.account_id(), 1_000_000_000_000 * ASTR),
-        (bob.account_id(), 1_000_000_000_000 * ASTR),
+        (alice.account_id(), 1_000_000_000 * ASTR),
+        (bob.account_id(), 1_000_000_000 * ASTR),
         (
             TreasuryPalletId::get().into_account_truncating(),
+            1_000_000_000 * ASTR,
+        ),
+        (
+            CommunityTreasuryPalletId::get().into_account_truncating(),
             1_000_000_000 * ASTR,
         ),
     ];
 
     let authorities = vec![&alice, &bob];
+    let accounts = vec![&alice, &bob, &charlie, &dave, &eve]
+        .iter()
+        .map(|x| x.account_id())
+        .collect::<Vec<_>>();
 
     let config = RuntimeGenesisConfig {
         system: Default::default(),
@@ -155,6 +166,32 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
                 .try_into()
                 .expect("Must work since buffer should have at least a single value."),
         },
+        council_membership: CouncilMembershipConfig {
+            members: accounts
+                .clone()
+                .try_into()
+                .expect("Should support at least 5 members."),
+            phantom: Default::default(),
+        },
+        technical_committee_membership: TechnicalCommitteeMembershipConfig {
+            members: accounts[..3]
+                .to_vec()
+                .try_into()
+                .expect("Should support at least 3 members."),
+            phantom: Default::default(),
+        },
+        community_council_membership: CommunityCouncilMembershipConfig {
+            members: accounts
+                .try_into()
+                .expect("Should support at least 5 members."),
+            phantom: Default::default(),
+        },
+        council: Default::default(),
+        technical_committee: Default::default(),
+        community_council: Default::default(),
+        democracy: Default::default(),
+        treasury: Default::default(),
+        community_treasury: Default::default(),
     };
 
     serde_json::to_value(&config).expect("Could not build genesis config.")
