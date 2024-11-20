@@ -63,6 +63,11 @@ impl Contains<RuntimeCall> for WhitelistedCalls {
             RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
             RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiasset_with_fee { .. }) => true,
             RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiasset { .. }) => true,
+            // Governance related calls
+            RuntimeCall::Democracy(_)
+            | RuntimeCall::Treasury(_)
+            | RuntimeCall::CommunityTreasury(_)
+            | RuntimeCall::Preimage(_) => true,
             _ => false,
         }
     }

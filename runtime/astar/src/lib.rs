@@ -1469,7 +1469,8 @@ impl InstanceFilter<RuntimeCall> for CommunityCouncilCallFilter {
             c,
             RuntimeCall::DappStaking(..)
                 | RuntimeCall::System(frame_system::Call::remark { .. })
-                | RuntimeCall::Utility(..)
+                | RuntimeCall::Utility(pallet_utility::Call::batch { .. })
+                | RuntimeCall::Utility(pallet_utility::Call::batch_all { .. })
         )
     }
 }
