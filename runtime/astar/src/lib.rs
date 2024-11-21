@@ -19,8 +19,8 @@
 //! The Astar Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-#![recursion_limit = "256"]
+// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 512.
+#![recursion_limit = "512"]
 
 use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
@@ -28,9 +28,11 @@ use frame_support::{
     dispatch::DispatchClass,
     genesis_builder_helper, parameter_types,
     traits::{
-        fungible::{Balanced, Credit},
-        AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, Contains, FindAuthor, Get, Imbalance,
-        InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
+        fungible::{Balanced, Credit, HoldConsideration},
+        tokens::{PayFromAccount, UnityAssetBalanceConversion},
+        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, Contains,
+        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice,
+        Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -61,7 +63,8 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-        DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto, Zero,
+        DispatchInfoOf, Dispatchable, IdentityLookup, OpaqueKeys, PostDispatchInfoOf,
+        UniqueSaturatedInto, Zero,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
     ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
@@ -82,11 +85,19 @@ use astar_primitives::{
         PeriodNumber, RankedTier, SmartContract, StandardTierSlots,
     },
     evm::EvmRevertCodeHandler,
+    governance::{
+        CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
+        EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
+        EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrTwoThirdsCommunityCouncil,
+        EnsureRootOrTwoThirdsMainCouncil, EnsureRootOrTwoThirdsTechnicalCommittee,
+        MainCouncilCollectiveInst, MainCouncilMembershipInst, MainTreasuryInst,
+        OracleMembershipInst, TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+    },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce, UnfreezeChainOnFailedMigration,
 };
-pub use astar_primitives::{governance::OracleMembershipInst, AccountId, Balance, Signature};
+pub use astar_primitives::{AccountId, Balance, Signature};
 
 pub use pallet_dapp_staking::TierThreshold;
 pub use pallet_inflation::InflationParameters;
@@ -358,6 +369,42 @@ impl pallet_multisig::Config for Runtime {
 }
 
 parameter_types! {
+    pub MaximumSchedulerWeight: Weight = NORMAL_DISPATCH_RATIO * RuntimeBlockWeights::get().max_block;
+}
+
+impl pallet_scheduler::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type PalletsOrigin = OriginCaller;
+    type RuntimeCall = RuntimeCall;
+    type MaximumWeight = MaximumSchedulerWeight;
+    type ScheduleOrigin = EnsureRoot<AccountId>;
+    type MaxScheduledPerBlock = ConstU32<32>;
+    type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+    type OriginPrivilegeCmp = EqualPrivilegeOnly;
+    type Preimages = Preimage;
+}
+
+parameter_types! {
+    pub const PreimageBaseDeposit: Balance = deposit(1, 0);
+    pub const PreimageByteDeposit: Balance = deposit(0, 1);
+    pub const PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
+}
+
+impl pallet_preimage::Config for Runtime {
+    type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type ManagerOrigin = EnsureRoot<AccountId>;
+    type Consideration = HoldConsideration<
+        AccountId,
+        Balances,
+        PreimageHoldReason,
+        LinearStoragePrice<PreimageBaseDeposit, PreimageByteDeposit, Balance>,
+    >;
+}
+
+parameter_types! {
     pub const MinimumStakingAmount: Balance = 500 * ASTR;
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
@@ -395,8 +442,8 @@ impl pallet_dapp_staking::Config for Runtime {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
-    type ContractRegisterOrigin = frame_system::EnsureRoot<AccountId>;
-    type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
+    type ContractRegisterOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
+    type ContractUnregisterOrigin = EnsureRootOrFourFifthsCommunityCouncil;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = PriceAggregator;
     type StakingRewardHandler = Inflation;
@@ -1194,6 +1241,250 @@ impl frame_support::traits::SortedMembers<AccountId> for OracleMembershipWrapper
 }
 
 parameter_types! {
+    pub const CouncilMaxMembers: u32 = 16;
+    pub const TechnicalCommitteeMaxMembers: u32 = 8;
+    pub const CommunityCouncilMaxMembers: u32 = 32;
+}
+
+impl pallet_membership::Config<MainCouncilMembershipInst> for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type MembershipInitialized = Council;
+    type MembershipChanged = Council;
+    type MaxMembers = CouncilMaxMembers;
+    type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_membership::Config<TechnicalCommitteeMembershipInst> for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type MembershipInitialized = TechnicalCommittee;
+    type MembershipChanged = TechnicalCommittee;
+    type MaxMembers = TechnicalCommitteeMaxMembers;
+    type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_membership::Config<CommunityCouncilMembershipInst> for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type MembershipInitialized = CommunityCouncil;
+    type MembershipChanged = CommunityCouncil;
+    type MaxMembers = CommunityCouncilMaxMembers;
+    type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    pub MaxProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
+}
+
+impl pallet_collective::Config<MainCouncilCollectiveInst> for Runtime {
+    type RuntimeOrigin = RuntimeOrigin;
+    type Proposal = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type MotionDuration = ConstU32<{ 5 * DAYS }>;
+    type MaxProposals = ConstU32<16>;
+    type MaxMembers = CouncilMaxMembers;
+    type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type SetMembersOrigin = EnsureRoot<AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
+    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_collective::Config<TechnicalCommitteeCollectiveInst> for Runtime {
+    type RuntimeOrigin = RuntimeOrigin;
+    type Proposal = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type MotionDuration = ConstU32<{ 5 * DAYS }>;
+    type MaxProposals = ConstU32<16>;
+    type MaxMembers = TechnicalCommitteeMaxMembers;
+    type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type SetMembersOrigin = EnsureRoot<AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
+    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_collective::Config<CommunityCouncilCollectiveInst> for Runtime {
+    type RuntimeOrigin = RuntimeOrigin;
+    type Proposal = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type MotionDuration = ConstU32<{ 5 * DAYS }>;
+    type MaxProposals = ConstU32<16>;
+    type MaxMembers = CommunityCouncilMaxMembers;
+    type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type SetMembersOrigin = EnsureRoot<AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
+    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_democracy::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type EnactmentPeriod = ConstU32<{ 2 * DAYS }>;
+    type LaunchPeriod = ConstU32<{ 7 * DAYS }>;
+    type VotingPeriod = ConstU32<{ 7 * DAYS }>;
+    // Match with dApp staking unlocking period
+    type VoteLockingPeriod = ConstU32<{ 9 * DAYS }>;
+    type MinimumDeposit = ConstU128<{ 1000 * ASTR }>;
+    type FastTrackVotingPeriod = ConstU32<{ 2 * HOURS }>;
+    type CooloffPeriod = ConstU32<{ 7 * DAYS }>;
+
+    type MaxVotes = ConstU32<128>;
+    type MaxProposals = ConstU32<128>;
+    type MaxDeposits = ConstU32<128>;
+    type MaxBlacklisted = ConstU32<128>;
+
+    /// A two third majority of the Council can choose the next external "super majority approve" proposal.
+    type ExternalOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    /// A two third majority of the Council can choose the next external "majority approve" proposal. Also bypasses blacklist filter.
+    type ExternalMajorityOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    /// Unanimous approval of the Council can choose the next external "super majority against" proposal.
+    type ExternalDefaultOrigin = EnsureRootOrAllMainCouncil;
+    /// A two third majority of the Technical Committee can have an external proposal tabled immediately
+    /// for a _fast track_ vote, and a custom enactment period.
+    type FastTrackOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
+    /// Unanimous approval of the Technical Committee can have an external proposal tabled immediately
+    /// for a completely custom _voting period length_ vote, and a custom enactment period.
+    type InstantOrigin = EnsureRootOrAllTechnicalCommittee;
+    type InstantAllowed = ConstBool<true>;
+
+    /// A two third majority of the Council can cancel a passed proposal. Can happen only once per unique proposal.
+    type CancellationOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    /// Only a passed public referendum can permanently blacklist a proposal.
+    type BlacklistOrigin = EnsureRoot<AccountId>;
+    /// An unanimous Technical Committee can cancel a public proposal, slashing the deposit(s).
+    type CancelProposalOrigin = EnsureRootOrAllTechnicalCommittee;
+    /// Any member of the Technical Committee can veto Council's proposal. This can be only done once per proposal, and _veto_ lasts for a _cooloff_ period.
+    type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCommitteeCollectiveInst>;
+
+    type SubmitOrigin = EnsureSigned<AccountId>;
+    type PalletsOrigin = OriginCaller;
+    type Preimages = Preimage;
+    type Scheduler = Scheduler;
+    type Slash = Treasury;
+    type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    pub const ProposalBond: Permill = Permill::from_percent(5);
+    pub MainTreasuryAccount: AccountId = Treasury::account_id();
+}
+
+impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
+    type PalletId = TreasuryPalletId;
+    type Currency = Balances;
+    type RuntimeEvent = RuntimeEvent;
+
+    // Two origins which can either approve or reject the spending proposal
+    type ApproveOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type RejectOrigin = EnsureRootOrTwoThirdsMainCouncil;
+
+    type OnSlash = Treasury;
+    type ProposalBond = ProposalBond;
+    type ProposalBondMinimum = ConstU128<{ 100 * ASTR }>;
+    type ProposalBondMaximum = ConstU128<{ 1000 * ASTR }>;
+    type SpendPeriod = ConstU32<{ 7 * DAYS }>;
+
+    // We don't do periodic burns of the treasury
+    type Burn = ();
+    type BurnDestination = ();
+    type SpendFunds = ();
+
+    type MaxApprovals = ConstU32<64>;
+    type AssetKind = (); // Only native asset is supported
+    type Beneficiary = AccountId;
+    type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
+    type Paymaster = PayFromAccount<Balances, MainTreasuryAccount>;
+    type BalanceConverter = UnityAssetBalanceConversion;
+
+    // New approach to using treasury, useful for OpenGov but not necessarily for us.
+    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+    // Only used by 'spend' approach which is disabled
+    type PayoutPeriod = ConstU32<0>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
+    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    pub const CommunityTreasuryPalletId: PalletId = PalletId(*b"py/comtr");
+}
+
+impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
+    type PalletId = CommunityTreasuryPalletId;
+    type Currency = Balances;
+    type RuntimeEvent = RuntimeEvent;
+
+    // Two origins which can either approve or reject the spending proposal
+    type ApproveOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
+    type RejectOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
+
+    type OnSlash = CommunityTreasury;
+    type ProposalBond = ProposalBond;
+    type ProposalBondMinimum = ConstU128<{ 100 * ASTR }>;
+    type ProposalBondMaximum = ConstU128<{ 1000 * ASTR }>;
+    type SpendPeriod = ConstU32<{ 7 * DAYS }>;
+
+    // We don't do periodic burns of the community treasury
+    type Burn = ();
+    type BurnDestination = ();
+    type SpendFunds = ();
+
+    type MaxApprovals = ConstU32<64>;
+    type AssetKind = (); // Only native asset is supported
+    type Beneficiary = AccountId;
+    type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
+    type Paymaster = PayFromAccount<Balances, MainTreasuryAccount>;
+    type BalanceConverter = UnityAssetBalanceConversion;
+
+    // New approach to using treasury, useful for OpenGov but not necessarily for us.
+    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+    // Only used by 'spend' approach which is disabled
+    type PayoutPeriod = ConstU32<0>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
+    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    pub CommunityTreasuryAccountId: AccountId = CommunityTreasuryPalletId::get().into_account_truncating();
+}
+
+#[derive(Default)]
+pub struct CommunityCouncilCallFilter;
+impl InstanceFilter<RuntimeCall> for CommunityCouncilCallFilter {
+    fn filter(&self, c: &RuntimeCall) -> bool {
+        matches!(
+            c,
+            RuntimeCall::DappStaking(..)
+                | RuntimeCall::System(frame_system::Call::remark { .. })
+                | RuntimeCall::Utility(pallet_utility::Call::batch { .. })
+                | RuntimeCall::Utility(pallet_utility::Call::batch_all { .. })
+        )
+    }
+}
+
+impl pallet_collective_proxy::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type CollectiveProxy = EnsureRootOrTwoThirdsCommunityCouncil;
+    type ProxyAccountId = CommunityTreasuryAccountId;
+    type CallFilter = CommunityCouncilCallFilter;
+    type WeightInfo = pallet_collective_proxy::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
     pub MbmServiceWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
@@ -1226,6 +1517,7 @@ construct_runtime!(
         Timestamp: pallet_timestamp = 13,
         Multisig: pallet_multisig = 14,
         Proxy: pallet_proxy = 15,
+        Scheduler: pallet_scheduler = 17,
 
         ParachainSystem: cumulus_pallet_parachain_system = 20,
         ParachainInfo: parachain_info = 21,
@@ -1233,7 +1525,7 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment = 30,
         Balances: pallet_balances = 31,
         Vesting: pallet_vesting = 32,
-// Inflation needs to execute `on_initialize` as soon as possible, and `on_finalize` as late as possible.
+        // Inflation needs to execute `on_initialize` as soon as possible, and `on_finalize` as late as possible.
         // However, we need to execute Balance genesis before Inflation genesis, otherwise we'll have zero issuance when Inflation
         // logic is executed.
         // TODO: Address this later. It would be best if Inflation was first pallet.
@@ -1264,7 +1556,20 @@ construct_runtime!(
 
         Contracts: pallet_contracts = 70,
 
+        Preimage: pallet_preimage = 84,
+
+        // Governance
         Sudo: pallet_sudo = 99,
+        CouncilMembership: pallet_membership::<Instance2> = 100,
+        TechnicalCommitteeMembership: pallet_membership::<Instance3> = 101,
+        CommunityCouncilMembership: pallet_membership::<Instance4> = 102,
+        Council: pallet_collective::<Instance2> = 103,
+        TechnicalCommittee: pallet_collective::<Instance3> = 104,
+        CommunityCouncil: pallet_collective::<Instance4> = 105,
+        Democracy: pallet_democracy = 106,
+        Treasury: pallet_treasury::<Instance1> = 107,
+        CommunityTreasury: pallet_treasury::<Instance2> = 108,
+        CollectiveProxy: pallet_collective_proxy = 109,
 
         MultiBlockMigrations: pallet_migrations = 120,
     }

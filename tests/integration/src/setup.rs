@@ -35,7 +35,7 @@ use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use sp_consensus_aura::{Slot, SlotDuration, AURA_ENGINE_ID};
 
-#[cfg(feature = "shibuya")]
+#[cfg(any(feature = "shibuya", feature = "astar"))]
 pub use astar_primitives::governance::{
     CommunityCouncilMembershipInst, MainCouncilMembershipInst, TechnicalCommitteeMembershipInst,
 };
@@ -177,7 +177,7 @@ impl ExtBuilder {
         )
         .unwrap();
 
-        #[cfg(any(feature = "shibuya"))]
+        #[cfg(any(feature = "shibuya", feature = "astar"))]
         // Governance related storage initialization
         {
             <pallet_membership::GenesisConfig<Runtime, MainCouncilMembershipInst> as BuildStorage>::assimilate_storage(

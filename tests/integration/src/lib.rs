@@ -47,7 +47,7 @@ mod oracle;
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod evm_tracing;
 
-#[cfg(any(feature = "shibuya"))]
+#[cfg(any(feature = "shibuya", feature = "astar"))]
 mod governance;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]

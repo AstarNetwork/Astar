@@ -61,6 +61,10 @@ impl Contains<RuntimeCall> for WhitelistedCalls {
             }
             RuntimeCall::DappStaking(_) => true,
             RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
+            RuntimeCall::Democracy(_)
+            | RuntimeCall::Treasury(_)
+            | RuntimeCall::CommunityTreasury(_)
+            | RuntimeCall::Preimage(_) => true,
             _ => false,
         }
     }
