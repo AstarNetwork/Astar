@@ -2750,6 +2750,7 @@
 <a href="#2748" id="2748">2748</a>
 <a href="#2749" id="2749">2749</a>
 <a href="#2750" id="2750">2750</a>
+<a href="#2751" id="2751">2751</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -4253,7 +4254,8 @@
             c,
             RuntimeCall::DappStaking(..)
                 | RuntimeCall::System(frame_system::Call::remark { .. })
-                | RuntimeCall::Utility(..)
+                | RuntimeCall::Utility(pallet_utility::Call::batch { .. })
+                | RuntimeCall::Utility(pallet_utility::Call::batch_all { .. })
         )
     }
 }

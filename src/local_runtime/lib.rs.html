@@ -2064,6 +2064,7 @@
 <a href="#2062" id="2062">2062</a>
 <a href="#2063" id="2063">2063</a>
 <a href="#2064" id="2064">2064</a>
+<a href="#2065" id="2065">2065</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3178,7 +3179,8 @@
             c,
             RuntimeCall::DappStaking(..)
                 | RuntimeCall::System(frame_system::Call::remark { .. })
-                | RuntimeCall::Utility(..)
+                | RuntimeCall::Utility(pallet_utility::Call::batch { .. })
+                | RuntimeCall::Utility(pallet_utility::Call::batch_all { .. })
         )
     }
 }
