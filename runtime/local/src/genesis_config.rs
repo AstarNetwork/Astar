@@ -58,7 +58,7 @@ pub fn default_config() -> serde_json::Value {
                 // Private key: 0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391
                 // H160 public address: 0xaaafB3972B05630fCceE866eC69CdADd9baC2771
                 AccountId::from_ss58check("5FQedkNQcF2fJPwkB6Z1ZcMgGti4vcJQNs6x85YPv3VhjBBT")
-                    .unwrap(),
+                    .expect("Invalid SS58 address"),
             ]
             .iter(),
         )
