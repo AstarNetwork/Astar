@@ -1010,7 +1010,7 @@ pub enum ProxyType {
     Balances,
     /// All Runtime calls from Pallet Assets allowed for proxy account
     Assets,
-    /// Not used at the moment, but kept for backwards compatibility.
+    /// All governance related calls allowed for proxy account
     Governance,
     /// Only provide_judgement call from pallet identity allowed for proxy account
     IdentityJudgement,
@@ -1099,8 +1099,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                     )
                 )
             }
-            // Not used at the moment, but kept for backwards compatibility.
-            ProxyType::Governance => false,
+            ProxyType::Governance => {
+                matches!(
+                    c,
+                    RuntimeCall::Democracy(..)
+                        | RuntimeCall::Council(..)
+                        | RuntimeCall::TechnicalCommittee(..)
+                        | RuntimeCall::CommunityCouncil(..)
+                )
+            }
         }
     }
 

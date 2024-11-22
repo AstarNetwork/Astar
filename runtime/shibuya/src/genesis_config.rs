@@ -40,23 +40,22 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
     let dave = GenesisAccount::<sr25519::Public>::from_seed("Dave");
     let eve = GenesisAccount::<sr25519::Public>::from_seed("Eve");
 
-    let balances: Vec<(AccountId, Balance)> = vec![
-        (alice.account_id(), 1_000_000_000 * SBY),
-        (bob.account_id(), 1_000_000_000 * SBY),
-        (
-            TreasuryPalletId::get().into_account_truncating(),
-            1_000_000_000 * SBY,
-        ),
-        (
-            CommunityTreasuryPalletId::get().into_account_truncating(),
-            1_000_000_000 * SBY,
-        ),
-    ];
-
     let authorities = vec![&alice, &bob];
     let accounts = vec![&alice, &bob, &charlie, &dave, &eve]
         .iter()
         .map(|x| x.account_id())
+        .collect::<Vec<_>>();
+
+    let balances = accounts
+        .iter()
+        .chain(
+            vec![
+                TreasuryPalletId::get().into_account_truncating(),
+                CommunityTreasuryPalletId::get().into_account_truncating(),
+            ]
+            .iter(),
+        )
+        .map(|x| (x.clone(), 1_000_000_000 * SBY))
         .collect::<Vec<_>>();
 
     let config = RuntimeGenesisConfig {
