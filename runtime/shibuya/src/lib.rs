@@ -207,7 +207,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 1000,
+    spec_version: 1100,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -1537,11 +1537,6 @@ impl pallet_migrations::Config for Runtime {
 
 #[cfg(feature = "runtime-benchmarks")]
 impl vesting_mbm::Config for Runtime {}
-
-impl cumulus_pallet_xcmp_queue::migration::v5::V5Config for Runtime {
-    // This must be the same as the `ChannelInfo` from the `Config`:
-    type ChannelList = ParachainSystem;
-}
 
 construct_runtime!(
     pub struct Runtime
