@@ -43,11 +43,13 @@ pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
+pallet-safe-mode = { workspace = true, default-features = false }
 pallet-scheduler = { workspace = true }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-treasury = { workspace = true }
+pallet-tx-pause = { workspace = true, default-features = false }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 sp-api = { workspace = true }
@@ -160,6 +162,8 @@ std = [
 	"pallet-utility/std",
 	"pallet-vesting/std",
 	"pallet-proxy/std",
+	"pallet-safe-mode/std",
+	"pallet-tx-pause/std",
 	"sp-api/std",
 	"sp-block-builder/std",
 	"sp-consensus-aura/std",
@@ -222,9 +226,11 @@ runtime-benchmarks = [
 	"pallet-evm-precompile-dapp-staking/runtime-benchmarks",
 	"pallet-grandpa/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
+	"pallet-safe-mode/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-static-price-provider/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
+	"pallet-tx-pause/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
 ]
@@ -248,11 +254,13 @@ try-runtime = [
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
+	"pallet-tx-pause/try-runtime",
 	"pallet-utility/try-runtime",
 	"pallet-vesting/try-runtime",
 	"pallet-unified-accounts/try-runtime",
 	"pallet-ethereum/try-runtime",
 	"pallet-assets/try-runtime",
+	"pallet-safe-mode/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-preimage/try-runtime",

@@ -184,6 +184,8 @@ pallet-message-queue = { git = "https://github.com/paritytech/polkadot-sdk", bra
 pallet-membership = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 pallet-collective = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 pallet-democracy = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+pallet-tx-pause = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+pallet-safe-mode = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 
 # EVM & Ethereum
 # (wasm)

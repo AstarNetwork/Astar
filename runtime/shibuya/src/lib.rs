@@ -31,8 +31,8 @@ use frame_support::{
         fungible::{Balanced, Credit, HoldConsideration},
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
         AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, Contains,
-        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice,
-        Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
+        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InsideBoth, InstanceFilter,
+        LinearStoragePrice, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -45,7 +45,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot, EnsureSigned,
+    EnsureRoot, EnsureSigned, EnsureWithSuccess,
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
@@ -53,6 +53,7 @@ use pallet_identity::legacy::IdentityInfo;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
+use pallet_tx_pause::RuntimeCallNameOf;
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
@@ -290,6 +291,9 @@ impl Contains<RuntimeCall> for BaseFilter {
     }
 }
 
+type SafeModeTxPauseFilter = InsideBoth<SafeMode, TxPause>;
+type BaseCallFilter = InsideBoth<BaseFilter, SafeModeTxPauseFilter>;
+
 impl frame_system::Config for Runtime {
     /// The identifier used to distinguish between accounts.
     type AccountId = AccountId;
@@ -321,7 +325,7 @@ impl frame_system::Config for Runtime {
     type OnNewAccount = ();
     type OnKilledAccount = pallet_unified_accounts::KillAccountMapping<Self>;
     type DbWeight = RocksDbWeight;
-    type BaseCallFilter = BaseFilter;
+    type BaseCallFilter = BaseCallFilter;
     type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
     type BlockWeights = RuntimeBlockWeights;
     type BlockLength = RuntimeBlockLength;
@@ -1535,6 +1539,70 @@ impl pallet_migrations::Config for Runtime {
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const EnterDuration: BlockNumber = 4 * HOURS;
+    pub const EnterDepositAmount: Option<Balance> = None;
+    pub const ExtendDuration: BlockNumber = 2 * HOURS;
+    pub const ExtendDepositAmount: Option<Balance> = None;
+    pub const ReleaseDelay: Option<u32> = None;
+}
+
+/// Calls that can bypass the safe-mode pallet.
+pub struct SafeModeWhitelistedCalls;
+impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
+    fn contains(call: &RuntimeCall) -> bool {
+        match call {
+            RuntimeCall::Sudo(_)
+            // System and Timestamp are required for block production
+            | RuntimeCall::System(_)
+            | RuntimeCall::Timestamp(_)
+            | RuntimeCall::SafeMode(_)
+            | RuntimeCall::TxPause(_) => true,
+            _ => false,
+        }
+    }
+}
+
+/// Calls that cannot be paused by the tx-pause pallet.
+pub struct TxPauseWhitelistedCalls;
+/// All calls can be paused, except Sudo calls.
+impl Contains<RuntimeCallNameOf<Runtime>> for TxPauseWhitelistedCalls {
+    fn contains(full_name: &pallet_tx_pause::RuntimeCallNameOf<Runtime>) -> bool {
+        matches!(full_name.0.as_slice(), b"Sudo")
+    }
+}
+
+impl pallet_safe_mode::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type WhitelistedCalls = SafeModeWhitelistedCalls;
+    type EnterDuration = EnterDuration;
+    type EnterDepositAmount = EnterDepositAmount;
+    type ExtendDuration = ExtendDuration;
+    type ExtendDepositAmount = ExtendDepositAmount;
+    // The 'Success' value below represents the number of blocks that the origin may induce safe mode
+    type ForceEnterOrigin =
+        EnsureWithSuccess<EnsureRootOrAllTechnicalCommittee, AccountId, EnterDuration>;
+    type ForceExtendOrigin =
+        EnsureWithSuccess<EnsureRootOrAllTechnicalCommittee, AccountId, ExtendDuration>;
+    type ForceExitOrigin = EnsureRootOrAllTechnicalCommittee;
+    type ForceDepositOrigin = EnsureRootOrAllTechnicalCommittee;
+    type ReleaseDelay = ReleaseDelay;
+    type Notify = ();
+    type WeightInfo = pallet_safe_mode::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_tx_pause::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type PauseOrigin = EnsureRootOrHalfTechnicalCommittee;
+    type UnpauseOrigin = EnsureRootOrHalfTechnicalCommittee;
+    type WhitelistedCalls = TxPauseWhitelistedCalls;
+    type MaxNameLen = ConstU32<256>;
+    type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>;
+}
+
 #[cfg(feature = "runtime-benchmarks")]
 impl vesting_mbm::Config for Runtime {}
 
@@ -1609,6 +1677,9 @@ construct_runtime!(
         CollectiveProxy: pallet_collective_proxy = 109,
 
         MultiBlockMigrations: pallet_migrations = 120,
+
+        SafeMode: pallet_safe_mode = 130,
+        TxPause: pallet_tx_pause = 131,
 
         #[cfg(feature = "runtime-benchmarks")]
         VestingMBM: vesting_mbm = 250,
@@ -1751,6 +1822,8 @@ mod benches {
         [pallet_collective_proxy, CollectiveProxy]
         [orml_oracle, Oracle]
         [vesting_mbm, VestingMBM]
+        [pallet_tx_pause, TxPause]
+        [pallet_safe_mode, SafeMode]
     );
 }
 

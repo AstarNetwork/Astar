@@ -29,8 +29,9 @@ use frame_support::{
     traits::{
         fungible::{Balanced, Credit, HoldConsideration},
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, EqualPrivilegeOnly, FindAuthor, Get,
-        InstanceFilter, LinearStoragePrice, Nothing, OnFinalize, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Contains, EqualPrivilegeOnly,
+        FindAuthor, Get, InsideBoth, InstanceFilter, LinearStoragePrice, Nothing, OnFinalize,
+        WithdrawReasons,
     },
     weights::{
         constants::{ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -41,13 +42,14 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot, EnsureSigned,
+    EnsureRoot, EnsureSigned, EnsureWithSuccess,
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
+use pallet_tx_pause::RuntimeCallNameOf;
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, sr25519, ConstBool, OpaqueMetadata, H160, H256, U256};
@@ -72,10 +74,10 @@ use astar_primitives::{
     governance::{
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
-        EnsureRootOrTwoThirdsCommunityCouncil, EnsureRootOrTwoThirdsMainCouncil,
-        EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
-        MainCouncilMembershipInst, MainTreasuryInst, TechnicalCommitteeCollectiveInst,
-        TechnicalCommitteeMembershipInst,
+        EnsureRootOrHalfTechnicalCommittee, EnsureRootOrTwoThirdsCommunityCouncil,
+        EnsureRootOrTwoThirdsMainCouncil, EnsureRootOrTwoThirdsTechnicalCommittee,
+        MainCouncilCollectiveInst, MainCouncilMembershipInst, MainTreasuryInst,
+        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
     Address, AssetId, Balance, BlockNumber, Hash, Header, Nonce,
 };
@@ -207,10 +209,9 @@ parameter_types! {
 }
 
 // Configure FRAME pallets to include in runtime.
-
 impl frame_system::Config for Runtime {
     /// The basic call filter to use in dispatchable.
-    type BaseCallFilter = frame_support::traits::Everything;
+    type BaseCallFilter = InsideBoth<SafeMode, TxPause>;
     /// Block & extrinsics weights: base values and limits.
     type BlockWeights = RuntimeBlockWeights;
     /// The maximum length of a block (in bytes).
@@ -1127,6 +1128,70 @@ impl pallet_collective_proxy::Config for Runtime {
     type WeightInfo = pallet_collective_proxy::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const EnterDuration: BlockNumber = 10 * MINUTES;
+    pub const EnterDepositAmount: Option<Balance> = None;
+    pub const ExtendDuration: BlockNumber = 5 * MINUTES;
+    pub const ExtendDepositAmount: Option<Balance> = None;
+    pub const ReleaseDelay: Option<u32> = None;
+}
+
+/// Calls that can bypass the safe-mode pallet.
+pub struct SafeModeWhitelistedCalls;
+impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
+    fn contains(call: &RuntimeCall) -> bool {
+        match call {
+            RuntimeCall::Sudo(_)
+            // System and Timestamp are required for block production
+            | RuntimeCall::System(_)
+            | RuntimeCall::Timestamp(_)
+            | RuntimeCall::SafeMode(_)
+            | RuntimeCall::TxPause(_) => true,
+            _ => false,
+        }
+    }
+}
+
+/// Calls that cannot be paused by the tx-pause pallet.
+pub struct TxPauseWhitelistedCalls;
+/// All calls can be paused, except Sudo calls.
+impl Contains<RuntimeCallNameOf<Runtime>> for TxPauseWhitelistedCalls {
+    fn contains(full_name: &pallet_tx_pause::RuntimeCallNameOf<Runtime>) -> bool {
+        matches!(full_name.0.as_slice(), b"Sudo")
+    }
+}
+
+impl pallet_safe_mode::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type WhitelistedCalls = SafeModeWhitelistedCalls;
+    type EnterDuration = EnterDuration;
+    type EnterDepositAmount = EnterDepositAmount;
+    type ExtendDuration = ExtendDuration;
+    type ExtendDepositAmount = ExtendDepositAmount;
+    // The 'Success' value below represents the number of blocks that the origin may induce safe mode
+    type ForceEnterOrigin =
+        EnsureWithSuccess<EnsureRootOrAllTechnicalCommittee, AccountId, EnterDuration>;
+    type ForceExtendOrigin =
+        EnsureWithSuccess<EnsureRootOrAllTechnicalCommittee, AccountId, ExtendDuration>;
+    type ForceExitOrigin = EnsureRootOrAllTechnicalCommittee;
+    type ForceDepositOrigin = EnsureRootOrAllTechnicalCommittee;
+    type ReleaseDelay = ReleaseDelay;
+    type Notify = ();
+    type WeightInfo = pallet_safe_mode::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_tx_pause::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type PauseOrigin = EnsureRootOrHalfTechnicalCommittee;
+    type UnpauseOrigin = EnsureRootOrHalfTechnicalCommittee;
+    type WhitelistedCalls = TxPauseWhitelistedCalls;
+    type MaxNameLen = ConstU32<256>;
+    type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>;
+}
+
 construct_runtime!(
     pub struct Runtime {
         System: frame_system = 10,
@@ -1171,6 +1236,9 @@ construct_runtime!(
         Treasury: pallet_treasury::<Instance1> = 107,
         CommunityTreasury: pallet_treasury::<Instance2> = 108,
         CollectiveProxy: pallet_collective_proxy = 109,
+
+        SafeMode: pallet_safe_mode = 130,
+        TxPause: pallet_tx_pause = 131,
     }
 );
 
@@ -1290,6 +1358,8 @@ mod benches {
         [pallet_dapp_staking, DappStaking]
         [pallet_inflation, Inflation]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
+        [pallet_tx_pause, TxPause]
+        [pallet_safe_mode, SafeMode]
     );
 }
 
