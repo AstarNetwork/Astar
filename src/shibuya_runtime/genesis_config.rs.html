@@ -201,7 +201,6 @@
 <a href="#199" id="199">199</a>
 <a href="#200" id="200">200</a>
 <a href="#201" id="201">201</a>
-<a href="#202" id="202">202</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -244,23 +243,22 @@
     <span class="kw">let </span>dave = GenesisAccount::&lt;sr25519::Public&gt;::from_seed(<span class="string">"Dave"</span>);
     <span class="kw">let </span>eve = GenesisAccount::&lt;sr25519::Public&gt;::from_seed(<span class="string">"Eve"</span>);
 
-    <span class="kw">let </span>balances: Vec&lt;(AccountId, Balance)&gt; = <span class="macro">vec!</span>[
-        (alice.account_id(), <span class="number">1_000_000_000 </span>* SBY),
-        (bob.account_id(), <span class="number">1_000_000_000 </span>* SBY),
-        (
-            TreasuryPalletId::get().into_account_truncating(),
-            <span class="number">1_000_000_000 </span>* SBY,
-        ),
-        (
-            CommunityTreasuryPalletId::get().into_account_truncating(),
-            <span class="number">1_000_000_000 </span>* SBY,
-        ),
-    ];
-
     <span class="kw">let </span>authorities = <span class="macro">vec!</span>[<span class="kw-2">&amp;</span>alice, <span class="kw-2">&amp;</span>bob];
     <span class="kw">let </span>accounts = <span class="macro">vec!</span>[<span class="kw-2">&amp;</span>alice, <span class="kw-2">&amp;</span>bob, <span class="kw-2">&amp;</span>charlie, <span class="kw-2">&amp;</span>dave, <span class="kw-2">&amp;</span>eve]
         .iter()
         .map(|x| x.account_id())
+        .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+
+    <span class="kw">let </span>balances = accounts
+        .iter()
+        .chain(
+            <span class="macro">vec!</span>[
+                TreasuryPalletId::get().into_account_truncating(),
+                CommunityTreasuryPalletId::get().into_account_truncating(),
+            ]
+            .iter(),
+        )
+        .map(|x| (x.clone(), <span class="number">1_000_000_000 </span>* SBY))
         .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
 
     <span class="kw">let </span>config = RuntimeGenesisConfig {

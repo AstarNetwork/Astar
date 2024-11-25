@@ -2065,6 +2065,17 @@
 <a href="#2063" id="2063">2063</a>
 <a href="#2064" id="2064">2064</a>
 <a href="#2065" id="2065">2065</a>
+<a href="#2066" id="2066">2066</a>
+<a href="#2067" id="2067">2067</a>
+<a href="#2068" id="2068">2068</a>
+<a href="#2069" id="2069">2069</a>
+<a href="#2070" id="2070">2070</a>
+<a href="#2071" id="2071">2071</a>
+<a href="#2072" id="2072">2072</a>
+<a href="#2073" id="2073">2073</a>
+<a href="#2074" id="2074">2074</a>
+<a href="#2075" id="2075">2075</a>
+<a href="#2076" id="2076">2076</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2855,6 +2866,8 @@
     </span>DappStaking,
     <span class="doccomment">/// Only claim_staker call from pallet DappStaking allowed for proxy account
     </span>StakerRewardClaim,
+    <span class="doccomment">/// All governance related calls allowed for proxy account
+    </span>Governance,
 }
 
 <span class="kw">impl </span>Default <span class="kw">for </span>ProxyType {
@@ -2915,6 +2928,15 @@
                     RuntimeCall::DappStaking(
                         pallet_dapp_staking::Call::claim_staker_rewards { .. }
                     )
+                )
+            }
+            ProxyType::Governance =&gt; {
+                <span class="macro">matches!</span>(
+                    c,
+                    RuntimeCall::Democracy(..)
+                        | RuntimeCall::Council(..)
+                        | RuntimeCall::TechnicalCommittee(..)
+                        | RuntimeCall::CommunityCouncil(..)
                 )
             }
         }

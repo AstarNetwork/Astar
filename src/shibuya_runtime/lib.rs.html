@@ -2746,6 +2746,13 @@
 <a href="#2744" id="2744">2744</a>
 <a href="#2745" id="2745">2745</a>
 <a href="#2746" id="2746">2746</a>
+<a href="#2747" id="2747">2747</a>
+<a href="#2748" id="2748">2748</a>
+<a href="#2749" id="2749">2749</a>
+<a href="#2750" id="2750">2750</a>
+<a href="#2751" id="2751">2751</a>
+<a href="#2752" id="2752">2752</a>
+<a href="#2753" id="2753">2753</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3758,7 +3765,7 @@
     </span>Balances,
     <span class="doccomment">/// All Runtime calls from Pallet Assets allowed for proxy account
     </span>Assets,
-    <span class="doccomment">/// Not used at the moment, but kept for backwards compatibility.
+    <span class="doccomment">/// All governance related calls allowed for proxy account
     </span>Governance,
     <span class="doccomment">/// Only provide_judgement call from pallet identity allowed for proxy account
     </span>IdentityJudgement,
@@ -3847,8 +3854,15 @@
                     )
                 )
             }
-            <span class="comment">// Not used at the moment, but kept for backwards compatibility.
-            </span>ProxyType::Governance =&gt; <span class="bool-val">false</span>,
+            ProxyType::Governance =&gt; {
+                <span class="macro">matches!</span>(
+                    c,
+                    RuntimeCall::Democracy(..)
+                        | RuntimeCall::Council(..)
+                        | RuntimeCall::TechnicalCommittee(..)
+                        | RuntimeCall::CommunityCouncil(..)
+                )
+            }
         }
     }
 
