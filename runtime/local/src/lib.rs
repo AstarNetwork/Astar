@@ -788,6 +788,8 @@ pub enum ProxyType {
     DappStaking,
     /// Only claim_staker call from pallet DappStaking allowed for proxy account
     StakerRewardClaim,
+    /// All governance related calls allowed for proxy account
+    Governance,
 }
 
 impl Default for ProxyType {
@@ -848,6 +850,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                     RuntimeCall::DappStaking(
                         pallet_dapp_staking::Call::claim_staker_rewards { .. }
                     )
+                )
+            }
+            ProxyType::Governance => {
+                matches!(
+                    c,
+                    RuntimeCall::Democracy(..)
+                        | RuntimeCall::Council(..)
+                        | RuntimeCall::TechnicalCommittee(..)
+                        | RuntimeCall::CommunityCouncil(..)
                 )
             }
         }

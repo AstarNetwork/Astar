@@ -44,28 +44,25 @@ pub fn default_config() -> serde_json::Value {
     let dave = GenesisAccount::<sr25519::Public>::from_seed("Dave");
     let eve = GenesisAccount::<sr25519::Public>::from_seed("Eve");
 
-    let balances: Vec<(AccountId, Balance)> = vec![
-        (alice.account_id(), 1_000_000_000 * AST),
-        (bob.account_id(), 1_000_000_000 * AST),
-        (
-            TreasuryPalletId::get().into_account_truncating(),
-            1_000_000_000 * AST,
-        ),
-        (
-            CommunityTreasuryPalletId::get().into_account_truncating(),
-            1_000_000_000 * AST,
-        ),
-        (
-            // Private key: 0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391
-            // H160 public address: 0xaaafB3972B05630fCceE866eC69CdADd9baC2771
-            AccountId::from_ss58check("5FQedkNQcF2fJPwkB6Z1ZcMgGti4vcJQNs6x85YPv3VhjBBT").unwrap(),
-            1_000_000_000 * AST,
-        ),
-    ];
-
     let accounts = vec![&alice, &bob, &charlie, &dave, &eve]
         .iter()
         .map(|x| x.account_id())
+        .collect::<Vec<_>>();
+
+    let balances = accounts
+        .iter()
+        .chain(
+            vec![
+                TreasuryPalletId::get().into_account_truncating(),
+                CommunityTreasuryPalletId::get().into_account_truncating(),
+                // Private key: 0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391
+                // H160 public address: 0xaaafB3972B05630fCceE866eC69CdADd9baC2771
+                AccountId::from_ss58check("5FQedkNQcF2fJPwkB6Z1ZcMgGti4vcJQNs6x85YPv3VhjBBT")
+                    .expect("Invalid SS58 address"),
+            ]
+            .iter(),
+        )
+        .map(|x| (x.clone(), 1_000_000_000 * AST))
         .collect::<Vec<_>>();
 
     let config = RuntimeGenesisConfig {
