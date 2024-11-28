@@ -188,7 +188,7 @@ where
 
     fn pay_priority_fee(tip: Self::LiquidityInfo) {
         if let Some(tip) = tip {
-            OUT::on_unbalanceds(sp_std::vec![tip].into_iter());
+            OUT::on_unbalanceds(Some(tip).into_iter());
         }
     }
 }

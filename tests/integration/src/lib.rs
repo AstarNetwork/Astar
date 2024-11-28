@@ -52,3 +52,6 @@ mod governance;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod xcm_api;
+
+#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
+mod fees;

@@ -816,6 +816,10 @@ impl OnUnbalanced<Credit<AccountId, Balances>> for DealWithFees {
             <CollatorRewardPot as OnUnbalanced<_>>::on_unbalanced(collator);
         }
     }
+
+    fn on_unbalanced(amount: Credit<AccountId, Balances>) {
+        Self::on_unbalanceds(Some(amount).into_iter());
+    }
 }
 
 impl pallet_transaction_payment::Config for Runtime {
