@@ -80,7 +80,7 @@ use astar_primitives::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
         PeriodNumber, RankedTier, SmartContract, TierSlots as TierSlotsFunc,
     },
-    evm::EvmRevertCodeHandler,
+    evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler},
     governance::OracleMembershipInst,
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -462,7 +462,7 @@ impl pallet_inflation::PayoutPerBlock<Credit<AccountId, Balances>> for Inflation
     }
 
     fn collators(reward: Credit<AccountId, Balances>) {
-        ToStakingPot::on_unbalanced(reward);
+        CollatorRewardPot::on_unbalanced(reward);
     }
 }
 
@@ -601,8 +601,8 @@ parameter_types! {
     pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
-pub struct ToStakingPot;
-impl OnUnbalanced<Credit<AccountId, Balances>> for ToStakingPot {
+pub struct CollatorRewardPot;
+impl OnUnbalanced<Credit<AccountId, Balances>> for CollatorRewardPot {
     fn on_nonzero_unbalanced(amount: Credit<AccountId, Balances>) {
         let staking_pot = PotId::get().into_account_truncating();
         let _ = Balances::resolve(&staking_pot, amount);
@@ -813,7 +813,7 @@ impl OnUnbalanced<Credit<AccountId, Balances>> for DealWithFees {
             drop(to_burn);
 
             // pay fees to collator
-            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collator);
+            <CollatorRewardPot as OnUnbalanced<_>>::on_unbalanced(collator);
         }
     }
 }
@@ -920,7 +920,7 @@ impl pallet_evm::Config for Runtime {
     type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
     type ChainId = ChainId;
-    type OnChargeTransaction = pallet_evm::EVMFungibleAdapter<Balances, ToStakingPot>;
+    type OnChargeTransaction = EVMFungibleAdapterWrapper<Balances, DealWithFees, CollatorRewardPot>;
     type BlockGasLimit = BlockGasLimit;
     type Timestamp = Timestamp;
     type OnCreate = ();
