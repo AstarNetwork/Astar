@@ -39,7 +39,7 @@ use frame_support::{
     pallet_prelude::*,
     traits::{
         fungible::{Inspect as FunInspect, MutateFreeze as FunMutateFreeze},
-        StorageVersion,
+        SafeModeNotify, StorageVersion,
     },
     weights::Weight,
 };
@@ -682,9 +682,7 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::maintenance_mode())]
         pub fn maintenance_mode(origin: OriginFor<T>, enabled: bool) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
-            ActiveProtocolState::<T>::mutate(|state| state.maintenance = enabled);
-
-            Self::deposit_event(Event::<T>::MaintenanceMode { enabled });
+            Self::set_maintenance_mode(enabled);
             Ok(())
         }
 
@@ -2210,6 +2208,14 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Internal function to transition the dApp staking protocol maintenance mode.
+        /// Ensure this method is **not exposed publicly** and is only used for legitimate maintenance mode transitions invoked by privileged or trusted logic,
+        /// such as `T::ManagerOrigin` or a safe-mode enter/exit notification.
+        fn set_maintenance_mode(enabled: bool) {
+            ActiveProtocolState::<T>::mutate(|state| state.maintenance = enabled);
+            Self::deposit_event(Event::<T>::MaintenanceMode { enabled });
+        }
+
         /// Ensure the correctness of the state of this pallet.
         #[cfg(any(feature = "try-runtime", test))]
         pub fn do_try_state() -> Result<(), sp_runtime::TryRuntimeError> {
@@ -2468,6 +2474,19 @@ pub mod pallet {
             }
 
             Ok(())
+        }
+    }
+
+    /// Implementation of the `SafeModeNotify` trait for the `DappStaking` pallet.
+    /// This integration ensures that the dApp staking protocol transitions to and from
+    /// maintenance mode when the runtime enters or exits safe mode.
+    impl<T: Config> SafeModeNotify for Pallet<T> {
+        fn entered() {
+            Self::set_maintenance_mode(true);
+        }
+
+        fn exited() {
+            Self::set_maintenance_mode(false);
         }
     }
 }
