@@ -249,9 +249,7 @@ parameter_types! {
     pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
         .base_block(BlockExecutionWeight::get())
         .for_class(DispatchClass::all(), |weights| {
-            // Adjusting the base extrinsic weight to account for the additional database
-            // read introduced by the `tx-pause` pallet during extrinsic filtering.
-            weights.base_extrinsic = ExtrinsicBaseWeight::get().saturating_add(RocksDbWeight::get().reads(1));
+            weights.base_extrinsic = weights::base_extrinsic::ExtrinsicBaseWeight::get();
         })
         .for_class(DispatchClass::Normal, |weights| {
             weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);

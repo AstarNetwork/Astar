@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+pub mod base_extrinsic;
 pub mod orml_oracle;
 pub mod pallet_assets;
 pub mod pallet_balances;
