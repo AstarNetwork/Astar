@@ -807,7 +807,12 @@ impl WeightToFeePolynomial for WeightToFee {
     type Balance = Balance;
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
         let p = WeightFeeFactor::get();
-        let q = Balance::from(ExtrinsicBaseWeight::get().ref_time());
+        let q = Balance::from(
+            RuntimeBlockWeights::get()
+                .get(DispatchClass::Normal)
+                .base_extrinsic
+                .ref_time(),
+        );
         smallvec::smallvec![WeightToFeeCoefficient {
             degree: 1,
             negative: false,
