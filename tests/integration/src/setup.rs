@@ -48,6 +48,7 @@ pub use shibuya::*;
 #[cfg(feature = "shibuya")]
 mod shibuya {
     use super::*;
+    pub use shibuya_runtime::WeightToFee;
     pub use shibuya_runtime::*;
 
     /// 1 SBY.
@@ -82,6 +83,7 @@ mod shibuya {
 pub use shiden::*;
 #[cfg(feature = "shiden")]
 mod shiden {
+    pub use shiden_runtime::WeightToFee;
     pub use shiden_runtime::*;
 
     /// 1 SDN.
@@ -92,6 +94,7 @@ mod shiden {
 pub use astar::*;
 #[cfg(feature = "astar")]
 mod astar {
+    pub use astar_runtime::WeightToFee;
     pub use astar_runtime::*;
 
     /// 1 ASTR.
@@ -373,22 +376,4 @@ pub fn call_wasm_contract_method<V: Decode>(
         false,
     );
     value
-}
-
-/// TODO: improve WeightToFee later once code is more accessible.
-
-/// Same `WeightToFee` implementation as runtime
-pub struct WeightToFee;
-impl WeightToFeePolynomial for WeightToFee {
-    type Balance = Balance;
-    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        let p = WeightFeeFactor::get();
-        let q = Balance::from(ExtrinsicBaseWeight::get().ref_time());
-        smallvec::smallvec![WeightToFeeCoefficient {
-            degree: 1,
-            negative: false,
-            coeff_frac: Perbill::from_rational(p % q, q),
-            coeff_integer: p / q,
-        }]
-    }
 }
