@@ -251,6 +251,9 @@ parameter_types! {
         .for_class(DispatchClass::all(), |weights| {
             // Adjusting the base extrinsic weight to account for the additional database
             // read introduced by the `tx-pause` pallet during extrinsic filtering.
+            //
+            // TODO: This hardcoded addition is a temporary fix. Replace it with a proper
+            // benchmark in the future.
             weights.base_extrinsic = ExtrinsicBaseWeight::get().saturating_add(RocksDbWeight::get().reads(1));
         })
         .for_class(DispatchClass::Normal, |weights| {
