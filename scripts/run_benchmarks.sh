@@ -140,7 +140,7 @@ for chain in ${chains//,/ }; do
     # Update the block and extrinsic overhead weights.
     echo "[+] Benchmarking block and extrinsic overheads..."
     OUTPUT=$(
-      $ASTAR_COLLATOR benchmark overhead \
+      ./target/production/polkadot benchmark overhead \
       --chain=$chain \
       --wasm-execution=compiled \
       --weight-path="$output_path/$chain/" \
