@@ -137,22 +137,6 @@ for chain in ${chains//,/ }; do
       fi
     done
 
-    # Update the block and extrinsic overhead weights.
-    echo "[+] Benchmarking block and extrinsic overheads..."
-    OUTPUT=$(
-      ./target/production/polkadot benchmark overhead \
-      --chain=$chain \
-      --wasm-execution=compiled \
-      --weight-path="$output_path/$chain/" \
-      --warmup=10 \
-      --repeat=100 \
-      --header=./.github/license-check/headers/HEADER-GNUv3
-    )
-    if [ $? -ne 0 ]; then
-      echo "$OUTPUT" >> "$ERR_FILE"
-      echo "[-] Failed to benchmark the block and extrinsic overheads. Error written to $ERR_FILE; continuing..."
-    fi
-
     echo "[+] Benchmarking the machine..."
     OUTPUT=$(
       $ASTAR_COLLATOR benchmark machine --chain=$chain 2>&1

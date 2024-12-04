@@ -62,16 +62,7 @@ use crate::{
 };
 
 /// Parachain host functions
-#[cfg(not(feature = "runtime-benchmarks"))]
 pub type HostFunctions = (
-    cumulus_client_service::ParachainHostFunctions,
-    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-);
-
-/// Host functions required for kitchensink runtime and Substrate node.
-#[cfg(feature = "runtime-benchmarks")]
-pub type HostFunctions = (
-    frame_benchmarking::benchmarking::HostFunctions,
     cumulus_client_service::ParachainHostFunctions,
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
 );
