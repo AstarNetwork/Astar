@@ -254,7 +254,7 @@ parameter_types! {
             //
             // TODO: This hardcoded addition is a temporary fix. Replace it with a proper
             // benchmark in the future.
-            weights.base_extrinsic = ExtrinsicBaseWeight::get().saturating_add(RocksDbWeight::get().reads(1));
+            weights.base_extrinsic = ExtrinsicBaseWeight::get().saturating_add(<Runtime as frame_system::Config>::DbWeight::get().reads(1));
         })
         .for_class(DispatchClass::Normal, |weights| {
             weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
