@@ -2473,6 +2473,25 @@
 <a href="#2471" id="2471">2471</a>
 <a href="#2472" id="2472">2472</a>
 <a href="#2473" id="2473">2473</a>
+<a href="#2474" id="2474">2474</a>
+<a href="#2475" id="2475">2475</a>
+<a href="#2476" id="2476">2476</a>
+<a href="#2477" id="2477">2477</a>
+<a href="#2478" id="2478">2478</a>
+<a href="#2479" id="2479">2479</a>
+<a href="#2480" id="2480">2480</a>
+<a href="#2481" id="2481">2481</a>
+<a href="#2482" id="2482">2482</a>
+<a href="#2483" id="2483">2483</a>
+<a href="#2484" id="2484">2484</a>
+<a href="#2485" id="2485">2485</a>
+<a href="#2486" id="2486">2486</a>
+<a href="#2487" id="2487">2487</a>
+<a href="#2488" id="2488">2488</a>
+<a href="#2489" id="2489">2489</a>
+<a href="#2490" id="2490">2490</a>
+<a href="#2491" id="2491">2491</a>
+<a href="#2492" id="2492">2492</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2514,7 +2533,7 @@
     pallet_prelude::<span class="kw-2">*</span>,
     traits::{
         fungible::{Inspect <span class="kw">as </span>FunInspect, MutateFreeze <span class="kw">as </span>FunMutateFreeze},
-        StorageVersion,
+        SafeModeNotify, StorageVersion,
     },
     weights::Weight,
 };
@@ -3157,9 +3176,7 @@
         #[pallet::weight(T::WeightInfo::maintenance_mode())]
         </span><span class="kw">pub fn </span>maintenance_mode(origin: OriginFor&lt;T&gt;, enabled: bool) -&gt; DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)<span class="question-mark">?</span>;
-            ActiveProtocolState::&lt;T&gt;::mutate(|state| state.maintenance = enabled);
-
-            <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::MaintenanceMode { enabled });
+            <span class="self">Self</span>::set_maintenance_mode(enabled);
             <span class="prelude-val">Ok</span>(())
         }
 
@@ -4685,6 +4702,14 @@
             <span class="prelude-val">Ok</span>(())
         }
 
+        <span class="doccomment">/// Internal function to transition the dApp staking protocol maintenance mode.
+        /// Ensure this method is **not exposed publicly** and is only used for legitimate maintenance mode transitions invoked by privileged or trusted logic,
+        /// such as `T::ManagerOrigin` or a safe-mode enter/exit notification.
+        </span><span class="kw">fn </span>set_maintenance_mode(enabled: bool) {
+            ActiveProtocolState::&lt;T&gt;::mutate(|state| state.maintenance = enabled);
+            <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::MaintenanceMode { enabled });
+        }
+
         <span class="doccomment">/// Ensure the correctness of the state of this pallet.
         </span><span class="attr">#[cfg(any(feature = <span class="string">"try-runtime"</span>, test))]
         </span><span class="kw">pub fn </span>do_try_state() -&gt; <span class="prelude-ty">Result</span>&lt;(), sp_runtime::TryRuntimeError&gt; {
@@ -4943,6 +4968,19 @@
             }
 
             <span class="prelude-val">Ok</span>(())
+        }
+    }
+
+    <span class="doccomment">/// Implementation of the `SafeModeNotify` trait for the `DappStaking` pallet.
+    /// This integration ensures that the dApp staking protocol transitions to and from
+    /// maintenance mode when the runtime enters or exits safe mode.
+    </span><span class="kw">impl</span>&lt;T: Config&gt; SafeModeNotify <span class="kw">for </span>Pallet&lt;T&gt; {
+        <span class="kw">fn </span>entered() {
+            <span class="self">Self</span>::set_maintenance_mode(<span class="bool-val">true</span>);
+        }
+
+        <span class="kw">fn </span>exited() {
+            <span class="self">Self</span>::set_maintenance_mode(<span class="bool-val">false</span>);
         }
     }
 }
