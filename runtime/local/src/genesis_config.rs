@@ -173,6 +173,8 @@ pub fn default_config() -> serde_json::Value {
         democracy: Default::default(),
         treasury: Default::default(),
         community_treasury: Default::default(),
+        safe_mode: Default::default(),
+        tx_pause: Default::default(),
     };
 
     serde_json::to_value(&config).expect("Could not build genesis config.")

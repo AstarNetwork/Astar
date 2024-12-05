@@ -68,6 +68,7 @@ pallet-migrations = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
+pallet-safe-mode = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true }
 pallet-sudo = { workspace = true }
@@ -75,6 +76,7 @@ pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-treasury = { workspace = true }
+pallet-tx-pause = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 vesting-mbm = { workspace = true }
@@ -223,6 +225,7 @@ std = [
 	"pallet-preimage/std",
 	"pallet-price-aggregator/std",
 	"pallet-proxy/std",
+	"pallet-safe-mode/std",
 	"pallet-scheduler/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
@@ -230,6 +233,7 @@ std = [
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"pallet-treasury/std",
+	"pallet-tx-pause/std",
 	"pallet-unified-accounts/std",
 	"pallet-utility/std",
 	"pallet-vesting/std",
@@ -306,10 +310,12 @@ runtime-benchmarks = [
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-price-aggregator/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
+	"pallet-safe-mode/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
+	"pallet-tx-pause/runtime-benchmarks",
 	"pallet-unified-accounts/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
@@ -367,12 +373,14 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-price-aggregator/try-runtime",
 	"pallet-proxy/try-runtime",
+	"pallet-safe-mode/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-treasury/try-runtime",
+	"pallet-tx-pause/try-runtime",
 	"pallet-unified-accounts/try-runtime",
 	"pallet-utility/try-runtime",
 	"pallet-vesting/try-runtime",

@@ -29,8 +29,9 @@ use frame_support::{
     traits::{
         fungible::{Balanced, Credit, HoldConsideration},
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, EqualPrivilegeOnly, FindAuthor, Get,
-        InstanceFilter, LinearStoragePrice, Nothing, OnFinalize, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Contains, EqualPrivilegeOnly,
+        FindAuthor, Get, InsideBoth, InstanceFilter, LinearStoragePrice, Nothing, OnFinalize,
+        WithdrawReasons,
     },
     weights::{
         constants::{ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -41,7 +42,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot, EnsureSigned,
+    EnsureRoot, EnsureSigned, EnsureWithSuccess,
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
@@ -72,10 +73,10 @@ use astar_primitives::{
     governance::{
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
-        EnsureRootOrTwoThirdsCommunityCouncil, EnsureRootOrTwoThirdsMainCouncil,
-        EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
-        MainCouncilMembershipInst, MainTreasuryInst, TechnicalCommitteeCollectiveInst,
-        TechnicalCommitteeMembershipInst,
+        EnsureRootOrHalfTechnicalCommittee, EnsureRootOrTwoThirdsCommunityCouncil,
+        EnsureRootOrTwoThirdsMainCouncil, EnsureRootOrTwoThirdsTechnicalCommittee,
+        MainCouncilCollectiveInst, MainCouncilMembershipInst, MainTreasuryInst,
+        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
     Address, AssetId, Balance, BlockNumber, Hash, Header, Nonce,
 };
@@ -207,10 +208,9 @@ parameter_types! {
 }
 
 // Configure FRAME pallets to include in runtime.
-
 impl frame_system::Config for Runtime {
     /// The basic call filter to use in dispatchable.
-    type BaseCallFilter = frame_support::traits::Everything;
+    type BaseCallFilter = InsideBoth<SafeMode, TxPause>;
     /// Block & extrinsics weights: base values and limits.
     type BlockWeights = RuntimeBlockWeights;
     /// The maximum length of a block (in bytes).
@@ -1132,6 +1132,52 @@ impl pallet_collective_proxy::Config for Runtime {
     type WeightInfo = pallet_collective_proxy::weights::SubstrateWeight<Runtime>;
 }
 
+/// Calls that can bypass the safe-mode pallet.
+pub struct SafeModeWhitelistedCalls;
+impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
+    fn contains(call: &RuntimeCall) -> bool {
+        match call {
+            // System and Timestamp are required for block production
+            RuntimeCall::System(_)
+            | RuntimeCall::Timestamp(_)
+            | RuntimeCall::Sudo(_)
+            | RuntimeCall::TxPause(_) => true,
+            _ => false,
+        }
+    }
+}
+
+impl pallet_safe_mode::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type WhitelistedCalls = SafeModeWhitelistedCalls;
+    type EnterDuration = ConstU32<{ 5 * MINUTES }>;
+    type EnterDepositAmount = ();
+    type ExtendDuration = ConstU32<{ 2 * MINUTES }>;
+    type ExtendDepositAmount = ();
+    // The 'Success' values below represent the number of blocks that the origin may induce safe mode
+    type ForceEnterOrigin =
+        EnsureWithSuccess<EnsureRootOrHalfTechnicalCommittee, AccountId, ConstU32<{ 5 * MINUTES }>>;
+    type ForceExtendOrigin =
+        EnsureWithSuccess<EnsureRootOrHalfTechnicalCommittee, AccountId, ConstU32<{ 2 * MINUTES }>>;
+    type ForceExitOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
+    type ForceDepositOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
+    type ReleaseDelay = ();
+    type Notify = DappStaking;
+    type WeightInfo = pallet_safe_mode::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_tx_pause::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type PauseOrigin = EnsureRootOrHalfTechnicalCommittee;
+    type UnpauseOrigin = EnsureRootOrHalfTechnicalCommittee;
+    type WhitelistedCalls = ();
+    type MaxNameLen = ConstU32<256>;
+    type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>;
+}
+
 construct_runtime!(
     pub struct Runtime {
         System: frame_system = 10,
@@ -1176,6 +1222,8 @@ construct_runtime!(
         Treasury: pallet_treasury::<Instance1> = 107,
         CommunityTreasury: pallet_treasury::<Instance2> = 108,
         CollectiveProxy: pallet_collective_proxy = 109,
+        SafeMode: pallet_safe_mode = 110,
+        TxPause: pallet_tx_pause = 111,
     }
 );
 
@@ -1295,6 +1343,8 @@ mod benches {
         [pallet_dapp_staking, DappStaking]
         [pallet_inflation, Inflation]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
+        [pallet_tx_pause, TxPause]
+        [pallet_safe_mode, SafeMode]
     );
 }
 

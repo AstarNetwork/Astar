@@ -29,7 +29,7 @@ use frame_support::{
     error::BadOrigin,
     traits::{
         fungible::Unbalanced as FunUnbalanced, Currency, Get, OnFinalize, OnInitialize,
-        ReservableCurrency,
+        ReservableCurrency, SafeModeNotify,
     },
     BoundedVec,
 };
@@ -182,6 +182,28 @@ fn maintenance_mode_call_filtering_works() {
             DappStaking::withdraw_unbonded(RuntimeOrigin::signed(1),),
             Error::<Test>::Disabled
         );
+    })
+}
+
+#[test]
+fn maintenance_safe_mode_entered_exited_works() {
+    ExtBuilder::default().build_and_execute(|| {
+        // Check that maintenance mode is disabled by default
+        assert!(!ActiveProtocolState::<Test>::get().maintenance);
+
+        // Call entered and check post-state and event
+        DappStaking::entered();
+        assert!(ActiveProtocolState::<Test>::get().maintenance);
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::MaintenanceMode {
+            enabled: true,
+        }));
+
+        // Call exited and check post-state and event
+        DappStaking::exited();
+        assert!(!ActiveProtocolState::<Test>::get().maintenance);
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::MaintenanceMode {
+            enabled: false,
+        }));
     })
 }
 
