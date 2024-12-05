@@ -811,18 +811,12 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                 matches!(
                     c,
                     RuntimeCall::System(..)
-                        | RuntimeCall::Timestamp(..)
-                        | RuntimeCall::Scheduler(..)
                         | RuntimeCall::Proxy(..)
-                        | RuntimeCall::Grandpa(..)
-                        // Skip entire Balances pallet
-                        | RuntimeCall::Vesting(pallet_vesting::Call::vest{..})
-				        | RuntimeCall::Vesting(pallet_vesting::Call::vest_other{..})
-				        // Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
+                        | RuntimeCall::Vesting(
+                            pallet_vesting::Call::vest { .. }
+                                | pallet_vesting::Call::vest_other { .. }
+                        )
                         | RuntimeCall::DappStaking(..)
-                        // Skip entire EVM pallet
-                        // Skip entire Ethereum pallet
-                        | RuntimeCall::DynamicEvmBaseFee(..) // Skip entire Contracts pallet
                 )
             }
             // All Runtime calls from Pallet Balances allowed for proxy account

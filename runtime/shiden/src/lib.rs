@@ -1011,26 +1011,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                     c,
                     RuntimeCall::System(..)
                         | RuntimeCall::Identity(..)
-                        | RuntimeCall::Timestamp(..)
                         | RuntimeCall::Multisig(..)
                         | RuntimeCall::Proxy(..)
-                        | RuntimeCall::ParachainSystem(..)
-                        | RuntimeCall::ParachainInfo(..)
-                        // Skip entire Balances pallet
-                        | RuntimeCall::Vesting(pallet_vesting::Call::vest{..})
-				        | RuntimeCall::Vesting(pallet_vesting::Call::vest_other{..})
-				        // Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
+                        | RuntimeCall::Vesting(
+                            pallet_vesting::Call::vest { .. }
+                                | pallet_vesting::Call::vest_other { .. }
+                        )
                         | RuntimeCall::DappStaking(..)
-                        // Skip entire Assets pallet
                         | RuntimeCall::CollatorSelection(..)
-                        | RuntimeCall::Session(..)
-                        | RuntimeCall::XcmpQueue(..)
-                        | RuntimeCall::PolkadotXcm(..)
-                        | RuntimeCall::CumulusXcm(..)
                         | RuntimeCall::XcAssetConfig(..)
-                        // Skip entire EVM pallet
-                        // Skip entire Ethereum pallet
-                        | RuntimeCall::DynamicEvmBaseFee(..) // Skip entire Contracts pallet
                 )
             }
             ProxyType::Balances => {
