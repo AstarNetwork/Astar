@@ -80,7 +80,7 @@ use astar_primitives::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
         PeriodNumber, RankedTier, SmartContract, TierSlots as TierSlotsFunc,
     },
-    evm::EvmRevertCodeHandler,
+    evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler},
     governance::OracleMembershipInst,
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -462,7 +462,7 @@ impl pallet_inflation::PayoutPerBlock<Credit<AccountId, Balances>> for Inflation
     }
 
     fn collators(reward: Credit<AccountId, Balances>) {
-        ToStakingPot::on_unbalanced(reward);
+        CollatorRewardPot::on_unbalanced(reward);
     }
 }
 
@@ -601,8 +601,8 @@ parameter_types! {
     pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
-pub struct ToStakingPot;
-impl OnUnbalanced<Credit<AccountId, Balances>> for ToStakingPot {
+pub struct CollatorRewardPot;
+impl OnUnbalanced<Credit<AccountId, Balances>> for CollatorRewardPot {
     fn on_nonzero_unbalanced(amount: Credit<AccountId, Balances>) {
         let staking_pot = PotId::get().into_account_truncating();
         let _ = Balances::resolve(&staking_pot, amount);
@@ -813,8 +813,12 @@ impl OnUnbalanced<Credit<AccountId, Balances>> for DealWithFees {
             drop(to_burn);
 
             // pay fees to collator
-            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collator);
+            <CollatorRewardPot as OnUnbalanced<_>>::on_unbalanced(collator);
         }
+    }
+
+    fn on_unbalanced(amount: Credit<AccountId, Balances>) {
+        Self::on_unbalanceds(Some(amount).into_iter());
     }
 }
 
@@ -920,7 +924,7 @@ impl pallet_evm::Config for Runtime {
     type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
     type ChainId = ChainId;
-    type OnChargeTransaction = pallet_evm::EVMFungibleAdapter<Balances, ToStakingPot>;
+    type OnChargeTransaction = EVMFungibleAdapterWrapper<Balances, DealWithFees, CollatorRewardPot>;
     type BlockGasLimit = BlockGasLimit;
     type Timestamp = Timestamp;
     type OnCreate = ();
@@ -1007,26 +1011,14 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                     c,
                     RuntimeCall::System(..)
                         | RuntimeCall::Identity(..)
-                        | RuntimeCall::Timestamp(..)
                         | RuntimeCall::Multisig(..)
                         | RuntimeCall::Proxy(..)
-                        | RuntimeCall::ParachainSystem(..)
-                        | RuntimeCall::ParachainInfo(..)
-                        // Skip entire Balances pallet
-                        | RuntimeCall::Vesting(pallet_vesting::Call::vest{..})
-				        | RuntimeCall::Vesting(pallet_vesting::Call::vest_other{..})
-				        // Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
+                        | RuntimeCall::Vesting(
+                            pallet_vesting::Call::vest { .. }
+                                | pallet_vesting::Call::vest_other { .. }
+                        )
                         | RuntimeCall::DappStaking(..)
-                        // Skip entire Assets pallet
                         | RuntimeCall::CollatorSelection(..)
-                        | RuntimeCall::Session(..)
-                        | RuntimeCall::XcmpQueue(..)
-                        | RuntimeCall::PolkadotXcm(..)
-                        | RuntimeCall::CumulusXcm(..)
-                        | RuntimeCall::XcAssetConfig(..)
-                        // Skip entire EVM pallet
-                        // Skip entire Ethereum pallet
-                        | RuntimeCall::DynamicEvmBaseFee(..) // Skip entire Contracts pallet
                 )
             }
             ProxyType::Balances => {

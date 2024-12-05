@@ -18,11 +18,18 @@
 
 use crate::{AccountId, AssetId};
 
-use frame_support::ensure;
-use pallet_evm::{AddressMapping, HashedAddressMapping};
+use frame_support::{
+    ensure,
+    traits::{
+        fungible::{Balanced, Credit},
+        tokens::{fungible::Inspect, imbalance::OnUnbalanced},
+    },
+};
+use pallet_evm::{AddressMapping, HashedAddressMapping, OnChargeEVMTransaction};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_core::{Hasher, H160, H256};
+use sp_core::{Hasher, H160, H256, U256};
+use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::marker::PhantomData;
 
 use pallet_assets::AssetsCallback;
@@ -136,6 +143,55 @@ impl<Address> UnifiedAddress<Address> {
         match self {
             Self::Default(a) => a,
             Self::Mapped(a) => a,
+        }
+    }
+}
+
+/// Wrapper around the `EvmFungibleAdapter` from the `pallet-evm`.
+///
+/// While it provides most of the functionality we need,
+/// it doesn't allow the tip to be deposited into an arbitrary account.
+/// This adapter allows us to do that.
+///
+/// Two separate `OnUnbalanced` handers are used:
+/// - `UOF` for the fee
+/// - `OUT` for the tip
+pub struct EVMFungibleAdapterWrapper<F, FeeHandler, TipHandler>(
+    core::marker::PhantomData<(F, FeeHandler, TipHandler)>,
+);
+impl<T, F, FeeHandler, TipHandler> OnChargeEVMTransaction<T>
+    for EVMFungibleAdapterWrapper<F, FeeHandler, TipHandler>
+where
+    T: pallet_evm::Config,
+    F: Balanced<T::AccountId>,
+    FeeHandler: OnUnbalanced<Credit<T::AccountId, F>>,
+    TipHandler: OnUnbalanced<Credit<T::AccountId, F>>,
+    U256: UniqueSaturatedInto<<F as Inspect<<T as frame_system::Config>::AccountId>>::Balance>,
+{
+    // Kept type as Option to satisfy bound of Default
+    type LiquidityInfo = Option<Credit<T::AccountId, F>>;
+
+    fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, pallet_evm::Error<T>> {
+        pallet_evm::EVMFungibleAdapter::<F, FeeHandler>::withdraw_fee(who, fee)
+    }
+
+    fn correct_and_deposit_fee(
+        who: &H160,
+        corrected_fee: U256,
+        base_fee: U256,
+        already_withdrawn: Self::LiquidityInfo,
+    ) -> Self::LiquidityInfo {
+        <pallet_evm::EVMFungibleAdapter::<F, FeeHandler> as OnChargeEVMTransaction<T>>::correct_and_deposit_fee(
+            who,
+            corrected_fee,
+            base_fee,
+            already_withdrawn,
+        )
+    }
+
+    fn pay_priority_fee(tip: Self::LiquidityInfo) {
+        if let Some(tip) = tip {
+            TipHandler::on_unbalanceds(Some(tip).into_iter());
         }
     }
 }
