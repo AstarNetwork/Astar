@@ -2414,14 +2414,6 @@
 <a href="#2412" id="2412">2412</a>
 <a href="#2413" id="2413">2413</a>
 <a href="#2414" id="2414">2414</a>
-<a href="#2415" id="2415">2415</a>
-<a href="#2416" id="2416">2416</a>
-<a href="#2417" id="2417">2417</a>
-<a href="#2418" id="2418">2418</a>
-<a href="#2419" id="2419">2419</a>
-<a href="#2420" id="2420">2420</a>
-<a href="#2421" id="2421">2421</a>
-<a href="#2422" id="2422">2422</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2504,7 +2496,7 @@
         AccountCheck <span class="kw">as </span>DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
         PeriodNumber, RankedTier, SmartContract, TierSlots <span class="kw">as </span>TierSlotsFunc,
     },
-    evm::EvmRevertCodeHandler,
+    evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler},
     governance::OracleMembershipInst,
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -2886,7 +2878,7 @@
     }
 
     <span class="kw">fn </span>collators(reward: Credit&lt;AccountId, Balances&gt;) {
-        ToStakingPot::on_unbalanced(reward);
+        CollatorRewardPot::on_unbalanced(reward);
     }
 }
 
@@ -3025,8 +3017,8 @@
     <span class="kw">pub </span>TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
-<span class="kw">pub struct </span>ToStakingPot;
-<span class="kw">impl </span>OnUnbalanced&lt;Credit&lt;AccountId, Balances&gt;&gt; <span class="kw">for </span>ToStakingPot {
+<span class="kw">pub struct </span>CollatorRewardPot;
+<span class="kw">impl </span>OnUnbalanced&lt;Credit&lt;AccountId, Balances&gt;&gt; <span class="kw">for </span>CollatorRewardPot {
     <span class="kw">fn </span>on_nonzero_unbalanced(amount: Credit&lt;AccountId, Balances&gt;) {
         <span class="kw">let </span>staking_pot = PotId::get().into_account_truncating();
         <span class="kw">let _ </span>= Balances::resolve(<span class="kw-2">&amp;</span>staking_pot, amount);
@@ -3237,8 +3229,12 @@
             </span>drop(to_burn);
 
             <span class="comment">// pay fees to collator
-            </span>&lt;ToStakingPot <span class="kw">as </span>OnUnbalanced&lt;<span class="kw">_</span>&gt;&gt;::on_unbalanced(collator);
+            </span>&lt;CollatorRewardPot <span class="kw">as </span>OnUnbalanced&lt;<span class="kw">_</span>&gt;&gt;::on_unbalanced(collator);
         }
+    }
+
+    <span class="kw">fn </span>on_unbalanced(amount: Credit&lt;AccountId, Balances&gt;) {
+        <span class="self">Self</span>::on_unbalanceds(<span class="prelude-val">Some</span>(amount).into_iter());
     }
 }
 
@@ -3344,7 +3340,7 @@
     <span class="kw">type </span>PrecompilesType = Precompiles;
     <span class="kw">type </span>PrecompilesValue = PrecompilesValue;
     <span class="kw">type </span>ChainId = ChainId;
-    <span class="kw">type </span>OnChargeTransaction = pallet_evm::EVMFungibleAdapter&lt;Balances, ToStakingPot&gt;;
+    <span class="kw">type </span>OnChargeTransaction = EVMFungibleAdapterWrapper&lt;Balances, DealWithFees, CollatorRewardPot&gt;;
     <span class="kw">type </span>BlockGasLimit = BlockGasLimit;
     <span class="kw">type </span>Timestamp = Timestamp;
     <span class="kw">type </span>OnCreate = ();
@@ -3431,27 +3427,15 @@
                     c,
                     RuntimeCall::System(..)
                         | RuntimeCall::Identity(..)
-                        | RuntimeCall::Timestamp(..)
                         | RuntimeCall::Multisig(..)
                         | RuntimeCall::Proxy(..)
-                        | RuntimeCall::ParachainSystem(..)
-                        | RuntimeCall::ParachainInfo(..)
-                        <span class="comment">// Skip entire Balances pallet
-                        </span>| RuntimeCall::Vesting(pallet_vesting::Call::vest{..})
-				        | RuntimeCall::Vesting(pallet_vesting::Call::vest_other{..})
-				        <span class="comment">// Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
-                        </span>| RuntimeCall::DappStaking(..)
-                        <span class="comment">// Skip entire Assets pallet
-                        </span>| RuntimeCall::CollatorSelection(..)
-                        | RuntimeCall::Session(..)
-                        | RuntimeCall::XcmpQueue(..)
-                        | RuntimeCall::PolkadotXcm(..)
-                        | RuntimeCall::CumulusXcm(..)
-                        | RuntimeCall::XcAssetConfig(..)
-                        <span class="comment">// Skip entire EVM pallet
-                        // Skip entire Ethereum pallet
-                        </span>| RuntimeCall::DynamicEvmBaseFee(..) <span class="comment">// Skip entire Contracts pallet
-                </span>)
+                        | RuntimeCall::Vesting(
+                            pallet_vesting::Call::vest { .. }
+                                | pallet_vesting::Call::vest_other { .. }
+                        )
+                        | RuntimeCall::DappStaking(..)
+                        | RuntimeCall::CollatorSelection(..)
+                )
             }
             ProxyType::Balances =&gt; {
                 <span class="macro">matches!</span>(c, RuntimeCall::Balances(..))

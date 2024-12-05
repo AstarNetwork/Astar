@@ -141,6 +141,62 @@
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -161,11 +217,18 @@
 
 </span><span class="kw">use crate</span>::{AccountId, AssetId};
 
-<span class="kw">use </span>frame_support::ensure;
-<span class="kw">use </span>pallet_evm::{AddressMapping, HashedAddressMapping};
+<span class="kw">use </span>frame_support::{
+    ensure,
+    traits::{
+        fungible::{Balanced, Credit},
+        tokens::{fungible::Inspect, imbalance::OnUnbalanced},
+    },
+};
+<span class="kw">use </span>pallet_evm::{AddressMapping, HashedAddressMapping, OnChargeEVMTransaction};
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>scale_info::TypeInfo;
-<span class="kw">use </span>sp_core::{Hasher, H160, H256};
+<span class="kw">use </span>sp_core::{Hasher, H160, H256, U256};
+<span class="kw">use </span>sp_runtime::traits::UniqueSaturatedInto;
 <span class="kw">use </span>sp_std::marker::PhantomData;
 
 <span class="kw">use </span>pallet_assets::AssetsCallback;
@@ -279,6 +342,55 @@
         <span class="kw">match </span><span class="self">self </span>{
             <span class="self">Self</span>::Default(a) =&gt; a,
             <span class="self">Self</span>::Mapped(a) =&gt; a,
+        }
+    }
+}
+
+<span class="doccomment">/// Wrapper around the `EvmFungibleAdapter` from the `pallet-evm`.
+///
+/// While it provides most of the functionality we need,
+/// it doesn't allow the tip to be deposited into an arbitrary account.
+/// This adapter allows us to do that.
+///
+/// Two separate `OnUnbalanced` handers are used:
+/// - `UOF` for the fee
+/// - `OUT` for the tip
+</span><span class="kw">pub struct </span>EVMFungibleAdapterWrapper&lt;F, FeeHandler, TipHandler&gt;(
+    core::marker::PhantomData&lt;(F, FeeHandler, TipHandler)&gt;,
+);
+<span class="kw">impl</span>&lt;T, F, FeeHandler, TipHandler&gt; OnChargeEVMTransaction&lt;T&gt;
+    <span class="kw">for </span>EVMFungibleAdapterWrapper&lt;F, FeeHandler, TipHandler&gt;
+<span class="kw">where
+    </span>T: pallet_evm::Config,
+    F: Balanced&lt;T::AccountId&gt;,
+    FeeHandler: OnUnbalanced&lt;Credit&lt;T::AccountId, F&gt;&gt;,
+    TipHandler: OnUnbalanced&lt;Credit&lt;T::AccountId, F&gt;&gt;,
+    U256: UniqueSaturatedInto&lt;&lt;F <span class="kw">as </span>Inspect&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::Balance&gt;,
+{
+    <span class="comment">// Kept type as Option to satisfy bound of Default
+    </span><span class="kw">type </span>LiquidityInfo = <span class="prelude-ty">Option</span>&lt;Credit&lt;T::AccountId, F&gt;&gt;;
+
+    <span class="kw">fn </span>withdraw_fee(who: <span class="kw-2">&amp;</span>H160, fee: U256) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::LiquidityInfo, pallet_evm::Error&lt;T&gt;&gt; {
+        pallet_evm::EVMFungibleAdapter::&lt;F, FeeHandler&gt;::withdraw_fee(who, fee)
+    }
+
+    <span class="kw">fn </span>correct_and_deposit_fee(
+        who: <span class="kw-2">&amp;</span>H160,
+        corrected_fee: U256,
+        base_fee: U256,
+        already_withdrawn: <span class="self">Self</span>::LiquidityInfo,
+    ) -&gt; <span class="self">Self</span>::LiquidityInfo {
+        &lt;pallet_evm::EVMFungibleAdapter::&lt;F, FeeHandler&gt; <span class="kw">as </span>OnChargeEVMTransaction&lt;T&gt;&gt;::correct_and_deposit_fee(
+            who,
+            corrected_fee,
+            base_fee,
+            already_withdrawn,
+        )
+    }
+
+    <span class="kw">fn </span>pay_priority_fee(tip: <span class="self">Self</span>::LiquidityInfo) {
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(tip) = tip {
+            TipHandler::on_unbalanceds(<span class="prelude-val">Some</span>(tip).into_iter());
         }
     }
 }
