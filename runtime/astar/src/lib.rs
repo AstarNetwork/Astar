@@ -186,7 +186,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 1100,
+    spec_version: 1200,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -1507,11 +1507,6 @@ impl pallet_migrations::Config for Runtime {
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
 }
 
-impl cumulus_pallet_xcmp_queue::migration::v5::V5Config for Runtime {
-    // This must be the same as the `ChannelInfo` from the `Config`:
-    type ChannelList = ParachainSystem;
-}
-
 construct_runtime!(
     pub struct Runtime
     {
@@ -1614,40 +1609,13 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-parameter_types! {
-    // Threshold amount variation allowed for this migration - 10%
-    pub const ThresholdVariationPercentage: u32 = 10;
-    // percentages below are calculated based on total issuance at the time when dApp staking v3 was launched (8.4B)
-    pub const TierThresholds: [TierThreshold; 4] = [
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(35_700_000), // 3.57%
-            minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
-        },
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(8_900_000), // 0.89%
-            minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
-        },
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(2_380_000), // 0.238%
-            minimum_required_percentage: Perbill::from_parts(1_790_000), // 0.179%
-        },
-        TierThreshold::FixedPercentage {
-            required_percentage: Perbill::from_parts(200_000), // 0.02%
-        },
-    ];
-}
-
-parameter_types! {
-    pub const DmpQueuePalletName: &'static str = "DmpQueue";
-}
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (cumulus_pallet_xcmp_queue::migration::v5::MigrateV4ToV5<Runtime>,);
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);

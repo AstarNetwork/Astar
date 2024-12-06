@@ -177,7 +177,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 1100,
+    spec_version: 1200,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -1286,33 +1286,6 @@ pub type Executive = frame_executive::Executive<
     AllPalletsWithSystem,
     Migrations,
 >;
-
-parameter_types! {
-    // Threshold amount variation allowed for this migration - 10%
-    pub const ThresholdVariationPercentage: u32 = 10;
-    // percentages below are calculated based on a total issuance at the time when dApp staking v3 was launched (84.3M)
-    pub const TierThresholds: [TierThreshold; 4] = [
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(35_700_000), // 3.57%
-            minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
-        },
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(8_900_000), // 0.89%
-            minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
-        },
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(2_380_000), // 0.238%
-            minimum_required_percentage: Perbill::from_parts(1_790_000), // 0.179%
-        },
-        TierThreshold::FixedPercentage {
-            required_percentage: Perbill::from_parts(600_000), // 0.06%
-        },
-    ];
-}
-
-parameter_types! {
-    pub const DmpQueuePalletName: &'static str = "DmpQueue";
-}
 
 /// All migrations that will run on the next runtime upgrade.
 ///
