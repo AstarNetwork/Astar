@@ -2705,38 +2705,6 @@
 <a href="#2703" id="2703">2703</a>
 <a href="#2704" id="2704">2704</a>
 <a href="#2705" id="2705">2705</a>
-<a href="#2706" id="2706">2706</a>
-<a href="#2707" id="2707">2707</a>
-<a href="#2708" id="2708">2708</a>
-<a href="#2709" id="2709">2709</a>
-<a href="#2710" id="2710">2710</a>
-<a href="#2711" id="2711">2711</a>
-<a href="#2712" id="2712">2712</a>
-<a href="#2713" id="2713">2713</a>
-<a href="#2714" id="2714">2714</a>
-<a href="#2715" id="2715">2715</a>
-<a href="#2716" id="2716">2716</a>
-<a href="#2717" id="2717">2717</a>
-<a href="#2718" id="2718">2718</a>
-<a href="#2719" id="2719">2719</a>
-<a href="#2720" id="2720">2720</a>
-<a href="#2721" id="2721">2721</a>
-<a href="#2722" id="2722">2722</a>
-<a href="#2723" id="2723">2723</a>
-<a href="#2724" id="2724">2724</a>
-<a href="#2725" id="2725">2725</a>
-<a href="#2726" id="2726">2726</a>
-<a href="#2727" id="2727">2727</a>
-<a href="#2728" id="2728">2728</a>
-<a href="#2729" id="2729">2729</a>
-<a href="#2730" id="2730">2730</a>
-<a href="#2731" id="2731">2731</a>
-<a href="#2732" id="2732">2732</a>
-<a href="#2733" id="2733">2733</a>
-<a href="#2734" id="2734">2734</a>
-<a href="#2735" id="2735">2735</a>
-<a href="#2736" id="2736">2736</a>
-<a href="#2737" id="2737">2737</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2925,7 +2893,7 @@
     spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">"astar"</span>),
     impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">"astar"</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">1100</span>,
+    spec_version: <span class="number">1200</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">3</span>,
@@ -4246,11 +4214,6 @@
     <span class="kw">type </span>WeightInfo = pallet_migrations::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="kw">impl </span>cumulus_pallet_xcmp_queue::migration::v5::V5Config <span class="kw">for </span>Runtime {
-    <span class="comment">// This must be the same as the `ChannelInfo` from the `Config`:
-    </span><span class="kw">type </span>ChannelList = ParachainSystem;
-}
-
 <span class="macro">construct_runtime!</span>(
     <span class="kw">pub struct </span>Runtime
     {
@@ -4353,40 +4316,13 @@
     Migrations,
 &gt;;
 
-<span class="macro">parameter_types! </span>{
-    <span class="comment">// Threshold amount variation allowed for this migration - 10%
-    </span><span class="kw">pub const </span>ThresholdVariationPercentage: u32 = <span class="number">10</span>;
-    <span class="comment">// percentages below are calculated based on total issuance at the time when dApp staking v3 was launched (8.4B)
-    </span><span class="kw">pub const </span>TierThresholds: [TierThreshold; <span class="number">4</span>] = [
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(<span class="number">35_700_000</span>), <span class="comment">// 3.57%
-            </span>minimum_required_percentage: Perbill::from_parts(<span class="number">23_800_000</span>), <span class="comment">// 2.38%
-        </span>},
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(<span class="number">8_900_000</span>), <span class="comment">// 0.89%
-            </span>minimum_required_percentage: Perbill::from_parts(<span class="number">6_000_000</span>), <span class="comment">// 0.6%
-        </span>},
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(<span class="number">2_380_000</span>), <span class="comment">// 0.238%
-            </span>minimum_required_percentage: Perbill::from_parts(<span class="number">1_790_000</span>), <span class="comment">// 0.179%
-        </span>},
-        TierThreshold::FixedPercentage {
-            required_percentage: Perbill::from_parts(<span class="number">200_000</span>), <span class="comment">// 0.02%
-        </span>},
-    ];
-}
-
-<span class="macro">parameter_types! </span>{
-    <span class="kw">pub const </span>DmpQueuePalletName: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = <span class="string">"DmpQueue"</span>;
-}
-
 <span class="doccomment">/// All migrations that will run on the next runtime upgrade.
 ///
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = (cumulus_pallet_xcmp_queue::migration::v5::MigrateV4ToV5&lt;Runtime&gt;,);
+</span><span class="kw">pub type </span>Unreleased = ();
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);
