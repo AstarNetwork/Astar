@@ -55,4 +55,4 @@ jobs:
       run: yarn test
       env:
         ASTAR_WASM: wasm/astar_runtime.wasm
-        SHIDEN_WASM: wasm/astar_runtime.wasm
+        SHIDEN_WASM: wasm/shiden_runtime.wasm
