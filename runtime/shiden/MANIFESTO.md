@@ -4,7 +4,7 @@
 
 Chaos is the mother of creation and innovation.
 
-Ever since the dawn of humanity, we have strived to push the bar of what is “impossible.” Our sense of curiosity and creativity drove us to where we are now. However, as our society has evolved to encourage materialistic values. We often forget that Issac Newton did not theorize about gravity because he wanted to create a business or to go to the moon, despite being a crucial part of it.
+Ever since the dawn of humanity, we have strived to push the bar of what is “impossible.” Our sense of curiosity and creativity drove us to where we are now. However, as our society has evolved to encourage materialistic values. We often forget that Isaac Newton did not theorize about gravity because he wanted to create a business or to go to the moon, despite being a crucial part of it.
 
 Whereas mankind’s creativity fills the gap between our understanding of the universe versus the unknown reality of our world,
 
@@ -24,7 +24,7 @@ Now, therefore,
 
 The Shiden Dope Ass Organization OG Founders,
 
-Declare chaos back upon this world with these tenants, representing our organization's core values and the rules governing the organization.
+Declare chaos back upon this world with these tenets, representing our organization's core values and the rules governing the organization.
 
 ## Chapter 1: The Philosophy
 
@@ -98,7 +98,7 @@ Be proud of your work, and be humble about your achievements. Build something th
 
 ### Article 1
 
-The Shiden DAO is a decentralized democratic organization run by the community that follows these tenants.
+The Shiden DAO is a decentralized democratic organization run by the community that follows these tenets.
 
 ### Article 2
 
