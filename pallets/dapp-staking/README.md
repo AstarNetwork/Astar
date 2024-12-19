@@ -27,7 +27,7 @@ Each period consists of two subperiods:
 Each period is denoted by a number, which increments each time a new period begins.
 Period beginning is marked by the `voting` subperiod, after which follows the `build&earn` period.
 
-Stakes are **only** valid throughout a period. When new period starts, all stakes are reset to **zero**. This helps prevent projects remaining staked due to intertia of stakers, and makes for a more dynamic staking system. Staker doesn't need to do anything for this to happen, it is automatic.
+Stakes are **only** valid throughout a period. When new period starts, all stakes are reset to **zero**. This helps prevent projects remaining staked due to inertia of stakers, and makes for a more dynamic staking system. Staker doesn't need to do anything for this to happen, it is automatic.
 
 Even though stakes are reset, locks (or freezes) of tokens remain.
 
@@ -48,7 +48,7 @@ Neither stakers nor dApps earn rewards during this subperiod - no new rewards ar
 
 #### Build&Earn
 
-`Build&Earn` subperiod consits of one or more eras, therefore its length is expressed in eras.
+`Build&Earn` subperiod consists of one or more eras, therefore its length is expressed in eras.
 
 After each _era_ ends, eligible stakers and dApps can claim the rewards they earned. Rewards are **only** claimable for the finished eras.
 
@@ -77,7 +77,7 @@ Projects, or _dApps_, must be registered into protocol to participate.
 Only a privileged `ManagerOrigin` can perform dApp registration.
 The pallet itself does not make assumptions who the privileged origin is, and it can differ from runtime to runtime.
 
-Once dApp has been registered, stakers can stake on it immediatelly.
+Once dApp has been registered, stakers can stake on it immediately.
 
 When contract is registered, it is assigned a unique compact numeric Id - 16 bit unsigned integer. This is important for the inner workings of the pallet, and is not directly exposed to the users.
 
@@ -89,7 +89,7 @@ After a dApp has been registered, it is possible to modify reward beneficiary or
 
 #### Unregistration
 
-dApp can be removed from the procotol by unregistering it.
+dApp can be removed from the protocol by unregistering it.
 This is a privileged action that only `ManagerOrigin` can perform.
 
 After a dApp has been unregistered, it's no longer eligible to receive rewards.
@@ -165,7 +165,7 @@ Stakers can claim rewards for passed eras during which they were staking. Even i
 
 Only rewards for passed eras can be claimed. It is possible that a successful reward claim call will claim rewards for multiple eras. This can happen if staker hasn't claimed rewards in some time, and many eras have passed since then, accumulating pending rewards.
 
-To achieve this, the pallet's underyling storage organizes **era reward information** into **spans**. A single span covers multiple eras, e.g. from **1** to **16**. In case user has staked during era 1, and hasn't claimed rewards until era 17, they will be eligible to claim 15 rewards in total (from era 2 to 16). All of this will be done in a single claim reward call.
+To achieve this, the pallet's underlying storage organizes **era reward information** into **spans**. A single span covers multiple eras, e.g. from **1** to **16**. In case user has staked during era 1, and hasn't claimed rewards until era 17, they will be eligible to claim 15 rewards in total (from era 2 to 16). All of this will be done in a single claim reward call.
 
 In case unclaimed history has built up past one span, multiple reward claim calls will be needed to claim all of the rewards.
 
@@ -225,9 +225,9 @@ In the case a dApp doesn't satisfy the entry threshold for any tier, even though
 be left out of tiers and won't earn **any** reward.
 
 In a special and unlikely case that two or more dApps have the exact same score and satisfy tier entry threshold, but there isn't enough
-leftover tier capacity to accomodate them all, this is considered _undefined_ behavior. Some of the dApps will manage to enter the tier, while
+leftover tier capacity to accommodate them all, this is considered _undefined_ behavior. Some of the dApps will manage to enter the tier, while
 others will be left out. There is no strict rule which defines this behavior - instead dApps are encouraged to ensure their tier entry by
-having a larger stake than the other dApp(s). Tehnically, at the moment, the dApp with the lower `dApp Id` will have the advantage over a dApp with
+having a larger stake than the other dApp(s). Technically, at the moment, the dApp with the lower `dApp Id` will have the advantage over a dApp with
 the larger Id.
 
 ### Reward Expiry
