@@ -1904,7 +1904,7 @@ impl_runtime_apis! {
 
             // for native token
             if asset_id.0 == xcm_config::ShidenLocation::get() {
-                Ok(WeightToFee::weight_to_fee(&weight))
+                Ok(XcmWeightToFee::weight_to_fee(&weight))
             }
             // for foreign assets with “units per second” configurations
             else {

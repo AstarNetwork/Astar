@@ -117,7 +117,7 @@ fn query_weight_to_asset_fee_is_ok() {
         // 1. Native asset payment
         {
             let weight = Weight::from_parts(1000, 1000);
-            let expected_fee = WeightToFee::weight_to_fee(&weight);
+            let expected_fee = XcmWeightToFee::weight_to_fee(&weight);
             let fee =
                 Runtime::query_weight_to_asset_fee(weight, XcmAssetId(Location::here()).into())
                     .expect("Must return fee for native asset.");
