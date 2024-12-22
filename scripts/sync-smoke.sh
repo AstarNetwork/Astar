@@ -11,7 +11,7 @@ chain="$@"
 trap "kill $CHAIN_PID" EXIT
 
 echo "Waiting for RPC to be ready"
-attempts=12 # 1 minutes
+attempts=12 # 1 minute
 until nc -z localhost 9944; do
   attempts=$((attempts - 1))
   if [ $attempts -eq 0 ]; then
