@@ -45,7 +45,6 @@ pub use shibuya::*;
 #[cfg(feature = "shibuya")]
 mod shibuya {
     use super::*;
-    pub use shibuya_runtime::WeightToFee;
     pub use shibuya_runtime::*;
 
     /// 1 SBY.
@@ -80,7 +79,6 @@ mod shibuya {
 pub use shiden::*;
 #[cfg(feature = "shiden")]
 mod shiden {
-    pub use shiden_runtime::WeightToFee;
     pub use shiden_runtime::*;
 
     /// 1 SDN.
@@ -91,7 +89,6 @@ mod shiden {
 pub use astar::*;
 #[cfg(feature = "astar")]
 mod astar {
-    pub use astar_runtime::WeightToFee;
     pub use astar_runtime::*;
 
     /// 1 ASTR.
