@@ -4932,7 +4932,7 @@
 
             <span class="comment">// for native token
             </span><span class="kw">if </span>asset_id.<span class="number">0 </span>== xcm_config::AstarLocation::get() {
-                <span class="prelude-val">Ok</span>(WeightToFee::weight_to_fee(<span class="kw-2">&amp;</span>weight))
+                <span class="prelude-val">Ok</span>(XcmWeightToFee::weight_to_fee(<span class="kw-2">&amp;</span>weight))
             }
             <span class="comment">// for foreign assets with “units per second” configurations
             </span><span class="kw">else </span>{
