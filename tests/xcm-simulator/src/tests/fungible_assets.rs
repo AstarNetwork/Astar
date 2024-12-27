@@ -28,7 +28,7 @@ fn para_to_para_reserve_transfer_and_back_via_xtokens() {
     let sibling_asset_id = 123 as u128;
     let para_a_multiloc = (Parent, Parachain(1));
 
-    // On parachain B create an asset which representes a derivative of parachain A native asset.
+    // On parachain B create an asset which represents a derivative of parachain A native asset.
     // This asset is allowed as XCM execution fee payment asset.
     ParaB::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
@@ -74,7 +74,7 @@ fn para_to_para_reserve_transfer_and_back_via_xtokens() {
         );
     });
 
-    // Parachain B should receive parachain A native assets and should mint their local derivate.
+    // Parachain B should receive parachain A native assets and should mint their local derivative.
     // Portion of those assets should be taken as the XCM execution fee.
     let four_instructions_execution_cost =
         (parachain::UnitWeightCost::get() * 4).ref_time() as u128;
@@ -110,7 +110,7 @@ fn para_to_para_reserve_transfer_and_back_via_xtokens() {
     });
 
     ParaA::execute_with(|| {
-        // ParaB soveregin account account should have only the execution cost
+        // ParaB sovereign account account should have only the execution cost
         assert_eq!(
             parachain::Balances::free_balance(&sibling_para_account_id(2)),
             INITIAL_BALANCE + four_instructions_execution_cost
@@ -137,7 +137,7 @@ fn para_to_para_reserve_transfer_and_back() {
         id: ALICE.into(),
     };
 
-    // On parachain B create an asset which representes a derivative of parachain A native asset.
+    // On parachain B create an asset which represents a derivative of parachain A native asset.
     // This asset is allowed as XCM execution fee payment asset.
     ParaB::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
@@ -172,7 +172,7 @@ fn para_to_para_reserve_transfer_and_back() {
         );
     });
 
-    // Parachain B should receive parachain A native assets and should mint their local derivate.
+    // Parachain B should receive parachain A native assets and should mint their local derivative.
     // Portion of those assets should be taken as the XCM execution fee.
     let four_instructions_execution_cost =
         (parachain::UnitWeightCost::get() * 4).ref_time() as u128;
@@ -197,7 +197,7 @@ fn para_to_para_reserve_transfer_and_back() {
     });
 
     ParaA::execute_with(|| {
-        // ParaB soveregin account account should have only the execution cost
+        // ParaB sovereign account account should have only the execution cost
         assert_eq!(
             parachain::Balances::free_balance(&sibling_para_account_id(2)),
             INITIAL_BALANCE + four_instructions_execution_cost
@@ -423,7 +423,7 @@ fn receive_relay_asset_from_relay_and_send_them_back_via_xtokens() {
         id: ALICE.into(),
     };
 
-    // On parachain A create an asset which representes a derivative of relay native asset.
+    // On parachain A create an asset which represents a derivative of relay native asset.
     // This asset is allowed as XCM execution fee payment asset.
     ParaA::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
@@ -460,7 +460,7 @@ fn receive_relay_asset_from_relay_and_send_them_back_via_xtokens() {
         );
     });
 
-    // Parachain A should receive relay native assets and should mint their local derivate.
+    // Parachain A should receive relay native assets and should mint their local derivative.
     // Portion of those assets should be taken as the XCM execution fee.
     let four_instructions_execution_cost =
         (parachain::UnitWeightCost::get() * 4).ref_time() as u128;
@@ -497,7 +497,7 @@ fn receive_relay_asset_from_relay_and_send_them_back_via_xtokens() {
         ));
     });
 
-    // The balances in ParaA alice should have been substracted
+    // The balances in ParaA alice should have been subtracted
     ParaA::execute_with(|| {
         assert_eq!(parachain::Assets::balance(relay_asset_id, ALICE), 0);
     });
@@ -522,7 +522,7 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
         id: ALICE.into(),
     };
 
-    // On parachain A create an asset which representes a derivative of relay native asset.
+    // On parachain A create an asset which represents a derivative of relay native asset.
     // This asset is allowed as XCM execution fee payment asset.
     ParaA::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
@@ -559,7 +559,7 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
         );
     });
 
-    // Parachain A should receive relay native assets and should mint their local derivate.
+    // Parachain A should receive relay native assets and should mint their local derivative.
     // Portion of those assets should be taken as the XCM execution fee.
     let four_instructions_execution_cost =
         (parachain::UnitWeightCost::get() * 4).ref_time() as u128;
@@ -592,7 +592,7 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
         ));
     });
 
-    // The balances in ParaA alice should have been substracted
+    // The balances in ParaA alice should have been subtracted
     ParaA::execute_with(|| {
         assert_eq!(parachain::Assets::balance(relay_asset_id, ALICE), 0);
     });
@@ -616,7 +616,7 @@ fn para_a_send_relay_asset_to_para_b() {
         id: ALICE.into(),
     };
 
-    // On parachain A create an asset which representes a derivative of relay native asset.
+    // On parachain A create an asset which represents a derivative of relay native asset.
     // This asset is allowed as XCM execution fee payment asset.
     // Register relay asset in ParaA
     ParaA::execute_with(|| {
@@ -678,7 +678,7 @@ fn para_a_send_relay_asset_to_para_b() {
         ));
     });
 
-    // Para A balances should have been substracted
+    // Para A balances should have been subtracted
     ParaA::execute_with(|| {
         assert_eq!(parachain::Assets::balance(relay_asset_id, ALICE), 0);
     });
@@ -706,7 +706,7 @@ fn send_relay_asset_to_para_b_with_extra_native() {
     let para_a_native: Location = (Parent, Parachain(1)).into();
     let para_a_native_on_para_b = 456;
 
-    // On parachain A create an asset which representes a derivative of relay native asset.
+    // On parachain A create an asset which represents a derivative of relay native asset.
     // This asset is allowed as XCM execution fee payment asset.
     // Register relay asset in ParaA
     ParaA::execute_with(|| {
@@ -786,7 +786,7 @@ fn send_relay_asset_to_para_b_with_extra_native() {
         ));
     });
 
-    // Para A balances should have been substracted
+    // Para A balances should have been subtracted
     ParaA::execute_with(|| {
         assert_eq!(parachain::Assets::balance(relay_asset_id, ALICE), 0);
         assert_eq!(
@@ -816,7 +816,7 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
     let source_location = (Parent,);
     let fresh_account = [2u8; 32];
 
-    // On parachain A create an asset which representes a derivative of relay native asset.
+    // On parachain A create an asset which represents a derivative of relay native asset.
     ParaA::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
@@ -902,7 +902,7 @@ fn receive_assets_with_sufficients_true_allows_non_funded_account_to_receive_ass
     let source_location = (Parent,);
     let fresh_account = [2u8; 32];
 
-    // On parachain A create an asset which representes a derivative of relay native asset.
+    // On parachain A create an asset which represents a derivative of relay native asset.
     ParaA::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),

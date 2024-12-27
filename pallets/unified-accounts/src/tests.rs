@@ -124,7 +124,7 @@ fn on_killed_account_hook() {
         // create the mappings
         connect_accounts(&ALICE, &alice_secret());
 
-        // kill alice by transfering everything to bob
+        // kill alice by transferring everything to bob
         Balances::set_balance(&ALICE, 0);
 
         // check killed account events
@@ -162,7 +162,7 @@ fn account_claim_should_work() {
             signature
         ));
 
-        // check if all of balances is transfered to new account (ALICE) from
+        // check if all of balances is transferred to new account (ALICE) from
         // old account (alice_eth_old_account)
         assert!(System::events().iter().any(|r| matches!(
             &r.event,
@@ -242,7 +242,7 @@ fn account_default_claim_should_not_work_if_collision() {
         let bob_default_h160 = <UnifiedAccounts as UnifiedAddressMapper<_>>::to_default_h160(&BOB);
 
         // create mapping of alice native with bob's default address
-        // in real world possibilty of this happening is minuscule
+        // in real world possibility of this happening is minuscule
         EvmToNative::<TestRuntime>::insert(&bob_default_h160, &ALICE);
         NativeToEvm::<TestRuntime>::insert(&ALICE, &bob_default_h160);
 
@@ -362,7 +362,7 @@ fn charging_storage_fee_should_not_reap_account() {
         );
 
         //
-        // With sufficent funds, claim should succeed
+        // With sufficient funds, claim should succeed
         //
         assert_ok!(UnifiedAccounts::claim_evm_address(
             RuntimeOrigin::signed(ALICE),

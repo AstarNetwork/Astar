@@ -12,7 +12,7 @@ num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
-#substarte
+#substrate
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 

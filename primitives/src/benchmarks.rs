@@ -72,10 +72,10 @@ where
                 assert_ok!(pallet_assets::Pallet::<T>::force_create(
                     RawOrigin::Root.into(),
                     (i as u128).into(),
-                    // min balance, no significane in holding
+                    // min balance, no significance in holding
                     Address::Id([0u8; 32].into()).into(),
                     true,
-                    // min balance, no significane in holding
+                    // min balance, no significance in holding
                     1u128.into()
                 ));
 

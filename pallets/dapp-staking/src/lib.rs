@@ -2442,7 +2442,7 @@ pub mod pallet {
         /// ### Invariants of EraRewards
         ///
         /// 1. Era number in [`DAppTiers`] must also be stored in one of the span of [`EraRewards`].
-        /// 2. Each span lenght entry in [`EraRewards`] should be lower than or equal to the [`T::EraRewardSpanLength`] constant.
+        /// 2. Each span length entry in [`EraRewards`] should be lower than or equal to the [`T::EraRewardSpanLength`] constant.
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_era_rewards() -> Result<(), sp_runtime::TryRuntimeError> {
             let era_rewards = EraRewards::<T>::iter().collect::<Vec<_>>();

@@ -245,7 +245,7 @@ fn bfpg_matches_expected_value_for_so_called_average_transaction() {
         BaseFeePerGas::<TestRuntime>::set(init_bfpg);
         let init_adj_factor = <TestRuntime as pallet::Config>::AdjustmentFactor::get();
 
-        // Slighly increase the adjustment factor, and calculate the new base fee per gas
+        // Slightly increase the adjustment factor, and calculate the new base fee per gas
         //
         // To keep it closer to reality, let's assume we're using the proposed variability factor of 0.000_015.
         // Let's also assume that block fullness difference is 0.01 (1%).

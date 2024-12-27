@@ -973,7 +973,7 @@ fn relock_unlocking_insufficient_lock_amount_fails() {
         // Otherwise we always have a guarantee that the latest unlocking chunk at least covers the
         // minimum staking amount.
         // To test this, we will do a "dirty trick", and swap the two unlocking chunks that were just created.
-        // This shoudl ensure that the latest unlocking chunk is below the minimum staking amount.
+        // This should ensure that the latest unlocking chunk is below the minimum staking amount.
         Ledger::<Test>::mutate(&account, |ledger| {
             ledger.unlocking = ledger
                 .unlocking

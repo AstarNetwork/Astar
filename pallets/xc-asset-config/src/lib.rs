@@ -156,7 +156,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// Registed mapping between asset type and asset Id.
+        /// Registered mapping between asset type and asset Id.
         AssetRegistered {
             asset_location: VersionedLocation,
             asset_id: T::AssetId,

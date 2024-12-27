@@ -236,7 +236,7 @@ impl CycleConfiguration for DummyCycleConfiguration {
     }
 }
 
-// Just to satsify the trait bound
+// Just to satisfy the trait bound
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]

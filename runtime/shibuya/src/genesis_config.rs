@@ -135,7 +135,7 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
                 Permill::from_percent(30),
                 Permill::from_percent(40),
             ],
-            // percentages below are calulated based on a total issuance at the time when dApp staking v3 was launched (147M)
+            // percentages below are calculated based on a total issuance at the time when dApp staking v3 was launched (147M)
             tier_thresholds: vec![
                 TierThreshold::DynamicPercentage {
                     percentage: Perbill::from_parts(20_000), // 0.0020%

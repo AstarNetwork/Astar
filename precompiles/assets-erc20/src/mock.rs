@@ -188,7 +188,7 @@ impl pallet_evm::Config for Runtime {
 }
 
 // These parameters dont matter much as this will only be called by root with the forced arguments
-// No deposit is substracted with those methods
+// No deposit is subtracted with those methods
 parameter_types! {
     pub const AssetDeposit: Balance = 0;
     pub const AssetAccountDeposit: Balance = 0;

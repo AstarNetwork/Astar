@@ -84,11 +84,11 @@
         external returns (bool);
 
     /**
-     * @dev Event emited when a transfer has been performed.
+     * @dev Event emitted when a transfer has been performed.
      * Selector: ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
      * @param from address The address sending the tokens
      * @param to address The address receiving the tokens.
-     * @param value uint256 The amount of tokens transfered.
+     * @param value uint256 The amount of tokens transferred.
      */
     event Transfer(
         address indexed from,
@@ -97,7 +97,7 @@
     );
 
     /**
-     * @dev Event emited when an approval has been registered.
+     * @dev Event emitted when an approval has been registered.
      * Selector: 8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
      * @param owner address Owner of the tokens.
      * @param spender address Allowed spender.

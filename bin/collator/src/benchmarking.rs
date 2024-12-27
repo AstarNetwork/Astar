@@ -488,7 +488,7 @@ pub fn para_benchmark_inherent_data(
 }
 
 /// Interpret client's native runtime version name (at genesis block).
-/// This is valid only for benchmarking, since genesis block is alreways refered to.
+/// This is valid only for benchmarking, since genesis block is alreways referred to.
 macro_rules! with_runtime {
 	{
 		$client:expr,

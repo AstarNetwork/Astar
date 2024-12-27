@@ -16,7 +16,7 @@ interface XCM {
      *
      * How method check that assets list is valid:
      * - all assets resolved to multi-location (on runtime level)
-     * - all assets has corresponded amount (lenght of assets list matched to amount list)
+     * - all assets has corresponded amount (length of assets list matched to amount list)
      */
     function assets_withdraw(
         address[] calldata asset_id,
@@ -38,7 +38,7 @@ interface XCM {
      *
      * How method check that assets list is valid:
      * - all assets resolved to multi-location (on runtime level)
-     * - all assets has corresponded amount (lenght of assets list matched to amount list)
+     * - all assets has corresponded amount (length of assets list matched to amount list)
      */
     function assets_withdraw(
         address[] calldata asset_id,
@@ -52,7 +52,7 @@ interface XCM {
     /**
      * @param parachain_id - destination parachain Id (ignored if is_relay is true)
      * @param is_relay - if true, destination is relay_chain, if false it is parachain (see previous argument)
-     * @param payment_asset_id - ETH address of the local asset derivate used to pay for execution in the destination chain
+     * @param payment_asset_id - ETH address of the local asset derivative used to pay for execution in the destination chain
      * @param payment_amount - amount of payment asset to use for execution payment - should cover cost of XCM instructions + Transact call weight.
      * @param call - encoded call data (must be decodable by remote chain)
      * @param transact_weight - max weight that the encoded call is allowed to consume in the destination chain
@@ -78,7 +78,7 @@ interface XCM {
      *
      * How method check that assets list is valid:
      * - all assets resolved to multi-location (on runtime level)
-     * - all assets has corresponded amount (lenght of assets list matched to amount list)
+     * - all assets has corresponded amount (length of assets list matched to amount list)
      */
     function assets_reserve_transfer(
         address[] calldata asset_id,
@@ -100,7 +100,7 @@ interface XCM {
      *
      * How method check that assets list is valid:
      * - all assets resolved to multi-location (on runtime level)
-     * - all assets has corresponded amount (lenght of assets list matched to amount list)
+     * - all assets has corresponded amount (length of assets list matched to amount list)
      */
     function assets_reserve_transfer(
         address[] calldata asset_id,

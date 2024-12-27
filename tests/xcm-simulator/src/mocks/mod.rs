@@ -195,7 +195,7 @@ pub fn advance_parachain_block_to(block_number: u64) {
 /// Register and configure the asset for use in XCM
 /// It first create the asset in `pallet_assets` and then register the asset multilocation
 /// mapping in `pallet_xc_asset_config`, and lastly set the asset per second for calculating
-/// XCM execution cost (only applicable if `is_sufficent` is true)
+/// XCM execution cost (only applicable if `is_sufficient` is true)
 pub fn register_and_setup_xcm_asset<Runtime, AssetId>(
     origin: Runtime::RuntimeOrigin,
     // AssetId for the new asset
@@ -205,7 +205,7 @@ pub fn register_and_setup_xcm_asset<Runtime, AssetId>(
     // Asset controller
     asset_controller: <Runtime::Lookup as StaticLookup>::Source,
     // make asset payable, default true
-    is_sufficent: Option<bool>,
+    is_sufficient: Option<bool>,
     // minimum balance for account to exist (ED), default, 0
     min_balance: Option<Runtime::Balance>,
     // Asset unit per second for calculating execution cost for XCM, default 1_000_000_000_000

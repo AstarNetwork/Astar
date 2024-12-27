@@ -817,7 +817,7 @@ mod xcm_new_interface_test {
             }]),
         );
         let weight = WeightV2::from(3_000_000_000u64, 1024);
-        // we only allow upto 2 currencies to be transfered
+        // we only allow upto 2 currencies to be transferred
         let currencies = vec![
             (
                 Address::from(Runtime::asset_id_to_address(2u128)),
