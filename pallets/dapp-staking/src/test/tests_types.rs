@@ -39,6 +39,19 @@ macro_rules! get_u32_type {
     };
 }
 
+// Helper to generate custom `Get` types for testing the `BonusStatus` enum.
+macro_rules! get_u8_type {
+    ($struct_name:ident, $value:expr) => {
+        #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+        struct $struct_name;
+        impl Get<u8> for $struct_name {
+            fn get() -> u8 {
+                $value
+            }
+        }
+    };
+}
+
 #[test]
 fn subperiod_sanity_check() {
     assert_eq!(Subperiod::Voting.next(), Subperiod::BuildAndEarn);
@@ -2011,20 +2024,174 @@ fn stake_amount_works() {
 }
 
 #[test]
+fn default_bonus_status_works() {
+    get_u8_type!(MaxMoves, 2);
+    type TestBonusStatus = BonusStatus<MaxMoves>;
+    let default_value = TestBonusStatus::default();
+
+    assert_eq!(
+        default_value,
+        BonusStatus::SafeMovesRemaining(MaxMoves::get()),
+        "Default should use SafeMovesRemaining(MaxMoves) value"
+    )
+}
+
+#[test]
+fn bonus_status_decrease_works() {
+    get_u8_type!(MaxMoves, 1);
+    type TestBonusStatus = BonusStatus<MaxMoves>;
+    let mut bonus_status = TestBonusStatus::default();
+
+    bonus_status.decrease_moves();
+    assert_eq!(
+        bonus_status,
+        BonusStatus::SafeMovesRemaining(0),
+        "Safe moves must be decreased by one"
+    );
+
+    bonus_status.decrease_moves();
+    assert_eq!(
+        bonus_status,
+        BonusStatus::BonusForfeited,
+        "Bonus must be forfeited"
+    );
+
+    // Decreasing one more time has no effet, bonus is already forfeited
+    bonus_status.decrease_moves();
+    assert_eq!(
+        bonus_status,
+        BonusStatus::BonusForfeited,
+        "Bonus must be forfeited"
+    );
+}
+
+#[test]
+fn singular_staking_encoding_decoding_works() {
+    get_u8_type!(MaxMoves, 2);
+    type TestSingularStakingInfo = SingularStakingInfo<MaxMoves>;
+
+    let staking_info = TestSingularStakingInfo::new(0, Subperiod::Voting);
+    let encoded = staking_info.encode();
+    let expected_encoded = vec![
+        0x00, 0x00, 0x00, 0x00, // previous_staked (StakeAmount default)
+        0x00, 0x00, 0x00, 0x00, // staked (StakeAmount default)
+        0x01, 0x02, // SafeMovesRemaining(2)
+    ];
+
+    assert_eq!(encoded, expected_encoded);
+
+    let decoded: TestSingularStakingInfo =
+        Decode::decode(&mut &encoded[..]).expect("Decoding should succeed");
+
+    assert_eq!(decoded.bonus_status, BonusStatus::SafeMovesRemaining(2));
+
+    let staking_info_no_bonus = TestSingularStakingInfo::new(0, Subperiod::BuildAndEarn);
+    let encoded_no_bonus = staking_info_no_bonus.encode();
+    let expected_encoded_no_bonus = vec![
+        0x00, 0x00, 0x00, 0x00, // previous_staked (StakeAmount default)
+        0x00, 0x00, 0x00, 0x00, // staked (StakeAmount default)
+        0x00, // BonusForfeited
+    ];
+
+    assert_eq!(encoded_no_bonus, expected_encoded_no_bonus);
+
+    let decoded_no_bonus: TestSingularStakingInfo =
+        Decode::decode(&mut &encoded_no_bonus[..]).expect("Decoding should succeed");
+
+    assert_eq!(decoded_no_bonus.bonus_status, BonusStatus::BonusForfeited);
+}
+
+#[test]
+fn singular_staking_decoding_incorrect_moves_fails() {
+    get_u8_type!(MaxMoves, 5);
+    type TestSingularStakingInfo = SingularStakingInfo<MaxMoves>;
+
+    let invalid_encoded_moves = vec![
+        0x00, 0x00, 0x00, 0x00, // previous_staked (StakeAmount default)
+        0x00, 0x00, 0x00, 0x00, // staked (StakeAmount default)
+        0x01, 0x06, // 6 moves (out of range for MaxMoves = 2)
+    ];
+
+    let decoded = TestSingularStakingInfo::decode(&mut &invalid_encoded_moves[..]);
+    assert!(decoded.is_err());
+}
+
+#[test]
+fn legacy_singular_staking_format_decoding_works() {
+    get_u8_type!(MaxMoves, 2);
+    type TestSingularStakingInfo = SingularStakingInfo<MaxMoves>;
+
+    let legacy_encoded_false: Vec<u8> = vec![
+        0x00, 0x00, 0x00, 0x00, // previous_staked (StakeAmount default)
+        0x00, 0x00, 0x00, 0x00, // staked (StakeAmount default)
+        0x00, // loyal_staker = false
+    ];
+
+    let decoded: TestSingularStakingInfo =
+        Decode::decode(&mut &legacy_encoded_false[..]).expect("Decoding should succeed");
+
+    assert_eq!(decoded.bonus_status, BonusStatus::BonusForfeited);
+
+    let legacy_encoded_true: Vec<u8> = vec![
+        0x00, 0x00, 0x00, 0x00, // previous_staked (StakeAmount default)
+        0x00, 0x00, 0x00, 0x00, // staked (StakeAmount default)
+        0x01, // loyal_staker = true
+    ];
+
+    let decoded: TestSingularStakingInfo =
+        Decode::decode(&mut &legacy_encoded_true[..]).expect("Decoding should succeed");
+
+    assert_eq!(decoded.bonus_status, BonusStatus::SafeMovesRemaining(0));
+
+    let legacy_encoded_false_with_extra_byte: Vec<u8> = vec![
+        0x00, 0x00, 0x00, 0x00, // previous_staked (StakeAmount default)
+        0x00, 0x00, 0x00, 0x00, // staked (StakeAmount default)
+        0x00, // loyal_staker = false
+        0x01, // useless extra byte
+    ];
+
+    let decoded: TestSingularStakingInfo =
+        Decode::decode(&mut &legacy_encoded_false_with_extra_byte[..])
+            .expect("Decoding should succeed");
+
+    assert_eq!(decoded.bonus_status, BonusStatus::BonusForfeited);
+}
+
+#[test]
+fn legacy_singular_staking_incorrect_format_decoding_fails() {
+    get_u8_type!(MaxMoves, 2);
+    type TestSingularStakingInfo = SingularStakingInfo<MaxMoves>;
+
+    let encoded_empty: Vec<u8> = vec![];
+    let decoded = TestSingularStakingInfo::decode(&mut &encoded_empty[..]);
+    assert!(decoded.is_err());
+
+    let legacy_encoded_incomplete: Vec<u8> = vec![
+        0x00, 0x00, 0x00, 0x00, // previous_staked (StakeAmount default)
+        0x00, 0x00, 0x00, 0x00, // staked (StakeAmount default)
+              // missing byte
+    ];
+    let decoded = TestSingularStakingInfo::decode(&mut &legacy_encoded_incomplete[..]);
+    assert!(decoded.is_err());
+}
+
+#[test]
 fn singular_staking_info_basics_are_ok() {
+    get_u8_type!(MaxMoves, 0);
+    type TestSingularStakingInfo = SingularStakingInfo<MaxMoves>;
     let period_number = 3;
     let subperiod = Subperiod::Voting;
-    let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
+    let mut staking_info = TestSingularStakingInfo::new(period_number, subperiod);
 
     // Sanity checks
     assert_eq!(staking_info.period_number(), period_number);
-    assert!(staking_info.is_loyal());
+    assert!(staking_info.has_bonus());
     assert!(staking_info.total_staked_amount().is_zero());
     assert!(staking_info.is_empty());
     assert!(staking_info.era().is_zero());
-    assert!(!SingularStakingInfo::new(period_number, Subperiod::BuildAndEarn).is_loyal());
+    assert!(!TestSingularStakingInfo::new(period_number, Subperiod::BuildAndEarn).has_bonus());
 
-    // Add some staked amount during `Voting` period
+    // Add some staked amount during `Voting` subperiod
     let era_1 = 7;
     let vote_stake_amount_1 = 11;
     staking_info.stake(vote_stake_amount_1, era_1, Subperiod::Voting);
@@ -2070,16 +2237,19 @@ fn singular_staking_info_basics_are_ok() {
 
 #[test]
 fn singular_staking_info_unstake_during_voting_is_ok() {
+    get_u8_type!(MaxMoves, 1);
+    type TestSingularStakingInfo = SingularStakingInfo<MaxMoves>;
     let period_number = 3;
     let subperiod = Subperiod::Voting;
-    let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
+    let mut staking_info = TestSingularStakingInfo::new(period_number, subperiod);
 
     // Prep actions
     let era_1 = 2;
     let vote_stake_amount_1 = 11;
     staking_info.stake(vote_stake_amount_1, era_1, Subperiod::Voting);
+    let bonus_status_snapshot = staking_info.bonus_status;
 
-    // 1. Unstake some amount during `Voting` period, loyalty should remain as expected.
+    // 1. Unstake some amount during `Voting` period, bonus status should remain as expected.
     let unstake_amount_1 = 5;
     assert_eq!(
         staking_info.unstake(unstake_amount_1, era_1, Subperiod::Voting),
@@ -2089,7 +2259,11 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
         staking_info.total_staked_amount(),
         vote_stake_amount_1 - unstake_amount_1
     );
-    assert!(staking_info.is_loyal());
+    assert_eq!(
+        staking_info.bonus_status, bonus_status_snapshot,
+        "Bonus should remain unchanged with max safe moves preserved."
+    );
+    assert!(staking_info.bonus_status.has_bonus());
     assert_eq!(
         staking_info.era(),
         era_1 + 1,
@@ -2099,7 +2273,7 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
     assert!(staking_info.previous_staked.is_empty());
     assert!(staking_info.previous_staked.era.is_zero());
 
-    // 2. Fully unstake, attempting to underflow, and ensure loyalty flag has been removed.
+    // 2. Fully unstake, attempting to underflow, and ensure bonus is forfeited.
     let era_2 = era_1 + 2;
     let remaining_stake = staking_info.total_staked_amount();
     assert_eq!(
@@ -2109,8 +2283,8 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
     );
     assert!(staking_info.total_staked_amount().is_zero());
     assert!(
-        !staking_info.is_loyal(),
-        "Loyalty flag should have been removed since it was full unstake."
+        !staking_info.has_bonus(),
+        "Bonus should have been forfeited since it was full unstake."
     );
     assert!(staking_info.era().is_zero());
 
@@ -2120,9 +2294,18 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
 
 #[test]
 fn singular_staking_info_unstake_during_bep_is_ok() {
+    get_u8_type!(MaxMoves, 1);
+    type TestSingularStakingInfo = SingularStakingInfo<MaxMoves>;
     let period_number = 3;
     let subperiod = Subperiod::Voting;
-    let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
+    let mut staking_info = TestSingularStakingInfo::new(period_number, subperiod);
+
+    // Sanity check
+    assert_eq!(
+        staking_info.bonus_status,
+        BonusStatus::SafeMovesRemaining(1),
+        "Sanity check to cover all scenarios.",
+    );
 
     // Prep actions
     let era_1 = 3;
@@ -2153,7 +2336,12 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         staking_info.staked_amount(Subperiod::BuildAndEarn),
         bep_stake_amount_1 - unstake_1
     );
-    assert!(staking_info.is_loyal());
+    assert_eq!(
+        staking_info.bonus_status,
+        BonusStatus::SafeMovesRemaining(1),
+        "Bonus should remain unchanged with max safe moves preserved."
+    );
+    assert!(staking_info.has_bonus());
     assert_eq!(
         staking_info.era(),
         era_1 + 1,
@@ -2190,6 +2378,11 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         staking_info.staked_amount(Subperiod::BuildAndEarn),
         bep_stake_amount_1 + bep_stake_amount_2 - unstake_1 - unstake_2
     );
+    assert_eq!(
+        staking_info.bonus_status,
+        BonusStatus::SafeMovesRemaining(1),
+        "Bonus should remain unchanged with max safe moves preserved."
+    );
 
     assert_eq!(
         staking_info.previous_staked.total(),
@@ -2197,7 +2390,7 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
     );
     assert_eq!(staking_info.previous_staked.era, era_1);
 
-    // 3rd scenario - unstake all of the amount staked during B&E period, and then some more.
+    // 3rd scenario - unstake all of the amount staked during B&E subperiod, and then some more.
     // The point is to take a chunk from the voting subperiod stake too.
     let current_total_stake = staking_info.total_staked_amount();
     let current_bep_stake = staking_info.staked_amount(Subperiod::BuildAndEarn);
@@ -2210,6 +2403,13 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         vec![(era_2, unstake_2), (era_2 + 1, unstake_2)],
         "Also chipping away from the next era since the unstake is relevant to the ongoing era."
     );
+
+    assert_eq!(
+        staking_info.bonus_status,
+        BonusStatus::SafeMovesRemaining(0),
+        "Bonus status moves counter should have been decreased to 0."
+    );
+    assert!(staking_info.has_bonus(), "Bonus should have been preserved since it is the first partial unstake from the 'voting subperiod' stake");
     assert_eq!(
         staking_info.total_staked_amount(),
         current_total_stake - unstake_2
@@ -2221,27 +2421,45 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
     assert!(staking_info
         .staked_amount(Subperiod::BuildAndEarn)
         .is_zero());
-    assert!(
-        !staking_info.is_loyal(),
-        "Loyalty flag should have been removed due to non-zero voting subperiod unstake"
-    );
     assert_eq!(staking_info.era(), era_2);
 
     assert_eq!(staking_info.previous_staked.total(), current_total_stake);
     assert_eq!(staking_info.previous_staked.era, era_2 - 1);
+
+    // 4th scenario - Bonus forfeited
+    // Fully exhaust the bonus by performing another unstake during the B&E subperiod
+    let era_3 = era_2 + 2;
+    let unstake_3 = 5;
+
+    assert_eq!(
+        staking_info.unstake(unstake_3, era_3, Subperiod::BuildAndEarn),
+        vec![(era_3, unstake_3), (era_3 + 1, unstake_3)]
+    );
+    assert_eq!(
+        staking_info.bonus_status,
+        BonusStatus::BonusForfeited,
+        "Bonus should be forfeited after exhausting all safe moves."
+    );
+    assert!(
+        !staking_info.has_bonus(),
+        "Bonus should no longer be active."
+    );
+    assert_eq!(staking_info.era(), era_3);
 }
 
 #[test]
 fn singular_staking_info_unstake_era_amount_pairs_are_ok() {
+    get_u8_type!(MaxMoves, 1);
+    type TestSingularStakingInfo = SingularStakingInfo<MaxMoves>;
     let period_number = 1;
     let subperiod = Subperiod::BuildAndEarn;
 
     // 1. Unstake only reduces the amount from a the future era
     {
-        let era = 3;
+        let era: u32 = 3;
         let stake_amount = 13;
         let unstake_amount = 3;
-        let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
+        let mut staking_info = TestSingularStakingInfo::new(period_number, subperiod);
         staking_info.stake(stake_amount, era, Subperiod::BuildAndEarn);
 
         assert_eq!(
@@ -2255,7 +2473,7 @@ fn singular_staking_info_unstake_era_amount_pairs_are_ok() {
         let era = 3;
         let stake_amount = 17;
         let unstake_amount = 5;
-        let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
+        let mut staking_info = TestSingularStakingInfo::new(period_number, subperiod);
         staking_info.stake(stake_amount, era, Subperiod::BuildAndEarn);
 
         assert_eq!(
@@ -2272,7 +2490,7 @@ fn singular_staking_info_unstake_era_amount_pairs_are_ok() {
         let era = 3;
         let stake_amount = 17;
         let unstake_amount = 5;
-        let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
+        let mut staking_info = TestSingularStakingInfo::new(period_number, subperiod);
         staking_info.stake(stake_amount, era, Subperiod::BuildAndEarn);
 
         assert_eq!(
@@ -2282,6 +2500,54 @@ fn singular_staking_info_unstake_era_amount_pairs_are_ok() {
             vec![(era + 2, unstake_amount), (era + 3, unstake_amount)]
         );
     }
+}
+
+#[test]
+fn bonus_status_transition_between_subperiods_is_ok() {
+    get_u8_type!(MaxMoves, 1);
+    type TestSingularStakingInfo = SingularStakingInfo<MaxMoves>;
+    let mut staking_info = TestSingularStakingInfo::new(1, Subperiod::Voting);
+    staking_info.staked.voting = 15;
+
+    // Sanity check
+    assert_eq!(
+        staking_info.bonus_status,
+        BonusStatus::SafeMovesRemaining(1),
+        "Sanity check to cover all scenarios.",
+    );
+
+    // First unstake in Voting subperiod
+    staking_info.update_bonus_status(Subperiod::Voting, 10);
+    assert_eq!(
+        staking_info.bonus_status,
+        BonusStatus::SafeMovesRemaining(1),
+        "Unstaking during Voting subperiod should not decrement safe moves if voting stake remains."
+    );
+
+    // Then unstake in B&E subperiod
+    staking_info.update_bonus_status(Subperiod::BuildAndEarn, 20);
+    assert_eq!(
+        staking_info.bonus_status,
+        BonusStatus::SafeMovesRemaining(0),
+        "Safe moves should decrement when unstaking in B&E subperiod."
+    );
+}
+
+#[test]
+fn bonus_status_no_change_on_exact_match() {
+    get_u8_type!(MaxMoves, 2);
+    type TestSingularStakingInfo = SingularStakingInfo<MaxMoves>;
+
+    let mut staking_info = TestSingularStakingInfo::new(1, Subperiod::Voting);
+    staking_info.bonus_status = BonusStatus::SafeMovesRemaining(2);
+    staking_info.staked.voting = 15;
+
+    staking_info.update_bonus_status(Subperiod::BuildAndEarn, 15);
+    assert_eq!(
+        staking_info.bonus_status,
+        BonusStatus::SafeMovesRemaining(2),
+        "Safe moves should not decrement when voting stake matches the reference amount."
+    );
 }
 
 #[test]

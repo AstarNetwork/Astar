@@ -21,8 +21,9 @@ After an era ends, it's usually possible to claim rewards for it, if user or dAp
 Periods are another _time unit_ in dApp staking. They are expected to be more lengthy than eras.
 
 Each period consists of two subperiods:
-* `Voting`
-* `Build&Earn`
+
+-   `Voting`
+-   `Build&Earn`
 
 Each period is denoted by a number, which increments each time a new period begins.
 Period beginning is marked by the `voting` subperiod, after which follows the `build&earn` period.
@@ -41,8 +42,9 @@ Casting a vote, or staking, during the `Voting` subperiod makes the staker eligi
 
 `Voting` subperiod length is expressed in _standard_ era lengths, even though the entire voting subperiod is treated as a single _voting era_.
 E.g. if `voting` subperiod lasts for **5 eras**, and each era lasts for **100** blocks, total length of the `voting` subperiod will be **500** blocks.
-* Block 1, Era 1 starts, Period 1 starts, `Voting` subperiod starts
-* Block 501, Era 2 starts, Period 1 continues, `Build&Earn` subperiod starts
+
+-   Block 1, Era 1 starts, Period 1 starts, `Voting` subperiod starts
+-   Block 501, Era 2 starts, Period 1 continues, `Build&Earn` subperiod starts
 
 Neither stakers nor dApps earn rewards during this subperiod - no new rewards are generated after `voting` subperiod ends.
 
@@ -56,14 +58,15 @@ It is still possible to _stake_ during this period, and stakers are encouraged t
 The only exemption is the **final era** of the `build&earn` subperiod - it's not possible to _stake_ then since the stake would be invalid anyhow (stake is only valid from the next era which would be in the next period).
 
 To continue the previous example where era length is **100** blocks, let's assume that `Build&Earn` subperiod lasts for 10 eras:
-* Block 1, Era 1 starts, Period 1 starts, `Voting` subperiod starts
-* Block 501, Era 2 starts, Period 1 continues, `Build&Earn` subperiod starts
-* Block 601, Era 3 starts, Period 1 continues, `Build&Earn` subperiod continues
-* Block 701, Era 4 starts, Period 1 continues, `Build&Earn` subperiod continues
-* ...
-* Block 1401, Era 11 starts, Period 1 continues, `Build&Earn` subperiod enters the final era
-* Block 1501, Era 12 starts, Period 2 starts, `Voting` subperiod starts
-* Block 2001, Era 13 starts, Period 2 continues, `Build&Earn` subperiod starts
+
+-   Block 1, Era 1 starts, Period 1 starts, `Voting` subperiod starts
+-   Block 501, Era 2 starts, Period 1 continues, `Build&Earn` subperiod starts
+-   Block 601, Era 3 starts, Period 1 continues, `Build&Earn` subperiod continues
+-   Block 701, Era 4 starts, Period 1 continues, `Build&Earn` subperiod continues
+-   ...
+-   Block 1401, Era 11 starts, Period 1 continues, `Build&Earn` subperiod enters the final era
+-   Block 1501, Era 12 starts, Period 2 starts, `Voting` subperiod starts
+-   Block 2001, Era 13 starts, Period 2 continues, `Build&Earn` subperiod starts
 
 ### dApps & Smart Contracts
 
@@ -137,11 +140,14 @@ User's stake on a contract must be equal or greater than the `MinimumStakeAmount
 
 Although user can stake on multiple smart contracts, the amount is limited. To be more precise, amount of database entries that can exist per user is limited.
 
-The protocol keeps track of how much was staked by the user in `voting` and `build&earn` subperiod. This is important for the bonus reward calculation.
+The protocol keeps track of how much was staked by the user in `voting` and `build&earn` subperiod. This is important for the bonus reward calculation. Only a limited number of _move actions_ are allowed during the `build&earn` subperiod to preserve bonus reward elegibility. _Move actions_ refer either to:
+
+-   a 'partial unstake with voting stake decrease',
+-   a 'stake transfer between two contracts'.
 
 It is not possible to stake on a dApp that has been unregistered.
 However, if dApp is unregistered after user has staked on it, user will keep earning
-rewards for the staked amount.
+rewards for the staked amount, or can 'move' his stake without impacting his number of allowed 'move actions' for the ongoing period.
 
 #### Unstaking Tokens
 

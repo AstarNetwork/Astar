@@ -29,8 +29,8 @@ use frame_support::{
     genesis_builder_helper, parameter_types,
     traits::{
         fungible::{Balanced, Credit},
-        AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, Contains, FindAuthor, Get, Imbalance,
-        InstanceFilter, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, Contains, FindAuthor, Get,
+        Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -450,6 +450,7 @@ impl pallet_dapp_staking::Config for Runtime {
     type MinimumStakeAmount = MinimumStakingAmount;
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
+    type MaxBonusMovesPerPeriod = ConstU8<2>;
     type WeightInfo = weights::pallet_dapp_staking::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>;

@@ -211,6 +211,12 @@ pub mod pallet {
         #[pallet::constant]
         type RankingEnabled: Get<bool>;
 
+        /// The maximum number of 'move actions' allowed within a single period while
+        /// retaining eligibility for bonus rewards. Exceeding this limit will result in the
+        /// forfeiture of the bonus rewards for the affected stake.
+        #[pallet::constant]
+        type MaxBonusMovesPerPeriod: Get<u8> + Default + Debug;
+
         /// Weight info for various calls & operations in the pallet.
         type WeightInfo: WeightInfo;
 
@@ -290,7 +296,7 @@ pub mod pallet {
             era: EraNumber,
             amount: Balance,
         },
-        /// Bonus reward has been paid out to a loyal staker.
+        /// Bonus reward has been paid out to a 'loyal' staker.
         BonusReward {
             account: T::AccountId,
             smart_contract: T::SmartContract,
@@ -429,7 +435,7 @@ pub mod pallet {
         T::AccountId,
         Blake2_128Concat,
         T::SmartContract,
-        SingularStakingInfo,
+        SingularStakingInfoFor<T>,
         OptionQuery,
     >;
 
@@ -1069,7 +1075,7 @@ pub mod pallet {
                     // Entry exists but period doesn't match. Bonus reward might still be claimable.
                     Some(staking_info)
                         if staking_info.period_number() >= threshold_period
-                            && staking_info.is_loyal() =>
+                            && staking_info.has_bonus() =>
                     {
                         return Err(Error::<T>::UnclaimedRewards.into());
                     }
@@ -1391,8 +1397,8 @@ pub mod pallet {
         /// Cleanup expired stake entries for the contract.
         ///
         /// Entry is considered to be expired if:
-        /// 1. It's from a past period & the account wasn't a loyal staker, meaning there's no claimable bonus reward.
-        /// 2. It's from a period older than the oldest claimable period, regardless whether the account was loyal or not.
+        /// 1. It's from a past period & the account has NO BONUS reward.
+        /// 2. It's from a period older than the oldest claimable period, regardless whether the account was has bonus reward or not.
         #[pallet::call_index(17)]
         #[pallet::weight(T::WeightInfo::cleanup_expired_entries(
             T::MaxNumberOfStakedContracts::get()
@@ -1409,7 +1415,7 @@ pub mod pallet {
             // This is bounded by max allowed number of stake entries per account.
             let to_be_deleted: Vec<T::SmartContract> = StakerInfo::<T>::iter_prefix(&account)
                 .filter_map(|(smart_contract, stake_info)| {
-                    if stake_info.period_number() < current_period && !stake_info.is_loyal()
+                    if stake_info.period_number() < current_period && !stake_info.has_bonus()
                         || stake_info.period_number() < threshold_period
                     {
                         Some(smart_contract)
@@ -2159,7 +2165,7 @@ pub mod pallet {
 
             // Ensure:
             // 1. Period for which rewards are being claimed has ended.
-            // 2. Account has been a loyal staker.
+            // 2. Account is eligible to bonus rewards.
             // 3. Rewards haven't expired.
             let staked_period = staker_info.period_number();
             ensure!(
@@ -2167,7 +2173,7 @@ pub mod pallet {
                 Error::<T>::NoClaimableRewards
             );
             ensure!(
-                staker_info.is_loyal(),
+                staker_info.has_bonus(),
                 Error::<T>::NotEligibleForBonusReward
             );
             ensure!(

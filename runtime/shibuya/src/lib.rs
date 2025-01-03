@@ -30,7 +30,7 @@ use frame_support::{
     traits::{
         fungible::{Balanced, Credit, HoldConsideration},
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
-        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, Contains,
+        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, Contains,
         EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InsideBoth, InstanceFilter,
         LinearStoragePrice, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
@@ -494,6 +494,7 @@ impl pallet_dapp_staking::Config for Runtime {
     type MinimumStakeAmount = MinimumStakingAmount;
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
+    type MaxBonusMovesPerPeriod = ConstU8<2>;
     type WeightInfo = weights::pallet_dapp_staking::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>;

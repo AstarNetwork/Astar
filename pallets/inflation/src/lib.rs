@@ -494,7 +494,7 @@ pub struct InflationConfiguration {
     /// This is provided to the stakers according to formula: 'pool * min(1, total_staked / ideal_staked)'.
     #[codec(compact)]
     pub adjustable_staker_reward_pool_per_era: Balance,
-    /// Bonus reward pool per period, for loyal stakers.
+    /// Bonus reward pool per period, for eligible stakers.
     #[codec(compact)]
     pub bonus_reward_pool_per_period: Balance,
     /// The ideal staking rate, in respect to total issuance.

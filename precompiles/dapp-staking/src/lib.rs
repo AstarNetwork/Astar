@@ -266,7 +266,7 @@ where
         handle.record_db_read::<R>(
             24 + ProtocolState::max_encoded_len()
                 + <R as pallet_dapp_staking::Config>::SmartContract::max_encoded_len()
-                + SingularStakingInfo::max_encoded_len(),
+                + SingularStakingInfo::<<R as pallet_dapp_staking::Config>::MaxBonusMovesPerPeriod>::max_encoded_len(),
         )?;
 
         let smart_contract =
@@ -402,7 +402,7 @@ where
         handle.record_db_read::<R>(
             24 + ProtocolState::max_encoded_len()
                 + <R as pallet_dapp_staking::Config>::SmartContract::max_encoded_len()
-                + SingularStakingInfo::max_encoded_len(),
+                + SingularStakingInfo::<<R as pallet_dapp_staking::Config>::MaxBonusMovesPerPeriod>::max_encoded_len(),
         )?;
 
         let smart_contract =
@@ -527,7 +527,7 @@ where
         // Blake2_128Concat(16 + SmartContract::max_encoded_len) + SingularStakingInfo::max_encoded_len
         handle.record_db_read::<R>(
             16 + <R as pallet_dapp_staking::Config>::SmartContract::max_encoded_len()
-                + SingularStakingInfo::max_encoded_len(),
+                + SingularStakingInfo::<<R as pallet_dapp_staking::Config>::MaxBonusMovesPerPeriod>::max_encoded_len(),
         )?;
 
         let origin_smart_contract =
@@ -688,7 +688,7 @@ where
         Ok(true)
     }
 
-    /// Attempts to claim bonus reward for being a loyal staker of the given dApp.
+    /// Attempts to claim bonus reward for an elegible staker.
     #[precompile::public("claim_bonus_reward((uint8,bytes))")]
     fn claim_bonus_reward(
         handle: &mut impl PrecompileHandle,

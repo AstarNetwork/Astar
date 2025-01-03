@@ -19,9 +19,9 @@
 use crate::test::mock::*;
 use crate::types::*;
 use crate::{
-    pallet::Config, ActiveProtocolState, ContractStake, CurrentEraInfo, DAppId, DAppTiers,
-    EraRewards, Event, FreezeReason, HistoryCleanupMarker, IntegratedDApps, Ledger, NextDAppId,
-    PeriodEnd, PeriodEndInfo, StakerInfo,
+    pallet::Config, ActiveProtocolState, BonusStatusFor, ContractStake, CurrentEraInfo, DAppId,
+    DAppTiers, EraRewards, Event, FreezeReason, HistoryCleanupMarker, IntegratedDApps, Ledger,
+    NextDAppId, PeriodEnd, PeriodEndInfo, StakerInfo,
 };
 
 use frame_support::{
@@ -54,7 +54,7 @@ pub(crate) struct MemorySnapshot {
             <Test as frame_system::Config>::AccountId,
             <Test as Config>::SmartContract,
         ),
-        SingularStakingInfo,
+        SingularStakingInfo<<Test as Config>::MaxBonusMovesPerPeriod>,
     >,
     contract_stake: HashMap<DAppId, ContractStakeAmount>,
     era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>>,
@@ -550,9 +550,10 @@ pub(crate) fn assert_stake(
             );
             assert_eq!(post_staker_info.period_number(), stake_period);
             assert_eq!(
-                post_staker_info.is_loyal(),
-                pre_staker_info.is_loyal(),
-                "Staking operation mustn't change loyalty flag."
+                post_staker_info.has_bonus(),
+                pre_staker_info.has_bonus(),
+                "Staking operation mustn't change bonus reward 
+                eligibility."
             );
         }
         // A new entry is created.
@@ -570,7 +571,7 @@ pub(crate) fn assert_stake(
             );
             assert_eq!(post_staker_info.period_number(), stake_period);
             assert_eq!(
-                post_staker_info.is_loyal(),
+                post_staker_info.has_bonus(),
                 stake_subperiod == Subperiod::Voting
             );
         }
@@ -713,20 +714,42 @@ pub(crate) fn assert_unstake(
             "Staked amount must decrease by the 'amount'"
         );
 
-        let is_loyal = pre_staker_info.is_loyal()
-            && match unstake_subperiod {
-                Subperiod::Voting => !post_staker_info.staked_amount(Subperiod::Voting).is_zero(),
-                Subperiod::BuildAndEarn => {
-                    post_staker_info.staked_amount(Subperiod::Voting)
-                        == pre_staker_info.staked_amount(Subperiod::Voting)
-                }
-            };
+        let should_keep_bonus = if pre_staker_info.has_bonus() {
+            match pre_staker_info.bonus_status {
+                BonusStatus::SafeMovesRemaining(remaining_moves) if remaining_moves > 0 => true,
+                _ => match unstake_subperiod {
+                    Subperiod::Voting => {
+                        !post_staker_info.staked_amount(Subperiod::Voting).is_zero()
+                    }
+                    Subperiod::BuildAndEarn => {
+                        post_staker_info.staked_amount(Subperiod::Voting)
+                            == pre_staker_info.staked_amount(Subperiod::Voting)
+                    }
+                },
+            }
+        } else {
+            false
+        };
 
         assert_eq!(
-            post_staker_info.is_loyal(),
-            is_loyal,
-            "If 'Voting' stake amount is reduced in B&E period, loyalty flag must be set to false."
+            post_staker_info.has_bonus(),
+            should_keep_bonus,
+            "If 'voting stake' amount is fully unstaked in Voting subperiod or reduced in B&E subperiod, 'BonusStatus' must reflect this."
         );
+
+        if unstake_subperiod == Subperiod::BuildAndEarn
+            && pre_staker_info.has_bonus()
+            && post_staker_info.staked_amount(Subperiod::Voting)
+                < pre_staker_info.staked_amount(Subperiod::Voting)
+        {
+            let mut bonus_status_clone = pre_staker_info.bonus_status.clone();
+            bonus_status_clone.decrease_moves();
+
+            assert_eq!(
+                post_staker_info.bonus_status, bonus_status_clone,
+                "'BonusStatus' must correctly decrease moves when 'voting stake' is reduced in B&E subperiod."
+            );
+        }
     }
 
     let unstaked_amount_era_pairs =
@@ -826,6 +849,24 @@ pub(crate) fn assert_unstake(
             pre_era_info.staked_amount_next_era(unstake_subperiod) - expected_amount
         );
     }
+}
+
+/// Assert the bonus status of a staker for a specific smart contract.
+pub(crate) fn assert_bonus_status(
+    account: AccountId,
+    smart_contract: &MockSmartContract,
+    expected_bonus_status: BonusStatusFor<Test>,
+) {
+    let snapshot = MemorySnapshot::new();
+    let staker_info = snapshot
+        .staker_info
+        .get(&(account, *smart_contract))
+        .expect("Staker info entry must exist to verify bonus status.");
+
+    assert_eq!(
+        staker_info.bonus_status, expected_bonus_status,
+        "The staker's bonus status does not match the expected value."
+    );
 }
 
 /// Claim staker rewards.
@@ -1195,7 +1236,7 @@ pub(crate) fn assert_cleanup_expired_entries(account: AccountId) {
         .iter()
         .for_each(|((inner_account, contract), entry)| {
             if *inner_account == account {
-                if entry.period_number() < current_period && !entry.is_loyal()
+                if entry.period_number() < current_period && !entry.has_bonus()
                     || entry.period_number() < threshold_period
                 {
                     to_be_deleted.push(contract);
