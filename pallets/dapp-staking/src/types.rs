@@ -47,7 +47,7 @@
 //! * `UnlockingChunk` - describes some amount undergoing the unlocking process.
 //! * `StakeAmount` - contains information about the staked amount in a particular era, and period.
 //! * `AccountLedger` - keeps track of total locked & staked balance, unlocking chunks and number of stake entries.
-//! * `SingularStakingInfo` - contains information about a particular staker's stake on a specific smart contract. Used to track loyalty.
+//! * `SingularStakingInfo` - contains information about a particular staker's stake on a specific smart contract. Used to track bonus reward elegibility.
 //!
 //! ## Era Information
 //!
@@ -83,6 +83,12 @@ use crate::pallet::Config;
 
 // Convenience type for `AccountLedger` usage.
 pub type AccountLedgerFor<T> = AccountLedger<<T as Config>::MaxUnlockingChunks>;
+
+// Convenience type for `SingularStakingInfo` usage.
+pub type SingularStakingInfoFor<T> = SingularStakingInfo<<T as Config>::MaxBonusMovesPerPeriod>;
+
+// Convenience type for `BonusStatus` usage.
+pub type BonusStatusFor<T> = BonusStatus<<T as Config>::MaxBonusMovesPerPeriod>;
 
 // Convenience type for `DAppTierRewards` usage.
 pub type DAppTierRewardsFor<T> =
@@ -993,20 +999,77 @@ impl EraInfo {
     }
 }
 
+/// Bonus status to track remaining 'voting stake' safe move actions in the ongoing B&E subperiod.
+/// Move actions during B&E refer either to:
+/// - a 'partial unstake with voting stake decrease',
+/// - a 'stake transfer between two contracts'.
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, TypeInfo)]
+#[scale_info(skip_type_params(MaxBonusMoves))]
+pub enum BonusStatus<MaxBonusMoves: Get<u8>> {
+    /// Bonus rewards are forfeited.
+    BonusForfeited,
+    /// Bonus rewards are preserved with a value which is the number of remaining 'safe moves' allowed in the ongoing B&E subperiod.
+    SafeMovesRemaining(u8),
+    #[codec(skip)]
+    _Phantom(PhantomData<MaxBonusMoves>),
+}
+
+impl<MaxBonusMoves: Get<u8>> Default for BonusStatus<MaxBonusMoves> {
+    fn default() -> Self {
+        let max = MaxBonusMoves::get();
+        BonusStatus::SafeMovesRemaining(max)
+    }
+}
+
+impl<MaxBonusMoves: Get<u8>> BonusStatus<MaxBonusMoves> {
+    /// Decrease the number of remaining safe moves by 1.
+    /// If the counter reaches 0, the bonus is forfeited.
+    pub fn decrease_moves(&mut self) {
+        *self = match self {
+            BonusStatus::SafeMovesRemaining(counter) => {
+                if *counter == 0 {
+                    BonusStatus::BonusForfeited
+                } else {
+                    BonusStatus::SafeMovesRemaining(counter.saturating_sub(1))
+                }
+            }
+            _ => BonusStatus::BonusForfeited,
+        }
+    }
+
+    /// Check if bonus rewards are preserved.
+    pub fn has_bonus(&self) -> bool {
+        matches!(self, BonusStatus::SafeMovesRemaining(_))
+    }
+}
+
+impl<MaxBonusMoves: Get<u8>> PartialEq for BonusStatus<MaxBonusMoves> {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (BonusStatus::BonusForfeited, BonusStatus::BonusForfeited) => true,
+            (BonusStatus::SafeMovesRemaining(a), BonusStatus::SafeMovesRemaining(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
+impl<MaxBonusMoves: Get<u8>> Eq for BonusStatus<MaxBonusMoves> {}
+
 /// Information about how much a particular staker staked on a particular smart contract.
 ///
 /// Keeps track of amount staked in the 'voting subperiod', as well as 'build&earn subperiod'.
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
-pub struct SingularStakingInfo {
+#[derive(Encode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+#[scale_info(skip_type_params(MaxBonusMoves))]
+pub struct SingularStakingInfo<MaxBonusMoves: Get<u8>> {
     /// Amount staked before, if anything.
     pub(crate) previous_staked: StakeAmount,
     /// Staked amount
     pub(crate) staked: StakeAmount,
-    /// Indicates whether a staker is a loyal staker or not.
-    pub(crate) loyal_staker: bool,
+    /// Tracks the remaining allowable actions to preserve a staking bonus, based on the staker's behavior during specific subperiods.
+    pub(crate) bonus_status: BonusStatus<MaxBonusMoves>,
 }
 
-impl SingularStakingInfo {
+impl<MaxBonusMoves: Get<u8>> SingularStakingInfo<MaxBonusMoves> {
     /// Creates new instance of the struct.
     ///
     /// ## Args
@@ -1014,14 +1077,20 @@ impl SingularStakingInfo {
     /// `period` - period number for which this entry is relevant.
     /// `subperiod` - subperiod during which this entry is created.
     pub(crate) fn new(period: PeriodNumber, subperiod: Subperiod) -> Self {
+        // Bonus staking is only possible if stake is first made during the voting subperiod.
+        let bonus_status = if subperiod == Subperiod::Voting {
+            BonusStatus::<MaxBonusMoves>::default()
+        } else {
+            BonusStatus::<MaxBonusMoves>::BonusForfeited
+        };
+
         Self {
             previous_staked: Default::default(),
             staked: StakeAmount {
                 period,
                 ..Default::default()
             },
-            // Loyalty staking is only possible if stake is first made during the voting subperiod.
-            loyal_staker: subperiod == Subperiod::Voting,
+            bonus_status,
         }
     }
 
@@ -1042,7 +1111,8 @@ impl SingularStakingInfo {
     /// Unstakes some of the specified amount from the contract.
     ///
     /// In case the `amount` being unstaked is larger than the amount staked in the `Voting` subperiod,
-    /// and `Voting` subperiod has passed, this will remove the _loyalty_ flag from the staker.
+    /// and `Voting` subperiod has passed, this will reduce the staker's remaining safe moves in the bonus status.
+    /// Once all safe moves are exhausted, the bonus will be forfeited.
     ///
     /// Returns a vector of `(era, amount)` pairs, where `era` is the era in which the unstake happened,
     /// and the amount is the corresponding amount.
@@ -1067,12 +1137,8 @@ impl SingularStakingInfo {
         self.staked.era = self.staked.era.max(current_era);
         result.push((self.staked.era, unstaked_amount));
 
-        // 2. Update loyal staker flag accordingly.
-        self.loyal_staker = self.loyal_staker
-            && match subperiod {
-                Subperiod::Voting => !self.staked.voting.is_zero(),
-                Subperiod::BuildAndEarn => self.staked.voting == staked_snapshot.voting,
-            };
+        // 2. Update bonus status accordingly.
+        self.update_bonus_status(subperiod, staked_snapshot.voting);
 
         // 3. Determine what was the previous staked amount.
         // This is done by simply comparing where does the _previous era_ fit in the current context.
@@ -1137,6 +1203,24 @@ impl SingularStakingInfo {
         result
     }
 
+    /// Updates the bonus_status based on the current subperiod
+    /// For Voting subperiod: bonus_status is forfeited for full unstake
+    /// For B&E: the number of 'bonus safe moves' remaining is reduced for full unstake or for partial unstake if it exceeds the previous ‘voting’ stake used as a reference (the bonus status changes to 'forfeited' if there are no safe moves remaining)
+    pub fn update_bonus_status(&mut self, subperiod: Subperiod, previous_voting_stake: Balance) {
+        match subperiod {
+            Subperiod::Voting => {
+                if self.staked.voting.is_zero() {
+                    self.bonus_status = BonusStatus::BonusForfeited;
+                }
+            }
+            Subperiod::BuildAndEarn => {
+                if self.staked.voting < previous_voting_stake {
+                    self.bonus_status.decrease_moves();
+                }
+            }
+        }
+    }
+
     /// Total staked on the contract by the user. Both subperiod stakes are included.
     pub fn total_staked_amount(&self) -> Balance {
         self.staked.total()
@@ -1147,9 +1231,9 @@ impl SingularStakingInfo {
         self.staked.for_type(subperiod)
     }
 
-    /// If `true` staker has staked during voting subperiod and has never reduced their sta
-    pub fn is_loyal(&self) -> bool {
-        self.loyal_staker
+    /// If `true` staker has bonus rewards
+    pub fn has_bonus(&self) -> bool {
+        self.bonus_status.has_bonus()
     }
 
     /// Period for which this entry is relevant.
@@ -1165,6 +1249,46 @@ impl SingularStakingInfo {
     /// `true` if no stake exists, `false` otherwise.
     pub fn is_empty(&self) -> bool {
         self.staked.is_empty()
+    }
+}
+
+impl<MaxBonusMoves: Get<u8>> Decode for SingularStakingInfo<MaxBonusMoves> {
+    /// Decodes SingularStakingInfo from input, supporting both current and legacy format with 'loyal_staker' flag.
+    fn decode<I: parity_scale_codec::Input>(
+        input: &mut I,
+    ) -> Result<Self, parity_scale_codec::Error> {
+        let previous_staked = StakeAmount::decode(input)?;
+        let staked = StakeAmount::decode(input)?;
+
+        let bonus_status = match input.read_byte() {
+            Ok(0x00) => BonusStatus::BonusForfeited, // Legacy format: loyal_staker = false
+            Ok(0x01) => {
+                if input.remaining_len()?.unwrap_or(0) > 0 {
+                    let remaining_moves = u8::decode(input)?;
+                    if remaining_moves > MaxBonusMoves::get() {
+                        return Err(parity_scale_codec::Error::from(
+                            "Remaining bonus safe moves cannot exceed 'MaxBonusMoves' value.",
+                        ));
+                    }
+
+                    BonusStatus::SafeMovesRemaining(remaining_moves)
+                } else {
+                    // Legacy format `loyal_staker = true` without count.
+                    BonusStatus::SafeMovesRemaining(0)
+                }
+            }
+            _ => {
+                return Err(parity_scale_codec::Error::from(
+                    "Invalid byte for BonusStatus",
+                ))
+            }
+        };
+
+        Ok(Self {
+            previous_staked,
+            staked,
+            bonus_status,
+        })
     }
 }
 

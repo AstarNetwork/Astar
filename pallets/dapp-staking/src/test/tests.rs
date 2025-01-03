@@ -18,10 +18,10 @@
 
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
-    pallet::Config, ActiveProtocolState, ContractStake, DAppId, DAppTierRewardsFor, DAppTiers,
-    EraRewards, Error, Event, ForcingType, GenesisConfig, IntegratedDApps, Ledger, NextDAppId,
-    Perbill, PeriodNumber, Permill, Safeguard, StakerInfo, StaticTierParams, Subperiod, TierConfig,
-    TierThreshold,
+    pallet::Config, ActiveProtocolState, BonusStatus, ContractStake, DAppId, DAppTierRewardsFor,
+    DAppTiers, EraRewards, Error, Event, ForcingType, GenesisConfig, IntegratedDApps, Ledger,
+    NextDAppId, Perbill, PeriodNumber, Permill, Safeguard, StakerInfo, StaticTierParams, Subperiod,
+    TierConfig, TierThreshold,
 };
 
 use frame_support::{
@@ -1246,7 +1246,7 @@ fn stake_fails_due_to_too_many_staked_contracts() {
         let account = 1;
         assert_lock(account, 100 as Balance * max_number_of_contracts as Balance);
 
-        // Advance to build&earn subperiod so we ensure non-loyal staking
+        // Advance to build&earn subperiod so we ensure 'non-loyal' staking
         advance_to_next_subperiod();
 
         // Register smart contracts up to the max allowed number
@@ -2147,10 +2147,10 @@ fn cleanup_expired_entries_is_ok() {
 
         // Scenario:
         // - 1st contract will be staked in the period that expires due to exceeded reward retention
-        // - 2nd contract will be staked in the period on the edge of expiry, with loyalty flag
-        // - 3rd contract will be be staked in the period on the edge of expiry, without loyalty flag
-        // - 4th contract will be staked in the period right before the current one, with loyalty flag
-        // - 5th contract will be staked in the period right before the current one, without loyalty flag
+        // - 2nd contract will be staked in the period on the edge of expiry, with bonus elegibility
+        // - 3rd contract will be be staked in the period on the edge of expiry, without bonus elegibility
+        // - 4th contract will be staked in the period right before the current one, with bonus elegibility
+        // - 5th contract will be staked in the period right before the current one, without bonus elegibility
         //
         // Expectation: 1, 3, 5 should be removed, 2 & 4 should remain
 
@@ -2923,6 +2923,51 @@ fn stake_after_period_ends_with_max_staked_contracts() {
             let smart_contract = MockSmartContract::Wasm(id.into());
             assert_stake(account, &smart_contract, 10);
         }
+    })
+}
+
+#[test]
+fn stake_after_period_ends_reset_bonus_status_is_ok() {
+    ExtBuilder::default().build_and_execute(|| {
+        let max_bonus_moves: u8 = <Test as Config>::MaxBonusMovesPerPeriod::get();
+
+        // Phase 1: Register smart contract, lock&stake some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(dev_account, &smart_contract);
+
+        let account = 2;
+        let amount = 400;
+        let partial_unstake_amount = 100;
+        assert_lock(account, amount);
+        assert_stake(account, &smart_contract, amount - partial_unstake_amount);
+
+        // Phase 2: Advance to B&E subperiod, we ensure 'bonus safe moves' remaining is decreased with a partial unstake (overflowing 'voting' stake)
+        advance_to_next_subperiod();
+        assert_unstake(account, &smart_contract, partial_unstake_amount);
+
+        if max_bonus_moves == 0 {
+            let expected_bonus_status = BonusStatus::BonusForfeited;
+            assert_bonus_status(account, &smart_contract, expected_bonus_status);
+        } else {
+            let expected_bonus_status = BonusStatus::SafeMovesRemaining(max_bonus_moves - 1);
+            assert_bonus_status(account, &smart_contract, expected_bonus_status);
+        }
+
+        // Phase 3: Advance to the next period, claim rewards
+        advance_to_next_period();
+        for _ in 0..required_number_of_reward_claims(account) {
+            assert_claim_staker_rewards(account);
+        }
+
+        if max_bonus_moves > 0 {
+            assert_claim_bonus_reward(account, &smart_contract);
+        }
+
+        // Phase 4: Restake and verify BonusStatus reset
+        assert_stake(account, &smart_contract, partial_unstake_amount);
+        let default_bonus_status = BonusStatus::default();
+        assert_bonus_status(account, &smart_contract, default_bonus_status);
     })
 }
 
