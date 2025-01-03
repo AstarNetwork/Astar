@@ -11,6 +11,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
+env:
+  RUSTC_WRAPPER: sccache
+  SCCACHE_CACHE_SIZE: 100G
+
 jobs:
   compile-and-check:
     runs-on: [self-hosted, Linux, X64]
@@ -24,8 +28,6 @@ jobs:
         if ! command -v sccache; then
             cargo install sccache --locked
         fi
-        echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-        echo "SCCACHE_CACHE_SIZE=100G" >> $GITHUB_ENV
 
     - name: Install & display rust toolchain
       run: rustup show
