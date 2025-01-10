@@ -274,6 +274,17 @@ impl RankedTier {
     }
 }
 
+pub struct StakeAmountMoved {
+    pub voting: Balance,
+    pub build_and_earn: Balance,
+}
+
+impl StakeAmountMoved {
+    pub fn total(&self) -> Balance {
+        self.voting.saturating_add(self.build_and_earn)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

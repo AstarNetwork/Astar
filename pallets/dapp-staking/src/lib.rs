@@ -215,7 +215,7 @@ pub mod pallet {
         /// retaining eligibility for bonus rewards. Exceeding this limit will result in the
         /// forfeiture of the bonus rewards for the affected stake.
         #[pallet::constant]
-        type MaxBonusMovesPerPeriod: Get<u8> + Default + Debug;
+        type MaxBonusMovesPerPeriod: Get<u8> + Default + Debug + Clone;
 
         /// Weight info for various calls & operations in the pallet.
         type WeightInfo: WeightInfo;
@@ -322,6 +322,13 @@ pub mod pallet {
         ExpiredEntriesRemoved { account: T::AccountId, count: u16 },
         /// Privileged origin has forced a new era and possibly a subperiod to start from next block.
         Force { forcing_type: ForcingType },
+        /// Account has moved some stake from a source smart contract to a destination smart contract.
+        StakeMoved {
+            account: T::AccountId,
+            source_contract: T::SmartContract,
+            destination_contract: T::SmartContract,
+            amount: Balance,
+        },
     }
 
     #[pallet::error]
@@ -398,6 +405,10 @@ pub mod pallet {
         NoExpiredEntries,
         /// Force call is not allowed in production.
         ForceNotAllowed,
+        /// Same contract specified as source and destination.
+        SameContracts,
+        /// Performing stake move from a registered contract without specifying amount.
+        InvalidAmount,
     }
 
     /// General information about dApp staking protocol state.
@@ -1522,6 +1533,157 @@ pub mod pallet {
 
             Self::internal_claim_bonus_reward_for(account, smart_contract)
         }
+
+        /// Transfers stake between two smart contracts, ensuring period alignment, bonus status preservation if elegible, 
+        /// and adherence to staking limits. Updates all relevant storage and emits a `StakeMoved` event.
+        #[pallet::call_index(21)]
+        #[pallet::weight(T::WeightInfo::move_stake())]
+        pub fn move_stake(
+            origin: OriginFor<T>,
+            source_contract: T::SmartContract,
+            destination_contract: T::SmartContract,
+            maybe_amount: Option<Balance>,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            ensure!(
+                !source_contract.eq(&destination_contract),
+                Error::<T>::SameContracts
+            );
+
+            let dest_dapp_info = IntegratedDApps::<T>::get(&destination_contract)
+                .ok_or(Error::<T>::ContractNotFound)?;
+
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let current_era = protocol_state.era;
+
+            let mut ledger = Ledger::<T>::get(&account);
+
+            // In case old stake rewards are unclaimed & have expired, clean them up.
+            let threshold_period = Self::oldest_claimable_period(protocol_state.period_number());
+            let _ignore = ledger.maybe_cleanup_expired(threshold_period);
+
+            let mut source_staking_info = StakerInfo::<T>::get(&account, &source_contract)
+                .ok_or(Error::<T>::NoStakingInfo)?;
+
+            ensure!(
+                source_staking_info.period_number() == protocol_state.period_number(),
+                Error::<T>::UnstakeFromPastPeriod
+            );
+
+            let maybe_source_dapp_info = IntegratedDApps::<T>::get(&source_contract);
+            let is_source_unregistered = maybe_source_dapp_info.is_none();
+            let bonus_status_snapshot = source_staking_info.bonus_status.clone();
+
+            let amount_to_move = Self::get_amount_to_move(
+                &source_staking_info,
+                maybe_amount,
+                is_source_unregistered,
+            )?;
+
+            // 1.
+            // Prepare Destination Contract Staking Info
+            let (mut dest_staking_info, is_new_entry) =
+                match StakerInfo::<T>::get(&account, &destination_contract) {
+                    // Entry with matching period exists
+                    Some(staking_info)
+                        if staking_info.period_number() == protocol_state.period_number() =>
+                    {
+                        (staking_info, false)
+                    }
+                    // Entry exists but period doesn't match. Bonus reward might still be claimable.
+                    Some(staking_info)
+                        if staking_info.period_number() >= threshold_period
+                            && staking_info.has_bonus() =>
+                    {
+                        return Err(Error::<T>::UnclaimedRewards.into());
+                    }
+                    // No valid entry exists
+                    _ => (
+                        SingularStakingInfo::new(
+                            protocol_state.period_number(),
+                            protocol_state.subperiod(),
+                        ),
+                        true,
+                    ),
+                };
+
+            // 2.
+            // Perform 'Move'
+            let (era_and_amount_pairs, _) = source_staking_info.move_stake(
+                &mut dest_staking_info,
+                amount_to_move,
+                current_era,
+                protocol_state.subperiod(),
+            );
+
+            ensure!(
+                dest_staking_info.total_staked_amount() >= T::MinimumStakeAmount::get(),
+                Error::<T>::InsufficientStakeAmount
+            );
+
+            if is_new_entry && !is_source_unregistered {
+                ledger.contract_stake_count.saturating_inc();
+                ensure!(
+                    ledger.contract_stake_count <= T::MaxNumberOfStakedContracts::get(),
+                    Error::<T>::TooManyStakedContracts
+                );
+            }
+
+            // 3.
+            // Handle Bonus Status
+            // For an unregistered contract the bonus status is preserved.
+            // For a registered contract, the source unstake has already handled the bonus status logic.
+            dest_staking_info.bonus_status = if is_source_unregistered {
+                bonus_status_snapshot
+            } else {
+                source_staking_info.bonus_status.clone()
+            };
+
+            // 4.
+            // Update Afected Contract Stakes
+            if let Some(source_dapp_info) = maybe_source_dapp_info {
+                // Registered source: perform unstake operations.
+                let mut source_contract_stake_info = ContractStake::<T>::get(source_dapp_info.id);
+                source_contract_stake_info.unstake(
+                    era_and_amount_pairs,
+                    protocol_state.period_info,
+                    current_era,
+                );
+
+                ContractStake::<T>::insert(&source_dapp_info.id, source_contract_stake_info);
+            }
+
+            let mut dest_contract_stake_info = ContractStake::<T>::get(&dest_dapp_info.id);
+            dest_contract_stake_info.stake(amount_to_move, protocol_state.period_info, current_era);
+
+            // 5.
+            // Update remaining storage entries
+            if !is_source_unregistered && source_staking_info.is_empty() {
+                ledger.contract_stake_count.saturating_dec();
+                StakerInfo::<T>::remove(&account, &source_contract);
+            } else if !is_source_unregistered {
+                StakerInfo::<T>::insert(&account, &source_contract, source_staking_info);
+            } else {
+                // Unregistered source: remove staker info directly
+                StakerInfo::<T>::remove(&account, &source_contract);
+            }
+
+            StakerInfo::<T>::insert(&account, &destination_contract, dest_staking_info);
+
+            Self::update_ledger(&account, ledger)?;
+            ContractStake::<T>::insert(&dest_dapp_info.id, dest_contract_stake_info);
+
+            Self::deposit_event(Event::<T>::StakeMoved {
+                account,
+                source_contract,
+                destination_contract,
+                amount: amount_to_move,
+            });
+
+            Ok(())
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -2220,6 +2382,36 @@ pub mod pallet {
         fn set_maintenance_mode(enabled: bool) {
             ActiveProtocolState::<T>::mutate(|state| state.maintenance = enabled);
             Self::deposit_event(Event::<T>::MaintenanceMode { enabled });
+        }
+
+        // Helper to get the correct amount to move based on source contract status
+        pub(crate) fn get_amount_to_move(
+            source_staking_info: &SingularStakingInfoFor<T>,
+            maybe_amount: Option<Balance>,
+            is_source_unregistered: bool,
+        ) -> Result<Balance, DispatchError> {
+            if is_source_unregistered {
+                // Unregistered contracts: Move all funds.
+                Ok(source_staking_info.total_staked_amount())
+            } else {
+                let amount = maybe_amount.ok_or(Error::<T>::InvalidAmount)?;
+                ensure!(amount > 0, Error::<T>::ZeroAmount);
+                ensure!(
+                    source_staking_info.total_staked_amount() >= amount,
+                    Error::<T>::UnstakeAmountTooLarge
+                );
+
+                // If the remaining stake falls below the minimum, unstake everything.
+                if source_staking_info
+                    .total_staked_amount()
+                    .saturating_sub(amount)
+                    < T::MinimumStakeAmount::get()
+                {
+                    Ok(source_staking_info.total_staked_amount())
+                } else {
+                    Ok(amount)
+                }
+            }
         }
 
         /// Ensure the correctness of the state of this pallet.

@@ -18,10 +18,11 @@
 
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
-    pallet::Config, ActiveProtocolState, BonusStatus, ContractStake, DAppId, DAppTierRewardsFor,
-    DAppTiers, EraRewards, Error, Event, ForcingType, GenesisConfig, IntegratedDApps, Ledger,
-    NextDAppId, Perbill, PeriodNumber, Permill, Safeguard, StakerInfo, StaticTierParams, Subperiod,
-    TierConfig, TierThreshold,
+    pallet::Config, ActiveProtocolState, BonusStatus, BonusStatusFor, ContractStake, DAppId,
+    DAppTierRewardsFor, DAppTiers, EraRewards, Error, Event, ForcingType, GenesisConfig,
+    IntegratedDApps, Ledger, NextDAppId, Perbill, PeriodNumber, Permill, Safeguard,
+    SingularStakingInfoFor, StakeAmount, StakerInfo, StaticTierParams, Subperiod, TierConfig,
+    TierThreshold,
 };
 
 use frame_support::{
@@ -3529,6 +3530,587 @@ fn claim_bonus_reward_for_works() {
             init_claimer_balance,
             Balances::free_balance(&claimer_account),
             "Claimer balance must not change since reward is deposited to the staker."
+        );
+    })
+}
+
+#[test]
+// Tests moving stakes from unregistered contracts to another contract while verifying that:
+// - All staked funds are moved from the unregistered contracts (for Some and None amounts).
+// - The bonus_status is preserved during the move from an unregistered contract.
+// - Subsequent moves preserve the adjusted bonus_status (check with an unstake in B&E before last move).
+// - Destination stake compounds successfully if entry already exists.
+fn move_stake_from_unregistered_contract_is_ok() {
+    ExtBuilder::default().build_and_execute(|| {
+        // 0.1. Setup 1
+        // Register smart contracts 1 & 2 & 3, lock&stake some amount on 1, unregister the smart contract 1
+        let source_contract = MockSmartContract::wasm(1 as AccountId);
+        let stopover_contract = MockSmartContract::wasm(2 as AccountId);
+        let final_contract = MockSmartContract::wasm(3 as AccountId);
+        assert_register(1, &source_contract);
+        assert_register(1, &stopover_contract);
+        assert_register(1, &final_contract);
+
+        let account = 2;
+        let amount = 300;
+        let partial_move_amount = 200;
+        assert_lock(account, amount);
+        assert_stake(account, &source_contract, amount);
+        assert_unregister(&source_contract);
+
+        // Advance to B&E subperiod to check that bonus is preserved during a move from an unregistered contract
+        advance_to_next_subperiod();
+
+        // 1. First Move
+        assert_move_stake(
+            account,
+            &source_contract,
+            &stopover_contract,
+            Some(partial_move_amount),
+        );
+
+        // 2. Verify newly created destination staking info
+        // - Total stake must be moved from unregistered contracts.
+        // - The new STOPOVER staker info bonus must be preserved with a default bonus status value.
+        let move_era = ActiveProtocolState::<Test>::get().era;
+        let move_period = ActiveProtocolState::<Test>::get().period_number();
+        let expected_stopover_staker_info = SingularStakingInfoFor::<Test> {
+            staked: StakeAmount {
+                voting: amount,
+                build_and_earn: 0,
+                era: move_era + 1,
+                period: move_period,
+            },
+            ..Default::default()
+        };
+        assert_staker_info(
+            account,
+            &stopover_contract,
+            expected_stopover_staker_info.clone(),
+        );
+
+        // 0.2. Setup 2
+        // Move again from an unregistered contract in the next era to ensure previous 'voting' & 'b&e' stakes where properly moved.
+        advance_to_next_era();
+        assert_claim_staker_rewards(account); // Require before unstake
+
+        let unstake_amount = 3;
+        assert_unstake(account, &stopover_contract, unstake_amount); // To decrese BonusStatus by 1
+        assert_unregister(&stopover_contract);
+
+        // 2. Second Move
+        assert_move_stake(account, &stopover_contract, &final_contract, None);
+
+        let move_2_era = ActiveProtocolState::<Test>::get().era;
+        let move_2_period = ActiveProtocolState::<Test>::get().period_number();
+        let mut expected_bonus_status = BonusStatusFor::<Test>::default();
+        expected_bonus_status.decrease_moves();
+        let expected_final_staker_info = SingularStakingInfoFor::<Test> {
+            staked: StakeAmount {
+                voting: amount - unstake_amount,
+                build_and_earn: 0,
+                era: move_2_era + 1,
+                period: move_2_period,
+            },
+            bonus_status: expected_bonus_status,
+            ..Default::default()
+        };
+
+        // The new final decreased staker's bonus must still be preserved.
+        assert_staker_info(account, &final_contract, expected_final_staker_info);
+    })
+}
+
+// Tests moving a stake from a registered contract to another contract under various scenarios:
+// - Partial stake move (to a new destination).
+// - Full stake move when the remaining stake is below the minimum required.
+// - Verifies proper cleanup of the source contract's staking info when fully moved.
+// - Tests the impact on the bonus_status when moves occur during B&E subperiod (until bonus is forfeited).
+#[test]
+fn move_stake_from_registered_contract_is_ok() {
+    ExtBuilder::default().build_and_execute(|| {
+        // 0.1. Setup 1
+        // Register smart contracts 1 & 2 & 3, lock&stake some amount on 1
+        let source_contract = MockSmartContract::wasm(1 as AccountId);
+        let stopover_contract = MockSmartContract::wasm(2 as AccountId);
+        let final_contract = MockSmartContract::wasm(3 as AccountId);
+        assert_register(1, &source_contract);
+        assert_register(1, &stopover_contract);
+        assert_register(1, &final_contract);
+
+        let account = 2;
+        let source_stake_amount = 300;
+        let final_stake_amount = 100;
+        assert_lock(account, source_stake_amount + final_stake_amount);
+
+        let stake_era = ActiveProtocolState::<Test>::get().era;
+        let stake_period = ActiveProtocolState::<Test>::get().period_number();
+        assert_stake(account, &source_contract, source_stake_amount);
+        assert_stake(account, &final_contract, final_stake_amount);
+
+        // 1. First Partial Move
+        let partial_move_amount = 200;
+        assert_move_stake(
+            account,
+            &source_contract,
+            &stopover_contract,
+            Some(partial_move_amount),
+        );
+
+        // 2. Verify newly created destination staking info
+        // - Partial stake must be moved from SOURCE contract to STOPOVER contract.
+        // - The new STOPOVER staker info bonus must be preserved with a default bonus status value (still 'Voting' subperiod).
+        let expected_source_staker_info = SingularStakingInfoFor::<Test> {
+            staked: StakeAmount {
+                voting: source_stake_amount - partial_move_amount,
+                build_and_earn: 0,
+                era: stake_era + 1,
+                period: stake_period,
+            },
+            ..Default::default()
+        };
+        assert_staker_info(account, &source_contract, expected_source_staker_info);
+
+        let expected_stopover_staker_info = SingularStakingInfoFor::<Test> {
+            staked: StakeAmount {
+                voting: partial_move_amount,
+                build_and_earn: 0,
+                era: stake_era + 1,
+                period: stake_period,
+            },
+            ..Default::default()
+        };
+        assert_staker_info(account, &stopover_contract, expected_stopover_staker_info);
+
+        // 0.2. Setup 2
+        // Move again from STOPOVER contract in the next subperiod to an already staked FINAL contract
+        advance_to_next_subperiod();
+
+        let min_stake_amount: Balance = <Test as Config>::MinimumStakeAmount::get();
+        // Ensure partial stake move but below the minimum allowed remaining stake for this to be treated as a full move
+        let partial_move_amount_2 = partial_move_amount.saturating_sub(min_stake_amount) + 1;
+
+        // 2. Second Move
+        assert_move_stake(
+            account,
+            &stopover_contract,
+            &final_contract,
+            Some(partial_move_amount_2),
+        );
+
+        let move_2_era = ActiveProtocolState::<Test>::get().era;
+        let move_2_period = ActiveProtocolState::<Test>::get().period_number();
+        let mut expected_bonus_status = BonusStatusFor::<Test>::default();
+        expected_bonus_status.decrease_moves();
+        let expected_final_staker_info = SingularStakingInfoFor::<Test> {
+            previous_staked: StakeAmount {
+                voting: final_stake_amount,
+                build_and_earn: 0,
+                era: stake_era + 1,
+                period: stake_period,
+            },
+            staked: StakeAmount {
+                voting: final_stake_amount + partial_move_amount,
+                build_and_earn: 0,
+                era: move_2_era + 1,
+                period: move_2_period,
+            },
+            bonus_status: expected_bonus_status,
+        };
+
+        assert_staker_info(account, &final_contract, expected_final_staker_info);
+
+        let max_bonus_moves: u8 = <Test as Config>::MaxBonusMovesPerPeriod::get();
+
+        // Sanity check
+        if max_bonus_moves > 0 {
+            let remaining_moves = max_bonus_moves.saturating_sub(1); // To account for previous unstake
+                                                                     // Move stake until bonus is forfeited
+            for _ in 0..=remaining_moves {
+                assert_move_stake(account, &final_contract, &source_contract, Some(1));
+            }
+
+            let expected_source_staker_info = SingularStakingInfoFor::<Test> {
+                previous_staked: StakeAmount {
+                    voting: source_stake_amount - partial_move_amount
+                        + ((max_bonus_moves as u128) - 1),
+                    build_and_earn: 0,
+                    era: stake_era + 1,
+                    period: stake_period,
+                },
+                staked: StakeAmount {
+                    voting: source_stake_amount - partial_move_amount + (max_bonus_moves as u128),
+                    build_and_earn: 0,
+                    era: move_2_era + 1,
+                    period: move_2_period,
+                },
+                bonus_status: BonusStatus::BonusForfeited,
+            };
+            assert_staker_info(account, &source_contract, expected_source_staker_info);
+
+            let expected_final_staker_info = SingularStakingInfoFor::<Test> {
+                previous_staked: StakeAmount {
+                    voting: final_stake_amount,
+                    build_and_earn: 0,
+                    era: stake_era + 1,
+                    period: stake_period,
+                },
+                staked: StakeAmount {
+                    voting: final_stake_amount + partial_move_amount - (max_bonus_moves as u128),
+                    build_and_earn: 0,
+                    era: move_2_era + 1,
+                    period: move_2_period,
+                },
+                bonus_status: BonusStatus::BonusForfeited, // Maybe to rework: the bonus of an already staked contract is also forfeited after exessive moves
+            };
+            assert_staker_info(account, &final_contract, expected_final_staker_info);
+        }
+    })
+}
+
+#[test]
+fn move_stake_for_different_subperiod_stakes_is_ok() {
+    ExtBuilder::default().build_and_execute(|| {
+        // Register smart contracts 1 & 2, lock&stake some amount on 1
+        let source_contract = MockSmartContract::wasm(1 as AccountId);
+        let destination_contract = MockSmartContract::wasm(2 as AccountId);
+        assert_register(1, &source_contract);
+        assert_register(1, &destination_contract);
+
+        let account = 2;
+        let total_locked_amount = 400;
+        let source_initial_stake_amount = 300;
+        assert_lock(account, total_locked_amount);
+        assert_stake(account, &source_contract, source_initial_stake_amount);
+
+        // 1. First Partial Move (Voting subperiod)
+        let partial_move_amount = 200;
+        assert_move_stake(
+            account,
+            &source_contract,
+            &destination_contract,
+            Some(partial_move_amount),
+        );
+
+        advance_to_next_subperiod();
+
+        // Second stake during B&E
+        let stake_2_era = ActiveProtocolState::<Test>::get().era;
+        let stake_2_period = ActiveProtocolState::<Test>::get().period_number();
+        let source_second_stake_amount = 100;
+        assert_stake(account, &source_contract, source_second_stake_amount);
+
+        advance_to_next_era();
+        let move_2_era = ActiveProtocolState::<Test>::get().era;
+        let move_2_period = ActiveProtocolState::<Test>::get().period_number();
+
+        // 2. Second Partial Move (B&E subperiod)
+        let partial_move_2_amount = 50;
+        assert_move_stake(
+            account,
+            &source_contract,
+            &destination_contract,
+            Some(partial_move_2_amount),
+        );
+
+        let expected_source_staker_info = SingularStakingInfoFor::<Test> {
+            previous_staked: StakeAmount {
+                voting: source_initial_stake_amount - partial_move_amount,
+                build_and_earn: 0,
+                era: stake_2_era,
+                period: stake_2_period,
+            },
+            staked: StakeAmount {
+                voting: source_initial_stake_amount - partial_move_amount,
+                build_and_earn: source_second_stake_amount - partial_move_2_amount,
+                era: move_2_era,
+                period: move_2_period,
+            },
+            bonus_status: BonusStatus::default(),
+        };
+        assert_staker_info(account, &source_contract, expected_source_staker_info);
+
+        let expected_destination_staker_info = SingularStakingInfoFor::<Test> {
+            previous_staked: StakeAmount {
+                voting: partial_move_amount,
+                build_and_earn: 0,
+                era: move_2_era,
+                period: move_2_period,
+            },
+            staked: StakeAmount {
+                voting: partial_move_amount,
+                build_and_earn: partial_move_2_amount,
+                era: move_2_era + 1,
+                period: move_2_period,
+            },
+            bonus_status: BonusStatus::default(),
+        };
+        assert_staker_info(
+            account,
+            &destination_contract,
+            expected_destination_staker_info,
+        );
+    })
+}
+
+#[test]
+fn move_for_same_contract_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        let account = 2;
+        let contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(1, &contract);
+
+        assert_noop!(
+            DappStaking::move_stake(RuntimeOrigin::signed(account), contract, contract, None),
+            Error::<Test>::SameContracts
+        );
+    })
+}
+
+#[test]
+fn move_from_past_period_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        let source_contract = MockSmartContract::wasm(1 as AccountId);
+        let destination_contract = MockSmartContract::wasm(2 as AccountId);
+        assert_register(1, &source_contract);
+        assert_register(1, &destination_contract);
+
+        let account = 2;
+        let source_stake_amount = 300;
+        let partial_move_amount = 200;
+        assert_lock(account, source_stake_amount);
+        assert_stake(account, &source_contract, source_stake_amount);
+
+        advance_to_next_period();
+        // for _ in 0..required_number_of_reward_claims(account) {
+        //     assert_claim_staker_rewards(account);
+        // }
+
+        // Try to move from the source contract, which is no longer staked on due to period change.
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                destination_contract,
+                Some(partial_move_amount)
+            ),
+            Error::<Test>::UnstakeFromPastPeriod
+        );
+    })
+}
+
+#[test]
+fn move_too_small_amount_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        let source_contract = MockSmartContract::wasm(1 as AccountId);
+        let destination_contract = MockSmartContract::wasm(2 as AccountId);
+        assert_register(1, &source_contract);
+        assert_register(1, &destination_contract);
+
+        let account = 2;
+        let source_stake_amount = 300;
+        assert_lock(account, source_stake_amount);
+        assert_stake(account, &source_contract, source_stake_amount);
+
+        let min_stake_amount: Balance = <Test as Config>::MinimumStakeAmount::get();
+        let partial_move_amount = min_stake_amount - 1;
+        // Move to a new contract with too small amount, expect a failure
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                destination_contract,
+                Some(partial_move_amount)
+            ),
+            Error::<Test>::InsufficientStakeAmount
+        );
+    })
+}
+
+// Destination contract is not found in IntegratedDApps.
+#[test]
+fn move_to_invalid_dapp_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        let source_contract = MockSmartContract::wasm(1 as AccountId);
+        let destination_contract = MockSmartContract::wasm(2 as AccountId);
+        assert_register(1, &source_contract);
+
+        let account = 2;
+        assert_lock(account, 300);
+
+        // Try to move to non-existing destination contract
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                destination_contract,
+                None
+            ),
+            Error::<Test>::ContractNotFound
+        );
+    })
+}
+
+// No staking info exists for the account and the source contract.
+#[test]
+fn move_from_non_staked_contract_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        let source_contract = MockSmartContract::Wasm(1);
+        let destination_contract = MockSmartContract::Wasm(2);
+        assert_register(1, &source_contract);
+        assert_register(1, &destination_contract);
+        let account = 2;
+        assert_lock(account, 300);
+
+        // Try to move from the source contract, which isn't staked on.
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                destination_contract,
+                None
+            ),
+            Error::<Test>::NoStakingInfo
+        );
+    })
+}
+
+// Registered contract, but the maybe_amount is None or 0.
+#[test]
+fn move_with_invalid_amount_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        let source_contract = MockSmartContract::Wasm(1);
+        let destination_contract = MockSmartContract::Wasm(2);
+        assert_register(1, &source_contract);
+        assert_register(1, &destination_contract);
+
+        let account = 2;
+        let source_stake_amount = 300;
+        assert_lock(account, source_stake_amount);
+        assert_stake(account, &source_contract, source_stake_amount);
+
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                destination_contract,
+                None
+            ),
+            Error::<Test>::InvalidAmount
+        );
+
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                destination_contract,
+                Some(0)
+            ),
+            Error::<Test>::ZeroAmount
+        );
+    })
+}
+
+// Move ammount exceeds the staked amount.
+#[test]
+fn move_with_exceeding_amount_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        let source_contract = MockSmartContract::Wasm(1);
+        let destination_contract = MockSmartContract::Wasm(2);
+        assert_register(1, &source_contract);
+        assert_register(1, &destination_contract);
+
+        let account = 2;
+        let source_stake_amount = 300;
+        assert_lock(account, source_stake_amount);
+        assert_stake(account, &source_contract, source_stake_amount);
+
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                destination_contract,
+                Some(source_stake_amount + 1)
+            ),
+            Error::<Test>::UnstakeAmountTooLarge
+        );
+    })
+}
+
+#[test]
+fn move_fails_due_to_too_many_staked_contracts() {
+    ExtBuilder::default().build_and_execute(|| {
+        let max_number_of_contracts: u32 = <Test as Config>::MaxNumberOfStakedContracts::get();
+
+        // Lock amount by staker
+        let account = 1;
+        assert_lock(account, 100 as Balance * max_number_of_contracts as Balance);
+
+        // Advance to build&earn subperiod so we ensure 'non-loyal' staking
+        advance_to_next_subperiod();
+
+        let source_contract = MockSmartContract::Wasm(1);
+        assert_register(1, &source_contract);
+        assert_stake(account, &source_contract, 10);
+
+        // Register smart contracts up to the max allowed number
+        for id in 2..=max_number_of_contracts {
+            let smart_contract = MockSmartContract::Wasm(id.into());
+            assert_register(2, &MockSmartContract::Wasm(id.into()));
+            assert_stake(account, &smart_contract, 10);
+        }
+
+        let excess_destination_smart_contract =
+            MockSmartContract::Wasm((max_number_of_contracts + 1).into());
+        assert_register(2, &excess_destination_smart_contract);
+
+        // Max number of staked contract entries has been exceeded.
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                excess_destination_smart_contract.clone(),
+                Some(10)
+            ),
+            Error::<Test>::TooManyStakedContracts
+        );
+    })
+}
+
+#[test]
+fn move_fails_if_unclaimed_destination_staker_rewards_from_past_remain() {
+    ExtBuilder::default().build_and_execute(|| {
+        let source_contract = MockSmartContract::Wasm(1);
+        let source_2_contract = MockSmartContract::Wasm(2);
+        let destination_contract = MockSmartContract::Wasm(3);
+        assert_register(1, &source_contract);
+        assert_register(1, &source_2_contract);
+        assert_register(1, &destination_contract);
+
+        let account = 2;
+        assert_lock(account, 300);
+        assert_stake(account, &source_contract, 100);
+
+        // To transfer bonus reward elegibility to destination_contract
+        assert_move_stake(account, &source_contract, &destination_contract, Some(10));
+
+        // Advance to next period, claim all staker rewards
+        advance_to_next_period();
+        for _ in 0..required_number_of_reward_claims(account) {
+            assert_claim_staker_rewards(account);
+        }
+
+        // Try to move again on the same destination contract, expect an error due to unclaimed bonus rewards
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+        assert_stake(account, &source_2_contract, 100);
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_2_contract,
+                destination_contract,
+                Some(10)
+            ),
+            Error::<Test>::UnclaimedRewards
         );
     })
 }

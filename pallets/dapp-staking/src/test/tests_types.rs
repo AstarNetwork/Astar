@@ -2503,6 +2503,88 @@ fn singular_staking_info_unstake_era_amount_pairs_are_ok() {
 }
 
 #[test]
+fn move_stake_basic() {
+    get_u8_type!(MaxMoves, 1);
+    type TestSingularStakingInfo = SingularStakingInfo<MaxMoves>;
+
+    // Setup initial staking info for source and destination
+    let current_era = 10;
+    let subperiod = Subperiod::Voting;
+    let mut source_staking_info = TestSingularStakingInfo::new(1, subperiod);
+    source_staking_info.staked.add(100, Subperiod::Voting);
+    source_staking_info.staked.add(50, Subperiod::BuildAndEarn);
+    source_staking_info.staked.era = current_era;
+
+    let mut destination_staking_info = TestSingularStakingInfo::new(1, subperiod);
+
+    // Move 80 tokens from source to destination
+    let move_amount = 80;
+    let (era_and_amount_pairs, stake_moved) = source_staking_info.move_stake(
+        &mut destination_staking_info,
+        move_amount,
+        current_era,
+        subperiod,
+    );
+
+    // Verify source staking info
+    assert_eq!(source_staking_info.staked.voting, 20); // 100 - 80
+    assert_eq!(source_staking_info.staked.build_and_earn, 50); // Unchanged
+    assert_eq!(source_staking_info.staked.era, current_era);
+
+    // Verify destination staking info
+    assert_eq!(destination_staking_info.staked.voting, 80);
+    assert_eq!(destination_staking_info.staked.build_and_earn, 0);
+    assert_eq!(destination_staking_info.staked.era, current_era + 1); // Stake valid from next era
+
+    // Verify return values
+    assert_eq!(era_and_amount_pairs.len(), 1);
+    assert_eq!(era_and_amount_pairs[0], (current_era, move_amount));
+    assert_eq!(stake_moved.voting, 80);
+    assert_eq!(stake_moved.build_and_earn, 0);
+}
+
+#[test]
+fn move_stake_full_transfer() {
+    get_u8_type!(MaxMoves, 1);
+    type TestSingularStakingInfo = SingularStakingInfo<MaxMoves>;
+
+    // Setup initial staking info for source and destination
+    let current_era = 10;
+    let subperiod = Subperiod::BuildAndEarn;
+    let mut source_staking_info = TestSingularStakingInfo::new(1, subperiod);
+    source_staking_info.staked.add(50, Subperiod::Voting);
+    source_staking_info.staked.add(50, Subperiod::BuildAndEarn);
+    source_staking_info.staked.era = current_era;
+
+    let mut destination_staking_info = TestSingularStakingInfo::new(1, subperiod);
+
+    // Move all 100 tokens from source to destination
+    let move_amount = 100;
+    let (era_and_amount_pairs, stake_moved) = source_staking_info.move_stake(
+        &mut destination_staking_info,
+        move_amount,
+        current_era,
+        subperiod,
+    );
+
+    // Verify source staking info is emptied
+    assert_eq!(source_staking_info.staked.voting, 0);
+    assert_eq!(source_staking_info.staked.build_and_earn, 0);
+    assert_eq!(source_staking_info.staked.era, current_era);
+
+    // Verify destination staking info - full transfer
+    assert_eq!(destination_staking_info.staked.voting, 50);
+    assert_eq!(destination_staking_info.staked.build_and_earn, 50);
+    assert_eq!(destination_staking_info.staked.era, current_era + 1);
+
+    // Verify return values
+    assert_eq!(era_and_amount_pairs.len(), 1);
+    assert_eq!(era_and_amount_pairs[0], (current_era, move_amount));
+    assert_eq!(stake_moved.voting, 50);
+    assert_eq!(stake_moved.build_and_earn, 50);
+}
+
+#[test]
 fn bonus_status_transition_between_subperiods_is_ok() {
     get_u8_type!(MaxMoves, 1);
     type TestSingularStakingInfo = SingularStakingInfo<MaxMoves>;

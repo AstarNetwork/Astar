@@ -75,7 +75,9 @@ use sp_runtime::{
 pub use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec::Vec};
 
 use astar_primitives::{
-    dapp_staking::{DAppId, EraNumber, PeriodNumber, RankedTier, TierSlots as TierSlotsFunc},
+    dapp_staking::{
+        DAppId, EraNumber, PeriodNumber, RankedTier, StakeAmountMoved, TierSlots as TierSlotsFunc,
+    },
     Balance, BlockNumber,
 };
 
@@ -1041,6 +1043,16 @@ impl<MaxBonusMoves: Get<u8>> BonusStatus<MaxBonusMoves> {
     pub fn has_bonus(&self) -> bool {
         matches!(self, BonusStatus::SafeMovesRemaining(_))
     }
+
+    /// Custom equality function to ignore the lack of PartialEq and Eq implementation for ConstU8 in MaxBonusMoves.
+    pub fn equals(&self, other: &Self) -> bool {
+        match (self, other) {
+            (BonusStatus::BonusForfeited, BonusStatus::BonusForfeited) => true,
+            (BonusStatus::SafeMovesRemaining(a), BonusStatus::SafeMovesRemaining(b)) => a == b,
+            (BonusStatus::_Phantom(_), BonusStatus::_Phantom(_)) => true,
+            _ => false,
+        }
+    }
 }
 
 impl<MaxBonusMoves: Get<u8>> PartialEq for BonusStatus<MaxBonusMoves> {
@@ -1203,10 +1215,51 @@ impl<MaxBonusMoves: Get<u8>> SingularStakingInfo<MaxBonusMoves> {
         result
     }
 
+    /// Transfers stake between contracts while maintaining subperiod-specific allocations, era consistency, and bonus-safe conditions.
+    pub fn move_stake(
+        &mut self,
+        destination: &mut SingularStakingInfo<MaxBonusMoves>,
+        amount: Balance,
+        current_era: EraNumber,
+        subperiod: Subperiod,
+    ) -> (Vec<(EraNumber, Balance)>, StakeAmountMoved) {
+        let staked_snapshot = self.staked;
+        let era_and_amount_pairs = self.unstake(amount, current_era, subperiod);
+
+        let voting_stake_moved = staked_snapshot.voting.saturating_sub(self.staked.voting);
+        let build_earn_stake_moved = staked_snapshot
+            .build_and_earn
+            .saturating_sub(self.staked.build_and_earn);
+
+        // Similar to a stake on destination but for the 2 subperiods
+        destination.previous_staked = destination.staked;
+        destination.previous_staked.era = current_era;
+        if destination.previous_staked.total().is_zero() {
+            destination.previous_staked = Default::default();
+        }
+        destination
+            .staked
+            .add(voting_stake_moved, Subperiod::Voting);
+        destination
+            .staked
+            .add(build_earn_stake_moved, Subperiod::BuildAndEarn);
+
+        // Moved stake is only valid from the next era so we keep it consistent here
+        destination.staked.era = current_era.saturating_add(1);
+
+        (
+            era_and_amount_pairs,
+            StakeAmountMoved {
+                voting: voting_stake_moved,
+                build_and_earn: build_earn_stake_moved,
+            },
+        )
+    }
+
     /// Updates the bonus_status based on the current subperiod
     /// For Voting subperiod: bonus_status is forfeited for full unstake
     /// For B&E: the number of 'bonus safe moves' remaining is reduced for full unstake or for partial unstake if it exceeds the previous ‘voting’ stake used as a reference (the bonus status changes to 'forfeited' if there are no safe moves remaining)
-    pub fn update_bonus_status(&mut self, subperiod: Subperiod, previous_voting_stake: Balance) {
+    pub fn update_bonus_status(&mut self, subperiod: Subperiod, voting_stake_snapshot: Balance) {
         match subperiod {
             Subperiod::Voting => {
                 if self.staked.voting.is_zero() {
@@ -1214,7 +1267,7 @@ impl<MaxBonusMoves: Get<u8>> SingularStakingInfo<MaxBonusMoves> {
                 }
             }
             Subperiod::BuildAndEarn => {
-                if self.staked.voting < previous_voting_stake {
+                if self.staked.voting < voting_stake_snapshot {
                     self.bonus_status.decrease_moves();
                 }
             }
@@ -1249,6 +1302,13 @@ impl<MaxBonusMoves: Get<u8>> SingularStakingInfo<MaxBonusMoves> {
     /// `true` if no stake exists, `false` otherwise.
     pub fn is_empty(&self) -> bool {
         self.staked.is_empty()
+    }
+
+    /// Custom equality function to ignore the lack of PartialEq and Eq implementation for ConstU8 in MaxBonusMoves.
+    pub fn equals(&self, other: &Self) -> bool {
+        self.previous_staked == other.previous_staked
+            && self.staked == other.staked
+            && self.bonus_status.equals(&other.bonus_status)
     }
 }
 

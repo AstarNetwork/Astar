@@ -21,7 +21,7 @@ use crate::types::*;
 use crate::{
     pallet::Config, ActiveProtocolState, BonusStatusFor, ContractStake, CurrentEraInfo, DAppId,
     DAppTiers, EraRewards, Event, FreezeReason, HistoryCleanupMarker, IntegratedDApps, Ledger,
-    NextDAppId, PeriodEnd, PeriodEndInfo, StakerInfo,
+    NextDAppId, PeriodEnd, PeriodEndInfo, StakerInfo, Subperiod,
 };
 
 use frame_support::{
@@ -33,13 +33,13 @@ use sp_runtime::{traits::Zero, Perbill};
 use std::collections::HashMap;
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, EraNumber, PeriodNumber},
+    dapp_staking::{CycleConfiguration, EraNumber, PeriodNumber, StakeAmountMoved},
     Balance, BlockNumber,
 };
 
 /// Helper struct used to store the entire pallet state snapshot.
 /// Used when comparison of before/after states is required.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct MemorySnapshot {
     active_protocol_state: ProtocolState,
     next_dapp_id: DAppId,
@@ -535,41 +535,38 @@ pub(crate) fn assert_stake(
     // 2. verify staker info
     // =====================
     // =====================
+
+    let stake_amount = match stake_subperiod {
+        Subperiod::Voting => StakeAmountMoved {
+            voting: amount,
+            build_and_earn: 0,
+        },
+        Subperiod::BuildAndEarn => StakeAmountMoved {
+            voting: 0,
+            build_and_earn: amount,
+        },
+    };
+
+    verify_staker_info_stake(
+        pre_snapshot.clone(),
+        post_snapshot.clone(),
+        account,
+        smart_contract,
+        stake_amount,
+    );
+
     match pre_staker_info {
         // We're just updating an existing entry
         Some(pre_staker_info) if pre_staker_info.period_number() == stake_period => {
             assert_eq!(
-                post_staker_info.total_staked_amount(),
-                pre_staker_info.total_staked_amount() + amount,
-                "Total staked amount must increase by the 'amount'"
-            );
-            assert_eq!(
-                post_staker_info.staked_amount(stake_subperiod),
-                pre_staker_info.staked_amount(stake_subperiod) + amount,
-                "Staked amount must increase by the 'amount'"
-            );
-            assert_eq!(post_staker_info.period_number(), stake_period);
-            assert_eq!(
                 post_staker_info.has_bonus(),
                 pre_staker_info.has_bonus(),
-                "Staking operation mustn't change bonus reward 
+                "Staking operation mustn't change bonus reward
                 eligibility."
             );
         }
         // A new entry is created.
         _ => {
-            assert_eq!(
-                post_staker_info.total_staked_amount(),
-                amount,
-                "Total staked amount must be equal to exactly the 'amount'"
-            );
-            assert!(amount >= <Test as Config>::MinimumStakeAmount::get());
-            assert_eq!(
-                post_staker_info.staked_amount(stake_subperiod),
-                amount,
-                "Staked amount must be equal to exactly the 'amount'"
-            );
-            assert_eq!(post_staker_info.period_number(), stake_period);
             assert_eq!(
                 post_staker_info.has_bonus(),
                 stake_subperiod == Subperiod::Voting
@@ -866,6 +863,24 @@ pub(crate) fn assert_bonus_status(
     assert_eq!(
         staker_info.bonus_status, expected_bonus_status,
         "The staker's bonus status does not match the expected value."
+    );
+}
+
+/// Assert the singular staking info of a staker for a specific smart contract.
+pub(crate) fn assert_staker_info(
+    account: AccountId,
+    smart_contract: &MockSmartContract,
+    expected_staker_info: SingularStakingInfoFor<Test>,
+) {
+    let snapshot = MemorySnapshot::new();
+    let staker_info = snapshot
+        .staker_info
+        .get(&(account, *smart_contract))
+        .expect("Staker info entry must exist to verify bonus status.");
+
+    assert!(
+        staker_info.equals(&expected_staker_info),
+        "Staker infos do not match."
     );
 }
 
@@ -1623,5 +1638,445 @@ pub(crate) fn is_account_ledger_expired(
     match ledger.staked_period() {
         Some(staked_period) if staked_period < valid_threshold_period => true,
         _ => false,
+    }
+}
+
+/// Move stake funds from source contract to destination contract.
+pub(crate) fn assert_move_stake(
+    account: AccountId,
+    source_contract: &MockSmartContract,
+    destination_contract: &MockSmartContract,
+    maybe_amount: Option<Balance>,
+) {
+    let pre_snapshot = MemorySnapshot::new();
+    let is_source_unregistered = IntegratedDApps::<Test>::get(&source_contract).is_none();
+
+    let pre_era_info = pre_snapshot.current_era_info;
+    let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
+    let pre_staker_info = pre_snapshot
+        .staker_info
+        .get(&(account, source_contract.clone()))
+        .expect("Entry must exist since 'move' is being called on a registered contract.");
+    let maybe_pre_source_contract_stake = if is_source_unregistered {
+        None
+    } else {
+        Some(
+            pre_snapshot
+                .contract_stake
+                .get(&pre_snapshot.integrated_dapps[&source_contract].id)
+                .expect("Entry must exist since 'move' is being called."),
+        )
+    };
+    let maybe_pre_destination_contract_stake = pre_snapshot
+        .contract_stake
+        .get(&pre_snapshot.integrated_dapps[&destination_contract].id);
+    let maybe_pre_destination_staker_info = pre_snapshot
+        .staker_info
+        .get(&(account, *destination_contract));
+
+    let move_era = pre_snapshot.active_protocol_state.era;
+    let move_period = pre_snapshot.active_protocol_state.period_number();
+    let move_subperiod = pre_snapshot.active_protocol_state.subperiod();
+
+    let amount_to_move: Balance =
+        DappStaking::get_amount_to_move(pre_staker_info, maybe_amount, is_source_unregistered)
+            .expect("Invalid amount to move");
+    let is_full_move_from_source = pre_staker_info.total_staked_amount() == amount_to_move;
+
+    // Move from source contract to destination contract & verify event
+    assert_ok!(DappStaking::move_stake(
+        RuntimeOrigin::signed(account),
+        source_contract.clone(),
+        destination_contract.clone(),
+        maybe_amount
+    ));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::StakeMoved {
+        account,
+        source_contract: source_contract.clone(),
+        destination_contract: destination_contract.clone(),
+        amount: amount_to_move,
+    }));
+
+    // Verify post-state
+    let post_snapshot = MemorySnapshot::new();
+    let post_era_info = post_snapshot.current_era_info;
+    let post_ledger = post_snapshot.ledger.get(&account).unwrap();
+    let maybe_post_source_contract_stake = if is_source_unregistered {
+        None
+    } else {
+        Some(
+            post_snapshot
+                .contract_stake
+                .get(&post_snapshot.integrated_dapps[&source_contract].id)
+                .expect("Entry must exist since 'move' is being called on a registered contract."),
+        )
+    };
+    let post_destination_contract_stake = post_snapshot
+        .contract_stake
+        .get(&post_snapshot.integrated_dapps[&destination_contract].id)
+        .expect("Entry must exist since 'move' is being called.");
+
+    // 1. verify staker info
+    // =====================
+    // =====================
+
+    let mut source_staker_info = pre_staker_info.clone();
+    let new_staker_info_entry = SingularStakingInfoFor::<Test>::new(move_period, move_subperiod);
+    let dest_staker_info = match maybe_pre_destination_staker_info {
+        Some(staking_info) => staking_info,
+        _ => &new_staker_info_entry,
+    };
+
+    let (_, stake_amount) = source_staker_info.move_stake(
+        &mut dest_staker_info.clone(),
+        amount_to_move,
+        move_era,
+        move_subperiod,
+    );
+
+    verify_staker_info_unstake(
+        pre_snapshot.clone(),
+        post_snapshot.clone(),
+        account,
+        source_contract,
+        amount_to_move,
+    );
+    verify_staker_info_stake(
+        pre_snapshot.clone(),
+        post_snapshot.clone(),
+        account,
+        destination_contract,
+        stake_amount,
+    );
+
+    // 2. verify contract stake (for registered source contract)
+    // =========================
+    // =========================
+
+    if let (Some(pre_source_contract_stake), Some(post_source_contract_stake)) = (
+        maybe_pre_source_contract_stake,
+        maybe_post_source_contract_stake,
+    ) {
+        assert_eq!(
+            post_source_contract_stake.total_staked_amount(move_period),
+            pre_source_contract_stake.total_staked_amount(move_period) - amount_to_move,
+            "Staked amount must decreased by the 'amount_to_move'"
+        );
+        assert_eq!(
+            post_source_contract_stake.staked_amount(move_period, move_subperiod),
+            pre_source_contract_stake
+                .staked_amount(move_period, move_subperiod)
+                .saturating_sub(amount_to_move),
+            "Staked amount must decreased by the 'amount_to_move'"
+        );
+
+        // A generic check, comparing what was received in the (era, amount) pairs and the impact it had on the contract stake.
+        let unstaked_amount_era_pairs =
+            pre_staker_info
+                .clone()
+                .unstake(amount_to_move, move_era, move_subperiod);
+        for (move_era_iter, move_amount_iter) in unstaked_amount_era_pairs {
+            assert_eq!(
+                post_source_contract_stake
+                    .get(move_era_iter, move_period)
+                    .unwrap_or_default() // it's possible that full move cleared the entry
+                    .total(),
+                pre_source_contract_stake
+                    .get(move_era_iter, move_period)
+                    .expect("Must exist")
+                    .total()
+                    - move_amount_iter
+            );
+        }
+
+        // More precise check, independent of the generic check above.
+        // If next era entry exists, it must be reduced by the unstake amount, nothing less.
+        if let Some(entry) = pre_source_contract_stake.get(move_era + 1, move_period) {
+            assert_eq!(
+                post_source_contract_stake
+                    .get(move_era + 1, move_period)
+                    .unwrap_or_default()
+                    .total(),
+                entry.total() - amount_to_move
+            );
+        }
+    }
+
+    if let Some(pre_destination_contract_stake) = maybe_pre_destination_contract_stake {
+        assert_eq!(
+            post_destination_contract_stake.total_staked_amount(move_period),
+            pre_destination_contract_stake.total_staked_amount(move_period) + amount_to_move,
+            "Staked amount must increase by the 'amount_to_move'"
+        );
+        assert_eq!(
+            post_destination_contract_stake.staked_amount(move_period, move_subperiod),
+            pre_destination_contract_stake.staked_amount(move_period, move_subperiod)
+                + amount_to_move,
+            "Staked amount must increase by the 'amount_to_move'"
+        );
+    } else {
+        assert_eq!(
+            post_destination_contract_stake.total_staked_amount(move_period),
+            amount_to_move,
+            "Staked amount must increase by the 'amount_to_move'"
+        );
+        assert_eq!(
+            post_destination_contract_stake.staked_amount(move_period, move_subperiod),
+            amount_to_move,
+            "Staked amount must increase by the 'amount_to_move'"
+        );
+    }
+
+    assert_eq!(
+        post_destination_contract_stake.latest_stake_period(),
+        Some(move_period)
+    );
+    assert_eq!(
+        post_destination_contract_stake.latest_stake_era(),
+        Some(move_era + 1)
+    );
+
+    // 3. verify ledger (unchanged)
+    // =====================
+    // =====================
+    assert_eq!(
+        post_ledger.staked_amount(move_period),
+        pre_ledger.staked_amount(move_period),
+        "Stake amount must remain unchanged for a 'move'"
+    );
+    assert_eq!(
+        post_ledger.stakeable_amount(move_period),
+        pre_ledger.stakeable_amount(move_period),
+        "Stakeable amount must remain unchanged for a 'move'"
+    );
+
+    let is_new_dest = maybe_pre_destination_staker_info.is_none();
+    if is_new_dest {
+        if is_source_unregistered || is_full_move_from_source {
+            assert_eq!(
+                pre_ledger.contract_stake_count,
+                post_ledger.contract_stake_count,
+                "Number of contract stakes must remain the same for a 'move' with an unregistered source."
+            );
+        } else {
+            assert_eq!(
+                pre_ledger.contract_stake_count.saturating_add(1),
+                post_ledger.contract_stake_count,
+                "Number of contract stakes must be incremented for a new destination after 'move'."
+            );
+        }
+    } else {
+        if is_full_move_from_source {
+            if is_source_unregistered {
+                assert_eq!(
+                    pre_ledger.contract_stake_count,
+                    post_ledger.contract_stake_count,
+                    "Number of contract stakes must remain the same for a full 'move' from an unregistered source."
+                );
+            } else {
+                assert_eq!(
+                    pre_ledger.contract_stake_count.saturating_sub(1),
+                    post_ledger.contract_stake_count,
+                    "Number of contract stakes must be decreased for a full 'move' from a registered source."
+                );
+            }
+        } else {
+            assert_eq!(
+                pre_ledger.contract_stake_count, post_ledger.contract_stake_count,
+                "Number of contract stakes must remain the same for a partial 'move'."
+            );
+        }
+    }
+
+    // 4. verify era info (unchanged)
+    // =========================
+    // =========================
+
+    assert_eq!(
+        post_era_info.total_staked_amount(),
+        pre_era_info.total_staked_amount(),
+        "Total staked amount for the current era must remain unchanged for a 'move'."
+    );
+    assert_eq!(
+        post_era_info.total_staked_amount_next_era(),
+        pre_era_info.total_staked_amount_next_era(),
+        "Total staked amount for the next era must remain unchanged for a 'move'."
+    );
+}
+
+pub(crate) fn verify_staker_info_unstake(
+    pre_snapshot: MemorySnapshot,
+    post_snapshot: MemorySnapshot,
+    account: AccountId,
+    smart_contract: &MockSmartContract,
+    amount: Balance,
+) {
+    let pre_staker_info = pre_snapshot
+        .staker_info
+        .get(&(account, smart_contract.clone()))
+        .expect("Entry must exist since 'unstake' is being called.");
+
+    let unstake_era = pre_snapshot.active_protocol_state.era;
+    let unstake_period = pre_snapshot.active_protocol_state.period_number();
+    let unstake_subperiod = pre_snapshot.active_protocol_state.subperiod();
+
+    let minimum_stake_amount: Balance = <Test as Config>::MinimumStakeAmount::get();
+    let is_full_unstake =
+        pre_staker_info.total_staked_amount().saturating_sub(amount) < minimum_stake_amount;
+
+    // Unstake all if we expect to go below the minimum stake amount
+    let expected_amount = if is_full_unstake {
+        pre_staker_info.total_staked_amount()
+    } else {
+        amount
+    };
+
+    // verify staker info
+    // =====================
+    // =====================
+
+    // Verify that expected unstake amounts are applied.
+    if is_full_unstake {
+        assert!(
+            !StakerInfo::<Test>::contains_key(&account, smart_contract),
+            "Entry must be deleted since it was a full unstake."
+        );
+    } else {
+        let post_staker_info = post_snapshot
+            .staker_info
+            .get(&(account, *smart_contract))
+            .expect(
+            "Entry must exist since 'stake' operation was successful and it wasn't a full unstake.",
+        );
+        assert_eq!(post_staker_info.period_number(), unstake_period);
+        assert_eq!(
+            post_staker_info.total_staked_amount(),
+            pre_staker_info.total_staked_amount() - expected_amount,
+            "Total staked amount must decrease by the 'amount'"
+        );
+        assert_eq!(
+            post_staker_info.staked_amount(unstake_subperiod),
+            pre_staker_info
+                .staked_amount(unstake_subperiod)
+                .saturating_sub(expected_amount),
+            "Staked amount must decrease by the 'amount'"
+        );
+
+        let should_keep_bonus = if pre_staker_info.has_bonus() {
+            match pre_staker_info.bonus_status {
+                BonusStatus::SafeMovesRemaining(remaining_moves) if remaining_moves > 0 => true,
+                _ => match unstake_subperiod {
+                    Subperiod::Voting => {
+                        !post_staker_info.staked_amount(Subperiod::Voting).is_zero()
+                    }
+                    Subperiod::BuildAndEarn => {
+                        post_staker_info.staked_amount(Subperiod::Voting)
+                            == pre_staker_info.staked_amount(Subperiod::Voting)
+                    }
+                },
+            }
+        } else {
+            false
+        };
+
+        assert_eq!(
+            post_staker_info.has_bonus(),
+            should_keep_bonus,
+            "If 'voting stake' amount is fully unstaked in Voting subperiod or reduced in B&E subperiod, 'BonusStatus' must reflect this."
+        );
+
+        if unstake_subperiod == Subperiod::BuildAndEarn
+            && pre_staker_info.has_bonus()
+            && post_staker_info.staked_amount(Subperiod::Voting)
+                < pre_staker_info.staked_amount(Subperiod::Voting)
+        {
+            let mut bonus_status_clone = pre_staker_info.bonus_status.clone();
+            bonus_status_clone.decrease_moves();
+
+            assert_eq!(
+                post_staker_info.bonus_status, bonus_status_clone,
+                "'BonusStatus' must correctly decrease moves when 'voting stake' is reduced in B&E subperiod."
+            );
+        }
+    }
+
+    let unstaked_amount_era_pairs =
+        pre_staker_info
+            .clone()
+            .unstake(expected_amount, unstake_era, unstake_subperiod);
+    assert!(unstaked_amount_era_pairs.len() <= 2 && unstaked_amount_era_pairs.len() > 0);
+
+    // If unstake from next era exists, it must exactly match the expected unstake amount.
+    unstaked_amount_era_pairs
+        .iter()
+        .filter(|(era, _)| *era > unstake_era)
+        .for_each(|(_, amount)| {
+            assert_eq!(*amount, expected_amount);
+        });
+}
+
+pub(crate) fn verify_staker_info_stake(
+    pre_snapshot: MemorySnapshot,
+    post_snapshot: MemorySnapshot,
+    account: AccountId,
+    smart_contract: &MockSmartContract,
+    stake_amount: StakeAmountMoved,
+) {
+    let pre_staker_info = pre_snapshot
+        .staker_info
+        .get(&(account, smart_contract.clone()));
+
+    let stake_period = pre_snapshot.active_protocol_state.period_number();
+
+    // Verify post-state
+    let post_staker_info = post_snapshot
+        .staker_info
+        .get(&(account, *smart_contract))
+        .expect("Entry must exist since 'stake' operation was successful.");
+
+    // Verify staker info
+    // =====================
+    // =====================
+    match pre_staker_info {
+        // We're just updating an existing entry
+        Some(pre_staker_info) if pre_staker_info.period_number() == stake_period => {
+            assert_eq!(
+                post_staker_info.total_staked_amount(),
+                pre_staker_info.total_staked_amount() + stake_amount.total(),
+                "Total staked amount must increase by the total 'stake_amount'"
+            );
+            assert_eq!(
+                post_staker_info.staked_amount(Subperiod::Voting),
+                pre_staker_info.staked_amount(Subperiod::Voting) + stake_amount.voting,
+                "Voting staked amount must increase by the voting 'stake_amount'"
+            );
+            assert_eq!(
+                post_staker_info.staked_amount(Subperiod::BuildAndEarn),
+                pre_staker_info.staked_amount(Subperiod::BuildAndEarn)
+                    + stake_amount.build_and_earn,
+                "B&E staked amount must increase by the B&E 'stake_amount'"
+            );
+            assert_eq!(post_staker_info.period_number(), stake_period);
+        }
+        // A new entry is created.
+        _ => {
+            assert_eq!(
+                post_staker_info.total_staked_amount(),
+                stake_amount.total(),
+                "Total staked amount must be equal to exactly the 'amount'"
+            );
+            assert!(stake_amount.total() >= <Test as Config>::MinimumStakeAmount::get());
+            assert_eq!(
+                post_staker_info.staked_amount(Subperiod::Voting),
+                stake_amount.voting,
+                "Voting staked amount must be equal to exactly the voting 'stake_amount'"
+            );
+            assert_eq!(
+                post_staker_info.staked_amount(Subperiod::BuildAndEarn),
+                stake_amount.build_and_earn,
+                "B&E staked amount must be equal to exactly the B&E 'stake_amount'"
+            );
+            assert_eq!(post_staker_info.period_number(), stake_period);
+        }
     }
 }
