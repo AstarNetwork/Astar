@@ -1224,7 +1224,7 @@ mod benchmarks {
         };
 
         assert!(match StakerInfo::<T>::get(&alice, &smart_contract) {
-            Some(staker_info) => staker_info.equals(&expected_staker_info),
+            Some(staker_info) => staker_info.eq(&expected_staker_info),
             _ => false,
         });
     }

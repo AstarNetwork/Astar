@@ -154,19 +154,19 @@ fn lazy_migrations_bonus_status() {
         };
 
         assert!(match StakerInfo::<Test>::get(&account_1, &contract_1) {
-            Some(staker_info) => staker_info.equals(&expected_staker_info_with_bonus),
+            Some(staker_info) => staker_info.eq(&expected_staker_info_with_bonus),
             _ => false,
         });
         assert!(match StakerInfo::<Test>::get(&account_1, &contract_2) {
-            Some(staker_info) => staker_info.equals(&expected_staker_info_without_bonus),
+            Some(staker_info) => staker_info.eq(&expected_staker_info_without_bonus),
             _ => false,
         });
         assert!(match StakerInfo::<Test>::get(&account_2, &contract_1) {
-            Some(staker_info) => staker_info.equals(&expected_staker_info_without_bonus),
+            Some(staker_info) => staker_info.eq(&expected_staker_info_without_bonus),
             _ => false,
         });
         assert!(match StakerInfo::<Test>::get(&account_2, &contract_3) {
-            Some(staker_info) => staker_info.equals(&expected_staker_info_with_bonus),
+            Some(staker_info) => staker_info.eq(&expected_staker_info_with_bonus),
             _ => false,
         });
     })

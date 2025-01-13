@@ -879,7 +879,7 @@ pub(crate) fn assert_staker_info(
         .expect("Staker info entry must exist to verify bonus status.");
 
     assert!(
-        staker_info.equals(&expected_staker_info),
+        staker_info.eq(&expected_staker_info),
         "Staker infos do not match."
     );
 }

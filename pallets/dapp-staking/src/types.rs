@@ -1043,16 +1043,6 @@ impl<MaxBonusMoves: Get<u8>> BonusStatus<MaxBonusMoves> {
     pub fn has_bonus(&self) -> bool {
         matches!(self, BonusStatus::SafeMovesRemaining(_))
     }
-
-    /// Custom equality function to ignore the lack of PartialEq and Eq implementation for ConstU8 in MaxBonusMoves.
-    pub fn equals(&self, other: &Self) -> bool {
-        match (self, other) {
-            (BonusStatus::BonusForfeited, BonusStatus::BonusForfeited) => true,
-            (BonusStatus::SafeMovesRemaining(a), BonusStatus::SafeMovesRemaining(b)) => a == b,
-            (BonusStatus::_Phantom(_), BonusStatus::_Phantom(_)) => true,
-            _ => false,
-        }
-    }
 }
 
 impl<MaxBonusMoves: Get<u8>> PartialEq for BonusStatus<MaxBonusMoves> {
@@ -1070,7 +1060,7 @@ impl<MaxBonusMoves: Get<u8>> Eq for BonusStatus<MaxBonusMoves> {}
 /// Information about how much a particular staker staked on a particular smart contract.
 ///
 /// Keeps track of amount staked in the 'voting subperiod', as well as 'build&earn subperiod'.
-#[derive(Encode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+#[derive(Encode, MaxEncodedLen, Copy, Clone, Debug, TypeInfo, Default)]
 #[scale_info(skip_type_params(MaxBonusMoves))]
 pub struct SingularStakingInfo<MaxBonusMoves: Get<u8>> {
     /// Amount staked before, if anything.
@@ -1303,14 +1293,17 @@ impl<MaxBonusMoves: Get<u8>> SingularStakingInfo<MaxBonusMoves> {
     pub fn is_empty(&self) -> bool {
         self.staked.is_empty()
     }
+}
 
-    /// Custom equality function to ignore the lack of PartialEq and Eq implementation for ConstU8 in MaxBonusMoves.
-    pub fn equals(&self, other: &Self) -> bool {
+impl<MaxBonusMoves: Get<u8>> PartialEq for SingularStakingInfo<MaxBonusMoves> {
+    fn eq(&self, other: &Self) -> bool {
         self.previous_staked == other.previous_staked
             && self.staked == other.staked
-            && self.bonus_status.equals(&other.bonus_status)
+            && self.bonus_status.eq(&other.bonus_status)
     }
 }
+
+impl<MaxBonusMoves: Get<u8>> Eq for SingularStakingInfo<MaxBonusMoves> {}
 
 impl<MaxBonusMoves: Get<u8>> Decode for SingularStakingInfo<MaxBonusMoves> {
     /// Decodes SingularStakingInfo from input, supporting both current and legacy format with 'loyal_staker' flag.
