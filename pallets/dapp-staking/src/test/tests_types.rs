@@ -2527,20 +2527,20 @@ fn move_stake_basic() {
     );
 
     // Verify source staking info
-    assert_eq!(source_staking_info.staked.voting, 20); // 100 - 80
-    assert_eq!(source_staking_info.staked.build_and_earn, 50); // Unchanged
+    assert_eq!(source_staking_info.staked.voting, 70); // 100 - 30
+    assert_eq!(source_staking_info.staked.build_and_earn, 0);
     assert_eq!(source_staking_info.staked.era, current_era);
 
     // Verify destination staking info
-    assert_eq!(destination_staking_info.staked.voting, 80);
-    assert_eq!(destination_staking_info.staked.build_and_earn, 0);
+    assert_eq!(destination_staking_info.staked.voting, 30);
+    assert_eq!(destination_staking_info.staked.build_and_earn, 50);
     assert_eq!(destination_staking_info.staked.era, current_era + 1); // Stake valid from next era
 
     // Verify return values
-    assert_eq!(era_and_amount_pairs.len(), 1);
+    assert_eq!(era_and_amount_pairs.len(), 2);
     assert_eq!(era_and_amount_pairs[0], (current_era, move_amount));
-    assert_eq!(stake_moved.voting, 80);
-    assert_eq!(stake_moved.build_and_earn, 0);
+    assert_eq!(stake_moved.voting, 30);
+    assert_eq!(stake_moved.build_and_earn, 50);
 }
 
 #[test]
@@ -2570,7 +2570,7 @@ fn move_stake_full_transfer() {
     // Verify source staking info is emptied
     assert_eq!(source_staking_info.staked.voting, 0);
     assert_eq!(source_staking_info.staked.build_and_earn, 0);
-    assert_eq!(source_staking_info.staked.era, current_era);
+    assert_eq!(source_staking_info.staked.era, 0); // Staked is empty - Default value expected
 
     // Verify destination staking info - full transfer
     assert_eq!(destination_staking_info.staked.voting, 50);
@@ -2578,7 +2578,7 @@ fn move_stake_full_transfer() {
     assert_eq!(destination_staking_info.staked.era, current_era + 1);
 
     // Verify return values
-    assert_eq!(era_and_amount_pairs.len(), 1);
+    assert_eq!(era_and_amount_pairs.len(), 2);
     assert_eq!(era_and_amount_pairs[0], (current_era, move_amount));
     assert_eq!(stake_moved.voting, 50);
     assert_eq!(stake_moved.build_and_earn, 50);
