@@ -19,8 +19,13 @@
 #![cfg(all(test, not(feature = "runtime-benchmarks")))]
 
 use crate::test::mock::*;
-use crate::{AccountLedger, CurrentEraInfo, EraInfo, Ledger, UnlockingChunk};
+use crate::{
+    AccountLedger, BonusStatus, CurrentEraInfo, EraInfo, Ledger, SingularStakingInfoFor,
+    StakerInfo, UnlockingChunk,
+};
 use frame_support::traits::OnRuntimeUpgrade;
+
+use astar_primitives::dapp_staking::SmartContractHandle;
 
 #[test]
 fn lazy_migrations() {
@@ -81,5 +86,88 @@ fn lazy_migrations() {
                 contract_stake_count: 0,
             }
         );
+    })
+}
+
+#[test]
+fn lazy_migrations_bonus_status() {
+    ExtBuilder::default().build_and_execute(|| {
+        let account_1 = 1;
+        let account_2 = 2;
+        let contract_1 = MockSmartContract::wasm(1 as AccountId);
+        let contract_2 = MockSmartContract::wasm(2 as AccountId);
+        let contract_3 = MockSmartContract::wasm(3 as AccountId);
+
+        crate::migration::v8::StakerInfo::<Test>::set(
+            &account_1,
+            &contract_1,
+            Some(crate::migration::v8::SingularStakingInfo {
+                previous_staked: Default::default(),
+                staked: Default::default(),
+                loyal_staker: true,
+            }),
+        );
+        crate::migration::v8::StakerInfo::<Test>::set(
+            &account_1,
+            &contract_2,
+            Some(crate::migration::v8::SingularStakingInfo {
+                previous_staked: Default::default(),
+                staked: Default::default(),
+                loyal_staker: false,
+            }),
+        );
+        crate::migration::v8::StakerInfo::<Test>::set(
+            &account_2,
+            &contract_1,
+            Some(crate::migration::v8::SingularStakingInfo {
+                previous_staked: Default::default(),
+                staked: Default::default(),
+                loyal_staker: false,
+            }),
+        );
+        crate::migration::v8::StakerInfo::<Test>::set(
+            &account_2,
+            &contract_3,
+            Some(crate::migration::v8::SingularStakingInfo {
+                previous_staked: Default::default(),
+                staked: Default::default(),
+                loyal_staker: true,
+            }),
+        );
+
+        // go to block before migration
+        run_to_block(9);
+
+        // onboard MBMs
+        AllPalletsWithSystem::on_runtime_upgrade();
+        run_to_block(10);
+
+        let expected_staker_info_with_bonus = SingularStakingInfoFor::<Test> {
+            previous_staked: Default::default(),
+            staked: Default::default(),
+            bonus_status: BonusStatus::SafeMovesRemaining(0),
+        };
+        let expected_staker_info_without_bonus = SingularStakingInfoFor::<Test> {
+            previous_staked: Default::default(),
+            staked: Default::default(),
+            bonus_status: BonusStatus::BonusForfeited,
+        };
+
+        assert!(match StakerInfo::<Test>::get(&account_1, &contract_1) {
+            Some(staker_info) => staker_info.equals(&expected_staker_info_with_bonus),
+            _ => false,
+        });
+        assert!(match StakerInfo::<Test>::get(&account_1, &contract_2) {
+            Some(staker_info) => staker_info.equals(&expected_staker_info_without_bonus),
+            _ => false,
+        });
+        assert!(match StakerInfo::<Test>::get(&account_2, &contract_1) {
+            Some(staker_info) => staker_info.equals(&expected_staker_info_without_bonus),
+            _ => false,
+        });
+        assert!(match StakerInfo::<Test>::get(&account_2, &contract_3) {
+            Some(staker_info) => staker_info.equals(&expected_staker_info_with_bonus),
+            _ => false,
+        });
     })
 }

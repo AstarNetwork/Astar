@@ -94,7 +94,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(8);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(9);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -1534,7 +1534,7 @@ pub mod pallet {
             Self::internal_claim_bonus_reward_for(account, smart_contract)
         }
 
-        /// Transfers stake between two smart contracts, ensuring period alignment, bonus status preservation if elegible, 
+        /// Transfers stake between two smart contracts, ensuring period alignment, bonus status preservation if elegible,
         /// and adherence to staking limits. Updates all relevant storage and emits a `StakeMoved` event.
         #[pallet::call_index(21)]
         #[pallet::weight(T::WeightInfo::move_stake())]

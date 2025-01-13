@@ -56,11 +56,132 @@ pub mod versioned_migrations {
         >;
 }
 
+pub mod v9 {
+    use super::*;
+
+    // The loyal staker flag is replaced by 'BonusStatus'
+    pub struct LazyMigrationBonusStatus<T, W: WeightInfo>(PhantomData<(T, W)>);
+
+    impl<T: Config, W: WeightInfo> SteppedMigration for LazyMigrationBonusStatus<T, W> {
+        type Cursor = (<T as frame_system::Config>::AccountId, T::SmartContract);
+        // Without the explicit length here the construction of the ID would not be infallible.
+        type Identifier = MigrationId<16>;
+
+        /// The identifier of this migration. Which should be globally unique.
+        fn id() -> Self::Identifier {
+            MigrationId {
+                pallet_id: *PALLET_MIGRATIONS_ID,
+                version_from: 8,
+                version_to: 9,
+            }
+        }
+
+        fn step(
+            mut cursor: Option<Self::Cursor>,
+            meter: &mut WeightMeter,
+        ) -> Result<Option<Self::Cursor>, SteppedMigrationError> {
+            let on_chain_version = Pallet::<T>::on_chain_storage_version();
+            if on_chain_version != 9 {
+                return Ok(None);
+            }
+
+            let required = W::mbm_step_v9_bonus_status();
+
+            // If there is not enough weight for a single step, return an error. This case can be
+            // problematic if it is the first migration that ran in this block. But there is nothing
+            // that we can do about it here.
+            if meter.remaining().any_lt(required) {
+                return Err(SteppedMigrationError::InsufficientWeight { required });
+            }
+
+            let mut count = 0u32;
+            let mut migrated = 0u32;
+
+            loop {
+                if meter.try_consume(required).is_err() {
+                    break;
+                }
+
+                let mut iter = if let Some(last_key_pair) = cursor {
+                    // If a cursor is provided, start iterating from the stored value
+                    // corresponding to the last key pair processed in the previous step.
+                    // Note that this only works if the old and the new map use the same way to hash
+                    // storage keys.
+                    v8::StakerInfo::<T>::iter_from(v8::StakerInfo::<T>::hashed_key_for(
+                        last_key_pair.0,
+                        last_key_pair.1,
+                    ))
+                } else {
+                    // If no cursor is provided, start iterating from the beginning.
+                    v8::StakerInfo::<T>::iter()
+                };
+
+                if let Some((account, smart_contract, old_staking_info)) = iter.next() {
+                    // inc count
+                    count.saturating_inc();
+
+                    let bonus_status = if old_staking_info.loyal_staker {
+                        BonusStatusFor::<T>::SafeMovesRemaining(0)
+                    } else {
+                        BonusStatusFor::<T>::BonusForfeited
+                    };
+
+                    let new_staking_info = SingularStakingInfoFor::<T> {
+                        previous_staked: old_staking_info.previous_staked,
+                        staked: old_staking_info.staked,
+                        bonus_status,
+                    };
+
+                    // Override StakerInfo
+                    StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
+
+                    // inc migrated
+                    migrated.saturating_inc();
+
+                    // Return the processed key pair as the new cursor.
+                    cursor = Some((account, smart_contract))
+                } else {
+                    // Signal that the migration is complete (no more items to process).
+                    cursor = None;
+                    break;
+                }
+            }
+            log::info!(target: LOG_TARGET, "🚚 iterated {count} entries, migrated {migrated}");
+            Ok(cursor)
+        }
+    }
+}
+
 // TierThreshold as percentage of the total issuance
-mod v8 {
+pub mod v8 {
     use super::*;
     use crate::migration::v7::TierParameters as TierParametersV7;
     use crate::migration::v7::TiersConfiguration as TiersConfigurationV7;
+
+    /// Information about how much a particular staker staked on a particular smart contract.
+    #[derive(
+        Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default,
+    )]
+    pub struct SingularStakingInfo {
+        /// Amount staked before, if anything.
+        pub(crate) previous_staked: StakeAmount,
+        /// Staked amount
+        pub(crate) staked: StakeAmount,
+        /// Indicates whether a staker is a loyal staker or not.
+        pub(crate) loyal_staker: bool,
+    }
+
+    /// v8 type for [`crate::StakerInfo`]
+    #[storage_alias]
+    pub type StakerInfo<T: Config> = StorageDoubleMap<
+        Pallet<T>,
+        Blake2_128Concat,
+        <T as frame_system::Config>::AccountId,
+        Blake2_128Concat,
+        <T as Config>::SmartContract,
+        SingularStakingInfo,
+        OptionQuery,
+    >;
 
     pub struct VersionMigrateV7ToV8<T, TierThresholds, ThresholdVariationPercentage>(
         PhantomData<(T, TierThresholds, ThresholdVariationPercentage)>,

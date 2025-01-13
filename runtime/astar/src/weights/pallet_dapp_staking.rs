@@ -40,7 +40,7 @@
 // --output=./benchmark-results/astar-dev/dapp_staking_weights.rs
 // --template=./scripts/templates/weight-template.hbs
 
-// TODO: Dummy values for move_stake, do proper benchmark using gha
+// TODO: Dummy values for move_stake & mbm_step_v9_bonus_status: do proper benchmark using gha
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
@@ -492,6 +492,17 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		//  Estimated: `6560`
 		// Minimum execution time: 10_060_000 picoseconds.
 		Weight::from_parts(10_314_000, 6560)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `DappStaking::StakerInfo` (r:2 w:1)
+	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(179), added: 2654, mode: `MaxEncodedLen`)
+	fn mbm_step_v9_bonus_status() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `150`
+		//  Estimated: `6298`
+		// Minimum execution time: 15_000_000 picoseconds.
+		Weight::from_parts(15_000_000, 6298)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}

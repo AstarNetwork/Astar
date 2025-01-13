@@ -1191,6 +1191,44 @@ mod benchmarks {
         );
     }
 
+    /// Benchmark a single step of v9 mbm migration (for bonus_status).
+    #[benchmark]
+    fn mbm_step_v9_bonus_status() {
+        let alice: T::AccountId = account("alice", 0, 1);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+
+        crate::migration::v8::StakerInfo::<T>::set(
+            &alice,
+            &smart_contract,
+            Some(crate::migration::v8::SingularStakingInfo {
+                previous_staked: Default::default(),
+                staked: Default::default(),
+                loyal_staker: true,
+            }),
+        );
+
+        let mut meter = WeightMeter::new();
+
+        #[block]
+        {
+            crate::migration::v9::LazyMigrationBonusStatus::<T, weights::SubstrateWeight<T>>::step(
+                None, &mut meter,
+            )
+            .unwrap();
+        }
+
+        let expected_staker_info = SingularStakingInfoFor::<T> {
+            previous_staked: Default::default(),
+            staked: Default::default(),
+            bonus_status: BonusStatus::SafeMovesRemaining(0),
+        };
+
+        assert!(match StakerInfo::<T>::get(&alice, &smart_contract) {
+            Some(staker_info) => staker_info.equals(&expected_staker_info),
+            _ => false,
+        });
+    }
+
     impl_benchmark_test_suite!(
         Pallet,
         crate::benchmarking::tests::new_test_ext(),

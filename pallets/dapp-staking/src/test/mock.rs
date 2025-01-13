@@ -123,8 +123,10 @@ parameter_types! {
 #[derive_impl(pallet_migrations::config_preludes::TestDefaultConfig)]
 impl pallet_migrations::Config for Test {
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations =
-        (crate::migration::LazyMigration<Test, crate::weights::SubstrateWeight<Test>>,);
+    type Migrations = (
+        crate::migration::LazyMigration<Test, crate::weights::SubstrateWeight<Test>>,
+        crate::migration::v9::LazyMigrationBonusStatus<Test, crate::weights::SubstrateWeight<Test>>,
+    );
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
     type MigrationStatusHandler = ();
