@@ -43,32 +43,13 @@ jobs:
     - name: Install deps
       run: sudo apt -y install protobuf-compiler
 
-    - name: Install Tarpaulin v0.31.4
+    - name: Install Tarpaulin v0.31.4 and Generate Report
       run: |
-        curl -L -o tarpaulin.tar.gz https://github.com/xd009642/tarpaulin/releases/download/0.31.4/cargo-tarpaulin-x86_64-unknown-linux-gnu.tar.gz
-        tar -xvzf tarpaulin.tar.gz
-        chmod +x cargo-tarpaulin
-        sudo mv cargo-tarpaulin /usr/local/bin/
-
-    - name: Run all tests & Generate report
-      run: |
-        cargo tarpaulin \
-          --workspace \
-          --features try-runtime,runtime-benchmarks \
-          --exclude astar-collator \
-          --exclude xcm-tools \
-          --exclude local-runtime \
-          --exclude shibuya-runtime \
-          --exclude shiden-runtime \
-          --exclude astar-runtime \
-          integration-tests \
-          --exclude-files vendor/* \
-          --exclude-files bin/* \
-          --exclude-files runtime/* \
-          --exclude-files tests/* \
-          --exclude-files **/mock.rs \
-          --exclude-files **/weights.rs \
-          --out Xml
+        curl -L -o tarpaulin.tar.gz https://github.com/xd009642/tarpaulin/releases/download/0.31.4/cargo-tarpaulin-x86_64-unknown-linux-gnu.tar.gz && \
+        tar -xvzf tarpaulin.tar.gz && \
+        chmod +x cargo-tarpaulin && \
+        sudo mv cargo-tarpaulin /usr/local/bin/ && \
+        cargo tarpaulin --workspace --features try-runtime,runtime-benchmarks --exclude astar-collator --exclude xcm-tools --exclude local-runtime --exclude shibuya-runtime --exclude shiden-runtime --exclude astar-runtime integration-tests --exclude-files vendor/* --exclude-files bin/* --exclude-files runtime/* --exclude-files tests/* --exclude-files **/mock.rs --exclude-files **/weights.rs --out Xml
 
     - name: Code Coverage Summary Report
       uses: irongut/CodeCoverageSummary@v1.2.0
