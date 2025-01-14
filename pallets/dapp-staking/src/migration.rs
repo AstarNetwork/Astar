@@ -112,7 +112,15 @@ pub mod v9 {
                         last_key_pair.1,
                     ))
                 } else {
-                    // If no cursor is provided, start iterating from the beginning.
+                    // If no cursor is provided, migration is starting
+
+                    // Enable maintenance mode.
+                    ActiveProtocolState::<T>::mutate(|state| {
+                        state.maintenance = true;
+                    });
+                    log::warn!("Maintenance mode enabled.");
+
+                    // Start iterating from the beginning.
                     v8::StakerInfo::<T>::iter()
                 };
 
@@ -141,7 +149,15 @@ pub mod v9 {
                     // Return the processed key pair as the new cursor.
                     cursor = Some((account, smart_contract))
                 } else {
-                    // Signal that the migration is complete (no more items to process).
+                    // Migration is complete
+
+                    // Disable maintenance mode.
+                    ActiveProtocolState::<T>::mutate(|state| {
+                        state.maintenance = false;
+                    });
+                    log::warn!("Maintenance mode disabled.");
+
+                    // No more items to process
                     cursor = None;
                     break;
                 }

@@ -512,15 +512,17 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	/// Storage: UNKNOWN KEY `0x802ef6eba87d4e0518600ef1e62725104e7b9012096b41c4eb3aaf947f6ea429` (r:1 w:0)
+	/// Proof: UNKNOWN KEY `0x802ef6eba87d4e0518600ef1e62725104e7b9012096b41c4eb3aaf947f6ea429` (r:1 w:0)
 	/// Storage: `DappStaking::StakerInfo` (r:2 w:1)
 	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(179), added: 2654, mode: `MaxEncodedLen`)
 	fn mbm_step_v9_bonus_status() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `150`
 		//  Estimated: `6298`
-		// Minimum execution time: 15_000_000 picoseconds.
-		Weight::from_parts(15_000_000, 6298)
-			.saturating_add(T::DbWeight::get().reads(2_u64))
+		// Minimum execution time: 21_000_000 picoseconds.
+		Weight::from_parts(22_000_000, 6298)
+			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
@@ -958,15 +960,17 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
+	/// Storage: UNKNOWN KEY `0x802ef6eba87d4e0518600ef1e62725104e7b9012096b41c4eb3aaf947f6ea429` (r:1 w:0)
+	/// Proof: UNKNOWN KEY `0x802ef6eba87d4e0518600ef1e62725104e7b9012096b41c4eb3aaf947f6ea429` (r:1 w:0)
 	/// Storage: `DappStaking::StakerInfo` (r:2 w:1)
 	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(179), added: 2654, mode: `MaxEncodedLen`)
 	fn mbm_step_v9_bonus_status() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `150`
 		//  Estimated: `6298`
-		// Minimum execution time: 15_000_000 picoseconds.
-		Weight::from_parts(15_000_000, 6298)
-			.saturating_add(RocksDbWeight::get().reads(2_u64))
+		// Minimum execution time: 21_000_000 picoseconds.
+		Weight::from_parts(22_000_000, 6298)
+			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }
