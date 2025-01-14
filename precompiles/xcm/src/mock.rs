@@ -21,11 +21,7 @@
 use super::*;
 
 use fp_evm::{IsPrecompileResult, Precompile};
-use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU64, Everything, Nothing},
-    weights::Weight,
-};
+use frame_support::{construct_runtime, derive_impl, parameter_types, traits::{AsEnsureOriginWithArg, ConstU64, Everything, Nothing}, weights::Weight};
 use once_cell::unsync::Lazy;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -290,6 +286,7 @@ parameter_types! {
     pub const ExistentialDeposit: u128 = 1;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Runtime {
     type MaxReserves = ();
     type ReserveIdentifier = ();

@@ -21,11 +21,7 @@
 use crate::{fungible, generic, *};
 use astar_primitives::xcm::ReserveAssetFilter;
 use frame_benchmarking::BenchmarkError;
-use frame_support::{
-    assert_ok, parameter_types,
-    traits::{fungible::ItemOf, AsEnsureOriginWithArg, Everything, Nothing},
-    weights::Weight,
-};
+use frame_support::{assert_ok, derive_impl, parameter_types, traits::{fungible::ItemOf, AsEnsureOriginWithArg, Everything, Nothing}, weights::Weight};
 use frame_system::{EnsureRoot, EnsureSigned};
 
 use core::marker::PhantomData;
@@ -140,6 +136,7 @@ parameter_types! {
     pub const ExistentialDeposit: u64 = 10;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ();

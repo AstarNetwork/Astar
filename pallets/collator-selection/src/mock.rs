@@ -17,11 +17,7 @@
 
 use super::*;
 use crate as collator_selection;
-use frame_support::{
-    ord_parameter_types, parameter_types,
-    traits::{ConstU32, FindAuthor, ValidatorRegistration},
-    PalletId,
-};
+use frame_support::{derive_impl, ord_parameter_types, parameter_types, traits::{ConstU32, FindAuthor, ValidatorRegistration}, PalletId};
 use frame_system as system;
 use frame_system::EnsureSignedBy;
 use sp_core::{ConstBool, H256};
@@ -88,6 +84,7 @@ parameter_types! {
     pub const MaxReserves: u32 = 50;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
     type Balance = u64;
     type RuntimeEvent = RuntimeEvent;

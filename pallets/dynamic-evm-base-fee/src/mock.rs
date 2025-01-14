@@ -21,11 +21,7 @@
 use super::*;
 use crate as pallet_dynamic_evm_base_fee;
 
-use frame_support::{
-    construct_runtime, parameter_types, storage,
-    traits::{ConstU128, ConstU32, ConstU64, Get},
-    weights::constants::RocksDbWeight,
-};
+use frame_support::{construct_runtime, derive_impl, parameter_types, storage, traits::{ConstU128, ConstU32, ConstU64, Get}, weights::constants::RocksDbWeight};
 use parity_scale_codec::Encode;
 use sp_core::H256;
 use sp_io::TestExternalities;
@@ -74,6 +70,7 @@ impl frame_system::Config for TestRuntime {
     type PostTransactions = ();
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for TestRuntime {
     type MaxLocks = ConstU32<4>;
     type MaxReserves = ();

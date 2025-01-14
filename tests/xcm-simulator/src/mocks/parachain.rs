@@ -18,20 +18,13 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-    construct_runtime,
-    dispatch::DispatchClass,
-    parameter_types,
-    traits::{
-        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, Contains, Everything,
-        InstanceFilter, Nothing,
-    },
-    weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
-        Weight,
-    },
-    PalletId,
-};
+use frame_support::{construct_runtime, derive_impl, dispatch::DispatchClass, parameter_types, traits::{
+    AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, Contains, Everything,
+    InstanceFilter, Nothing,
+}, weights::{
+    constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
+    Weight,
+}, PalletId};
 use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureRoot, EnsureSigned,
@@ -118,6 +111,7 @@ parameter_types! {
     pub const MaxReserves: u32 = 50;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Runtime {
     type MaxLocks = MaxLocks;
     type Balance = Balance;

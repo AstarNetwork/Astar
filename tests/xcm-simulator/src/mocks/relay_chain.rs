@@ -16,11 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{ConstU32, Everything, Nothing, ProcessMessage, ProcessMessageError},
-    weights::{Weight, WeightMeter},
-};
+use frame_support::{construct_runtime, derive_impl, parameter_types, traits::{ConstU32, Everything, Nothing, ProcessMessage, ProcessMessageError}, weights::{Weight, WeightMeter}};
 use frame_system::EnsureRoot;
 use sp_core::H256;
 use sp_runtime::{traits::IdentityLookup, AccountId32};
@@ -85,6 +81,7 @@ parameter_types! {
     pub const MaxReserves: u32 = 50;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Runtime {
     type MaxLocks = MaxLocks;
     type Balance = Balance;

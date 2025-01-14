@@ -23,11 +23,7 @@ use crate as pallet_ethereum_checked;
 
 use ethereum_types::H256;
 
-use frame_support::{
-    assert_ok, construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU64, FindAuthor},
-    weights::Weight,
-};
+use frame_support::{assert_ok, construct_runtime, derive_impl, parameter_types, traits::{ConstU128, ConstU64, FindAuthor}, weights::Weight};
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{AddressMapping, FeeCalculator};
 use sp_io::{hashing::blake2_256, TestExternalities};
@@ -73,6 +69,7 @@ impl frame_system::Config for TestRuntime {
     type PostTransactions = ();
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for TestRuntime {
     type MaxLocks = ConstU32<4>;
     type MaxReserves = ();

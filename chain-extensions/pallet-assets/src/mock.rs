@@ -18,11 +18,7 @@
 
 use crate::AssetsExtension;
 use frame_support::traits::{AsEnsureOriginWithArg, ConstU128, Currency, Randomness};
-use frame_support::{
-    parameter_types,
-    traits::{ConstU32, ConstU64, Nothing},
-    weights::Weight,
-};
+use frame_support::{derive_impl, parameter_types, traits::{ConstU32, ConstU64, Nothing}, weights::Weight};
 use frame_system::EnsureSigned;
 use pallet_contracts::chain_extension::RegisteredChainExtension;
 use pallet_contracts::{Config, DefaultAddressGenerator, Frame};
@@ -137,6 +133,7 @@ parameter_types! {
     pub static ExistentialDeposit: u64 = 1;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ();

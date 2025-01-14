@@ -19,14 +19,10 @@
 use crate::*;
 
 use fp_evm::{IsPrecompileResult, Precompile};
-use frame_support::{
-    assert_ok, construct_runtime, parameter_types,
-    traits::{
-        fungible::{Mutate as FunMutate, Unbalanced as FunUnbalanced},
-        ConstBool, ConstU128, ConstU64, Hooks,
-    },
-    weights::{RuntimeDbWeight, Weight},
-};
+use frame_support::{assert_ok, construct_runtime, derive_impl, parameter_types, traits::{
+    fungible::{Mutate as FunMutate, Unbalanced as FunUnbalanced},
+    ConstBool, ConstU128, ConstU64, Hooks,
+}, weights::{RuntimeDbWeight, Weight}};
 use frame_system::RawOrigin;
 use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
@@ -109,6 +105,7 @@ impl frame_system::Config for Test {
     type PostTransactions = ();
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
     type MaxLocks = ConstU32<4>;
     type MaxReserves = ();

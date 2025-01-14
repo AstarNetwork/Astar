@@ -98,6 +98,7 @@ impl frame_system::Config for Test {
     type PostTransactions = ();
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
     type MaxLocks = ConstU32<4>;
     type MaxReserves = ();

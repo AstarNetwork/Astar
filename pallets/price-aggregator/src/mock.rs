@@ -20,11 +20,7 @@ use crate::{
     self as pallet_price_aggregator, AverageBlockValue, BlockNumberFor, IntermediateValueAggregator,
 };
 
-use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU32, Hooks},
-    weights::Weight,
-};
+use frame_support::{construct_runtime, derive_impl, parameter_types, traits::{ConstU128, ConstU32, Hooks}, weights::Weight};
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -75,6 +71,7 @@ impl frame_system::Config for Test {
     type PostTransactions = ();
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
     type MaxLocks = ConstU32<4>;
     type MaxReserves = ();

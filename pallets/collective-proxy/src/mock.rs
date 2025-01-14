@@ -20,7 +20,8 @@ use crate::{self as pallet_collective_proxy};
 
 use astar_primitives::{Balance, BlockNumber};
 use frame_support::{
-    construct_runtime, ord_parameter_types, parameter_types,
+    construct_runtime, derive_impl,
+    ord_parameter_types, parameter_types,
     traits::{ConstU128, ConstU32, InstanceFilter},
     weights::Weight,
 };
@@ -85,6 +86,7 @@ impl frame_system::Config for Test {
     type PostTransactions = ();
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
     type MaxLocks = ConstU32<4>;
     type MaxReserves = ();

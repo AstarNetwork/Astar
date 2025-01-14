@@ -18,7 +18,7 @@
 
 use crate::{self as pallet_xc_asset_config};
 
-use frame_support::{construct_runtime, parameter_types, traits::ConstU32, weights::Weight};
+use frame_support::{construct_runtime, derive_impl, parameter_types, traits::ConstU32, weights::Weight};
 use sp_core::H256;
 
 use sp_io::TestExternalities;
@@ -85,6 +85,7 @@ parameter_types! {
     pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
     type MaxLocks = MaxLocks;
     type MaxReserves = ();

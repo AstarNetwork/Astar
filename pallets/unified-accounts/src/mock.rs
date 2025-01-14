@@ -21,11 +21,7 @@
 use super::*;
 use crate as pallet_unified_accounts;
 use astar_primitives::evm::HashedDefaultMappings;
-use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{ConstU64, FindAuthor},
-    weights::Weight,
-};
+use frame_support::{construct_runtime, derive_impl, parameter_types, traits::{ConstU64, FindAuthor}, weights::Weight};
 use pallet_ethereum::PostLogContent;
 use pallet_evm::FeeCalculator;
 use sp_core::{keccak_256, H160, H256, U256};
@@ -73,6 +69,7 @@ impl frame_system::Config for TestRuntime {
     type PostTransactions = ();
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for TestRuntime {
     type MaxLocks = ConstU32<4>;
     type MaxReserves = ();
