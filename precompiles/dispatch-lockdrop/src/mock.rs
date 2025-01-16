@@ -20,7 +20,9 @@ use super::*;
 use std::marker::PhantomData;
 
 use fp_evm::{IsPrecompileResult, Precompile};
-use frame_support::{construct_runtime, parameter_types, traits::ConstU64, weights::Weight};
+use frame_support::{
+    construct_runtime, derive_impl, parameter_types, traits::ConstU64, weights::Weight,
+};
 pub use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
@@ -52,6 +54,7 @@ parameter_types! {
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for TestRuntime {
     type BaseCallFilter = frame_support::traits::Everything;
     type BlockWeights = ();
@@ -127,6 +130,7 @@ parameter_types! {
     pub const ExistentialDeposit: u128 = 1;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for TestRuntime {
     type MaxReserves = ();
     type ReserveIdentifier = ();
@@ -147,6 +151,7 @@ parameter_types! {
     pub const MinimumPeriod: u64 = 5;
 }
 
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for TestRuntime {
     type Moment = u64;
     type OnTimestampSet = ();

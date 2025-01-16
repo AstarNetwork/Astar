@@ -22,7 +22,7 @@ use crate::{fungible, generic, *};
 use astar_primitives::xcm::ReserveAssetFilter;
 use frame_benchmarking::BenchmarkError;
 use frame_support::{
-    assert_ok, parameter_types,
+    assert_ok, derive_impl, parameter_types,
     traits::{fungible::ItemOf, AsEnsureOriginWithArg, Everything, Nothing},
     weights::Weight,
 };
@@ -104,6 +104,7 @@ parameter_types! {
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, u64::MAX));
     pub UniversalLocation: InteriorLocation = Here;
 }
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
@@ -140,6 +141,7 @@ parameter_types! {
     pub const ExistentialDeposit: u64 = 10;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ();
@@ -156,6 +158,7 @@ impl pallet_balances::Config for Test {
     type MaxFreezes = ConstU32<0>;
 }
 
+#[derive_impl(pallet_assets::config_preludes::TestDefaultConfig)]
 impl pallet_assets::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;

@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::{
-    construct_runtime, parameter_types,
+    construct_runtime, derive_impl, parameter_types,
     traits::{ConstU32, Everything, Nothing, ProcessMessage, ProcessMessageError},
     weights::{Weight, WeightMeter},
 };
@@ -47,6 +47,7 @@ parameter_types! {
     pub const BlockHashCount: u64 = 250;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
@@ -85,6 +86,7 @@ parameter_types! {
     pub const MaxReserves: u32 = 50;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Runtime {
     type MaxLocks = MaxLocks;
     type Balance = Balance;

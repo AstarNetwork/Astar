@@ -22,7 +22,7 @@ use super::*;
 
 use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{
-    construct_runtime, parameter_types,
+    construct_runtime, derive_impl, parameter_types,
     traits::{AsEnsureOriginWithArg, ConstU64, Everything, Nothing},
     weights::Weight,
 };
@@ -215,6 +215,7 @@ parameter_types! {
     pub const SS58Prefix: u8 = 42;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Runtime {
     type BaseCallFilter = Everything;
     type DbWeight = ();
@@ -279,6 +280,7 @@ parameter_types! {
     pub const MinimumPeriod: u64 = 5;
 }
 
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for Runtime {
     type Moment = u64;
     type OnTimestampSet = ();
@@ -290,6 +292,7 @@ parameter_types! {
     pub const ExistentialDeposit: u128 = 1;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Runtime {
     type MaxReserves = ();
     type ReserveIdentifier = ();
@@ -317,6 +320,7 @@ parameter_types! {
     pub const MetadataDepositPerByte: Balance = 0;
 }
 
+#[derive_impl(pallet_assets::config_preludes::TestDefaultConfig)]
 impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;

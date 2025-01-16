@@ -19,7 +19,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-    construct_runtime,
+    construct_runtime, derive_impl,
     dispatch::DispatchClass,
     parameter_types,
     traits::{
@@ -80,6 +80,7 @@ parameter_types! {
     pub const BlockHashCount: u64 = 250;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
@@ -118,6 +119,7 @@ parameter_types! {
     pub const MaxReserves: u32 = 50;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Runtime {
     type MaxLocks = MaxLocks;
     type Balance = Balance;
@@ -141,6 +143,7 @@ impl pallet_utility::Config for Runtime {
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
+#[derive_impl(pallet_assets::config_preludes::TestDefaultConfig)]
 impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
@@ -164,6 +167,7 @@ impl pallet_assets::Config for Runtime {
     type BenchmarkHelper = ();
 }
 
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for Runtime {
     type Moment = u64;
     type OnTimestampSet = ();
@@ -239,6 +243,7 @@ impl Contains<RuntimeCall> for CallFilter {
     }
 }
 
+#[derive_impl(pallet_contracts::config_preludes::TestDefaultConfig)]
 impl pallet_contracts::Config for Runtime {
     type Time = Timestamp;
     type Randomness = Randomness;

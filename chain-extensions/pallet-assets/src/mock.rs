@@ -19,7 +19,7 @@
 use crate::AssetsExtension;
 use frame_support::traits::{AsEnsureOriginWithArg, ConstU128, Currency, Randomness};
 use frame_support::{
-    parameter_types,
+    derive_impl, parameter_types,
     traits::{ConstU32, ConstU64, Nothing},
     weights::Weight,
 };
@@ -47,6 +47,7 @@ parameter_types! {
             Weight::from_parts(2_000_000_000_000, u64::MAX),
         );
 }
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
     type BaseCallFilter = frame_support::traits::Everything;
     type BlockWeights = BlockWeights;
@@ -96,6 +97,7 @@ impl Randomness<H256, BlockNumber> for DummyDeprecatedRandomness {
     }
 }
 
+#[derive_impl(pallet_contracts::config_preludes::TestDefaultConfig)]
 impl pallet_contracts::Config for Test {
     type Time = Timestamp;
     type Randomness = DummyDeprecatedRandomness;
@@ -137,6 +139,7 @@ parameter_types! {
     pub static ExistentialDeposit: u64 = 1;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ();
@@ -153,6 +156,7 @@ impl pallet_balances::Config for Test {
     type MaxFreezes = ConstU32<0>;
 }
 
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for Test {
     type Moment = u64;
     type OnTimestampSet = ();
@@ -160,6 +164,7 @@ impl pallet_timestamp::Config for Test {
     type WeightInfo = ();
 }
 
+#[derive_impl(pallet_assets::config_preludes::TestDefaultConfig)]
 impl pallet_assets::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;

@@ -66,6 +66,7 @@ parameter_types! {
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
     type BaseCallFilter = frame_support::traits::Everything;
     type BlockWeights = ();
@@ -98,6 +99,7 @@ impl frame_system::Config for Test {
     type PostTransactions = ();
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
     type MaxLocks = ConstU32<4>;
     type MaxReserves = ();

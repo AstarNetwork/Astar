@@ -22,7 +22,7 @@ use super::*;
 use crate as pallet_dynamic_evm_base_fee;
 
 use frame_support::{
-    construct_runtime, parameter_types, storage,
+    construct_runtime, derive_impl, parameter_types, storage,
     traits::{ConstU128, ConstU32, ConstU64, Get},
     weights::constants::RocksDbWeight,
 };
@@ -42,6 +42,7 @@ parameter_types! {
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for TestRuntime {
     type BaseCallFilter = frame_support::traits::Everything;
     type BlockWeights = ();
@@ -74,6 +75,7 @@ impl frame_system::Config for TestRuntime {
     type PostTransactions = ();
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for TestRuntime {
     type MaxLocks = ConstU32<4>;
     type MaxReserves = ();
@@ -90,6 +92,7 @@ impl pallet_balances::Config for TestRuntime {
     type MaxFreezes = ConstU32<0>;
 }
 
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for TestRuntime {
     type Moment = u64;
     type OnTimestampSet = ();
