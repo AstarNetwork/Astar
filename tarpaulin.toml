@@ -1,0 +1,13 @@
+[default-astar]
+
+name = "default-astar"
+manifest-path = "./Cargo.toml"
+
+workspace = true
+out = ["Xml"]
+
+# List of packages to exclude from testing.
+exclude = ["astar-collator", "xcm-tools", "local-runtime", "shibuya-runtime", "shiden-runtime", "astar-runtime", "integration-tests"]
+
+# List of file paths to exclude from testing.
+exclude-files = ["vendor/*", "bin/*", "runtime/*", "tests/*", "**/mock.rs", "**/weights.rs"]
