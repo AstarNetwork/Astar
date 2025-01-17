@@ -46,7 +46,7 @@ jobs:
     - name: Install Tarpaulin
       run: |
         curl -L -o tarpaulin.tar.gz https://github.com/xd009642/tarpaulin/releases/download/0.31.4/cargo-tarpaulin-x86_64-unknown-linux-gnu.tar.gz
-        tar -xvzf tarpaulin.tar.gz
+        tar -zxvf tarpaulin.tar.gz -C $HOME/.cargo/bin
         chmod +x cargo-tarpaulin
         sudo mv cargo-tarpaulin $HOME/.cargo/bin
         cargo tarpaulin --version
