@@ -106,11 +106,7 @@ parameter_types! {
 }
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
-    type BaseCallFilter = Everything;
-    type BlockWeights = ();
-    type BlockLength = ();
     type Block = Block;
-    type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
     type Nonce = u64;
     type Hash = H256;
@@ -120,21 +116,10 @@ impl frame_system::Config for Test {
     type Lookup = IdentityLookup<Self::AccountId>;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
-    type Version = ();
     type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<u64>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
     type MaxConsumers = ConstU32<16>;
     type RuntimeTask = RuntimeTask;
-    type SingleBlockMigrations = ();
-    type MultiBlockMigrator = ();
-    type PreInherents = ();
-    type PostInherents = ();
-    type PostTransactions = ();
 }
 
 parameter_types! {
@@ -147,14 +132,11 @@ impl pallet_balances::Config for Test {
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     type Balance = Balance;
-    type DustRemoval = ();
     type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type WeightInfo = ();
     type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
-    type RuntimeFreezeReason = ();
     type MaxFreezes = ConstU32<0>;
 }
 
@@ -174,10 +156,7 @@ impl pallet_assets::Config for Test {
     type ApprovalDeposit = ConstU64<10>;
     type StringLimit = ConstU32<50>;
     type Freezer = ();
-    type Extra = ();
     type RemoveItemsLimit = ConstU32<100>;
-    type CallbackHandle = ();
-    type WeightInfo = ();
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
 }
