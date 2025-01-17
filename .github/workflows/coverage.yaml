@@ -43,12 +43,16 @@ jobs:
     - name: Install deps
       run: sudo apt -y install protobuf-compiler
 
-    - name: Run all tests & Generate report
-      uses: actions-rs/tarpaulin@v0.1
-      with:
-        version: 0.22.0
-        args: '--workspace --features try-runtime,runtime-benchmarks -e astar-collator xcm-tools local-runtime shibuya-runtime shiden-runtime astar-runtime integration-tests --exclude-files vendor/* bin/* runtime/* tests/* **/mock.rs **/weights.rs precompiles/utils/*'
-        out-type: Xml
+    # TODO: Use `cargo install` with a specific version during the next PolkadotSDK uplift and Rust toolchain version upgrade.
+    - name: Install Tarpaulin
+      run: |
+        curl -L -o tarpaulin.tar.gz https://github.com/xd009642/tarpaulin/releases/download/0.31.4/cargo-tarpaulin-x86_64-unknown-linux-gnu.tar.gz
+        tar -zxvf tarpaulin.tar.gz -C $HOME/.cargo/bin
+        cargo tarpaulin --version
+
+    - name: Run Tarpaulin
+      run: |
+        cargo tarpaulin --features try-runtime,runtime-benchmarks
 
     - name: Code Coverage Summary Report
       uses: irongut/CodeCoverageSummary@v1.2.0
