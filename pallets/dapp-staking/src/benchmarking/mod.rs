@@ -840,6 +840,60 @@ mod benchmarks {
     }
 
     #[benchmark]
+    fn move_stake() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let source_contract = T::BenchmarkHelper::get_smart_contract(1);
+        let destination_contract = T::BenchmarkHelper::get_smart_contract(2);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            source_contract.clone(),
+        ));
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            destination_contract.clone(),
+        ));
+
+        // To preserve source staking and create destination staking
+        let amount = T::MinimumLockedAmount::get() + T::MinimumLockedAmount::get();
+        T::BenchmarkHelper::set_balance(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            source_contract.clone(),
+            amount
+        ));
+
+        let amount_to_move = T::MinimumLockedAmount::get();
+
+        #[extrinsic_call]
+        _(
+            RawOrigin::Signed(staker.clone()),
+            source_contract.clone(),
+            destination_contract.clone(),
+            Some(amount_to_move.clone()),
+        );
+
+        assert_last_event::<T>(
+            Event::<T>::StakeMoved {
+                account: staker,
+                source_contract,
+                destination_contract,
+                amount: amount_to_move,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
     fn on_initialize_voting_to_build_and_earn() {
         initial_config::<T>();
 
@@ -1135,6 +1189,44 @@ mod benchmarks {
                 contract_stake_count: 0,
             }
         );
+    }
+
+    /// Benchmark a single step of v9 mbm migration (for bonus_status).
+    #[benchmark]
+    fn mbm_step_v9_bonus_status() {
+        let alice: T::AccountId = account("alice", 0, 1);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+
+        crate::migration::v8::StakerInfo::<T>::set(
+            &alice,
+            &smart_contract,
+            Some(crate::migration::v8::SingularStakingInfo {
+                previous_staked: Default::default(),
+                staked: Default::default(),
+                loyal_staker: true,
+            }),
+        );
+
+        let mut meter = WeightMeter::new();
+
+        #[block]
+        {
+            crate::migration::v9::LazyMigrationBonusStatus::<T, weights::SubstrateWeight<T>>::step(
+                None, &mut meter,
+            )
+            .unwrap();
+        }
+
+        let expected_staker_info = SingularStakingInfoFor::<T> {
+            previous_staked: Default::default(),
+            staked: Default::default(),
+            bonus_status: BonusStatus::SafeMovesRemaining(0),
+        };
+
+        assert!(match StakerInfo::<T>::get(&alice, &smart_contract) {
+            Some(staker_info) => staker_info.eq(&expected_staker_info),
+            _ => false,
+        });
     }
 
     impl_benchmark_test_suite!(

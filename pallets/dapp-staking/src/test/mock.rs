@@ -26,7 +26,9 @@ use frame_support::{
     construct_runtime, derive_impl,
     migrations::MultiStepMigrator,
     ord_parameter_types, parameter_types,
-    traits::{fungible::Mutate as FunMutate, ConstBool, ConstU128, ConstU32, EitherOfDiverse},
+    traits::{
+        fungible::Mutate as FunMutate, ConstBool, ConstU128, ConstU32, ConstU8, EitherOfDiverse,
+    },
     weights::Weight,
 };
 use sp_arithmetic::fixed_point::FixedU128;
@@ -121,8 +123,10 @@ parameter_types! {
 #[derive_impl(pallet_migrations::config_preludes::TestDefaultConfig)]
 impl pallet_migrations::Config for Test {
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations =
-        (crate::migration::LazyMigration<Test, crate::weights::SubstrateWeight<Test>>,);
+    type Migrations = (
+        crate::migration::LazyMigration<Test, crate::weights::SubstrateWeight<Test>>,
+        crate::migration::v9::LazyMigrationBonusStatus<Test, crate::weights::SubstrateWeight<Test>>,
+    );
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
     type MigrationStatusHandler = ();
@@ -258,6 +262,7 @@ impl pallet_dapp_staking::Config for Test {
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
+    type MaxBonusMovesPerPeriod = ConstU8<2>;
     type WeightInfo = weights::SubstrateWeight<Test>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;

@@ -68,12 +68,14 @@ pub trait WeightInfo {
 	fn unstake_from_unregistered() -> Weight;
 	fn cleanup_expired_entries(x: u32, ) -> Weight;
 	fn force() -> Weight;
+	fn move_stake() -> Weight;
 	fn on_initialize_voting_to_build_and_earn() -> Weight;
 	fn on_initialize_build_and_earn_to_voting() -> Weight;
 	fn on_initialize_build_and_earn_to_build_and_earn() -> Weight;
 	fn dapp_tier_assignment(x: u32, ) -> Weight;
 	fn on_idle_cleanup() -> Weight;
 	fn step() -> Weight;
+	fn mbm_step_v9_bonus_status() -> Weight;
 }
 
 /// Weights for pallet_dapp_staking using the Substrate node and recommended hardware.
@@ -395,6 +397,27 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Minimum execution time: 11_543_000 picoseconds.
 		Weight::from_parts(11_735_000, 0)
 	}
+	/// Storage: `DappStaking::IntegratedDApps` (r:2 w:0)
+	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
+	/// Storage: `DappStaking::Ledger` (r:1 w:1)
+	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
+	/// Storage: `DappStaking::StakerInfo` (r:2 w:2)
+	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(179), added: 2654, mode: `MaxEncodedLen`)
+	/// Storage: `DappStaking::ContractStake` (r:2 w:2)
+	/// Proof: `DappStaking::ContractStake` (`max_values`: Some(65535), `max_size`: Some(91), added: 2071, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Freezes` (r:1 w:1)
+	/// Proof: `Balances::Freezes` (`max_values`: None, `max_size`: Some(67), added: 2542, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Locks` (r:1 w:0)
+	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
+	fn move_stake() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `536`
+		//  Estimated: `6298`
+		// Minimum execution time: 59_000_000 picoseconds.
+		Weight::from_parts(60_000_000, 6298)
+			.saturating_add(T::DbWeight::get().reads(9_u64))
+			.saturating_add(T::DbWeight::get().writes(6_u64))
+	}
 	/// Storage: DappStaking CurrentEraInfo (r:1 w:1)
 	/// Proof: DappStaking CurrentEraInfo (max_values: Some(1), max_size: Some(112), added: 607, mode: MaxEncodedLen)
 	/// Storage: DappStaking EraRewards (r:1 w:1)
@@ -487,6 +510,19 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Minimum execution time: 10_060_000 picoseconds.
 		Weight::from_parts(10_314_000, 6560)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: UNKNOWN KEY `0x802ef6eba87d4e0518600ef1e62725104e7b9012096b41c4eb3aaf947f6ea429` (r:1 w:0)
+	/// Proof: UNKNOWN KEY `0x802ef6eba87d4e0518600ef1e62725104e7b9012096b41c4eb3aaf947f6ea429` (r:1 w:0)
+	/// Storage: `DappStaking::StakerInfo` (r:2 w:1)
+	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(179), added: 2654, mode: `MaxEncodedLen`)
+	fn mbm_step_v9_bonus_status() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `150`
+		//  Estimated: `6298`
+		// Minimum execution time: 21_000_000 picoseconds.
+		Weight::from_parts(22_000_000, 6298)
+			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
@@ -809,6 +845,27 @@ impl WeightInfo for () {
 		// Minimum execution time: 11_543_000 picoseconds.
 		Weight::from_parts(11_735_000, 0)
 	}
+	/// Storage: `DappStaking::IntegratedDApps` (r:2 w:0)
+	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
+	/// Storage: `DappStaking::Ledger` (r:1 w:1)
+	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
+	/// Storage: `DappStaking::StakerInfo` (r:2 w:2)
+	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(179), added: 2654, mode: `MaxEncodedLen`)
+	/// Storage: `DappStaking::ContractStake` (r:2 w:2)
+	/// Proof: `DappStaking::ContractStake` (`max_values`: Some(65535), `max_size`: Some(91), added: 2071, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Freezes` (r:1 w:1)
+	/// Proof: `Balances::Freezes` (`max_values`: None, `max_size`: Some(67), added: 2542, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Locks` (r:1 w:0)
+	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
+	fn move_stake() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `536`
+		//  Estimated: `6298`
+		// Minimum execution time: 59_000_000 picoseconds.
+		Weight::from_parts(60_000_000, 6298)
+			.saturating_add(RocksDbWeight::get().reads(9_u64))
+			.saturating_add(RocksDbWeight::get().writes(6_u64))
+	}
 	/// Storage: DappStaking CurrentEraInfo (r:1 w:1)
 	/// Proof: DappStaking CurrentEraInfo (max_values: Some(1), max_size: Some(112), added: 607, mode: MaxEncodedLen)
 	/// Storage: DappStaking EraRewards (r:1 w:1)
@@ -901,6 +958,19 @@ impl WeightInfo for () {
 		// Minimum execution time: 10_060_000 picoseconds.
 		Weight::from_parts(10_314_000, 6560)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: UNKNOWN KEY `0x802ef6eba87d4e0518600ef1e62725104e7b9012096b41c4eb3aaf947f6ea429` (r:1 w:0)
+	/// Proof: UNKNOWN KEY `0x802ef6eba87d4e0518600ef1e62725104e7b9012096b41c4eb3aaf947f6ea429` (r:1 w:0)
+	/// Storage: `DappStaking::StakerInfo` (r:2 w:1)
+	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(179), added: 2654, mode: `MaxEncodedLen`)
+	fn mbm_step_v9_bonus_status() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `150`
+		//  Estimated: `6298`
+		// Minimum execution time: 21_000_000 picoseconds.
+		Weight::from_parts(22_000_000, 6298)
+			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

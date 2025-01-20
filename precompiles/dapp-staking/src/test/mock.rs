@@ -35,7 +35,7 @@ use sp_arithmetic::{fixed_point::FixedU128, Permill};
 use sp_core::{H160, H256};
 use sp_io::TestExternalities;
 use sp_runtime::{
-    traits::{BlakeTwo256, ConstU32, IdentityLookup},
+    traits::{BlakeTwo256, ConstU32, ConstU8, IdentityLookup},
     BuildStorage, Perbill,
 };
 extern crate alloc;
@@ -279,6 +279,7 @@ impl pallet_dapp_staking::Config for Test {
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
+    type MaxBonusMovesPerPeriod = ConstU8<2>;
     type WeightInfo = pallet_dapp_staking::weights::SubstrateWeight<Test>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;

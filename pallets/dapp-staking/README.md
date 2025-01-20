@@ -21,8 +21,9 @@ After an era ends, it's usually possible to claim rewards for it, if user or dAp
 Periods are another _time unit_ in dApp staking. They are expected to be more lengthy than eras.
 
 Each period consists of two subperiods:
-* `Voting`
-* `Build&Earn`
+
+-   `Voting`
+-   `Build&Earn`
 
 Each period is denoted by a number, which increments each time a new period begins.
 Period beginning is marked by the `voting` subperiod, after which follows the `build&earn` period.
@@ -41,8 +42,9 @@ Casting a vote, or staking, during the `Voting` subperiod makes the staker eligi
 
 `Voting` subperiod length is expressed in _standard_ era lengths, even though the entire voting subperiod is treated as a single _voting era_.
 E.g. if `voting` subperiod lasts for **5 eras**, and each era lasts for **100** blocks, total length of the `voting` subperiod will be **500** blocks.
-* Block 1, Era 1 starts, Period 1 starts, `Voting` subperiod starts
-* Block 501, Era 2 starts, Period 1 continues, `Build&Earn` subperiod starts
+
+-   Block 1, Era 1 starts, Period 1 starts, `Voting` subperiod starts
+-   Block 501, Era 2 starts, Period 1 continues, `Build&Earn` subperiod starts
 
 Neither stakers nor dApps earn rewards during this subperiod - no new rewards are generated after `voting` subperiod ends.
 
@@ -56,14 +58,15 @@ It is still possible to _stake_ during this period, and stakers are encouraged t
 The only exemption is the **final era** of the `build&earn` subperiod - it's not possible to _stake_ then since the stake would be invalid anyhow (stake is only valid from the next era which would be in the next period).
 
 To continue the previous example where era length is **100** blocks, let's assume that `Build&Earn` subperiod lasts for 10 eras:
-* Block 1, Era 1 starts, Period 1 starts, `Voting` subperiod starts
-* Block 501, Era 2 starts, Period 1 continues, `Build&Earn` subperiod starts
-* Block 601, Era 3 starts, Period 1 continues, `Build&Earn` subperiod continues
-* Block 701, Era 4 starts, Period 1 continues, `Build&Earn` subperiod continues
-* ...
-* Block 1401, Era 11 starts, Period 1 continues, `Build&Earn` subperiod enters the final era
-* Block 1501, Era 12 starts, Period 2 starts, `Voting` subperiod starts
-* Block 2001, Era 13 starts, Period 2 continues, `Build&Earn` subperiod starts
+
+-   Block 1, Era 1 starts, Period 1 starts, `Voting` subperiod starts
+-   Block 501, Era 2 starts, Period 1 continues, `Build&Earn` subperiod starts
+-   Block 601, Era 3 starts, Period 1 continues, `Build&Earn` subperiod continues
+-   Block 701, Era 4 starts, Period 1 continues, `Build&Earn` subperiod continues
+-   ...
+-   Block 1401, Era 11 starts, Period 1 continues, `Build&Earn` subperiod enters the final era
+-   Block 1501, Era 12 starts, Period 2 starts, `Voting` subperiod starts
+-   Block 2001, Era 13 starts, Period 2 continues, `Build&Earn` subperiod starts
 
 ### dApps & Smart Contracts
 
@@ -141,7 +144,7 @@ The protocol keeps track of how much was staked by the user in `voting` and `bui
 
 It is not possible to stake on a dApp that has been unregistered.
 However, if dApp is unregistered after user has staked on it, user will keep earning
-rewards for the staked amount.
+rewards for the staked amount, or can 'move' his stake without impacting his number of allowed 'move actions' for the ongoing period.
 
 #### Unstaking Tokens
 
@@ -157,7 +160,23 @@ If unstake would reduce the staked amount below `MinimumStakeAmount`, everything
 
 Once period finishes, all stakes are reset back to zero. This means that no unstake operation is needed after period ends to _unstake_ funds - it's done automatically.
 
-If dApp has been unregistered, a special operation to unstake from unregistered contract must be used.
+During the `build&earn` subperiod, if unstaking reduces the voting stake, the bonus status will be updated, and the number of allowed _move actions_ for the ongoing period will be reduced.
+
+If dApp has been unregistered, a special operation to unstake from unregistered contract must be used that preserves bonus elegibility.
+
+#### Moving Stake Between Contracts
+
+The moving stake feature allows users to transfer their staked amount between two smart contracts without undergoing the unstake and stake process separately. This feature ensures that the transferred stake remains aligned with the current staking period (effective in the next era), and any bonus eligibility is preserved as long as the conditions for the bonus reward are not violated (move actions are limited by `MaxBonusMovesPerPeriod`).
+
+Key details about moving stake:
+
+-   The destination contract must be different from the source contract.
+-   The user must ensure that unclaimed rewards are claimed before initiating a stake move.
+-   Only a limited number of move actions (defined by `MaxBonusMovesPerPeriod`) are allowed during the `build&earn` subperiod to preserve bonus reward eligibility (check "Claiming Bonus Reward" section below).
+-   If the destination contract is newly staked, the user's total staked contracts must not exceed the maximum allowed number of staked contracts.
+-   The destination contract must not be unregistered, but moving stake away from an unregistered contract is allowed without affecting bonus eligibility.
+
+This feature is particularly useful for stakers who wish to rebalance their stake across multiple contracts (including new registrations) or move their stake to better-performing dApps while retaining the potential for rewards and maintaining bonus eligibility.
 
 #### Claiming Staker Rewards
 
@@ -175,7 +194,20 @@ Rewards are calculated using a simple formula: `staker_reward_pool * staker_stak
 
 #### Claiming Bonus Reward
 
-If staker staked on a dApp during the voting subperiod, and didn't reduce their staked amount below what was staked at the end of the voting subperiod, this makes them eligible for the bonus reward.
+If a staker has staked on a dApp during the voting subperiod, and the bonus status for the associated staked amount has not been forfeited due to excessive move actions, they remain eligible for the bonus reward.
+
+Only a limited number of _move actions_ are allowed during the `build&earn` subperiod to preserve bonus reward eligibility. Move actions refer to either:
+
+-   A 'partial unstake that decreases the voting stake',
+-   A 'stake transfer between two contracts'. (check previous "Moving Stake Between Contracts" section)
+
+The number of authorized safe move actions is defined by `MaxBonusMovesPerPeriod`. For example:
+If 2 safe bonus move actions are allowed for one period, and a user has staked **100** on contract A during the `voting` subperiod and **50** during the `build&earn` subperiod, they can safely:
+
+1. Unstake **70**, reducing the `voting` stake to **80**.
+2. Transfer **50** to contract B.
+
+After these actions, the user will still be eligible for bonus rewards (**20** on contract A and **50** on contract B). However, if an additional move action is performed on contract A, the bonus eligibility will be forfeited.
 
 Bonus rewards need to be claimed per contract, unlike staker rewards.
 
