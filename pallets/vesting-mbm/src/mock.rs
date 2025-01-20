@@ -64,7 +64,6 @@ impl pallet_migrations::Config for Runtime {
     type Migrations = (crate::LazyMigration<Runtime, crate::weights::SubstrateWeight<Runtime>>,);
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
-    type MigrationStatusHandler = ();
     type MaxServiceWeight = MaxServiceWeight;
 }
 

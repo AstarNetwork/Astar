@@ -19,7 +19,9 @@
 use super::*;
 
 use fp_evm::{IsPrecompileResult, Precompile};
-use frame_support::{construct_runtime, parameter_types, traits::ConstU64, weights::Weight};
+use frame_support::{
+    construct_runtime, derive_impl, parameter_types, traits::ConstU64, weights::Weight,
+};
 pub use pallet_evm::{EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -112,10 +114,8 @@ parameter_types! {
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for TestRuntime {
-    type BaseCallFilter = frame_support::traits::Everything;
-    type BlockWeights = ();
-    type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
     type Nonce = u64;
     type RuntimeCall = RuntimeCall;
@@ -126,22 +126,9 @@ impl frame_system::Config for TestRuntime {
     type Lookup = IdentityLookup<AccountId32>;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
-    type DbWeight = ();
-    type Version = ();
     type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
-    type MaxConsumers = frame_support::traits::ConstU32<16>;
     type RuntimeTask = RuntimeTask;
-    type SingleBlockMigrations = ();
-    type MultiBlockMigrator = ();
-    type PreInherents = ();
-    type PostInherents = ();
-    type PostTransactions = ();
 }
 #[derive(Debug, Clone, Copy)]
 pub struct TestPrecompileSet<R>(PhantomData<R>);
@@ -173,18 +160,15 @@ parameter_types! {
     pub const ExistentialDeposit: u128 = 1;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for TestRuntime {
     type MaxReserves = ();
-    type ReserveIdentifier = ();
     type MaxLocks = ();
     type Balance = Balance;
     type RuntimeEvent = RuntimeEvent;
-    type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type WeightInfo = ();
     type RuntimeHoldReason = RuntimeHoldReason;
-    type RuntimeFreezeReason = ();
     type FreezeIdentifier = ();
     type MaxFreezes = ConstU32<0>;
 }
@@ -193,11 +177,9 @@ parameter_types! {
     pub const MinimumPeriod: u64 = 5;
 }
 
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for TestRuntime {
-    type Moment = u64;
-    type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
-    type WeightInfo = ();
 }
 
 parameter_types! {
