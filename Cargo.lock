@@ -593,7 +593,7 @@ dependencies = [
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-dispatch",
  "pallet-membership",
- "pallet-treasury 36.0.1",
+ "pallet-treasury 37.0.0",
  "pallet-xc-asset-config",
  "parity-scale-codec",
  "scale-info",
@@ -684,7 +684,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
- "pallet-treasury 36.0.1",
+ "pallet-treasury 37.0.0",
  "pallet-utility",
  "pallet-vesting",
  "pallet-xc-asset-config",
@@ -6548,7 +6548,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
- "pallet-treasury 36.0.1",
+ "pallet-treasury 37.0.0",
  "pallet-tx-pause",
  "pallet-unified-accounts",
  "pallet-utility",
@@ -8176,7 +8176,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-treasury 36.0.1 (git+https://github.com/paritytech/polkadot-sdk?branch=stable2407)",
+ "pallet-treasury 36.0.1",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -8254,7 +8254,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-bounties",
- "pallet-treasury 36.0.1 (git+https://github.com/paritytech/polkadot-sdk?branch=stable2407)",
+ "pallet-treasury 36.0.1",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -9544,7 +9544,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-treasury 36.0.1 (git+https://github.com/paritytech/polkadot-sdk?branch=stable2407)",
+ "pallet-treasury 36.0.1",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -9599,6 +9599,24 @@ dependencies = [
 [[package]]
 name = "pallet-treasury"
 version = "36.0.1"
+source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2407#b98e0b32c68ba10a345a5f6c9edf7e2648c3daac"
+dependencies = [
+ "docify",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-treasury"
+version = "37.0.0"
 dependencies = [
  "docify",
  "frame-benchmarking",
@@ -9612,24 +9630,6 @@ dependencies = [
  "serde",
  "sp-core",
  "sp-io",
- "sp-runtime",
-]
-
-[[package]]
-name = "pallet-treasury"
-version = "36.0.1"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2407#b98e0b32c68ba10a345a5f6c9edf7e2648c3daac"
-dependencies = [
- "docify",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "pallet-balances",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
  "sp-runtime",
 ]
 
@@ -10961,7 +10961,7 @@ dependencies = [
  "pallet-staking-reward-fn",
  "pallet-timestamp",
  "pallet-transaction-payment",
- "pallet-treasury 36.0.1 (git+https://github.com/paritytech/polkadot-sdk?branch=stable2407)",
+ "pallet-treasury 36.0.1",
  "pallet-vesting",
  "parity-scale-codec",
  "polkadot-primitives",
@@ -12303,7 +12303,7 @@ dependencies = [
  "pallet-tips",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
- "pallet-treasury 36.0.1 (git+https://github.com/paritytech/polkadot-sdk?branch=stable2407)",
+ "pallet-treasury 36.0.1",
  "pallet-utility",
  "pallet-vesting",
  "pallet-whitelist",
@@ -14434,7 +14434,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
- "pallet-treasury 36.0.1",
+ "pallet-treasury 37.0.0",
  "pallet-tx-pause",
  "pallet-unified-accounts",
  "pallet-utility",
@@ -17469,7 +17469,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
- "pallet-treasury 36.0.1 (git+https://github.com/paritytech/polkadot-sdk?branch=stable2407)",
+ "pallet-treasury 36.0.1",
  "pallet-utility",
  "pallet-vesting",
  "pallet-whitelist",

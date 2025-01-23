@@ -28,7 +28,6 @@ use frame_support::{
     construct_runtime, genesis_builder_helper, parameter_types,
     traits::{
         fungible::{Balanced, Credit, HoldConsideration},
-        tokens::{PayFromAccount, UnityAssetBalanceConversion},
         AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Contains, EqualPrivilegeOnly,
         FindAuthor, Get, InsideBoth, InstanceFilter, LinearStoragePrice, Nothing, OnFinalize,
         WithdrawReasons,
@@ -56,8 +55,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-        DispatchInfoOf, Dispatchable, IdentityLookup, NumberFor, PostDispatchInfoOf,
-        UniqueSaturatedInto,
+        DispatchInfoOf, Dispatchable, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
     ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
@@ -1048,20 +1046,8 @@ impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type Burn = ();
     type BurnDestination = ();
     type SpendFunds = ();
-
     type MaxApprovals = ConstU32<64>;
-    type AssetKind = (); // Only native asset is supported
-    type Beneficiary = AccountId;
-    type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
-    type Paymaster = PayFromAccount<Balances, MainTreasuryAccount>;
-    type BalanceConverter = UnityAssetBalanceConversion;
 
-    // New approach to using treasury, useful for OpenGov but not necessarily for us.
-    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
-    // Only used by 'spend' approach which is disabled
-    type PayoutPeriod = ConstU32<0>;
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = ();
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
@@ -1088,20 +1074,8 @@ impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
     type Burn = ();
     type BurnDestination = ();
     type SpendFunds = ();
-
     type MaxApprovals = ConstU32<64>;
-    type AssetKind = (); // Only native asset is supported
-    type Beneficiary = AccountId;
-    type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
-    type Paymaster = PayFromAccount<Balances, MainTreasuryAccount>;
-    type BalanceConverter = UnityAssetBalanceConversion;
 
-    // New approach to using treasury, useful for OpenGov but not necessarily for us.
-    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
-    // Only used by 'spend' approach which is disabled
-    type PayoutPeriod = ConstU32<0>;
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = ();
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 

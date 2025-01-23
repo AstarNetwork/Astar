@@ -1,6 +1,6 @@
 [package]
 name = "pallet-treasury"
-version = "36.0.1"
+version = "37.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 homepage = "https://paritytech.github.io/polkadot-sdk/"
