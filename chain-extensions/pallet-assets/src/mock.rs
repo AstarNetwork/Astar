@@ -20,16 +20,16 @@ use crate::AssetsExtension;
 use frame_support::traits::{AsEnsureOriginWithArg, ConstU128, Currency, Randomness};
 use frame_support::{
     derive_impl, parameter_types,
-    traits::{ConstU32, ConstU64, Nothing},
+    traits::{ConstU64, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureSigned;
 use pallet_contracts::chain_extension::RegisteredChainExtension;
-use pallet_contracts::{Config, DefaultAddressGenerator, Frame};
+use pallet_contracts::{Config, Frame};
 use sp_core::crypto::AccountId32;
 use sp_runtime::{
     testing::H256,
-    traits::{BlakeTwo256, Convert, IdentityLookup, Zero},
+    traits::{Convert, IdentityLookup, Zero},
     BuildStorage, Perbill,
 };
 
@@ -49,19 +49,10 @@ parameter_types! {
 }
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
-    type BlockWeights = BlockWeights;
-    type RuntimeOrigin = RuntimeOrigin;
     type Block = Block;
-    type Hash = H256;
-    type RuntimeCall = RuntimeCall;
-    type Hashing = BlakeTwo256;
     type AccountId = AccountId32;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type RuntimeTask = RuntimeTask;
 }
 
 parameter_types! {
@@ -90,23 +81,12 @@ impl pallet_contracts::Config for Test {
     type RuntimeCall = RuntimeCall;
     type CallFilter = Nothing;
     type CallStack = [Frame<Self>; 5];
-    type WeightPrice = Self;
     type ChainExtension = AssetsExtension<Self>;
     type Schedule = Schedule;
-    type DepositPerByte = DepositPerByte;
-    type DepositPerItem = DepositPerItem;
-    type DefaultDepositLimit = DefaultDepositLimit;
-    type AddressGenerator = DefaultAddressGenerator;
-    type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
-    type MaxStorageKeyLen = ConstU32<128>;
     type UnsafeUnstableInterface = UnstableInterface;
-    type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
-    type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
-    type MaxDelegateDependencies = MaxDelegateDependencies;
     type RuntimeHoldReason = RuntimeHoldReason;
     type UploadOrigin = EnsureSigned<AccountId32>;
     type InstantiateOrigin = EnsureSigned<AccountId32>;
-    type MaxTransientStorageSize = ConstU32<{ 1 * 1024 * 1024 }>;
 }
 
 impl RegisteredChainExtension<Test> for AssetsExtension<Test> {
@@ -119,16 +99,9 @@ parameter_types! {
 
 #[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
-    type MaxLocks = ();
-    type MaxReserves = ();
-    type ReserveIdentifier = [u8; 8];
     type Balance = Balance;
-    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type FreezeIdentifier = ();
-    type MaxFreezes = ConstU32<0>;
 }
 
 #[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
@@ -150,11 +123,7 @@ impl pallet_assets::Config for Test {
     type MetadataDepositBase = ConstU128<1>;
     type MetadataDepositPerByte = ConstU128<1>;
     type ApprovalDeposit = ConstU128<1>;
-    type StringLimit = ConstU32<50>;
     type Freezer = ();
-    type RemoveItemsLimit = ConstU32<5>;
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = ();
 }
 
 type Block = frame_system::mocking::MockBlockU32<Test>;

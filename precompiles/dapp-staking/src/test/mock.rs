@@ -32,10 +32,10 @@ use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
 use sp_arithmetic::{fixed_point::FixedU128, Permill};
-use sp_core::{H160, H256};
+use sp_core::H160;
 use sp_io::TestExternalities;
 use sp_runtime::{
-    traits::{BlakeTwo256, ConstU32, IdentityLookup},
+    traits::{ConstU32, IdentityLookup},
     BuildStorage, Perbill,
 };
 extern crate alloc;
@@ -79,31 +79,17 @@ parameter_types! {
 
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
-    type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
-    type RuntimeCall = RuntimeCall;
-    type Hash = H256;
     type Block = Block;
-    type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type RuntimeTask = RuntimeTask;
 }
 
 #[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
-    type MaxLocks = ConstU32<4>;
-    type MaxReserves = ();
-    type ReserveIdentifier = [u8; 8];
     type Balance = Balance;
-    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ConstU128<1>;
     type AccountStore = System;
-    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = RuntimeFreezeReason;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type MaxFreezes = ConstU32<1>;

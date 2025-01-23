@@ -22,7 +22,6 @@ use frame_support::{
     weights::{Weight, WeightMeter},
 };
 use frame_system::EnsureRoot;
-use sp_core::H256;
 use sp_runtime::{traits::IdentityLookup, AccountId32};
 
 use polkadot_parachain::primitives::Id as ParaId;
@@ -49,19 +48,10 @@ parameter_types! {
 
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Runtime {
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeCall = RuntimeCall;
-    type Nonce = u64;
     type Block = Block;
-    type Hash = H256;
-    type Hashing = ::sp_runtime::traits::BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type RuntimeTask = RuntimeTask;
 }
 
 parameter_types! {
@@ -72,16 +62,9 @@ parameter_types! {
 
 #[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Runtime {
-    type MaxLocks = MaxLocks;
     type Balance = Balance;
-    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type MaxReserves = MaxReserves;
-    type ReserveIdentifier = [u8; 8];
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type FreezeIdentifier = ();
-    type MaxFreezes = ConstU32<0>;
 }
 
 impl shared::Config for Runtime {

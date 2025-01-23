@@ -39,7 +39,7 @@ use super::*;
 
 use frame_support::{
     construct_runtime, derive_impl, parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU64, Everything},
+    traits::{AsEnsureOriginWithArg, ConstU64},
     weights::Weight,
 };
 
@@ -50,11 +50,8 @@ use precompile_utils::{
     testing::{AddressInPrefixedSet, MockAccount},
 };
 
-use sp_core::{ConstU32, H160, H256};
-use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
-    BuildStorage,
-};
+use sp_core::{ConstU32, H160};
+use sp_runtime::{traits::IdentityLookup, BuildStorage};
 
 pub type AccountId = MockAccount;
 pub type AssetId = u128;
@@ -94,20 +91,10 @@ parameter_types! {
 
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Runtime {
-    type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
     type Block = Block;
-    type RuntimeCall = RuntimeCall;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type SS58Prefix = SS58Prefix;
-    type RuntimeTask = RuntimeTask;
 }
 
 parameter_types! {
@@ -125,16 +112,9 @@ parameter_types! {
 
 #[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Runtime {
-    type MaxReserves = ();
-    type ReserveIdentifier = ();
-    type MaxLocks = ();
     type Balance = Balance;
-    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type RuntimeHoldReason = ();
-    type FreezeIdentifier = ();
-    type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {
@@ -198,8 +178,6 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<0>;
     type AssetIdParameter = AssetId;
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = ();
 }
 
 // Configure a mock runtime to test the pallet.

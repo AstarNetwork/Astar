@@ -29,8 +29,8 @@ use frame_support::{
 use frame_system::{EnsureRoot, EnsureSigned};
 
 use core::marker::PhantomData;
-use sp_core::{ConstU32, ConstU64, Get, H256};
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+use sp_core::{ConstU64, Get};
+use sp_runtime::traits::IdentityLookup;
 use xcm::latest::prelude::*;
 use xcm_builder::{AllowUnpaidExecutionFrom, FungiblesAdapter, MintLocation, NoChecking};
 
@@ -107,19 +107,9 @@ parameter_types! {
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
     type Block = Block;
-    type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
-    type Hash = H256;
-    type RuntimeCall = RuntimeCall;
-    type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<u64>;
-    type MaxConsumers = ConstU32<16>;
-    type RuntimeTask = RuntimeTask;
 }
 
 parameter_types! {
@@ -128,16 +118,8 @@ parameter_types! {
 
 #[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
-    type MaxLocks = ();
-    type MaxReserves = ();
-    type ReserveIdentifier = [u8; 8];
     type Balance = Balance;
-    type RuntimeEvent = RuntimeEvent;
-    type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type FreezeIdentifier = ();
-    type MaxFreezes = ConstU32<0>;
 }
 
 #[derive_impl(pallet_assets::config_preludes::TestDefaultConfig)]
@@ -154,11 +136,7 @@ impl pallet_assets::Config for Test {
     type MetadataDepositPerByte = ConstU64<1>;
     type AssetAccountDeposit = ConstU64<10>;
     type ApprovalDeposit = ConstU64<10>;
-    type StringLimit = ConstU32<50>;
     type Freezer = ();
-    type RemoveItemsLimit = ConstU32<100>;
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = ();
 }
 
 pub struct MatchOnlyAsset<MatchAsset>(PhantomData<MatchAsset>);

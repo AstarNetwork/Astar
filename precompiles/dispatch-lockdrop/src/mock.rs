@@ -26,9 +26,9 @@ use frame_support::{
 pub use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
-use sp_core::{keccak_256, H160, H256};
+use sp_core::{keccak_256, H160};
 use sp_runtime::{
-    traits::{BlakeTwo256, ConstU32, IdentityLookup},
+    traits::{ConstU32, IdentityLookup},
     AccountId32,
 };
 
@@ -56,19 +56,10 @@ parameter_types! {
 
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for TestRuntime {
-    type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
-    type RuntimeCall = RuntimeCall;
     type Block = Block;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
     type AccountId = AccountId32;
     type Lookup = IdentityLookup<AccountId32>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type RuntimeTask = RuntimeTask;
 }
 
 pub struct WhitelistedCalls;
@@ -116,15 +107,9 @@ parameter_types! {
 
 #[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for TestRuntime {
-    type MaxReserves = ();
-    type MaxLocks = ();
     type Balance = Balance;
-    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type FreezeIdentifier = ();
-    type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {

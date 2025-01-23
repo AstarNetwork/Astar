@@ -21,15 +21,11 @@ use crate::{self as pallet_collective_proxy};
 use astar_primitives::{Balance, BlockNumber};
 use frame_support::{
     construct_runtime, derive_impl, ord_parameter_types, parameter_types,
-    traits::{ConstU128, ConstU32, InstanceFilter},
+    traits::{ConstU128, InstanceFilter},
     weights::Weight,
 };
-use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
-    BuildStorage,
-};
+use sp_runtime::BuildStorage;
 
 use frame_system::EnsureSignedBy;
 
@@ -55,34 +51,15 @@ parameter_types! {
 
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
-    type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
-    type RuntimeCall = RuntimeCall;
     type Block = Block;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
-    type Lookup = IdentityLookup<Self::AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type RuntimeTask = RuntimeTask;
 }
 
 #[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
-    type MaxLocks = ConstU32<4>;
-    type MaxReserves = ();
-    type ReserveIdentifier = [u8; 8];
     type Balance = Balance;
-    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ConstU128<1>;
     type AccountStore = System;
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type FreezeIdentifier = RuntimeFreezeReason;
-    type RuntimeFreezeReason = RuntimeFreezeReason;
-    type MaxFreezes = ConstU32<1>;
 }
 
 parameter_types! {

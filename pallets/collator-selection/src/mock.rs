@@ -19,16 +19,14 @@ use super::*;
 use crate as collator_selection;
 use frame_support::{
     derive_impl, ord_parameter_types, parameter_types,
-    traits::{ConstU32, FindAuthor, ValidatorRegistration},
+    traits::{FindAuthor, ValidatorRegistration},
     PalletId,
 };
 use frame_system as system;
 use frame_system::EnsureSignedBy;
-use sp_core::{ConstBool, H256};
+use sp_core::ConstBool;
 use sp_runtime::{
-    testing::UintAuthorityId,
-    traits::{BlakeTwo256, IdentityLookup, OpaqueKeys},
-    BuildStorage, Perbill, RuntimeAppPublic,
+    testing::UintAuthorityId, traits::OpaqueKeys, BuildStorage, Perbill, RuntimeAppPublic,
 };
 
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -53,20 +51,8 @@ parameter_types! {
 
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl system::Config for Test {
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeCall = RuntimeCall;
-    type Nonce = u64;
     type Block = Block;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
-    type AccountId = u64;
-    type Lookup = IdentityLookup<Self::AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<u64>;
-    type SS58Prefix = SS58Prefix;
-    type RuntimeTask = RuntimeTask;
 }
 
 parameter_types! {
@@ -76,15 +62,8 @@ parameter_types! {
 
 #[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type MaxLocks = ();
-    type MaxReserves = MaxReserves;
-    type ReserveIdentifier = [u8; 8];
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type FreezeIdentifier = ();
-    type MaxFreezes = ConstU32<0>;
 }
 
 pub struct Author4;
