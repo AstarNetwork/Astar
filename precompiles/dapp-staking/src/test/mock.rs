@@ -20,7 +20,7 @@ use crate::*;
 
 use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{
-    assert_ok, construct_runtime, parameter_types,
+    assert_ok, construct_runtime, derive_impl, parameter_types,
     traits::{
         fungible::{Mutate as FunMutate, Unbalanced as FunUnbalanced},
         ConstBool, ConstU128, ConstU64, Hooks,
@@ -32,10 +32,10 @@ use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
 use sp_arithmetic::{fixed_point::FixedU128, Permill};
-use sp_core::{H160, H256};
+use sp_core::H160;
 use sp_io::TestExternalities;
 use sp_runtime::{
-    traits::{BlakeTwo256, ConstU32, IdentityLookup},
+    traits::{ConstU32, IdentityLookup},
     BuildStorage, Perbill,
 };
 extern crate alloc;
@@ -77,52 +77,22 @@ parameter_types! {
         };
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
-    type BaseCallFilter = frame_support::traits::Everything;
-    type BlockWeights = ();
-    type BlockLength = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
-    type RuntimeCall = RuntimeCall;
-    type Hash = H256;
     type Block = Block;
-    type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type DbWeight = ();
-    type Version = ();
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
-    type MaxConsumers = frame_support::traits::ConstU32<16>;
-    type RuntimeTask = RuntimeTask;
-    type SingleBlockMigrations = ();
-    type MultiBlockMigrator = ();
-    type PreInherents = ();
-    type PostInherents = ();
-    type PostTransactions = ();
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
-    type MaxLocks = ConstU32<4>;
-    type MaxReserves = ();
-    type ReserveIdentifier = [u8; 8];
     type Balance = Balance;
-    type RuntimeEvent = RuntimeEvent;
-    type DustRemoval = ();
     type ExistentialDeposit = ConstU128<1>;
     type AccountStore = System;
-    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = RuntimeFreezeReason;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type MaxFreezes = ConstU32<1>;
-    type WeightInfo = ();
 }
 
 pub fn precompile_address() -> H160 {
@@ -182,11 +152,9 @@ impl pallet_evm::Config for Test {
     type SuicideQuickClearLimit = ConstU32<0>;
 }
 
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for Test {
-    type Moment = u64;
-    type OnTimestampSet = ();
     type MinimumPeriod = ConstU64<5>;
-    type WeightInfo = ();
 }
 
 type MockSmartContract = SmartContract<<Test as frame_system::Config>::AccountId>;

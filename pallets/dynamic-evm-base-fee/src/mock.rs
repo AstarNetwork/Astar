@@ -22,19 +22,13 @@ use super::*;
 use crate as pallet_dynamic_evm_base_fee;
 
 use frame_support::{
-    construct_runtime, parameter_types, storage,
-    traits::{ConstU128, ConstU32, ConstU64, Get},
-    weights::constants::RocksDbWeight,
+    construct_runtime, derive_impl, parameter_types, storage,
+    traits::{ConstU128, ConstU64, Get},
 };
 use parity_scale_codec::Encode;
-use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup, One},
-    BuildStorage, FixedU128, Perquintill,
-};
+use sp_runtime::{traits::One, BuildStorage, FixedU128, Perquintill};
 
-pub(crate) type AccountId = u128;
 pub(crate) type Balance = u128;
 
 parameter_types! {
@@ -42,59 +36,22 @@ parameter_types! {
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for TestRuntime {
-    type BaseCallFilter = frame_support::traits::Everything;
-    type BlockWeights = ();
-    type BlockLength = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
-    type RuntimeCall = RuntimeCall;
     type Block = Block;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
-    type Lookup = IdentityLookup<Self::AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = ConstU32<250>;
-    type DbWeight = RocksDbWeight;
-    type Version = ();
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
-    type MaxConsumers = frame_support::traits::ConstU32<16>;
-    type RuntimeTask = RuntimeTask;
-    type SingleBlockMigrations = ();
-    type MultiBlockMigrator = ();
-    type PreInherents = ();
-    type PostInherents = ();
-    type PostTransactions = ();
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for TestRuntime {
-    type MaxLocks = ConstU32<4>;
-    type MaxReserves = ();
-    type ReserveIdentifier = [u8; 8];
     type Balance = Balance;
-    type RuntimeEvent = RuntimeEvent;
-    type DustRemoval = ();
     type ExistentialDeposit = ConstU128<2>;
     type AccountStore = System;
-    type WeightInfo = ();
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type FreezeIdentifier = ();
-    type RuntimeFreezeReason = ();
-    type MaxFreezes = ConstU32<0>;
 }
 
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for TestRuntime {
-    type Moment = u64;
-    type OnTimestampSet = ();
     type MinimumPeriod = ConstU64<3>;
-    type WeightInfo = ();
 }
 
 parameter_types! {

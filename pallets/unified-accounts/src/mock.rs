@@ -22,13 +22,13 @@ use super::*;
 use crate as pallet_unified_accounts;
 use astar_primitives::evm::HashedDefaultMappings;
 use frame_support::{
-    construct_runtime, parameter_types,
+    construct_runtime, derive_impl, parameter_types,
     traits::{ConstU64, FindAuthor},
     weights::Weight,
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::FeeCalculator;
-use sp_core::{keccak_256, H160, H256, U256};
+use sp_core::{keccak_256, H160, U256};
 use sp_io::TestExternalities;
 use sp_runtime::{
     traits::{AccountIdLookup, BlakeTwo256},
@@ -41,59 +41,25 @@ parameter_types! {
     pub const ExistentialDeposit: u128 = 100;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for TestRuntime {
-    type BaseCallFilter = frame_support::traits::Everything;
-    type BlockWeights = ();
-    type BlockLength = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
-    type RuntimeCall = RuntimeCall;
     type Block = Block;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = (AccountIdLookup<Self::AccountId, ()>, UnifiedAccounts);
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = ConstU64<250>;
-    type DbWeight = ();
-    type Version = ();
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
     type OnKilledAccount = KillAccountMapping<Self>;
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
-    type MaxConsumers = frame_support::traits::ConstU32<16>;
-    type RuntimeTask = RuntimeTask;
-    type SingleBlockMigrations = ();
-    type MultiBlockMigrator = ();
-    type PreInherents = ();
-    type PostInherents = ();
-    type PostTransactions = ();
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for TestRuntime {
-    type MaxLocks = ConstU32<4>;
-    type MaxReserves = ();
-    type ReserveIdentifier = [u8; 8];
     type Balance = Balance;
-    type RuntimeEvent = RuntimeEvent;
-    type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type WeightInfo = ();
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type FreezeIdentifier = ();
-    type RuntimeFreezeReason = ();
-    type MaxFreezes = ConstU32<0>;
 }
 
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for TestRuntime {
-    type Moment = u64;
-    type OnTimestampSet = ();
     type MinimumPeriod = ConstU64<3>;
-    type WeightInfo = ();
 }
 
 pub struct MockFeeCalculator;
