@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"astar_collator":[["impl SubstrateCli for <a class=\"struct\" href=\"astar_collator/struct.RelayChainCli.html\" title=\"struct astar_collator::RelayChainCli\">RelayChainCli</a>"],["impl SubstrateCli for <a class=\"struct\" href=\"astar_collator/struct.Cli.html\" title=\"struct astar_collator::Cli\">Cli</a>"]]
+"astar_collator":[["impl SubstrateCli for <a class=\"struct\" href=\"astar_collator/struct.Cli.html\" title=\"struct astar_collator::Cli\">Cli</a>"],["impl SubstrateCli for <a class=\"struct\" href=\"astar_collator/struct.RelayChainCli.html\" title=\"struct astar_collator::RelayChainCli\">RelayChainCli</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
