@@ -550,8 +550,8 @@ pub(crate) fn assert_stake(
             );
             assert_eq!(post_staker_info.period_number(), stake_period);
             assert_eq!(
-                post_staker_info.is_loyal(),
-                pre_staker_info.is_loyal(),
+                post_staker_info.is_bonus_eligible(),
+                pre_staker_info.is_bonus_eligible(),
                 "Staking operation mustn't change loyalty flag."
             );
         }
@@ -570,7 +570,7 @@ pub(crate) fn assert_stake(
             );
             assert_eq!(post_staker_info.period_number(), stake_period);
             assert_eq!(
-                post_staker_info.is_loyal(),
+                post_staker_info.is_bonus_eligible(),
                 stake_subperiod == Subperiod::Voting
             );
         }
@@ -713,7 +713,7 @@ pub(crate) fn assert_unstake(
             "Staked amount must decrease by the 'amount'"
         );
 
-        let is_loyal = pre_staker_info.is_loyal()
+        let is_bonus_eligible = pre_staker_info.is_bonus_eligible()
             && match unstake_subperiod {
                 Subperiod::Voting => !post_staker_info.staked_amount(Subperiod::Voting).is_zero(),
                 Subperiod::BuildAndEarn => {
@@ -723,8 +723,8 @@ pub(crate) fn assert_unstake(
             };
 
         assert_eq!(
-            post_staker_info.is_loyal(),
-            is_loyal,
+            post_staker_info.is_bonus_eligible(),
+            is_bonus_eligible,
             "If 'Voting' stake amount is reduced in B&E period, loyalty flag must be set to false."
         );
     }
@@ -1195,7 +1195,7 @@ pub(crate) fn assert_cleanup_expired_entries(account: AccountId) {
         .iter()
         .for_each(|((inner_account, contract), entry)| {
             if *inner_account == account {
-                if entry.period_number() < current_period && !entry.is_loyal()
+                if entry.period_number() < current_period && !entry.is_bonus_eligible()
                     || entry.period_number() < threshold_period
                 {
                     to_be_deleted.push(contract);

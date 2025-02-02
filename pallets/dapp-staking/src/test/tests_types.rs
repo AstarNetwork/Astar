@@ -2018,11 +2018,11 @@ fn singular_staking_info_basics_are_ok() {
 
     // Sanity checks
     assert_eq!(staking_info.period_number(), period_number);
-    assert!(staking_info.is_loyal());
+    assert!(staking_info.is_bonus_eligible());
     assert!(staking_info.total_staked_amount().is_zero());
     assert!(staking_info.is_empty());
     assert!(staking_info.era().is_zero());
-    assert!(!SingularStakingInfo::new(period_number, Subperiod::BuildAndEarn).is_loyal());
+    assert!(!SingularStakingInfo::new(period_number, Subperiod::BuildAndEarn).is_bonus_eligible());
 
     // Add some staked amount during `Voting` period
     let era_1 = 7;
@@ -2089,7 +2089,7 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
         staking_info.total_staked_amount(),
         vote_stake_amount_1 - unstake_amount_1
     );
-    assert!(staking_info.is_loyal());
+    assert!(staking_info.is_bonus_eligible());
     assert_eq!(
         staking_info.era(),
         era_1 + 1,
@@ -2109,7 +2109,7 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
     );
     assert!(staking_info.total_staked_amount().is_zero());
     assert!(
-        !staking_info.is_loyal(),
+        !staking_info.is_bonus_eligible(),
         "Loyalty flag should have been removed since it was full unstake."
     );
     assert!(staking_info.era().is_zero());
@@ -2153,7 +2153,7 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         staking_info.staked_amount(Subperiod::BuildAndEarn),
         bep_stake_amount_1 - unstake_1
     );
-    assert!(staking_info.is_loyal());
+    assert!(staking_info.is_bonus_eligible());
     assert_eq!(
         staking_info.era(),
         era_1 + 1,
@@ -2222,7 +2222,7 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         .staked_amount(Subperiod::BuildAndEarn)
         .is_zero());
     assert!(
-        !staking_info.is_loyal(),
+        !staking_info.is_bonus_eligible(),
         "Loyalty flag should have been removed due to non-zero voting subperiod unstake"
     );
     assert_eq!(staking_info.era(), era_2);
