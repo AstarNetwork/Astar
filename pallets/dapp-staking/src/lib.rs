@@ -1019,7 +1019,16 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
+            // TODO: feel free to remove or modify the comment once production code is ready!
+            //
             // User is only eligible for the bonus reward if their first time stake is in the `Voting` subperiod.
+            //
+            // `StakeAmount` is prepared based on the current subperiod.
+            // If the user is staking for the first time in the `Voting` subperiod, they are eligible for the bonus reward, and the max number of bonus moves is set.
+            // If the user is staking for the first time in the `Build&Earn` subperiod, they are not eligible for the bonus reward, and the bonus moves are set to 0.
+            //
+            // The `inner_stake` function no longer takes `amount` as balance, but instead as `StakeAmount` struct,
+            // allowing modification of both `voting` and `build_and_earn` amounts at the same time.
             let protocol_state = ActiveProtocolState::<T>::get();
             let (stake_amount, remaining_bonus_moves) = match protocol_state.subperiod() {
                 Subperiod::Voting => (
@@ -1077,6 +1086,11 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
+            
+            // TODO: feel free to remove or modify the comment once production code is ready!
+            //
+            // `inner_unstake` returns the amount of remaining moves (which can be reused in the `move` extrinsic), and also the amount that was unstaked as `StakeAmount` struct.
+            // This gives precise information about how much was unstaked from each subperiod amount, which is needed for the `move` extrinsic.
             let (unstake_amount, _remaining_moves) =
                 Self::inner_unstake(&account, &smart_contract, amount)?;
 
@@ -1471,17 +1485,22 @@ pub mod pallet {
 
             Self::update_ledger(&account, ledger)?;
 
-            // Implementation comment: We need to know what & how much was unstaked. The code can be made cleaner later.
+            // Implementation comment, remove once production code is ready:
+            // We need to know what & how much was unstaked. The code can be made cleaner later, maybe there are redundant parts now.
             // Return the `StakeAmount` that has max total value - that's the one that is equal to the `amount` parameter.
             let unstake_amount = stake_amount_iter
                 .iter()
                 .max_by_key(|e| e.total())
                 .expect("At least one value exists, otherwise we wouldn't be here.");
+            assert_eq!(unstake_amount.total(), amount);
 
             Ok((*unstake_amount, remaining_bonus_moves))
         }
 
-        // TODO
+        /// Inner `stake` functionality.
+        ///
+        /// Specifies the amount in the form of the `StakeAmount` struct, allowing simultaneous update of both `voting` and `build_and_earn` amounts.
+        /// The `remaining_bonus_moves` is used to determine if the staker is still eligible for the bonus reward. This is useful for the `move` extrinsic.
         pub fn inner_stake(
             account: &T::AccountId,
             smart_contract: &T::SmartContract,
