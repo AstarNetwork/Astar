@@ -1535,7 +1535,7 @@ impl TierThreshold {
     CloneNoBound,
     TypeInfo,
 )]
-#[scale_info(skip_type_params(NT, SN))]
+#[scale_info(skip_type_params(NT))]
 pub struct TierParameters<NT: Get<u32>> {
     /// Reward distribution per tier, in percentage.
     /// First entry refers to the first tier, and so on.

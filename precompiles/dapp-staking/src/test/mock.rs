@@ -44,7 +44,7 @@ use astar_primitives::{
     dapp_staking::{
         CycleConfiguration, EraNumber, PeriodNumber, SmartContract, StakingRewardHandler,
         StandardTierSlots, STANDARD_TIER_SLOTS_ARGS,
-    }, 
+    },
     oracle::PriceProvider,
     AccountId, Balance, BlockNumber,
 };
