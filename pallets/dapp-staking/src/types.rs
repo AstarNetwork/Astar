@@ -94,6 +94,9 @@ pub type EraRewardSpanFor<T> = EraRewardSpan<<T as Config>::EraRewardSpanLength>
 // Convenience type for `DAppInfo` usage.
 pub type DAppInfoFor<T> = DAppInfo<<T as frame_system::Config>::AccountId>;
 
+// Convenience type for `BonusStatusWrapper` usage.
+pub type BonusStatusWrapperFor<T> = BonusStatusWrapper<<T as Config>::MaxBonusSafeMovesPerPeriod>;
+
 /// Simple enum representing errors possible when using sparse bounded vector.
 #[derive(Debug, PartialEq, Eq)]
 pub enum AccountLedgerError {
@@ -1009,6 +1012,21 @@ impl EraInfo {
     }
 }
 
+/// Type alias for bonus status, where:
+/// - `0` means the bonus is forfeited,
+/// - `1` or greater means the staker is eligible for the bonus.
+pub type BonusStatus = u8;
+
+/// Wrapper struct that provides additional methods for `BonusStatus`.
+pub struct BonusStatusWrapper<MaxBonusMoves: Get<u8>>(pub BonusStatus, PhantomData<MaxBonusMoves>);
+
+impl<MaxBonusMoves: Get<u8>> Default for BonusStatusWrapper<MaxBonusMoves> {
+    fn default() -> Self {
+        let max = MaxBonusMoves::get();
+        BonusStatusWrapper::<MaxBonusMoves>(max + 1, PhantomData::default())
+    }
+}
+
 /// Information about how much a particular staker staked on a particular smart contract.
 ///
 /// Keeps track of amount staked in the 'voting subperiod', as well as 'build&earn subperiod'.
@@ -1018,8 +1036,9 @@ pub struct SingularStakingInfo {
     pub(crate) previous_staked: StakeAmount,
     /// Staked amount
     pub(crate) staked: StakeAmount,
-    /// Indicates how much time the staker can move their stake, while still being eligible for the bonus.
-    pub(crate) bonus_moves: u8,
+    /// Tracks the bonus eligibility: `0` means the bonus is forfeited, and `1` or greater indicates that the stake is eligible for bonus.
+    /// Serves as counter for remaining safe moves based on `MaxBonusSafeMovesPerPeriod` value.
+    pub(crate) bonus_status: BonusStatus,
 }
 
 impl SingularStakingInfo {
@@ -1028,21 +1047,22 @@ impl SingularStakingInfo {
     /// ## Args
     ///
     /// `period` - period number for which this entry is relevant.
-    /// `subperiod` - subperiod during which this entry is created.
-    pub(crate) fn new(period: PeriodNumber, bonus_moves: u8) -> Self {
+    /// `bonus_status` - `BonusStatus` to track bonus eligibility for this entry.
+    pub(crate) fn new(period: PeriodNumber, bonus_status: BonusStatus) -> Self {
         Self {
             previous_staked: Default::default(),
             staked: StakeAmount {
                 period,
                 ..Default::default()
             },
-            bonus_moves,
+            bonus_status,
         }
     }
 
-    /// Stake the specified amount on the contract, for the specified subperiod.
-    // TODO: get rid of redundant param
-    pub fn stake(&mut self, amount: StakeAmount, current_era: EraNumber, _subperiod: Subperiod) {
+    /// Stake the specified amount on the contract.
+    pub fn stake(&mut self, amount: StakeAmount) {
+        let current_era = amount.era;
+
         // Keep the previous stake amount for future reference
         self.previous_staked = self.staked;
         self.previous_staked.era = current_era;
@@ -1075,7 +1095,7 @@ impl SingularStakingInfo {
         amount: Balance,
         current_era: EraNumber,
         subperiod: Subperiod,
-    ) -> (Vec<StakeAmount>, u8) {
+    ) -> (Vec<StakeAmount>, BonusStatus) {
         let mut result = Vec::new();
         let staked_snapshot = self.staked;
 
@@ -1089,10 +1109,10 @@ impl SingularStakingInfo {
 
         result.push(unstaked_amount);
 
-        // 2. Update bonus eligibility flag accordingly.
+        // 2. Update bonus status accordingly.
         // In case voting subperiod has passed, and the the 'voting' stake amount was reduced, we need to reduce the bonus eligibility counter.
         if subperiod != Subperiod::Voting && self.staked.voting < staked_snapshot.voting {
-            self.bonus_moves = self.bonus_moves.saturating_sub(1);
+            self.bonus_status = self.bonus_status.saturating_sub(1);
         }
 
         // 3. Determine what was the previous staked amount.
@@ -1167,7 +1187,7 @@ impl SingularStakingInfo {
             self.previous_staked = Default::default();
         }
 
-        (result, self.bonus_moves)
+        (result, self.bonus_status)
     }
 
     /// Total staked on the contract by the user. Both subperiod stakes are included.
@@ -1182,7 +1202,7 @@ impl SingularStakingInfo {
 
     /// If `true` staker has staked during voting subperiod and has never reduced their sta
     pub fn is_bonus_eligible(&self) -> bool {
-        self.bonus_moves > 0
+        self.bonus_status > 0
     }
 
     /// Period for which this entry is relevant.
@@ -1289,7 +1309,8 @@ impl ContractStakeAmount {
     }
 
     /// Stake the specified `amount` on the contract, for the specified `subperiod` and `era`.
-    pub fn stake(&mut self, amount: StakeAmount, period_info: PeriodInfo, current_era: EraNumber) {
+    pub fn stake(&mut self, amount: StakeAmount, period_number: PeriodNumber) {
+        let current_era = amount.era;
         let stake_era = current_era.saturating_add(1);
 
         match self.staked_future.as_mut() {
@@ -1300,7 +1321,7 @@ impl ContractStakeAmount {
                 return;
             }
             // Future entry has an older era, but periods match so overwrite the 'current' entry with it
-            Some(stake_amount) if stake_amount.period == period_info.number => {
+            Some(stake_amount) if stake_amount.period == period_number => {
                 self.staked = *stake_amount;
                 // Align the eras to keep it simple
                 self.staked.era = current_era;
@@ -1312,28 +1333,28 @@ impl ContractStakeAmount {
         // Prepare new entry
         let mut new_entry = match self.staked {
             // 'current' entry period matches so we use it as base for the new entry
-            stake_amount if stake_amount.period == period_info.number => stake_amount,
+            stake_amount if stake_amount.period == period_number => stake_amount,
             // otherwise just create a dummy new entry
             _ => Default::default(),
         };
         new_entry.add(amount.voting, Subperiod::Voting);
         new_entry.add(amount.build_and_earn, Subperiod::BuildAndEarn);
         new_entry.era = stake_era;
-        new_entry.period = period_info.number;
+        new_entry.period = period_number;
 
         self.staked_future = Some(new_entry);
 
         // Convenience cleanup
-        if self.staked.period < period_info.number {
+        if self.staked.period < period_number {
             self.staked = Default::default();
         }
     }
 
-    /// Unstake the specified `(era, amount)` pairs from the contract.
+    /// Unstake the specified StakeAmount entries from the contract.
     // Important to account for the ongoing specified `subperiod` and `era` in order to align the entries.
     pub fn unstake(
         &mut self,
-        era_and_amount_pairs: &Vec<StakeAmount>,
+        stake_amount_entries: &Vec<StakeAmount>,
         period_info: PeriodInfo,
         current_era: EraNumber,
     ) {
@@ -1357,7 +1378,7 @@ impl ContractStakeAmount {
         }
 
         // 2. Value updates - only after alignment
-        for entry in era_and_amount_pairs {
+        for entry in stake_amount_entries {
             let (era, amount) = (entry.era, entry.total());
             if self.staked.era == era {
                 self.staked.subtract(amount);

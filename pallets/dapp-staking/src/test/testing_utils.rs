@@ -641,7 +641,7 @@ pub(crate) fn assert_unstake(
         pre_staker_info.total_staked_amount().saturating_sub(amount) < minimum_stake_amount;
 
     // Unstake all if we expect to go below the minimum stake amount
-    let expected_amount = if is_full_unstake {
+    let unstake_amount = if is_full_unstake {
         pre_staker_info.total_staked_amount()
     } else {
         amount
@@ -656,7 +656,7 @@ pub(crate) fn assert_unstake(
     System::assert_last_event(RuntimeEvent::DappStaking(Event::Unstake {
         account,
         smart_contract: smart_contract.clone(),
-        amount: expected_amount,
+        amount: unstake_amount,
     }));
 
     // Verify post-state
@@ -673,12 +673,12 @@ pub(crate) fn assert_unstake(
     // =====================
     assert_eq!(
         post_ledger.staked_amount(unstake_period),
-        pre_ledger.staked_amount(unstake_period) - expected_amount,
+        pre_ledger.staked_amount(unstake_period) - unstake_amount,
         "Stake amount must decrease by the 'amount'"
     );
     assert_eq!(
         post_ledger.stakeable_amount(unstake_period),
-        pre_ledger.stakeable_amount(unstake_period) + expected_amount,
+        pre_ledger.stakeable_amount(unstake_period) + unstake_amount,
         "Stakeable amount must increase by the 'amount'"
     );
 
@@ -702,45 +702,59 @@ pub(crate) fn assert_unstake(
         assert_eq!(post_staker_info.period_number(), unstake_period);
         assert_eq!(
             post_staker_info.total_staked_amount(),
-            pre_staker_info.total_staked_amount() - expected_amount,
+            pre_staker_info.total_staked_amount() - unstake_amount,
             "Total staked amount must decrease by the 'amount'"
         );
         assert_eq!(
             post_staker_info.staked_amount(unstake_subperiod),
             pre_staker_info
                 .staked_amount(unstake_subperiod)
-                .saturating_sub(expected_amount),
+                .saturating_sub(unstake_amount),
             "Staked amount must decrease by the 'amount'"
         );
 
-        let is_bonus_eligible = pre_staker_info.is_bonus_eligible()
-            && match unstake_subperiod {
-                Subperiod::Voting => !post_staker_info.staked_amount(Subperiod::Voting).is_zero(),
-                Subperiod::BuildAndEarn => {
-                    post_staker_info.staked_amount(Subperiod::Voting)
-                        == pre_staker_info.staked_amount(Subperiod::Voting)
-                }
-            };
+        let should_keep_bonus = if pre_staker_info.is_bonus_eligible() {
+            if pre_staker_info.bonus_status > 1 {
+                true
+            } else {
+                unstake_subperiod == Subperiod::Voting
+                    || (post_staker_info.staked_amount(Subperiod::Voting)
+                        == pre_staker_info.staked_amount(Subperiod::Voting))
+            }
+        } else {
+            false
+        };
 
         assert_eq!(
             post_staker_info.is_bonus_eligible(),
-            is_bonus_eligible,
-            "If 'Voting' stake amount is reduced in B&E period, loyalty flag must be set to false."
+            should_keep_bonus,
+            "If 'voting stake' amount is reduced in B&E subperiod, 'BonusStatus' must reflect this."
         );
+
+        if unstake_subperiod == Subperiod::BuildAndEarn
+            && pre_staker_info.is_bonus_eligible()
+            && post_staker_info.staked_amount(Subperiod::Voting)
+                < pre_staker_info.staked_amount(Subperiod::Voting)
+        {
+            assert_eq!(
+                post_staker_info.bonus_status, pre_staker_info.bonus_status - 1,
+                "'BonusStatus' must correctly decrease moves when 'voting stake' is reduced in B&E subperiod."
+            );
+        }
     }
 
-    let unstaked_amount_era_pairs =
+    let (stake_amount_entries, _) =
         pre_staker_info
             .clone()
-            .unstake(expected_amount, unstake_era, unstake_subperiod);
-    assert!(unstaked_amount_era_pairs.len() <= 2 && unstaked_amount_era_pairs.len() > 0);
+            .unstake(unstake_amount, unstake_era, unstake_subperiod);
+    assert!(stake_amount_entries.len() <= 2 && stake_amount_entries.len() > 0);
 
     // If unstake from next era exists, it must exactly match the expected unstake amount.
-    unstaked_amount_era_pairs
+    stake_amount_entries
         .iter()
-        .filter(|(era, _)| *era > unstake_era)
-        .for_each(|(_, amount)| {
-            assert_eq!(*amount, expected_amount);
+        .filter(|stake_amount| stake_amount.era > unstake_era)
+        .for_each(|stake_amount| {
+            assert_eq!(stake_amount.total(), unstake_amount);
         });
 
     // 3. verify contract stake
@@ -748,29 +762,30 @@ pub(crate) fn assert_unstake(
     // =========================
     assert_eq!(
         post_contract_stake.total_staked_amount(unstake_period),
-        pre_contract_stake.total_staked_amount(unstake_period) - expected_amount,
-        "Staked amount must decreased by the 'amount'"
+        pre_contract_stake.total_staked_amount(unstake_period) - unstake_amount,
+        "Staked amount must decreased by the 'unstake_amount'"
     );
     assert_eq!(
         post_contract_stake.staked_amount(unstake_period, unstake_subperiod),
         pre_contract_stake
             .staked_amount(unstake_period, unstake_subperiod)
-            .saturating_sub(expected_amount),
-        "Staked amount must decreased by the 'amount'"
+            .saturating_sub(unstake_amount),
+        "Staked amount must decreased by the 'unstake_amount'"
     );
 
-    // A generic check, comparing what was received in the (era, amount) pairs and the impact it had on the contract stake.
-    for (unstake_era_iter, unstake_amount_iter) in unstaked_amount_era_pairs {
+    // A generic check, comparing what was received in the unstaked StakeAmount entries and the impact it had on the contract stake.
+    for entry in stake_amount_entries {
+        let (era, amount) = (entry.era, entry.total());
         assert_eq!(
             post_contract_stake
-                .get(unstake_era_iter, unstake_period)
+                .get(era, unstake_period)
                 .unwrap_or_default() // it's possible that full unstake cleared the entry
                 .total(),
             pre_contract_stake
-                .get(unstake_era_iter, unstake_period)
+                .get(era, unstake_period)
                 .expect("Must exist")
                 .total()
-                - unstake_amount_iter
+                - amount
         );
     }
 
@@ -782,7 +797,7 @@ pub(crate) fn assert_unstake(
                 .get(unstake_era + 1, unstake_period)
                 .unwrap_or_default()
                 .total(),
-            entry.total() - expected_amount
+            entry.total() - unstake_amount
         );
     }
 
@@ -796,22 +811,22 @@ pub(crate) fn assert_unstake(
     } else {
         assert_eq!(
             post_era_info.total_staked_amount(),
-            pre_era_info.total_staked_amount() - expected_amount,
+            pre_era_info.total_staked_amount() - unstake_amount,
             "Total staked amount for the current era must decrease by 'amount'."
         );
     }
     assert_eq!(
         post_era_info.total_staked_amount_next_era(),
-        pre_era_info.total_staked_amount_next_era() - expected_amount,
+        pre_era_info.total_staked_amount_next_era() - unstake_amount,
         "Total staked amount for the next era must decrease by 'amount'. No overflow is allowed."
     );
 
     // Check for unstake underflow.
     if unstake_subperiod == Subperiod::BuildAndEarn
-        && pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn) < expected_amount
+        && pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn) < unstake_amount
     {
         let overflow =
-            expected_amount - pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn);
+            unstake_amount - pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn);
 
         assert!(post_era_info
             .staked_amount_next_era(Subperiod::BuildAndEarn)
@@ -823,9 +838,27 @@ pub(crate) fn assert_unstake(
     } else {
         assert_eq!(
             post_era_info.staked_amount_next_era(unstake_subperiod),
-            pre_era_info.staked_amount_next_era(unstake_subperiod) - expected_amount
+            pre_era_info.staked_amount_next_era(unstake_subperiod) - unstake_amount
         );
     }
+}
+
+/// Assert the bonus status of a staker for a specific smart contract.
+pub(crate) fn assert_bonus_status(
+    account: AccountId,
+    smart_contract: &MockSmartContract,
+    expected_bonus_status: BonusStatus,
+) {
+    let snapshot = MemorySnapshot::new();
+    let staker_info = snapshot
+        .staker_info
+        .get(&(account, *smart_contract))
+        .expect("Staker info entry must exist to verify bonus status.");
+
+    assert_eq!(
+        staker_info.bonus_status, expected_bonus_status,
+        "The staker's bonus status does not match the expected value."
+    );
 }
 
 /// Claim staker rewards.

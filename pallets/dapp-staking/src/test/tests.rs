@@ -18,10 +18,10 @@
 
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
-    pallet::Config, ActiveProtocolState, ContractStake, DAppId, DAppTierRewardsFor, DAppTiers,
-    EraRewards, Error, Event, ForcingType, GenesisConfig, IntegratedDApps, Ledger, NextDAppId,
-    Perbill, PeriodNumber, Permill, Safeguard, StakerInfo, StaticTierParams, Subperiod, TierConfig,
-    TierThreshold,
+    pallet::Config, ActiveProtocolState, BonusStatusWrapperFor, ContractStake, DAppId,
+    DAppTierRewardsFor, DAppTiers, EraRewards, Error, Event, ForcingType, GenesisConfig,
+    IntegratedDApps, Ledger, NextDAppId, Perbill, PeriodNumber, Permill, Safeguard, StakerInfo,
+    StaticTierParams, Subperiod, TierConfig, TierThreshold,
 };
 
 use frame_support::{
@@ -2923,6 +2923,44 @@ fn stake_after_period_ends_with_max_staked_contracts() {
             let smart_contract = MockSmartContract::Wasm(id.into());
             assert_stake(account, &smart_contract, 10);
         }
+    })
+}
+
+#[test]
+fn stake_after_period_ends_reset_bonus_status_is_ok() {
+    ExtBuilder::default().build_and_execute(|| {
+        let default_bonus_status = BonusStatusWrapperFor::<Test>::default().0;
+
+        // Phase 1: Register smart contract, lock&stake some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(dev_account, &smart_contract);
+
+        let account = 2;
+        let amount = 400;
+        let partial_unstake_amount = 100;
+        assert_lock(account, amount);
+        assert_stake(account, &smart_contract, amount - partial_unstake_amount);
+
+        // Phase 2: Advance to B&E subperiod, we ensure 'bonus safe moves' remaining is decreased with a partial unstake (overflowing 'voting' stake)
+        advance_to_next_subperiod();
+        assert_unstake(account, &smart_contract, partial_unstake_amount);
+
+        assert_bonus_status(account, &smart_contract, default_bonus_status - 1);
+
+        // Phase 3: Advance to the next period, claim rewards
+        advance_to_next_period();
+        for _ in 0..required_number_of_reward_claims(account) {
+            assert_claim_staker_rewards(account);
+        }
+
+        if default_bonus_status > 1 {
+            assert_claim_bonus_reward(account, &smart_contract);
+        }
+
+        // Phase 4: Restake and verify BonusStatus reset
+        assert_stake(account, &smart_contract, partial_unstake_amount);
+        assert_bonus_status(account, &smart_contract, default_bonus_status);
     })
 }
 

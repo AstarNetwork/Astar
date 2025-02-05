@@ -23,8 +23,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, Contains, Everything,
-        InstanceFilter, Nothing,
+        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, Contains,
+        Everything, InstanceFilter, Nothing,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -675,6 +675,7 @@ impl pallet_dapp_staking::Config for Runtime {
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
+    type MaxBonusSafeMovesPerPeriod = ConstU8<0>;
     type WeightInfo = ();
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
