@@ -1240,24 +1240,8 @@ fn stake_fails_due_to_too_small_staking_amount() {
 #[test]
 fn stake_fails_due_to_too_many_staked_contracts() {
     ExtBuilder::default().build_and_execute(|| {
-        let max_number_of_contracts: u32 = <Test as Config>::MaxNumberOfStakedContracts::get();
-
-        // Lock amount by staker
         let account = 1;
-        assert_lock(account, 100 as Balance * max_number_of_contracts as Balance);
-
-        // Advance to build&earn subperiod so we ensure non-loyal staking
-        advance_to_next_subperiod();
-
-        // Register smart contracts up to the max allowed number
-        for id in 1..=max_number_of_contracts {
-            let smart_contract = MockSmartContract::Wasm(id.into());
-            assert_register(2, &MockSmartContract::Wasm(id.into()));
-            assert_stake(account, &smart_contract, 10);
-        }
-
-        let excess_smart_contract = MockSmartContract::Wasm((max_number_of_contracts + 1).into());
-        assert_register(2, &excess_smart_contract);
+        let excess_smart_contract = setup_max_staked_contracts(account);
 
         // Max number of staked contract entries has been exceeded.
         assert_noop!(
@@ -1284,6 +1268,30 @@ fn stake_fails_due_to_too_many_staked_contracts() {
         );
     })
 }
+
+// #[test]
+// fn move_fails_due_to_too_many_staked_contracts() {
+//     ExtBuilder::default().build_and_execute(|| {
+//         let account = 1;
+//         let excess_destination_contract = setup_max_staked_contracts(account);
+//
+//         // Register & stake the source contract separately
+//         let source_contract = MockSmartContract::Wasm(1);
+//         assert_register(account, &source_contract);
+//         assert_stake(account, &source_contract, 10);
+//
+//         // Max number of staked contract entries has been exceeded.
+//         assert_noop!(
+//             DappStaking::move_stake(
+//                 RuntimeOrigin::signed(account),
+//                 source_contract,
+//                 excess_destination_contract.clone(),
+//                 10
+//             ),
+//             Error::<Test>::TooManyStakedContracts
+//         );
+//     })
+// }
 
 #[test]
 fn unstake_basic_example_is_ok() {
@@ -1371,17 +1379,18 @@ fn unstake_on_invalid_dapp_fails() {
 #[test]
 fn unstake_with_exceeding_amount_fails() {
     ExtBuilder::default().build_and_execute(|| {
-        // Register smart contracts & lock some amount
-        let smart_contract_1 = MockSmartContract::Wasm(1);
-        let smart_contract_2 = MockSmartContract::Wasm(2);
-        assert_register(1, &smart_contract_1);
-        assert_register(1, &smart_contract_2);
-        let account = 2;
-        assert_lock(account, 300);
+        let (
+            smart_contract_1,
+            Some(smart_contract_2),
+            account,
+            stake_amount_1,
+            Some(stake_amount_2),
+        ) = setup_staked_contracts_test(true)
+        else {
+            panic!("Expected a second contract for unstake test.");
+        };
 
         // 1st scenario - stake some amount on the first contract, and try to unstake more than was staked
-        let stake_amount_1 = 100;
-        assert_stake(account, &smart_contract_1, stake_amount_1);
         assert_noop!(
             DappStaking::unstake(
                 RuntimeOrigin::signed(account),
@@ -1392,8 +1401,6 @@ fn unstake_with_exceeding_amount_fails() {
         );
 
         // 2nd scenario - have some stake on two distinct contracts, but unstaking more than staked per contract still fails
-        let stake_amount_2 = 50;
-        assert_stake(account, &smart_contract_2, stake_amount_2);
         assert_noop!(
             DappStaking::unstake(
                 RuntimeOrigin::signed(account),
@@ -1406,15 +1413,31 @@ fn unstake_with_exceeding_amount_fails() {
 }
 
 #[test]
+fn move_with_exceeding_amount_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        let (source_contract, Some(destination_contract), account, source_stake_amount, _) =
+            setup_staked_contracts_test(true)
+        else {
+            panic!("Expected a second contract for move test.");
+        };
+
+        // Try to move more than was staked
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                destination_contract,
+                source_stake_amount + 1
+            ),
+            Error::<Test>::UnstakeAmountTooLarge
+        );
+    })
+}
+
+#[test]
 fn unstake_from_non_staked_contract_fails() {
     ExtBuilder::default().build_and_execute(|| {
-        // Register smart contracts & lock some amount
-        let smart_contract_1 = MockSmartContract::Wasm(1);
-        let smart_contract_2 = MockSmartContract::Wasm(2);
-        assert_register(1, &smart_contract_1);
-        assert_register(1, &smart_contract_2);
-        let account = 2;
-        assert_lock(account, 300);
+        let (smart_contract_1, smart_contract_2, account) = setup_for_non_staked_contract_test();
 
         // Stake some amount on the first contract.
         let stake_amount = 100;
@@ -1422,7 +1445,25 @@ fn unstake_from_non_staked_contract_fails() {
 
         // Try to unstake from the 2nd contract, which isn't staked on.
         assert_noop!(
-            DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract_2, 1,),
+            DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract_2, 1),
+            Error::<Test>::NoStakingInfo
+        );
+    })
+}
+
+#[test]
+fn move_from_non_staked_contract_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        let (source_contract, destination_contract, account) = setup_for_non_staked_contract_test();
+
+        // Try to move from the source contract, which isn't staked on.
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                destination_contract,
+                1
+            ),
             Error::<Test>::NoStakingInfo
         );
     })
@@ -1455,19 +1496,33 @@ fn unstake_with_unclaimed_rewards_fails() {
 #[test]
 fn unstake_from_past_period_fails() {
     ExtBuilder::default().build_and_execute(|| {
-        // Register smart contract & lock some amount
-        let smart_contract = MockSmartContract::Wasm(1);
-        assert_register(1, &smart_contract);
-        let account = 2;
-        assert_lock(account, 300);
-
-        // Stake some amount, and advance to the next period
-        let stake_amount = 100;
-        assert_stake(account, &smart_contract, stake_amount);
+        let (smart_contract, _, account, stake_amount, _) = setup_staked_contracts_test(false);
         advance_to_next_period();
 
         assert_noop!(
             DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract, stake_amount),
+            Error::<Test>::UnstakeFromPastPeriod
+        );
+    })
+}
+
+#[test]
+fn move_from_past_period_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        let (source_contract, Some(destination_contract), account, source_stake_amount, _) =
+            setup_staked_contracts_test(true)
+        else {
+            panic!("Expected a second contract for move test.");
+        };
+        advance_to_next_period();
+
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                destination_contract,
+                source_stake_amount
+            ),
             Error::<Test>::UnstakeFromPastPeriod
         );
     })
@@ -3522,6 +3577,44 @@ fn claim_bonus_reward_for_works() {
             init_claimer_balance,
             Balances::free_balance(&claimer_account),
             "Claimer balance must not change since reward is deposited to the staker."
+        );
+    })
+}
+
+#[test]
+fn move_for_same_contract_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        let account = 2;
+        let contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(1, &contract);
+
+        assert_noop!(
+            DappStaking::move_stake(RuntimeOrigin::signed(account), contract, contract, 1),
+            Error::<Test>::SameContracts
+        );
+    })
+}
+
+// Destination contract is not found in IntegratedDApps.
+#[test]
+fn move_to_invalid_dapp_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        let source_contract = MockSmartContract::wasm(1 as AccountId);
+        let destination_contract = MockSmartContract::wasm(2 as AccountId);
+        assert_register(1, &source_contract);
+
+        let account = 2;
+        assert_lock(account, 300);
+
+        // Try to move to non-existing destination contract
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                destination_contract,
+                1
+            ),
+            Error::<Test>::ContractNotFound
         );
     })
 }

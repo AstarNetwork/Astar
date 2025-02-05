@@ -94,7 +94,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(8);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(9);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -322,6 +322,13 @@ pub mod pallet {
         ExpiredEntriesRemoved { account: T::AccountId, count: u16 },
         /// Privileged origin has forced a new era and possibly a subperiod to start from next block.
         Force { forcing_type: ForcingType },
+        /// Account has moved some stake from a source smart contract to a destination smart contract.
+        StakeMoved {
+            account: T::AccountId,
+            source_contract: T::SmartContract,
+            destination_contract: T::SmartContract,
+            amount: Balance,
+        },
     }
 
     #[pallet::error]
@@ -398,6 +405,8 @@ pub mod pallet {
         NoExpiredEntries,
         /// Force call is not allowed in production.
         ForceNotAllowed,
+        /// Same contract specified as source and destination.
+        SameContracts,
     }
 
     /// General information about dApp staking protocol state.
@@ -1326,6 +1335,50 @@ pub mod pallet {
             ensure_signed(origin)?;
 
             Self::internal_claim_bonus_reward_for(account, smart_contract)
+        }
+
+        /// Transfers stake between two smart contracts (inner_unstake + inner_stake), ensuring bonus status preservation if eligible.
+        /// Emits a `StakeMoved` event.
+        #[pallet::call_index(21)]
+        #[pallet::weight(T::WeightInfo::move_stake())]
+        pub fn move_stake(
+            origin: OriginFor<T>,
+            source_contract: T::SmartContract,
+            destination_contract: T::SmartContract,
+            #[pallet::compact] amount: Balance,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            ensure!(
+                !source_contract.eq(&destination_contract),
+                Error::<T>::SameContracts
+            );
+
+            ensure!(
+                IntegratedDApps::<T>::contains_key(&destination_contract),
+                Error::<T>::ContractNotFound
+            );
+
+            let maybe_source_dapp_info = IntegratedDApps::<T>::get(&source_contract);
+            let is_source_unregistered = maybe_source_dapp_info.is_none();
+
+            let (move_amount, bonus_status) = if is_source_unregistered {
+                Self::inner_unstake_from_unregistered(&account, &source_contract)?
+            } else {
+                Self::inner_unstake(&account, &source_contract, amount)?
+            };
+
+            Self::inner_stake(&account, &destination_contract, move_amount, bonus_status)?;
+
+            Self::deposit_event(Event::<T>::StakeMoved {
+                account,
+                source_contract,
+                destination_contract,
+                amount: move_amount.total(),
+            });
+
+            Ok(())
         }
     }
 

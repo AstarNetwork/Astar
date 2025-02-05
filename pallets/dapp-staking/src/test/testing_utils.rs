@@ -1617,3 +1617,78 @@ pub(crate) fn is_account_ledger_expired(
         _ => false,
     }
 }
+
+pub(crate) fn setup_for_non_staked_contract_test() -> (MockSmartContract, MockSmartContract, u64) {
+    // Register smart contracts & lock some amount
+    let contract_1 = MockSmartContract::Wasm(1);
+    let contract_2 = MockSmartContract::Wasm(2);
+    assert_register(1, &contract_1);
+    assert_register(1, &contract_2);
+    let account = 2;
+    assert_lock(account, 300);
+
+    (contract_1, contract_2, account)
+}
+
+pub(crate) fn setup_staked_contracts_test(
+    stake_on_second_contract: bool,
+) -> (
+    MockSmartContract,
+    Option<MockSmartContract>,
+    AccountId,
+    Balance,
+    Option<Balance>,
+) {
+    let contract_1 = MockSmartContract::Wasm(1);
+    assert_register(1, &contract_1);
+
+    let contract_2 = if stake_on_second_contract {
+        let c = MockSmartContract::Wasm(2);
+        assert_register(1, &c);
+        Some(c)
+    } else {
+        None
+    };
+
+    let account = 2;
+    let stake_amount_1 = 100;
+    assert_lock(account, 300);
+    assert_stake(account, &contract_1, stake_amount_1);
+
+    if let Some(ref contract) = contract_2 {
+        let stake_amount_2 = 50;
+        assert_stake(account, contract, stake_amount_2);
+        return (
+            contract_1,
+            contract_2,
+            account,
+            stake_amount_1,
+            Some(stake_amount_2),
+        );
+    }
+
+    (contract_1, contract_2, account, stake_amount_1, None)
+}
+
+pub(crate) fn setup_max_staked_contracts(account: u64) -> MockSmartContract {
+    let max_number_of_contracts: u32 = <Test as Config>::MaxNumberOfStakedContracts::get();
+
+    // Lock funds for the staker
+    assert_lock(account, 100 as Balance * max_number_of_contracts as Balance);
+
+    // Advance to build&earn subperiod to ensure non-loyal staking
+    advance_to_next_subperiod();
+
+    // Register & stake on the maximum number of allowed contracts
+    for id in 1..=max_number_of_contracts {
+        let smart_contract = MockSmartContract::Wasm(id.into());
+        assert_register(account, &smart_contract);
+        assert_stake(account, &smart_contract, 10);
+    }
+
+    // Create an extra contract beyond the limit
+    let excess_contract = MockSmartContract::Wasm((max_number_of_contracts + 1).into());
+    assert_register(account, &excess_contract);
+
+    excess_contract
+}
