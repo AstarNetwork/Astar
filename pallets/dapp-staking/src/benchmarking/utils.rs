@@ -18,7 +18,7 @@
 
 use super::{Pallet as DappStaking, *};
 
-use astar_primitives::Balance;
+use astar_primitives::{dapp_staking::STANDARD_TIER_SLOTS_ARGS, Balance};
 
 use frame_system::Pallet as System;
 
@@ -194,6 +194,7 @@ pub(super) fn init_tier_settings<T: Config>() {
             },
         ])
         .unwrap(),
+        slot_number_args: STANDARD_TIER_SLOTS_ARGS,
     };
 
     let total_issuance = 1000 * MIN_TIER_THRESHOLD;

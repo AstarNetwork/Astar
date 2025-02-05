@@ -78,7 +78,7 @@ use xcm_runtime_apis::{
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, RankedTier, SmartContract, TierSlots as TierSlotsFunc,
+        PeriodNumber, RankedTier, SmartContract, StandardTierSlots,
     },
     evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler},
     governance::OracleMembershipInst,
@@ -411,15 +411,6 @@ impl DappStakingAccountCheck<AccountId> for AccountCheck {
     }
 }
 
-pub struct ShidenTierSlots;
-impl TierSlotsFunc for ShidenTierSlots {
-    fn number_of_slots(price: Price) -> u16 {
-        // According to the forum proposal, the original formula's factor is reduced from 1000x to 100x.
-        let result: u64 = price.saturating_mul_int(100_u64).saturating_add(50);
-        result.unique_saturated_into()
-    }
-}
-
 parameter_types! {
     pub const MinimumStakingAmount: Balance = 50 * SDN;
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
@@ -438,7 +429,7 @@ impl pallet_dapp_staking::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
     type AccountCheck = AccountCheck;
-    type TierSlots = ShidenTierSlots;
+    type TierSlots = StandardTierSlots;
     type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<3>;
@@ -1293,10 +1284,15 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased =
+    (pallet_dapp_staking::migration::versioned_migrations::V8ToV9<Runtime, TierSlotsArgs>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
+
+parameter_types! {
+    pub const TierSlotsArgs: (u64, u64) = (100, 50);
+}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

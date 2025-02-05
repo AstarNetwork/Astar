@@ -478,4 +478,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
+	fn set_static_tier_params() -> Weight {
+		T::DbWeight::get().reads_writes(1,1)
+	}
 }

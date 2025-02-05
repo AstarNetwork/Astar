@@ -35,7 +35,9 @@ use sp_runtime::{BuildStorage, Permill};
 use sp_std::cell::RefCell;
 
 use astar_primitives::{
-    dapp_staking::{Observer as DappStakingObserver, SmartContract, StandardTierSlots},
+    dapp_staking::{
+        Observer as DappStakingObserver, SmartContract, StandardTierSlots, STANDARD_TIER_SLOTS_ARGS,
+    },
     Balance, BlockNumber,
 };
 use frame_system::{EnsureRoot, EnsureSignedBy};
@@ -324,6 +326,7 @@ impl ExtBuilder {
                     },
                 ])
                 .unwrap(),
+                slot_number_args: STANDARD_TIER_SLOTS_ARGS,
             };
 
             let total_issuance = <Test as Config>::Currency::total_issuance();

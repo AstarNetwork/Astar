@@ -2828,6 +2828,7 @@ fn tier_params_check_is_ok() {
             },
         ])
         .unwrap(),
+        slot_number_args: (100, 50),
     };
     assert!(params.is_valid());
 
@@ -2913,6 +2914,7 @@ fn tier_configuration_basic_tests() {
             },
         ])
         .unwrap(),
+        slot_number_args: (100, 50),
     };
     assert!(params.is_valid(), "Example params must be valid!");
 

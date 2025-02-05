@@ -55,7 +55,7 @@ use astar_primitives::{
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver,
         PeriodNumber, Rank, RankedTier, SmartContractHandle, StakingRewardHandler, TierId,
-        TierSlots as TierSlotFunc,
+        TierSlots as TierSlotFunc, STANDARD_TIER_SLOTS_ARGS,
     },
     oracle::PriceProvider,
     Balance, BlockNumber,
@@ -94,7 +94,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(8);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(9);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -392,6 +392,8 @@ pub mod pallet {
         NoExpiredEntries,
         /// Force call is not allowed in production.
         ForceNotAllowed,
+        /// Invalid tier parameters were provided. This can happen if any number exceeds 100% or if number of elements does not match the number of tiers.
+        InvalidTierParams,
     }
 
     /// General information about dApp staking protocol state.
@@ -501,10 +503,11 @@ pub mod pallet {
     pub type Safeguard<T: Config> = StorageValue<_, bool, ValueQuery, DefaultSafeguard<T>>;
 
     #[pallet::genesis_config]
-    pub struct GenesisConfig<T> {
+    pub struct GenesisConfig<T: Config> {
         pub reward_portion: Vec<Permill>,
         pub slot_distribution: Vec<Permill>,
         pub tier_thresholds: Vec<TierThreshold>,
+        pub slot_number_args: (u64, u64),
         pub slots_per_tier: Vec<u16>,
         pub safeguard: Option<bool>,
         #[serde(skip)]
@@ -524,6 +527,7 @@ pub mod pallet {
                         required_percentage: Perbill::from_percent(i),
                     })
                     .collect(),
+                slot_number_args: STANDARD_TIER_SLOTS_ARGS,
                 slots_per_tier: vec![100; num_tiers as usize],
                 safeguard: None,
                 _config: Default::default(),
@@ -548,6 +552,7 @@ pub mod pallet {
                     self.tier_thresholds.clone(),
                 )
                 .expect("Invalid number of tier thresholds provided."),
+                slot_number_args: self.slot_number_args,
             };
             assert!(
                 tier_params.is_valid(),
@@ -1515,6 +1520,26 @@ pub mod pallet {
             ensure_signed(origin)?;
 
             Self::internal_claim_bonus_reward_for(account, smart_contract)
+        }
+
+        /// Used to set static tier parameters, which are used to calculate tier configuration.
+        /// Tier configuration defines tier entry threshold values, number of slots, and reward portions.
+        ///
+        /// This is a delicate call and great care should be taken when changing these
+        /// values since it has a significant impact on the reward system.
+        #[pallet::call_index(21)]
+        #[pallet::weight(T::WeightInfo::set_static_tier_params())] // TODO: sort out weight
+        pub fn set_static_tier_params(
+            origin: OriginFor<T>,
+            tier_params: TierParameters<T::NumberOfTiers>,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            ensure_root(origin)?;
+            ensure!(tier_params.is_valid(), Error::<T>::InvalidTierParams);
+
+            StaticTierParams::<T>::set(tier_params);
+
+            Ok(())
         }
     }
 
