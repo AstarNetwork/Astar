@@ -3543,6 +3543,10 @@ fn set_static_tier_params_works() {
             RuntimeOrigin::root(),
             tier_params.clone()
         ));
+
         assert_eq!(StaticTierParams::<Test>::get(), tier_params);
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::NewTierParameters {
+            params: tier_params,
+        }));
     })
 }

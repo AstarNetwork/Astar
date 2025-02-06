@@ -1151,6 +1151,12 @@ mod benchmarks {
         _(RawOrigin::Root, tier_params.clone());
 
         assert_eq!(StaticTierParams::<T>::get(), tier_params);
+        assert_last_event::<T>(
+            Event::<T>::NewTierParameters {
+                params: tier_params,
+            }
+            .into(),
+        );
     }
 
     impl_benchmark_test_suite!(

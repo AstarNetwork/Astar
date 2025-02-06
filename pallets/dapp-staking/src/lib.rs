@@ -316,6 +316,10 @@ pub mod pallet {
         ExpiredEntriesRemoved { account: T::AccountId, count: u16 },
         /// Privileged origin has forced a new era and possibly a subperiod to start from next block.
         Force { forcing_type: ForcingType },
+        /// Tier parameters, used to calculate tier configuration, have been updated, and will be applicable from next era.
+        NewTierParameters {
+            params: TierParameters<T::NumberOfTiers>,
+        },
     }
 
     #[pallet::error]
@@ -1531,13 +1535,15 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::set_static_tier_params())]
         pub fn set_static_tier_params(
             origin: OriginFor<T>,
-            tier_params: TierParameters<T::NumberOfTiers>,
+            params: TierParameters<T::NumberOfTiers>,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             ensure_root(origin)?;
-            ensure!(tier_params.is_valid(), Error::<T>::InvalidTierParams);
+            ensure!(params.is_valid(), Error::<T>::InvalidTierParams);
 
-            StaticTierParams::<T>::set(tier_params);
+            StaticTierParams::<T>::set(params.clone());
+
+            Self::deposit_event(Event::<T>::NewTierParameters { params });
 
             Ok(())
         }
