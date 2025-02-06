@@ -1528,7 +1528,7 @@ pub mod pallet {
         /// This is a delicate call and great care should be taken when changing these
         /// values since it has a significant impact on the reward system.
         #[pallet::call_index(21)]
-        #[pallet::weight(T::WeightInfo::set_static_tier_params())] // TODO: sort out weight
+        #[pallet::weight(T::WeightInfo::set_static_tier_params())]
         pub fn set_static_tier_params(
             origin: OriginFor<T>,
             tier_params: TierParameters<T::NumberOfTiers>,
