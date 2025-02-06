@@ -1269,29 +1269,33 @@ fn stake_fails_due_to_too_many_staked_contracts() {
     })
 }
 
-// #[test]
-// fn move_fails_due_to_too_many_staked_contracts() {
-//     ExtBuilder::default().build_and_execute(|| {
-//         let account = 1;
-//         let excess_destination_contract = setup_max_staked_contracts(account);
-//
-//         // Register & stake the source contract separately
-//         let source_contract = MockSmartContract::Wasm(1);
-//         assert_register(account, &source_contract);
-//         assert_stake(account, &source_contract, 10);
-//
-//         // Max number of staked contract entries has been exceeded.
-//         assert_noop!(
-//             DappStaking::move_stake(
-//                 RuntimeOrigin::signed(account),
-//                 source_contract,
-//                 excess_destination_contract.clone(),
-//                 10
-//             ),
-//             Error::<Test>::TooManyStakedContracts
-//         );
-//     })
-// }
+#[test]
+fn move_fails_due_to_too_many_staked_contracts() {
+    ExtBuilder::default().build_and_execute(|| {
+        let account = 1;
+        let excess_destination_contract = setup_max_staked_contracts(account);
+        let source_contract = MockSmartContract::Wasm(1);
+
+        // Max number of staked contract entries has been exceeded.
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                excess_destination_contract.clone(),
+                5 // not full move to preserved contract_stake_count
+            ),
+            Error::<Test>::TooManyStakedContracts
+        );
+
+        // However a full move works because it decreases contract_stake_count before via the inner_unstake
+        assert_ok!(DappStaking::move_stake(
+            RuntimeOrigin::signed(account),
+            source_contract,
+            excess_destination_contract.clone(),
+            10
+        ));
+    })
+}
 
 #[test]
 fn unstake_basic_example_is_ok() {
