@@ -899,8 +899,8 @@ impl StakeAmount {
         }
     }
 
-    // TODO: improve this later (especially the name), it's a convenience method for now
-    pub fn subtract_type(&self, other: &StakeAmount) -> Self {
+    // Subtracts `other` from `self` for each subperiod stake
+    pub fn subtract_stake_amount(&self, other: &StakeAmount) -> Self {
         let mut result = *self;
         result.voting.saturating_reduce(other.voting);
         result
@@ -908,6 +908,20 @@ impl StakeAmount {
             .saturating_reduce(other.build_and_earn);
 
         result
+    }
+
+    // Compares `self` and `other` by total amount first or by lowest era in case of tie
+    pub fn compare_stake_amounts(&self, other: &StakeAmount) -> std::cmp::Ordering {
+        let total_self = self.total();
+        let total_other = other.total();
+
+        // First, compare the total values
+        if total_self != total_other {
+            total_self.cmp(&total_other)
+        } else {
+            // In case of a tie, compare the era values (lowest era should come first)
+            other.era.cmp(&self.era)
+        }
     }
 }
 
@@ -1023,7 +1037,7 @@ pub struct BonusStatusWrapper<MaxBonusMoves: Get<u8>>(pub BonusStatus, PhantomDa
 impl<MaxBonusMoves: Get<u8>> Default for BonusStatusWrapper<MaxBonusMoves> {
     fn default() -> Self {
         let max = MaxBonusMoves::get();
-        BonusStatusWrapper::<MaxBonusMoves>(max + 1, PhantomData::default())
+        BonusStatusWrapper::<MaxBonusMoves>(max.saturating_add(1), PhantomData::default())
     }
 }
 
@@ -1060,7 +1074,7 @@ impl SingularStakingInfo {
     }
 
     /// Stake the specified amount on the contract.
-    pub fn stake(&mut self, amount: StakeAmount) {
+    pub fn stake(&mut self, amount: StakeAmount, bonus_status: BonusStatus) {
         let current_era = amount.era;
 
         // Keep the previous stake amount for future reference
@@ -1068,6 +1082,14 @@ impl SingularStakingInfo {
         self.previous_staked.era = current_era;
         if self.previous_staked.total().is_zero() {
             self.previous_staked = Default::default();
+        }
+
+        // If bonus is forfeited, previously existing Voting stake amount is moved to BuildAndEarn stake amount
+        if self.bonus_status == 0 {
+            let prev_amount = self.staked.voting;
+            self.staked.voting.saturating_reduce(prev_amount);
+            self.staked.add(prev_amount, Subperiod::BuildAndEarn);
+            self.bonus_status = bonus_status;
         }
 
         // Stake is only valid from the next era so we keep it consistent here
@@ -1104,7 +1126,7 @@ impl SingularStakingInfo {
         self.staked.era = self.staked.era.max(current_era);
 
         // Implementation comment: Unlike before, we provide full info about the unstaked amount.
-        let mut unstaked_amount = staked_snapshot.subtract_type(&self.staked);
+        let mut unstaked_amount = staked_snapshot.subtract_stake_amount(&self.staked);
         unstaked_amount.era = self.staked.era;
 
         result.push(unstaked_amount);
@@ -1159,7 +1181,7 @@ impl SingularStakingInfo {
                     self.previous_staked.subtract(overflow_amount);
 
                     let temp_unstaked_amount =
-                        previous_staked_snapshot.subtract_type(&self.previous_staked);
+                        previous_staked_snapshot.subtract_stake_amount(&self.previous_staked);
                     assert_eq!(
                         temp_unstaked_amount.total(),
                         overflow_amount,

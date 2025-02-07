@@ -2211,7 +2211,7 @@ fn singular_staking_info_basics_are_ok() {
         era: era_1,
         period: period_number,
     };
-    staking_info.stake(stake_amount_1);
+    staking_info.stake(stake_amount_1, 0);
     assert_eq!(staking_info.total_staked_amount(), vote_stake_amount_1);
     assert_eq!(
         staking_info.staked_amount(Subperiod::Voting),
@@ -2237,7 +2237,7 @@ fn singular_staking_info_basics_are_ok() {
         period: period_number,
     };
 
-    staking_info.stake(stake_amount_2);
+    staking_info.stake(stake_amount_2, 0);
     assert_eq!(
         staking_info.total_staked_amount(),
         vote_stake_amount_1 + bep_stake_amount_1
@@ -2277,7 +2277,7 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
         era: era_1,
         period: period_number,
     };
-    staking_info.stake(stake_amount_1);
+    staking_info.stake(stake_amount_1, 0);
 
     // 1. Unstake some amount during `Voting` period, bonus should remain as expected.
     let unstake_amount_1 = 5;
@@ -2360,7 +2360,7 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         era: era_1 - 1,
         period: period_number,
     };
-    staking_info.stake(stake_amount_1);
+    staking_info.stake(stake_amount_1, 0);
 
     let bep_stake_amount_1 = 23;
     let stake_amount_2 = StakeAmount {
@@ -2369,7 +2369,7 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         era: era_1,
         period: period_number,
     };
-    staking_info.stake(stake_amount_2);
+    staking_info.stake(stake_amount_2, 0);
 
     assert_eq!(staking_info.previous_staked.total(), vote_stake_amount_1);
     assert_eq!(staking_info.previous_staked.era, era_1);
@@ -2419,7 +2419,7 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         era: era_1,
         period: period_number,
     };
-    staking_info.stake(stake_amount);
+    staking_info.stake(stake_amount, 0);
     let previous_total_stake = staking_info.previous_staked.total();
     let delta = staking_info.staked.total() - staking_info.previous_staked.total();
     let overflow = 1;
@@ -2558,7 +2558,7 @@ fn singular_staking_info_unstake_stake_amount_entries_are_ok() {
         };
         let unstake_amount = 3;
         let mut staking_info = SingularStakingInfo::new(period_number, 0);
-        staking_info.stake(stake_amount);
+        staking_info.stake(stake_amount, 0);
 
         let expected_stake_amount = StakeAmount {
             voting: 0,
@@ -2584,7 +2584,7 @@ fn singular_staking_info_unstake_stake_amount_entries_are_ok() {
         };
         let unstake_amount = 5;
         let mut staking_info = SingularStakingInfo::new(period_number, 0);
-        staking_info.stake(stake_amount);
+        staking_info.stake(stake_amount, 0);
 
         let expected_stake_amount_1 = StakeAmount {
             voting: 0,
@@ -2619,7 +2619,7 @@ fn singular_staking_info_unstake_stake_amount_entries_are_ok() {
             period: period_number,
         };
         let mut staking_info = SingularStakingInfo::new(period_number, 0);
-        staking_info.stake(stake_amount);
+        staking_info.stake(stake_amount, 0);
 
         let expected_stake_amount_1 = StakeAmount {
             voting: 0,
@@ -2640,6 +2640,75 @@ fn singular_staking_info_unstake_stake_amount_entries_are_ok() {
             (vec![expected_stake_amount_1, expected_stake_amount_2], 0)
         );
     }
+}
+
+#[test]
+fn singular_staking_stake_with_bonus_status() {
+    let voting_amount = 100;
+    let bep_amount = 30;
+    let stake_amount = StakeAmount {
+        era: 1,
+        voting: voting_amount,
+        build_and_earn: bep_amount,
+        period: 0,
+    };
+
+    // Prep - StakeAmount with forfeited bonus and voting stake
+    let mut staking_info = SingularStakingInfo::new(0, 0);
+    staking_info.stake(stake_amount, 0);
+    assert_eq!(
+        staking_info.bonus_status, 0,
+        "Bonus status should be initialized to 0 before staking"
+    );
+
+    // Scenario 1 - Stake again but with incoming bonus status
+    let incoming_bonus_status = 1;
+    staking_info.stake(stake_amount, incoming_bonus_status);
+
+    // Check if the bonus status is updated
+    assert_eq!(
+        staking_info.bonus_status, incoming_bonus_status,
+        "Bonus status should be updated to incoming one"
+    );
+    // Ensure that the previous voting stake amount was moved to BuildAndEarn
+    assert_eq!(
+        staking_info.staked_amount(Subperiod::Voting),
+        voting_amount,
+        "Voting amount should increase correctly"
+    );
+    assert_eq!(
+        staking_info.staked_amount(Subperiod::BuildAndEarn),
+        (voting_amount + bep_amount) + bep_amount,
+        "BuildAndEarn amount should have increased including previous voting stake"
+    );
+
+    // Scenario 2 - bonus_status is not 0 anymore and new voting amount is staked on same staking_info
+    let voting_amount_snapshot = staking_info.staked_amount(Subperiod::Voting);
+    let bep_amount_snapshot = staking_info.staked_amount(Subperiod::BuildAndEarn);
+    staking_info.stake(stake_amount, 0);
+    assert_eq!(
+        staking_info.bonus_status, incoming_bonus_status,
+        "Bonus status should be initialized to prev incoming_bonus_status"
+    );
+
+    let incoming_bonus_status_2 = 10;
+    staking_info.stake(stake_amount, incoming_bonus_status_2);
+
+    // Ensure that the StakeAmount is increased with bonus status remaining the same
+    assert_eq!(
+        staking_info.bonus_status, incoming_bonus_status,
+        "Bonus status should remain the same"
+    );
+    assert_eq!(
+        staking_info.staked_amount(Subperiod::Voting),
+        voting_amount_snapshot + voting_amount * 2,
+        "Voting amount should increase correctly"
+    );
+    assert_eq!(
+        staking_info.staked_amount(Subperiod::BuildAndEarn),
+        bep_amount_snapshot + bep_amount * 2,
+        "BuildAndEarn amount should increase correctly"
+    );
 }
 
 #[test]
