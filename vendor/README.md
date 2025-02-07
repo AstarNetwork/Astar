@@ -1,6 +1,6 @@
 # Third party packages
 
-This directory contatins packages from third-party vendors reused in Astar Network.
+This directory contains packages from third-party vendors reused in Astar Network.
 
 ### Why not fork?
 
