@@ -1337,7 +1337,7 @@ pub mod pallet {
             Self::internal_claim_bonus_reward_for(account, smart_contract)
         }
 
-        /// Transfers stake between two smart contracts (inner_unstake + inner_stake), ensuring bonus status preservation if eligible.
+        /// Transfers stake between two smart contracts, ensuring bonus status preservation if eligible.
         /// Emits a `StakeMoved` event.
         #[pallet::call_index(21)]
         #[pallet::weight(T::WeightInfo::move_stake())]
@@ -1369,7 +1369,11 @@ pub mod pallet {
                 Self::inner_unstake(&account, &source_contract, amount)?
             };
 
-            Self::inner_stake(&account, &destination_contract, move_amount, bonus_status)?;
+            let stake_amount = StakeAmount {
+                era: move_amount.era - 1, // to avoid incrementing era 2 times
+                ..move_amount
+            };
+            Self::inner_stake(&account, &destination_contract, stake_amount, bonus_status)?;
 
             Self::deposit_event(Event::<T>::StakeMoved {
                 account,
@@ -1490,7 +1494,7 @@ pub mod pallet {
             // Return the `StakeAmount` that has max total value - that's the one that is equal to the `amount` parameter.
             let unstake_amount = stake_amount_iter
                 .iter()
-                .max_by_key(|e| e.total())
+                .max_by(|a, b| a.compare_stake_amounts(b))
                 .expect("At least one value exists, otherwise we wouldn't be here.");
             assert_eq!(unstake_amount.total(), amount);
 
@@ -1547,6 +1551,7 @@ pub mod pallet {
                     }
                     _ => Error::<T>::InternalUnstakeError,
                 })?;
+            ledger.contract_stake_count.saturating_dec();
 
             // Update total staked amount for the next era.
             // This means 'fake' stake total amount has been kept until now, even though contract was unregistered.
@@ -1561,7 +1566,7 @@ pub mod pallet {
 
             let unstake_amount = stake_amount_iter
                 .iter()
-                .max_by_key(|e| e.total())
+                .max_by(|a, b| a.compare_stake_amounts(b))
                 .expect("At least one value exists, otherwise we wouldn't be here.");
             assert_eq!(unstake_amount.total(), amount);
 
@@ -1648,7 +1653,8 @@ pub mod pallet {
                         true,
                     ),
                 };
-            new_staking_info.stake(amount);
+
+            new_staking_info.stake(amount, bonus_status);
             ensure!(
                 new_staking_info.total_staked_amount() >= T::MinimumStakeAmount::get(),
                 Error::<T>::InsufficientStakeAmount

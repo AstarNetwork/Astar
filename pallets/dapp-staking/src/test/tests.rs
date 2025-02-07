@@ -1143,6 +1143,44 @@ fn stake_fails_if_unclaimed_staker_rewards_from_past_remain() {
 }
 
 #[test]
+fn move_fails_if_unclaimed_destination_staker_rewards_from_past_remain() {
+    ExtBuilder::default().build_and_execute(|| {
+        let source_contract = MockSmartContract::Wasm(1);
+        let source_2_contract = MockSmartContract::Wasm(2);
+        let destination_contract = MockSmartContract::Wasm(3);
+        assert_register(1, &source_contract);
+        assert_register(1, &source_2_contract);
+        assert_register(1, &destination_contract);
+
+        let account = 2;
+        assert_lock(account, 300);
+        assert_stake(account, &source_contract, 100);
+
+        // To transfer bonus reward eligibility to destination_contract
+        assert_move_stake(account, &source_contract, &destination_contract, 10);
+
+        // Advance to next period, claim all staker rewards
+        advance_to_next_period();
+        for _ in 0..required_number_of_reward_claims(account) {
+            assert_claim_staker_rewards(account);
+        }
+
+        // Try to move again on the same destination contract, expect an error due to unclaimed bonus rewards
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+        assert_stake(account, &source_2_contract, 100);
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_2_contract,
+                destination_contract,
+                10
+            ),
+            Error::<Test>::UnclaimedRewards
+        );
+    })
+}
+
+#[test]
 fn stake_fails_if_claimable_bonus_rewards_from_past_remain() {
     ExtBuilder::default().build_and_execute(|| {
         // Register smart contract, lock&stake some amount
@@ -1240,8 +1278,24 @@ fn stake_fails_due_to_too_small_staking_amount() {
 #[test]
 fn stake_fails_due_to_too_many_staked_contracts() {
     ExtBuilder::default().build_and_execute(|| {
+        let max_number_of_contracts: u32 = <Test as Config>::MaxNumberOfStakedContracts::get();
+
+        // Lock amount by staker
         let account = 1;
-        let excess_smart_contract = setup_max_staked_contracts(account);
+        assert_lock(account, 100 as Balance * max_number_of_contracts as Balance);
+
+        // Advance to build&earn subperiod so we ensure 'non-loyal' staking
+        advance_to_next_subperiod();
+
+        // Register smart contracts up to the max allowed number
+        for id in 1..=max_number_of_contracts {
+            let smart_contract = MockSmartContract::Wasm(id.into());
+            assert_register(2, &MockSmartContract::Wasm(id.into()));
+            assert_stake(account, &smart_contract, 10);
+        }
+
+        let excess_smart_contract = MockSmartContract::Wasm((max_number_of_contracts + 1).into());
+        assert_register(2, &excess_smart_contract);
 
         // Max number of staked contract entries has been exceeded.
         assert_noop!(
@@ -1272,9 +1326,29 @@ fn stake_fails_due_to_too_many_staked_contracts() {
 #[test]
 fn move_fails_due_to_too_many_staked_contracts() {
     ExtBuilder::default().build_and_execute(|| {
+        let max_number_of_contracts: u32 = <Test as Config>::MaxNumberOfStakedContracts::get();
+
+        // Lock amount by staker
         let account = 1;
-        let excess_destination_contract = setup_max_staked_contracts(account);
+        assert_lock(account, 100 as Balance * max_number_of_contracts as Balance);
+
+        // Advance to build&earn subperiod so we ensure 'non-loyal' staking
+        advance_to_next_subperiod();
+
         let source_contract = MockSmartContract::Wasm(1);
+        assert_register(1, &source_contract);
+        assert_stake(account, &source_contract, 10);
+
+        // Register smart contracts up to the max allowed number
+        for id in 2..=max_number_of_contracts {
+            let smart_contract = MockSmartContract::Wasm(id.into());
+            assert_register(2, &MockSmartContract::Wasm(id.into()));
+            assert_stake(account, &smart_contract, 10);
+        }
+
+        let excess_destination_contract =
+            MockSmartContract::Wasm((max_number_of_contracts + 1).into());
+        assert_register(2, &excess_destination_contract);
 
         // Max number of staked contract entries has been exceeded.
         assert_noop!(
@@ -1383,18 +1457,17 @@ fn unstake_on_invalid_dapp_fails() {
 #[test]
 fn unstake_with_exceeding_amount_fails() {
     ExtBuilder::default().build_and_execute(|| {
-        let (
-            smart_contract_1,
-            Some(smart_contract_2),
-            account,
-            stake_amount_1,
-            Some(stake_amount_2),
-        ) = setup_staked_contracts_test(true)
-        else {
-            panic!("Expected a second contract for unstake test.");
-        };
+        // Register smart contracts & lock some amount
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+        assert_register(1, &smart_contract_1);
+        assert_register(1, &smart_contract_2);
+        let account = 2;
+        assert_lock(account, 300);
 
         // 1st scenario - stake some amount on the first contract, and try to unstake more than was staked
+        let stake_amount_1 = 100;
+        assert_stake(account, &smart_contract_1, stake_amount_1);
         assert_noop!(
             DappStaking::unstake(
                 RuntimeOrigin::signed(account),
@@ -1405,6 +1478,8 @@ fn unstake_with_exceeding_amount_fails() {
         );
 
         // 2nd scenario - have some stake on two distinct contracts, but unstaking more than staked per contract still fails
+        let stake_amount_2 = 50;
+        assert_stake(account, &smart_contract_2, stake_amount_2);
         assert_noop!(
             DappStaking::unstake(
                 RuntimeOrigin::signed(account),
@@ -1416,16 +1491,20 @@ fn unstake_with_exceeding_amount_fails() {
     })
 }
 
+// Move amount exceeds the staked amount.
 #[test]
 fn move_with_exceeding_amount_fails() {
     ExtBuilder::default().build_and_execute(|| {
-        let (source_contract, Some(destination_contract), account, source_stake_amount, _) =
-            setup_staked_contracts_test(true)
-        else {
-            panic!("Expected a second contract for move test.");
-        };
+        let source_contract = MockSmartContract::Wasm(1);
+        let destination_contract = MockSmartContract::Wasm(2);
+        assert_register(1, &source_contract);
+        assert_register(1, &destination_contract);
 
-        // Try to move more than was staked
+        let account = 2;
+        let source_stake_amount = 300;
+        assert_lock(account, source_stake_amount);
+        assert_stake(account, &source_contract, source_stake_amount);
+
         assert_noop!(
             DappStaking::move_stake(
                 RuntimeOrigin::signed(account),
@@ -1441,7 +1520,13 @@ fn move_with_exceeding_amount_fails() {
 #[test]
 fn unstake_from_non_staked_contract_fails() {
     ExtBuilder::default().build_and_execute(|| {
-        let (smart_contract_1, smart_contract_2, account) = setup_for_non_staked_contract_test();
+        // Register smart contracts & lock some amount
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+        assert_register(1, &smart_contract_1);
+        assert_register(1, &smart_contract_2);
+        let account = 2;
+        assert_lock(account, 300);
 
         // Stake some amount on the first contract.
         let stake_amount = 100;
@@ -1449,16 +1534,22 @@ fn unstake_from_non_staked_contract_fails() {
 
         // Try to unstake from the 2nd contract, which isn't staked on.
         assert_noop!(
-            DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract_2, 1),
+            DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract_2, 1,),
             Error::<Test>::NoStakingInfo
         );
     })
 }
 
+// No staking info exists for the account and the source contract.
 #[test]
 fn move_from_non_staked_contract_fails() {
     ExtBuilder::default().build_and_execute(|| {
-        let (source_contract, destination_contract, account) = setup_for_non_staked_contract_test();
+        let source_contract = MockSmartContract::Wasm(1);
+        let destination_contract = MockSmartContract::Wasm(2);
+        assert_register(1, &source_contract);
+        assert_register(1, &destination_contract);
+        let account = 2;
+        assert_lock(account, 300);
 
         // Try to move from the source contract, which isn't staked on.
         assert_noop!(
@@ -1500,7 +1591,15 @@ fn unstake_with_unclaimed_rewards_fails() {
 #[test]
 fn unstake_from_past_period_fails() {
     ExtBuilder::default().build_and_execute(|| {
-        let (smart_contract, _, account, stake_amount, _) = setup_staked_contracts_test(false);
+        // Register smart contract & lock some amount
+        let smart_contract = MockSmartContract::Wasm(1);
+        assert_register(1, &smart_contract);
+        let account = 2;
+        assert_lock(account, 300);
+
+        // Stake some amount, and advance to the next period
+        let stake_amount = 100;
+        assert_stake(account, &smart_contract, stake_amount);
         advance_to_next_period();
 
         assert_noop!(
@@ -1513,19 +1612,26 @@ fn unstake_from_past_period_fails() {
 #[test]
 fn move_from_past_period_fails() {
     ExtBuilder::default().build_and_execute(|| {
-        let (source_contract, Some(destination_contract), account, source_stake_amount, _) =
-            setup_staked_contracts_test(true)
-        else {
-            panic!("Expected a second contract for move test.");
-        };
+        let source_contract = MockSmartContract::wasm(1 as AccountId);
+        let destination_contract = MockSmartContract::wasm(2 as AccountId);
+        assert_register(1, &source_contract);
+        assert_register(1, &destination_contract);
+
+        let account = 2;
+        let source_stake_amount = 300;
+        let partial_move_amount = 200;
+        assert_lock(account, source_stake_amount);
+        assert_stake(account, &source_contract, source_stake_amount);
+
         advance_to_next_period();
 
+        // Try to move from the source contract, which is no longer staked on due to period change.
         assert_noop!(
             DappStaking::move_stake(
                 RuntimeOrigin::signed(account),
                 source_contract,
                 destination_contract,
-                source_stake_amount
+                partial_move_amount
             ),
             Error::<Test>::UnstakeFromPastPeriod
         );
@@ -3001,11 +3107,13 @@ fn stake_after_period_ends_reset_bonus_status_is_ok() {
         assert_lock(account, amount);
         assert_stake(account, &smart_contract, amount - partial_unstake_amount);
 
-        // Phase 2: Advance to B&E subperiod, we ensure 'bonus safe moves' remaining is decreased with a partial unstake (overflowing 'voting' stake)
+        // Phase 2: Advance to B&E subperiod, we ensure 'bonus status' is decreased with a partial unstake (overflowing 'voting' stake)
         advance_to_next_subperiod();
         assert_unstake(account, &smart_contract, partial_unstake_amount);
 
-        assert_bonus_status(account, &smart_contract, default_bonus_status - 1);
+        let staking_info = StakerInfo::<Test>::get(account, &smart_contract)
+            .expect("Should exist since partial unstake operation was successful.");
+        assert_eq!(staking_info.bonus_status, default_bonus_status - 1);
 
         // Phase 3: Advance to the next period, claim rewards
         advance_to_next_period();
@@ -3019,7 +3127,10 @@ fn stake_after_period_ends_reset_bonus_status_is_ok() {
 
         // Phase 4: Restake and verify BonusStatus reset
         assert_stake(account, &smart_contract, partial_unstake_amount);
-        assert_bonus_status(account, &smart_contract, default_bonus_status);
+
+        let staking_info = StakerInfo::<Test>::get(account, &smart_contract)
+            .expect("Should exist since stake operation was successful.");
+        assert_eq!(staking_info.bonus_status, default_bonus_status);
     })
 }
 
@@ -3583,6 +3694,90 @@ fn claim_bonus_reward_for_works() {
             "Claimer balance must not change since reward is deposited to the staker."
         );
     })
+}
+
+#[test]
+// Tests moving stakes from unregistered contracts to another contract while verifying that:
+// - All staked funds are moved from the unregistered contracts.
+// - The bonus_status is preserved during the move from an unregistered contract.
+// - Destination stake is successfully created if entry does not exist yet.
+fn move_stake_from_unregistered_contract_is_ok() {
+    ExtBuilder::default().build_and_execute(|| {
+        // Register smart contracts 1 & 2, lock&stake some amount on 1, unregister the smart contract 1
+        let source_contract = MockSmartContract::wasm(1 as AccountId);
+        let dest_contract = MockSmartContract::wasm(2 as AccountId);
+        assert_register(1, &source_contract);
+        assert_register(1, &dest_contract);
+
+        let account = 2;
+        let amount = 300;
+        let partial_stake_1 = 200;
+        let partial_stake_2 = 100;
+        assert_lock(account, amount);
+        assert_stake(account, &source_contract, partial_stake_1);
+
+        // Advance to B&E subperiod, stake again to check both stakes move and finally unregister source_contract
+        advance_to_next_subperiod();
+        assert_stake(account, &source_contract, partial_stake_2);
+        assert_unregister(&source_contract);
+
+        assert_move_stake(
+            account,
+            &source_contract,
+            &dest_contract,
+            1, // the amount is not important for an unregistered contract, everything is moved
+        );
+    })
+}
+
+#[test]
+// Tests moving stake with bonus preservation to an already lost bonus contract but that has some voting stake amount leftover. Verify that:
+// - total staked amount is preserved (the voting leftover stake should have been moved to bep stake),
+// - bonus status is updated (decreased but bonus is preserved)
+fn move_stake_in_bep_to_contract_with_voting_leftover_and_no_bonus_is_ok() {
+    ExtBuilder::default()
+        .with_max_bonus_safe_moves(1)
+        .build_and_execute(|| {
+            // Sanity check - max_moves minimal value must be 1
+            let default_bonus_status = BonusStatusWrapperFor::<Test>::default().0;
+            assert!(default_bonus_status > 1);
+
+            // Register smart contracts 1 & 2, lock&stake some amount on 1 & 2
+            let source_contract = MockSmartContract::wasm(1 as AccountId);
+            let dest_contract = MockSmartContract::wasm(2 as AccountId);
+            assert_register(1, &source_contract);
+            assert_register(1, &dest_contract);
+
+            let account = 2;
+            let amount = 300;
+            assert_lock(account, amount);
+
+            let voting_stake_1 = 100;
+            assert_stake(account, &source_contract, voting_stake_1);
+            assert_stake(account, &dest_contract, voting_stake_1);
+
+            advance_to_next_subperiod();
+
+            assert_stake(account, &source_contract, 20);
+            assert_unstake(account, &dest_contract, 20);
+            assert_unstake(account, &dest_contract, 30);
+            assert_stake(account, &dest_contract, 30);
+
+            // Expected state:
+            // source staker info { voting: 100, build_and_earn: 20, bonus_status: 2 }
+            // dest staker info { voting: 50, build_and_earn: 30, bonus_status: 0 }
+
+            assert_move_stake(
+                account,
+                &source_contract,
+                &dest_contract,
+                120, // the amount is not important for an unregistered contract, everything is moved
+            );
+
+            let staking_info = StakerInfo::<Test>::get(account, &dest_contract)
+                .expect("Should exist since move operation was successful.");
+            assert_eq!(staking_info.bonus_status, default_bonus_status - 1);
+        })
 }
 
 #[test]
