@@ -911,7 +911,7 @@ impl StakeAmount {
     }
 
     // Compares `self` and `other` by total amount first or by lowest era in case of tie
-    pub fn compare_stake_amounts(&self, other: &StakeAmount) -> std::cmp::Ordering {
+    pub fn compare_stake_amounts(&self, other: &StakeAmount) -> sp_std::cmp::Ordering {
         let total_self = self.total();
         let total_other = other.total();
 

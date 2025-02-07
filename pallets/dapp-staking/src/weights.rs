@@ -69,6 +69,7 @@ pub trait WeightInfo {
 	fn cleanup_expired_entries(x: u32, ) -> Weight;
 	fn force() -> Weight;
 	fn move_stake() -> Weight;
+	fn move_stake_unregistered_source() -> Weight;
 	fn on_initialize_voting_to_build_and_earn() -> Weight;
 	fn on_initialize_build_and_earn_to_voting() -> Weight;
 	fn on_initialize_build_and_earn_to_build_and_earn() -> Weight;
@@ -409,6 +410,27 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Balances::Locks` (r:1 w:0)
 	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
 	fn move_stake() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `536`
+		//  Estimated: `6298`
+		// Minimum execution time: 59_000_000 picoseconds.
+		Weight::from_parts(60_000_000, 6298)
+			.saturating_add(T::DbWeight::get().reads(9_u64))
+			.saturating_add(T::DbWeight::get().writes(6_u64))
+	}
+	/// Storage: `DappStaking::IntegratedDApps` (r:2 w:0)
+	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
+	/// Storage: `DappStaking::Ledger` (r:1 w:1)
+	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
+	/// Storage: `DappStaking::StakerInfo` (r:2 w:2)
+	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(179), added: 2654, mode: `MaxEncodedLen`)
+	/// Storage: `DappStaking::ContractStake` (r:2 w:2)
+	/// Proof: `DappStaking::ContractStake` (`max_values`: Some(65535), `max_size`: Some(91), added: 2071, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Freezes` (r:1 w:1)
+	/// Proof: `Balances::Freezes` (`max_values`: None, `max_size`: Some(67), added: 2542, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Locks` (r:1 w:0)
+	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
+	fn move_stake_unregistered_source() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `536`
 		//  Estimated: `6298`
@@ -844,6 +866,27 @@ impl WeightInfo for () {
 	/// Storage: `Balances::Locks` (r:1 w:0)
 	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
 	fn move_stake() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `536`
+		//  Estimated: `6298`
+		// Minimum execution time: 59_000_000 picoseconds.
+		Weight::from_parts(60_000_000, 6298)
+			.saturating_add(RocksDbWeight::get().reads(9_u64))
+			.saturating_add(RocksDbWeight::get().writes(6_u64))
+	}
+	/// Storage: `DappStaking::IntegratedDApps` (r:2 w:0)
+	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
+	/// Storage: `DappStaking::Ledger` (r:1 w:1)
+	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
+	/// Storage: `DappStaking::StakerInfo` (r:2 w:2)
+	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(179), added: 2654, mode: `MaxEncodedLen`)
+	/// Storage: `DappStaking::ContractStake` (r:2 w:2)
+	/// Proof: `DappStaking::ContractStake` (`max_values`: Some(65535), `max_size`: Some(91), added: 2071, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Freezes` (r:1 w:1)
+	/// Proof: `Balances::Freezes` (`max_values`: None, `max_size`: Some(67), added: 2542, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Locks` (r:1 w:0)
+	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
+	fn move_stake_unregistered_source() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `536`
 		//  Estimated: `6298`

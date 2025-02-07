@@ -1340,13 +1340,13 @@ pub mod pallet {
         /// Transfers stake between two smart contracts, ensuring bonus status preservation if eligible.
         /// Emits a `StakeMoved` event.
         #[pallet::call_index(21)]
-        #[pallet::weight(T::WeightInfo::move_stake())]
+        #[pallet::weight(T::WeightInfo::move_stake_unregistered_source().max(T::WeightInfo::move_stake()))]
         pub fn move_stake(
             origin: OriginFor<T>,
             source_contract: T::SmartContract,
             destination_contract: T::SmartContract,
             #[pallet::compact] amount: Balance,
-        ) -> DispatchResult {
+        ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
@@ -1382,7 +1382,12 @@ pub mod pallet {
                 amount: move_amount.total(),
             });
 
-            Ok(())
+            Ok(Some(if is_source_unregistered {
+                T::WeightInfo::move_stake_unregistered_source()
+            } else {
+                T::WeightInfo::move_stake()
+            })
+            .into())
         }
     }
 

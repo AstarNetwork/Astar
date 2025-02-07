@@ -894,6 +894,62 @@ mod benchmarks {
     }
 
     #[benchmark]
+    fn move_stake_unregistered_source() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let source_contract = T::BenchmarkHelper::get_smart_contract(1);
+        let destination_contract = T::BenchmarkHelper::get_smart_contract(2);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            source_contract.clone(),
+        ));
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            destination_contract.clone(),
+        ));
+
+        let amount = T::MinimumLockedAmount::get();
+        T::BenchmarkHelper::set_balance(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            source_contract.clone(),
+            amount
+        ));
+
+        assert_ok!(DappStaking::<T>::unregister(
+            RawOrigin::Root.into(),
+            source_contract.clone(),
+        ));
+
+        #[extrinsic_call]
+        move_stake(
+            RawOrigin::Signed(staker.clone()),
+            source_contract.clone(),
+            destination_contract.clone(),
+            amount.clone(),
+        );
+
+        assert_last_event::<T>(
+            Event::<T>::StakeMoved {
+                account: staker,
+                source_contract,
+                destination_contract,
+                amount,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
     fn on_initialize_voting_to_build_and_earn() {
         initial_config::<T>();
 
