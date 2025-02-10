@@ -592,13 +592,13 @@ where
     pub fn add_stake_amount(
         &mut self,
         amount: StakeAmount,
+        current_era: EraNumber,
         current_period_info: PeriodInfo,
     ) -> Result<(), AccountLedgerError> {
         if amount.total().is_zero() {
             return Ok(());
         }
 
-        let current_era = amount.era;
         self.stake_unstake_argument_check(current_era, &current_period_info)?;
 
         if self.stakeable_amount(current_period_info.number) < amount.total() {
@@ -909,20 +909,6 @@ impl StakeAmount {
 
         result
     }
-
-    // Compares `self` and `other` by total amount first or by lowest era in case of tie
-    pub fn compare_stake_amounts(&self, other: &StakeAmount) -> sp_std::cmp::Ordering {
-        let total_self = self.total();
-        let total_other = other.total();
-
-        // First, compare the total values
-        if total_self != total_other {
-            total_self.cmp(&total_other)
-        } else {
-            // In case of a tie, compare the era values (lowest era should come first)
-            other.era.cmp(&self.era)
-        }
-    }
 }
 
 /// Info about an era, including the rewards, how much is locked, unlocking, etc.
@@ -1074,9 +1060,12 @@ impl SingularStakingInfo {
     }
 
     /// Stake the specified amount on the contract.
-    pub fn stake(&mut self, amount: StakeAmount, bonus_status: BonusStatus) {
-        let current_era = amount.era;
-
+    pub fn stake(
+        &mut self,
+        amount: StakeAmount,
+        current_era: EraNumber,
+        bonus_status: BonusStatus,
+    ) {
         // Keep the previous stake amount for future reference
         self.previous_staked = self.staked;
         self.previous_staked.era = current_era;
@@ -1331,8 +1320,12 @@ impl ContractStakeAmount {
     }
 
     /// Stake the specified `amount` on the contract, for the specified `subperiod` and `era`.
-    pub fn stake(&mut self, amount: StakeAmount, period_number: PeriodNumber) {
-        let current_era = amount.era;
+    pub fn stake(
+        &mut self,
+        amount: StakeAmount,
+        current_era: EraNumber,
+        period_number: PeriodNumber,
+    ) {
         let stake_era = current_era.saturating_add(1);
 
         match self.staked_future.as_mut() {

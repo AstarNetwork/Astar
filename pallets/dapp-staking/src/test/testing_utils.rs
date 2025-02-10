@@ -841,7 +841,7 @@ pub(crate) fn assert_move_stake(
     let unstake_amount_entries_clone = unstake_amount_entries.clone();
     let stake_amount = unstake_amount_entries_clone
         .iter()
-        .max_by(|a, b| a.compare_stake_amounts(b))
+        .max_by(|a, b| a.total().cmp(&b.total()))
         .expect("At least one value exists, otherwise we wouldn't be here.");
     assert_eq!(stake_amount.total(), amount_to_move);
 

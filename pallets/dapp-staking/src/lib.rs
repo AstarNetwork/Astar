@@ -1369,11 +1369,7 @@ pub mod pallet {
                 Self::inner_unstake(&account, &source_contract, amount)?
             };
 
-            let stake_amount = StakeAmount {
-                era: move_amount.era - 1, // to avoid incrementing era 2 times
-                ..move_amount
-            };
-            Self::inner_stake(&account, &destination_contract, stake_amount, bonus_status)?;
+            Self::inner_stake(&account, &destination_contract, move_amount, bonus_status)?;
 
             Self::deposit_event(Event::<T>::StakeMoved {
                 account,
@@ -1499,7 +1495,7 @@ pub mod pallet {
             // Return the `StakeAmount` that has max total value - that's the one that is equal to the `amount` parameter.
             let unstake_amount = stake_amount_iter
                 .iter()
-                .max_by(|a, b| a.compare_stake_amounts(b))
+                .max_by(|a, b| a.total().cmp(&b.total()))
                 .expect("At least one value exists, otherwise we wouldn't be here.");
             assert_eq!(unstake_amount.total(), amount);
 
@@ -1571,7 +1567,7 @@ pub mod pallet {
 
             let unstake_amount = stake_amount_iter
                 .iter()
-                .max_by(|a, b| a.compare_stake_amounts(b))
+                .max_by(|a, b| a.total().cmp(&b.total()))
                 .expect("At least one value exists, otherwise we wouldn't be here.");
             assert_eq!(unstake_amount.total(), amount);
 
@@ -1612,7 +1608,7 @@ pub mod pallet {
             // 1.
             // Increase stake amount for the next era & current period in staker's ledger
             ledger
-                .add_stake_amount(amount, protocol_state.period_info)
+                .add_stake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| match err {
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
                         Error::<T>::UnclaimedRewards
@@ -1659,7 +1655,7 @@ pub mod pallet {
                     ),
                 };
 
-            new_staking_info.stake(amount, bonus_status);
+            new_staking_info.stake(amount, current_era, bonus_status);
             ensure!(
                 new_staking_info.total_staked_amount() >= T::MinimumStakeAmount::get(),
                 Error::<T>::InsufficientStakeAmount
@@ -1676,7 +1672,7 @@ pub mod pallet {
             // 3.
             // Update `ContractStake` storage with the new stake amount on the specified contract.
             let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
-            contract_stake_info.stake(amount, period_number);
+            contract_stake_info.stake(amount, current_era, period_number);
 
             // 4.
             // Update total staked amount for the next era.
