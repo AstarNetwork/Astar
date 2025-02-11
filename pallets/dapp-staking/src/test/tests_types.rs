@@ -1945,7 +1945,7 @@ fn era_info_stake_works() {
         voting: vp_stake_amount,
         ..StakeAmount::default()
     };
-    era_info.add_stake_amount(stake_amount, Subperiod::Voting);
+    era_info.add_stake_amount(stake_amount);
     assert_eq!(era_info.total_staked_amount_next_era(), vp_stake_amount);
     assert_eq!(
         era_info.staked_amount_next_era(Subperiod::Voting),
@@ -1962,7 +1962,7 @@ fn era_info_stake_works() {
         build_and_earn: bep_stake_amount,
         ..StakeAmount::default()
     };
-    era_info.add_stake_amount(stake_amount, Subperiod::BuildAndEarn);
+    era_info.add_stake_amount(stake_amount);
     assert_eq!(
         era_info.total_staked_amount_next_era(),
         vp_stake_amount + bep_stake_amount

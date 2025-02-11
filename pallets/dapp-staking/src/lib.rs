@@ -1195,7 +1195,7 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            let (unstake_amount, _remaining_moves) =
+            let (unstake_amount, _) =
                 Self::inner_unstake_from_unregistered(&account, &smart_contract)?;
 
             Self::deposit_event(Event::<T>::UnstakeFromUnregistered {
@@ -1677,7 +1677,7 @@ pub mod pallet {
             // 4.
             // Update total staked amount for the next era.
             CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.add_stake_amount(amount, protocol_state.subperiod());
+                era_info.add_stake_amount(amount);
             });
 
             // 5.

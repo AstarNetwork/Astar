@@ -899,8 +899,9 @@ impl StakeAmount {
         }
     }
 
-    /// Returns a new `StakeAmount` with `other` subtracted from `self` for both subperiods and era set from `other`.
-    pub fn subtracted_stake_amount(&self, other: &StakeAmount) -> StakeAmount {
+    /// Returns a new `StakeAmount` representing the difference between `self` and `other`,
+    /// keeping `other`'s era and period.
+    pub fn difference(&self, other: &StakeAmount) -> StakeAmount {
         StakeAmount {
             voting: self.voting.saturating_sub(other.voting),
             build_and_earn: self.build_and_earn.saturating_sub(other.build_and_earn),
@@ -966,8 +967,7 @@ impl EraInfo {
     }
 
     /// Add the specified `amount` to the appropriate stake amount, based on the `Subperiod`.
-    // TODO: get rid of redundant param
-    pub fn add_stake_amount(&mut self, amount: StakeAmount, _subperiod: Subperiod) {
+    pub fn add_stake_amount(&mut self, amount: StakeAmount) {
         self.next_stake_amount.add(amount.voting, Subperiod::Voting);
         self.next_stake_amount
             .add(amount.build_and_earn, Subperiod::BuildAndEarn);
@@ -1136,10 +1136,10 @@ impl SingularStakingInfo {
         self.staked.subtract(amount);
         self.staked.era = self.staked.era.max(current_era);
 
-        let mut unstaked_amount = staked_snapshot.subtracted_stake_amount(&self.staked);
+        let mut unstaked_amount = staked_snapshot.difference(&self.staked);
 
         // 2. Update bonus status accordingly.
-        // In case voting subperiod has passed, and the the 'voting' stake amount was reduced, we need to reduce the bonus eligibility counter.
+        // In case voting subperiod has passed, and the 'voting' stake amount was reduced, we need to reduce the bonus eligibility counter.
         if subperiod != Subperiod::Voting && self.staked.voting < staked_snapshot.voting {
             self.bonus_status = self.bonus_status.saturating_sub(1);
         }
@@ -1198,7 +1198,7 @@ impl SingularStakingInfo {
                     self.previous_staked.subtract(overflow_amount);
 
                     let mut temp_unstaked_amount =
-                        previous_staked_snapshot.subtracted_stake_amount(&self.previous_staked);
+                        previous_staked_snapshot.difference(&self.previous_staked);
                     assert_eq!(
                         temp_unstaked_amount.total(),
                         overflow_amount,
