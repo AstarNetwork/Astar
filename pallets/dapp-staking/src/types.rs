@@ -963,10 +963,25 @@ impl EraInfo {
             .add(amount.build_and_earn, Subperiod::BuildAndEarn);
     }
 
-    /// Subtract the specified `amount` from the appropriate stake amount.
-    pub fn unstake_amount(&mut self, amount: Balance) {
-        self.current_stake_amount.subtract(amount);
-        self.next_stake_amount.subtract(amount);
+    /// Unstakes the specified amounts by subtracting them from the appropriate stake subperiods.
+    ///
+    /// - If an entry belongs to the `current_era`, it reduces `current_stake_amount`.
+    /// - If an entry belongs to the `next_era`, it reduces `next_stake_amount`.
+    /// - If the entry is from a past era or invalid, it is ignored.
+    pub fn unstake_amount(&mut self, stake_amount_entries: impl IntoIterator<Item = StakeAmount>) {
+        let entries: Vec<StakeAmount> = stake_amount_entries.into_iter().collect();
+        match entries.as_slice() {
+            [single_entry] => {
+                let amount = single_entry.total();
+                self.current_stake_amount.subtract(amount);
+                self.next_stake_amount.subtract(amount);
+            }
+            [entry_current, entry_next] => {
+                self.current_stake_amount.subtract(entry_current.total());
+                self.next_stake_amount.subtract(entry_next.total());
+            }
+            _ => {} // Ignore cases with more than 2 entries or empty input - this should never happen
+        }
     }
 
     /// Total staked amount in this era.

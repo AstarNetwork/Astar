@@ -695,23 +695,15 @@ pub(crate) fn assert_unstake(
         &post_contract_stake,
         &pre_snapshot,
         unstake_amount,
-        unstake_amount_entries,
+        unstake_amount_entries.clone(),
     );
 
     // 4. verify era info
     // =========================
     // =========================
 
-    // It's possible next era has staked more than the current era. This is because 'stake' will always stake for the NEXT era.
-    if pre_era_info.total_staked_amount() < amount {
-        assert!(post_era_info.total_staked_amount().is_zero());
-    } else {
-        assert_eq!(
-            post_era_info.total_staked_amount(),
-            pre_era_info.total_staked_amount() - unstake_amount,
-            "Total staked amount for the current era must decrease by 'amount'."
-        );
-    }
+    assert_era_info_current_stake(&pre_era_info, &post_era_info, unstake_amount_entries);
+
     assert_eq!(
         post_era_info.total_staked_amount_next_era(),
         pre_era_info.total_staked_amount_next_era() - unstake_amount,
@@ -878,7 +870,7 @@ pub(crate) fn assert_move_stake(
             &post_source_contract_stake,
             &pre_snapshot,
             amount_to_move,
-            unstake_amount_entries,
+            unstake_amount_entries.clone(),
         );
     }
 
@@ -915,15 +907,12 @@ pub(crate) fn assert_move_stake(
         is_expected_to_increase,
     );
 
-    // 4. verify era info (unchanged)
+    // 4. verify era info
     // =========================
     // =========================
 
-    // assert_eq!(
-    //     post_era_info.total_staked_amount(),
-    //     pre_era_info.total_staked_amount(),
-    //     "Total staked amount for the current era must remain unchanged for a 'move'."
-    // );
+    assert_era_info_current_stake(&pre_era_info, &post_era_info, unstake_amount_entries);
+
     assert_eq!(
         post_era_info.total_staked_amount_next_era(),
         pre_era_info.total_staked_amount_next_era(),
@@ -1248,16 +1237,14 @@ pub(crate) fn assert_unstake_from_unregistered(
     // 3. verify era info
     // =========================
     // =========================
-    // It's possible next era has staked more than the current era. This is because 'stake' will always stake for the NEXT era.
-    if pre_era_info.total_staked_amount() < amount {
-        assert!(post_era_info.total_staked_amount().is_zero());
-    } else {
-        assert_eq!(
-            post_era_info.total_staked_amount(),
-            pre_era_info.total_staked_amount() - amount,
-            "Total staked amount for the current era must decrease by 'amount'."
-        );
-    }
+
+    let unstake_era = pre_snapshot.active_protocol_state.era;
+    let (stake_amount_entries, _) =
+        pre_staker_info
+            .clone()
+            .unstake(amount, unstake_era, unstake_subperiod);
+    assert_era_info_current_stake(&pre_era_info, &post_era_info, stake_amount_entries);
+
     assert_eq!(
         post_era_info.total_staked_amount_next_era(),
         pre_era_info.total_staked_amount_next_era() - amount,
@@ -1973,5 +1960,28 @@ fn assert_ledger_contract_stake_count(
             pre_ledger.contract_stake_count, post_ledger.contract_stake_count,
             "Number of contract stakes must remain the same."
         );
+    }
+}
+
+/// Helpers to compose EraInfo verification
+
+fn assert_era_info_current_stake(
+    pre_era_info: &EraInfo,
+    post_era_info: &EraInfo,
+    stake_amount_entries: impl IntoIterator<Item = StakeAmount>,
+) {
+    let entries: Vec<StakeAmount> = stake_amount_entries.into_iter().collect();
+    if let Some(first_entry) = entries.first() {
+        let amount = first_entry.total();
+        // It's possible next era has staked more than the current era. This is because 'stake' (or 'move') will always stake for the NEXT era.
+        if pre_era_info.total_staked_amount() < amount {
+            assert!(post_era_info.total_staked_amount().is_zero());
+        } else {
+            assert_eq!(
+                post_era_info.total_staked_amount(),
+                pre_era_info.total_staked_amount() - amount,
+                "Total staked amount for the current era must decrease by 'amount'."
+            );
+        }
     }
 }

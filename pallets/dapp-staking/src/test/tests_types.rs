@@ -1999,17 +1999,29 @@ fn era_info_unstake_works() {
         era: era + 1,
         period: period_number,
     };
+
     let total_staked = era_info.total_staked_amount();
     let total_staked_next_era = era_info.total_staked_amount_next_era();
 
-    // 1st scenario - unstake some amount, no overflow
-    let unstake_amount_1 = bep_stake_amount_1;
-    era_info.unstake_amount(unstake_amount_1);
+    // === Scenario 1: Partial unstake without overflow ===
+    let unstake_amount_1_current = StakeAmount {
+        voting: 0,
+        build_and_earn: bep_stake_amount_1,
+        era,
+        period: period_number,
+    };
+    let unstake_amount_1_next = StakeAmount {
+        voting: 0,
+        build_and_earn: bep_stake_amount_1,
+        era: era + 1,
+        period: period_number,
+    };
+    era_info.unstake_amount(vec![unstake_amount_1_current, unstake_amount_1_next]);
 
     // Current era
     assert_eq!(
         era_info.total_staked_amount(),
-        total_staked - unstake_amount_1
+        total_staked - unstake_amount_1_current.total()
     );
     assert_eq!(era_info.staked_amount(Subperiod::Voting), vp_stake_amount);
     assert!(era_info.staked_amount(Subperiod::BuildAndEarn).is_zero());
@@ -2017,7 +2029,7 @@ fn era_info_unstake_works() {
     // Next era
     assert_eq!(
         era_info.total_staked_amount_next_era(),
-        total_staked_next_era - unstake_amount_1
+        total_staked_next_era - unstake_amount_1_next.total()
     );
     assert_eq!(
         era_info.staked_amount_next_era(Subperiod::Voting),
@@ -2025,32 +2037,43 @@ fn era_info_unstake_works() {
     );
     assert_eq!(
         era_info.staked_amount_next_era(Subperiod::BuildAndEarn),
-        bep_stake_amount_2 - unstake_amount_1
+        bep_stake_amount_2 - unstake_amount_1_next.build_and_earn
     );
 
-    // 2nd scenario - unstake some more, but with overflow
+    // === Scenario 2: Unstake with overflow ===
     let overflow = 2;
-    let unstake_amount_2 = bep_stake_amount_2 - unstake_amount_1 + overflow;
-    era_info.unstake_amount(unstake_amount_2);
+    let unstake_amount_2_current = StakeAmount {
+        voting: 0,
+        build_and_earn: overflow, // current era stake is already at 0 from scenario 1
+        era,
+        period: period_number,
+    };
+    era_info.unstake_amount(vec![unstake_amount_2_current]);
 
-    // Current era
+    // Current era remains unchanged
     assert_eq!(
         era_info.total_staked_amount(),
-        total_staked - unstake_amount_1 - unstake_amount_2
+        total_staked - unstake_amount_1_current.total() - unstake_amount_2_current.total()
     );
+    assert_eq!(
+        era_info.staked_amount(Subperiod::Voting),
+        vp_stake_amount - overflow
+    );
+    assert!(era_info.staked_amount(Subperiod::BuildAndEarn).is_zero());
 
     // Next era
     assert_eq!(
         era_info.total_staked_amount_next_era(),
-        vp_stake_amount - overflow
+        total_staked_next_era - unstake_amount_1_next.total() - unstake_amount_2_current.total()
     );
     assert_eq!(
         era_info.staked_amount_next_era(Subperiod::Voting),
-        vp_stake_amount - overflow
+        vp_stake_amount
     );
-    assert!(era_info
-        .staked_amount_next_era(Subperiod::BuildAndEarn)
-        .is_zero());
+    assert_eq!(
+        era_info.staked_amount_next_era(Subperiod::BuildAndEarn),
+        bep_stake_amount_2 - unstake_amount_1_next.build_and_earn - overflow
+    );
 }
 
 #[test]

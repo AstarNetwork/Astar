@@ -18,10 +18,10 @@
 
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
-    pallet::Config, ActiveProtocolState, BonusStatusWrapperFor, ContractStake, DAppId,
-    DAppTierRewardsFor, DAppTiers, EraRewards, Error, Event, ForcingType, GenesisConfig,
-    IntegratedDApps, Ledger, NextDAppId, Perbill, PeriodNumber, Permill, Safeguard, StakerInfo,
-    StaticTierParams, Subperiod, TierConfig, TierThreshold,
+    pallet::Config, ActiveProtocolState, BonusStatusWrapperFor, ContractStake, CurrentEraInfo,
+    DAppId, DAppTierRewardsFor, DAppTiers, EraReward, EraRewards, Error, Event, ForcingType,
+    GenesisConfig, IntegratedDApps, Ledger, NextDAppId, Perbill, PeriodNumber, Permill, Safeguard,
+    StakerInfo, StaticTierParams, Subperiod, TierConfig, TierThreshold,
 };
 
 use frame_support::{
@@ -2296,6 +2296,60 @@ fn unstake_from_unregistered_fails_for_past_period() {
             DappStaking::unstake_from_unregistered(RuntimeOrigin::signed(account), smart_contract),
             Error::<Test>::UnstakeFromPastPeriod
         );
+    })
+}
+
+// Tests a previous bug where extra stake was chipped from the current era info due to a next era total stake larger (likely after a stake)
+#[test]
+fn unstake_from_future_stake_does_not_chip_current_era_stake() {
+    ExtBuilder::default().build_and_execute(|| {
+        // Register smart contract 1, lock&stake some amount on 1
+        let contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(1, &contract);
+
+        let account_1 = 2;
+        let account_2 = 3;
+        let amount = 100;
+        let partial_stake_account_1 = 50;
+        let partial_stake_account_2 = 30;
+        assert_lock(account_1, amount);
+        assert_stake(account_1, &contract, partial_stake_account_1);
+        assert_lock(account_2, amount);
+        assert_stake(account_2, &contract, partial_stake_account_2);
+
+        // Advance to B&E subperiod, stake again to check both stakes move and finally unregister source_contract
+        advance_to_next_subperiod();
+        assert_stake(account_1, &contract, amount - partial_stake_account_1);
+
+        let unstake_era = ActiveProtocolState::<Test>::get().era;
+        assert_unstake(
+            account_1, &contract, amount, // full unstake
+        );
+
+        let current_era_info = CurrentEraInfo::<Test>::get();
+        assert_eq!(
+            current_era_info.total_staked_amount(), // previously this was fully chipped and set to 0 because partial_stake_account_1 > partial_stake_account_2
+            partial_stake_account_2
+        );
+        assert_eq!(
+            current_era_info.total_staked_amount_next_era(),
+            partial_stake_account_2
+        );
+
+        // Advance 1 era so we have claimable rewards for account_2.
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        for _ in 0..required_number_of_reward_claims(3) {
+            assert_claim_staker_rewards(3);
+        }
+
+        let (_, mut reward_span) = EraRewards::<Test>::iter().next().unwrap();
+        if reward_span.len() == unstake_era as usize {
+            let era_reward: EraReward = reward_span.span.pop().unwrap();
+            assert_eq!(
+                era_reward.staked, // previously this was fully chipped and set to 0 because partial_stake_account_1 > partial_stake_account_2
+                partial_stake_account_2
+            );
+        }
     })
 }
 
