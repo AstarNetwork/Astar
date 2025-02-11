@@ -3782,6 +3782,22 @@ fn move_stake_from_unregistered_contract_is_ok() {
             &dest_contract,
             1, // the amount is not important for an unregistered contract, everything is moved
         );
+
+        let default_bonus_status = BonusStatusWrapperFor::<Test>::default().0;
+        assert!(StakerInfo::<Test>::get(&account, &source_contract).is_none());
+        let expected_dest_staking_info = SingularStakingInfo {
+            previous_staked: StakeAmount::default(),
+            staked: StakeAmount {
+                voting: partial_stake_1,
+                build_and_earn: partial_stake_2,
+                era: 3,
+                period: 1,
+            },
+            bonus_status: default_bonus_status,
+        };
+        let dest_staking_info = StakerInfo::<Test>::get(&account, &dest_contract)
+            .expect("Should exist after a successful move operation");
+        assert_eq!(dest_staking_info, expected_dest_staking_info);
     })
 }
 

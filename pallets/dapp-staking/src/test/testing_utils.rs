@@ -828,7 +828,7 @@ pub(crate) fn assert_move_stake(
     // =====================
     // =====================
 
-    let (unstake_amount_entries, bonus_status) = assert_staker_info_and_unstake(
+    let (amount_entries, bonus_status) = assert_staker_info_and_unstake(
         &pre_snapshot,
         &post_snapshot,
         account,
@@ -836,6 +836,20 @@ pub(crate) fn assert_move_stake(
         amount_to_move,
         is_full_move_from_source,
     );
+
+    let pre_staker_info = pre_snapshot
+        .staker_info
+        .get(&(account, source_contract.clone()))
+        .expect("Entry must exist since 'move' is being called.");
+
+    let unstake_amount_entries = if is_source_unregistered {
+        vec![pre_staker_info.previous_staked, pre_staker_info.staked]
+            .into_iter()
+            .filter(|stake_amount| !stake_amount.is_empty())
+            .collect::<Vec<StakeAmount>>()
+    } else {
+        amount_entries
+    };
 
     let unstake_amount_entries_clone = unstake_amount_entries.clone();
     let stake_amount = unstake_amount_entries_clone

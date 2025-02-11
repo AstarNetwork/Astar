@@ -1520,7 +1520,7 @@ pub mod pallet {
             let current_era = protocol_state.era;
 
             // Extract total staked amount on the specified unregistered contract
-            let (amount, stake_amount_iter, preserved_bonus_status) =
+            let (amount, unstake_amount_iter, preserved_bonus_status) =
                 match StakerInfo::<T>::get(&account, &smart_contract) {
                     Some(mut staking_info) => {
                         ensure!(
@@ -1528,13 +1528,18 @@ pub mod pallet {
                             Error::<T>::UnstakeFromPastPeriod
                         );
 
-                        let amount = staking_info.total_staked_amount();
                         let preserved_bonus_status = staking_info.bonus_status;
+                        // This need to be built before 'unstake', otherwise voting amount is converted into B&E amount
+                        let unstake_amount_iter: Vec<StakeAmount> =
+                            vec![staking_info.previous_staked, staking_info.staked]
+                                .into_iter()
+                                .filter(|stake_amount| !stake_amount.is_empty())
+                                .collect();
+                        let amount = staking_info.staked.total();
 
-                        let (stake_amount_iter, _) =
-                            staking_info.unstake(amount, current_era, protocol_state.subperiod());
+                        staking_info.unstake(amount, current_era, protocol_state.subperiod());
 
-                        (amount, stake_amount_iter, preserved_bonus_status)
+                        (amount, unstake_amount_iter, preserved_bonus_status)
                     }
                     None => {
                         return Err(Error::<T>::NoStakingInfo.into());
@@ -1558,14 +1563,14 @@ pub mod pallet {
             // This means 'fake' stake total amount has been kept until now, even though contract was unregistered.
             // Although strange, it's been requested to keep it like this from the team.
             CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.unstake_amount(stake_amount_iter.clone());
+                era_info.unstake_amount(unstake_amount_iter.clone());
             });
 
             // Update remaining storage entries
             Self::update_ledger(&account, ledger)?;
             StakerInfo::<T>::remove(&account, &smart_contract);
 
-            let unstake_amount = stake_amount_iter
+            let unstake_amount = unstake_amount_iter
                 .iter()
                 .max_by(|a, b| a.total().cmp(&b.total()))
                 .expect("At least one value exists, otherwise we wouldn't be here.");
