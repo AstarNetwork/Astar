@@ -899,15 +899,14 @@ impl StakeAmount {
         }
     }
 
-    // Subtracts `other` from `self` for each subperiod stake
-    pub fn subtract_stake_amount(&self, other: &StakeAmount) -> Self {
-        let mut result = *self;
-        result.voting.saturating_reduce(other.voting);
-        result
-            .build_and_earn
-            .saturating_reduce(other.build_and_earn);
-
-        result
+    /// Returns a new `StakeAmount` with `other` subtracted from `self` for both subperiods and era set from `other`.
+    pub fn subtracted_stake_amount(&self, other: &StakeAmount) -> StakeAmount {
+        StakeAmount {
+            voting: self.voting.saturating_sub(other.voting),
+            build_and_earn: self.build_and_earn.saturating_sub(other.build_and_earn),
+            era: other.era,
+            period: other.period,
+        }
     }
 }
 
@@ -1129,10 +1128,7 @@ impl SingularStakingInfo {
         self.staked.subtract(amount);
         self.staked.era = self.staked.era.max(current_era);
 
-        // Implementation comment: Unlike before, we provide full info about the unstaked amount.
-        let mut unstaked_amount = staked_snapshot.subtract_stake_amount(&self.staked);
-        unstaked_amount.era = self.staked.era;
-
+        let mut unstaked_amount = staked_snapshot.subtracted_stake_amount(&self.staked);
         result.push(unstaked_amount);
 
         // 2. Update bonus status accordingly.
@@ -1185,7 +1181,7 @@ impl SingularStakingInfo {
                     self.previous_staked.subtract(overflow_amount);
 
                     let temp_unstaked_amount =
-                        previous_staked_snapshot.subtract_stake_amount(&self.previous_staked);
+                        previous_staked_snapshot.subtracted_stake_amount(&self.previous_staked);
                     assert_eq!(
                         temp_unstaked_amount.total(),
                         overflow_amount,
@@ -1198,9 +1194,8 @@ impl SingularStakingInfo {
             }
         } else if self.staked.era == current_era {
             // In case the `staked` era was already the current era, it also means we're chipping away from the future era.
-            let mut temp_unstaked_amount = unstaked_amount;
-            temp_unstaked_amount.era = self.staked.era.saturating_add(1);
-            result.push(temp_unstaked_amount);
+            unstaked_amount.era = self.staked.era.saturating_add(1);
+            result.push(unstaked_amount);
         }
 
         // 5. Convenience cleanup
