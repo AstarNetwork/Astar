@@ -536,19 +536,25 @@ pub(crate) fn assert_stake(
     // =====================
     // =====================
 
-    let stake_amount = match stake_subperiod {
-        Subperiod::Voting => StakeAmount {
-            voting: amount,
-            build_and_earn: 0,
-            era: stake_era,
-            period: stake_period,
-        },
-        Subperiod::BuildAndEarn => StakeAmount {
-            voting: 0,
-            build_and_earn: amount,
-            era: stake_era,
-            period: stake_period,
-        },
+    let (stake_amount, bonus_status) = match stake_subperiod {
+        Subperiod::Voting => (
+            StakeAmount {
+                voting: amount,
+                build_and_earn: 0,
+                era: stake_era,
+                period: stake_period,
+            },
+            BonusStatusWrapperFor::<Test>::default().0,
+        ),
+        Subperiod::BuildAndEarn => (
+            StakeAmount {
+                voting: 0,
+                build_and_earn: amount,
+                era: stake_era,
+                period: stake_period,
+            },
+            0,
+        ),
     };
 
     assert_staker_info_stake(
@@ -557,6 +563,7 @@ pub(crate) fn assert_stake(
         account,
         smart_contract,
         stake_amount,
+        bonus_status,
     );
 
     match pre_staker_info {
@@ -678,7 +685,7 @@ pub(crate) fn assert_unstake(
     // 2. verify staker info
     // =====================
     // =====================
-    let unstake_amount_entries = assert_staker_info_and_unstake(
+    let (unstake_amount_entries, _) = assert_staker_info_and_unstake(
         &pre_snapshot,
         &post_snapshot,
         account,
@@ -821,7 +828,7 @@ pub(crate) fn assert_move_stake(
     // =====================
     // =====================
 
-    let unstake_amount_entries = assert_staker_info_and_unstake(
+    let (unstake_amount_entries, bonus_status) = assert_staker_info_and_unstake(
         &pre_snapshot,
         &post_snapshot,
         account,
@@ -843,6 +850,7 @@ pub(crate) fn assert_move_stake(
         account,
         destination_contract,
         *stake_amount,
+        bonus_status,
     );
 
     let pre_staker_info = pre_snapshot
@@ -1686,7 +1694,7 @@ fn assert_staker_info_and_unstake(
     smart_contract: &MockSmartContract,
     amount: Balance,
     is_full_unstake: bool,
-) -> Vec<StakeAmount> {
+) -> (Vec<StakeAmount>, BonusStatus) {
     let unstake_era = pre_snapshot.active_protocol_state.era;
     let unstake_period = pre_snapshot.active_protocol_state.period_number();
     let unstake_subperiod = pre_snapshot.active_protocol_state.subperiod();
@@ -1695,6 +1703,7 @@ fn assert_staker_info_and_unstake(
         .staker_info
         .get(&(account, smart_contract.clone()))
         .expect("Entry must exist since 'unstake' is being called.");
+    let was_bonus_eligible_snapshot = pre_staker_info.is_bonus_eligible();
 
     if is_full_unstake {
         assert!(
@@ -1708,25 +1717,40 @@ fn assert_staker_info_and_unstake(
             .expect(
             "Entry must exist since 'stake' operation was successful and it wasn't a full unstake.",
         );
+        let should_keep_bonus = pre_staker_info.is_bonus_eligible()
+            && (pre_staker_info.bonus_status > 1
+                || unstake_subperiod == Subperiod::Voting
+                || post_staker_info.staked_amount(Subperiod::Voting)
+                    == pre_staker_info.staked_amount(Subperiod::Voting));
+        let is_bonus_lost = was_bonus_eligible_snapshot && !should_keep_bonus;
+
         assert_eq!(post_staker_info.period_number(), unstake_period);
         assert_eq!(
             post_staker_info.total_staked_amount(),
             pre_staker_info.total_staked_amount() - amount,
             "Total staked amount must decrease by the 'amount'"
         );
-        assert_eq!(
-            post_staker_info.staked_amount(unstake_subperiod),
-            pre_staker_info
-                .staked_amount(unstake_subperiod)
-                .saturating_sub(amount),
-            "Staked amount must decrease by the 'amount'"
-        );
 
-        let should_keep_bonus = pre_staker_info.is_bonus_eligible()
-            && (pre_staker_info.bonus_status > 1
-                || unstake_subperiod == Subperiod::Voting
-                || post_staker_info.staked_amount(Subperiod::Voting)
-                    == pre_staker_info.staked_amount(Subperiod::Voting));
+        if is_bonus_lost {
+            assert_eq!(
+                post_staker_info.staked_amount(Subperiod::Voting),
+                0,
+                "Voting staked amount must be moved to B&E"
+            );
+            assert_eq!(
+                post_staker_info.staked_amount(Subperiod::BuildAndEarn),
+                post_staker_info.total_staked_amount(),
+                "B&E unstake amount includes forfeited bonus amount from voting 'unstake_amount'"
+            );
+        } else {
+            assert_eq!(
+                post_staker_info.staked_amount(unstake_subperiod),
+                pre_staker_info
+                    .staked_amount(unstake_subperiod)
+                    .saturating_sub(amount),
+                "Staked amount must decrease by the 'amount'"
+            );
+        }
 
         assert_eq!(
             post_staker_info.is_bonus_eligible(),
@@ -1746,11 +1770,13 @@ fn assert_staker_info_and_unstake(
         }
     }
 
-    let (stake_amount_entries, _) =
+    let (stake_amount_entries, bonus_status) =
         pre_staker_info
             .clone()
             .unstake(amount, unstake_era, unstake_subperiod);
     assert!(stake_amount_entries.len() <= 2 && stake_amount_entries.len() > 0);
+
+    let is_bonus_lost = was_bonus_eligible_snapshot && bonus_status.is_zero();
 
     // If unstake from next era exists, it must exactly match the expected unstake amount.
     stake_amount_entries
@@ -1758,9 +1784,21 @@ fn assert_staker_info_and_unstake(
         .filter(|stake_amount| stake_amount.era > unstake_era)
         .for_each(|stake_amount| {
             assert_eq!(stake_amount.total(), amount);
+            if is_bonus_lost {
+                assert_eq!(
+                    stake_amount.for_type(Subperiod::Voting),
+                    0,
+                    "Voting staked amount must be moved to bep 'unstake_amount'"
+                );
+                assert_eq!(
+                    stake_amount.for_type(Subperiod::BuildAndEarn),
+                    stake_amount.total(),
+                    "B&E unstake amount includes forfeited bonus amount from voting 'unstake_amount'"
+                );
+            }
         });
 
-    stake_amount_entries
+    (stake_amount_entries, bonus_status)
 }
 
 fn assert_staker_info_stake(
@@ -1769,6 +1807,7 @@ fn assert_staker_info_stake(
     account: AccountId,
     smart_contract: &MockSmartContract,
     stake_amount: StakeAmount,
+    incoming_bonus_status: BonusStatus,
 ) {
     let pre_staker_info = pre_snapshot
         .staker_info
@@ -1794,34 +1833,24 @@ fn assert_staker_info_stake(
                 "Total staked amount must increase by the total 'stake_amount'"
             );
 
-            if pre_staker_info.staked_amount(Subperiod::Voting) > 0
-                && pre_staker_info.bonus_status == 0
-            {
+            if pre_staker_info.bonus_status == 0 {
                 assert_eq!(
-                    post_staker_info.staked_amount(Subperiod::Voting),
-                    0,
-                    "Voting staked amount must moved to bep 'stake_amount'"
-                );
-                assert_eq!(
-                    post_staker_info.staked_amount(Subperiod::BuildAndEarn),
-                    pre_staker_info.staked_amount(Subperiod::BuildAndEarn)
-                        + stake_amount.build_and_earn
-                        + pre_staker_info.staked_amount(Subperiod::Voting),
-                    "B&E staked amount must increase by the Voting & B&E 'stake_amount' (both)"
-                );
-            } else {
-                assert_eq!(
-                    post_staker_info.staked_amount(Subperiod::Voting),
-                    pre_staker_info.staked_amount(Subperiod::Voting) + stake_amount.voting,
-                    "Voting staked amount must increase by the voting 'stake_amount'"
-                );
-                assert_eq!(
-                    post_staker_info.staked_amount(Subperiod::BuildAndEarn),
-                    pre_staker_info.staked_amount(Subperiod::BuildAndEarn)
-                        + stake_amount.build_and_earn,
-                    "B&E staked amount must increase by the B&E 'stake_amount'"
+                    post_staker_info.bonus_status, incoming_bonus_status,
+                    "Bonus status should be updated to incoming one"
                 );
             }
+
+            assert_eq!(
+                post_staker_info.staked_amount(Subperiod::Voting),
+                pre_staker_info.staked_amount(Subperiod::Voting) + stake_amount.voting,
+                "Voting staked amount must increase by the voting 'stake_amount'"
+            );
+            assert_eq!(
+                post_staker_info.staked_amount(Subperiod::BuildAndEarn),
+                pre_staker_info.staked_amount(Subperiod::BuildAndEarn)
+                    + stake_amount.build_and_earn,
+                "B&E staked amount must increase by the B&E 'stake_amount'"
+            );
             assert_eq!(post_staker_info.period_number(), stake_period);
         }
         // A new entry is created.

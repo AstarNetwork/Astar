@@ -21,7 +21,8 @@ use crate::{
     pallet::Config, ActiveProtocolState, BonusStatusWrapperFor, ContractStake, CurrentEraInfo,
     DAppId, DAppTierRewardsFor, DAppTiers, EraReward, EraRewards, Error, Event, ForcingType,
     GenesisConfig, IntegratedDApps, Ledger, NextDAppId, Perbill, PeriodNumber, Permill, Safeguard,
-    StakerInfo, StaticTierParams, Subperiod, TierConfig, TierThreshold,
+    SingularStakingInfo, StakeAmount, StakerInfo, StaticTierParams, Subperiod, TierConfig,
+    TierThreshold,
 };
 
 use frame_support::{
@@ -3781,6 +3782,192 @@ fn move_stake_from_unregistered_contract_is_ok() {
             &dest_contract,
             1, // the amount is not important for an unregistered contract, everything is moved
         );
+    })
+}
+
+// Tests multiple moves for registered contracts
+// Checks proper stake amounts transfer for preserved bonus and conversion for forfeited bonus
+#[test]
+fn move_stake_bonus_preserved_with_transfer_conversion_is_ok() {
+    ExtBuilder::default()
+        .with_max_bonus_safe_moves(1)
+        .build_and_execute(|| {
+            // Sanity check
+            let default_bonus_status = BonusStatusWrapperFor::<Test>::default().0;
+            assert_eq!(
+                default_bonus_status, 2,
+                "max_moves value must be 1 to cover both scenarios"
+            );
+
+            // Prep - Register source/stopover/dest smart contracts, lock&stake some amounts
+            let source_contract = MockSmartContract::wasm(1 as AccountId);
+            let stopover_contract = MockSmartContract::wasm(2 as AccountId);
+            let final_contract = MockSmartContract::wasm(3 as AccountId);
+            assert_register(1, &source_contract);
+            assert_register(1, &stopover_contract);
+            assert_register(1, &final_contract);
+
+            let min_stake_amount: Balance = <Test as Config>::MinimumStakeAmount::get();
+
+            let account = 2;
+            let amount = 700;
+            assert_lock(account, amount);
+            assert_stake(account, &source_contract, 100);
+            assert_stake(account, &final_contract, 200);
+
+            // Advance to B&E subperiod, stake again to check both stakes move
+            advance_to_next_subperiod();
+            assert_stake(account, &source_contract, 100);
+            assert_stake(account, &stopover_contract, 100);
+            assert_stake(account, &final_contract, 200);
+
+            // Move 1 - source -> stopover - VOTING TRANSFER
+            let move_amount = 200 - min_stake_amount + 1; // for full move
+            assert_move_stake(account, &source_contract, &stopover_contract, move_amount);
+
+            assert!(StakerInfo::<Test>::get(&account, &source_contract).is_none());
+            let default_bonus_status = BonusStatusWrapperFor::<Test>::default().0;
+            let expected_bonus_status = default_bonus_status - 1; // B&E subperiod + full move
+            let expected_stopover_staking_info = SingularStakingInfo {
+                previous_staked: StakeAmount {
+                    voting: 0,
+                    build_and_earn: 100,
+                    era: 2,
+                    period: 1,
+                },
+                staked: StakeAmount {
+                    voting: 100,
+                    build_and_earn: 200,
+                    era: 3,
+                    period: 1,
+                },
+                bonus_status: expected_bonus_status,
+            };
+            let stopover_staking_info = StakerInfo::<Test>::get(&account, &stopover_contract)
+                .expect("Should exist after a successful move operation");
+            assert_eq!(stopover_staking_info, expected_stopover_staking_info);
+
+            // Move 2 - stopover -> final - VOTING CONVERSION
+
+            // Advance one era (era 3) so we can check that move_2 amount will be effective the era after (era 4) (even if it was already effective)
+            advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+
+            // Prep - claim rewards to be able to move
+            for _ in 0..required_number_of_reward_claims(account) {
+                assert_claim_staker_rewards(account);
+            }
+
+            let move_2_amount = 300; // for full move again
+            assert_move_stake(account, &stopover_contract, &final_contract, move_2_amount);
+
+            assert!(StakerInfo::<Test>::get(&account, &stopover_contract).is_none());
+            let expected_final_staking_info = SingularStakingInfo {
+                previous_staked: StakeAmount {
+                    voting: 200,
+                    build_and_earn: 200,
+                    era: 3,
+                    period: 1,
+                },
+                staked: StakeAmount {
+                    voting: 200,
+                    build_and_earn: 500,
+                    era: 4,
+                    period: 1,
+                },
+                bonus_status: default_bonus_status,
+            };
+            let final_staking_info = StakerInfo::<Test>::get(&account, &final_contract)
+                .expect("Should exist after a successful move operation");
+            assert_eq!(final_staking_info, expected_final_staking_info);
+        })
+}
+
+#[test]
+fn move_stake_multiple_conversions_are_ok() {
+    ExtBuilder::default().build_and_execute(|| {
+        // Prep - Register source/dest smart contracts, lock&stake some amounts
+        let source_contract = MockSmartContract::wasm(1 as AccountId);
+        let dest_contract = MockSmartContract::wasm(2 as AccountId);
+        assert_register(1, &source_contract);
+        assert_register(1, &dest_contract);
+
+        let account = 2;
+        let amount = 300;
+        assert_lock(account, amount);
+        assert_stake(account, &source_contract, 100);
+        assert_stake(account, &dest_contract, 100);
+
+        // Advance to B&E subperiod, stake again to check both stakes move
+        advance_to_next_subperiod();
+        assert_stake(account, &source_contract, 100);
+
+        // Move 1 - source -> dest - VOTING CONVERSION 1
+        let move_amount = 150; // reduce bonus status
+        assert_move_stake(account, &source_contract, &dest_contract, move_amount);
+
+        let expected_source_staking_info = SingularStakingInfo {
+            previous_staked: StakeAmount {
+                voting: 50,
+                build_and_earn: 0,
+                era: 2,
+                period: 1,
+            },
+            staked: StakeAmount {
+                voting: 0,
+                build_and_earn: 50,
+                era: 3,
+                period: 1,
+            },
+            bonus_status: 0, // bonus has been forfeited
+        };
+
+        let source_staking_info = StakerInfo::<Test>::get(&account, &source_contract)
+            .expect("Should exist after a successful move operation");
+        assert_eq!(source_staking_info, expected_source_staking_info);
+
+        let expected_dest_staking_info = SingularStakingInfo {
+            previous_staked: StakeAmount {
+                voting: 100,
+                build_and_earn: 0,
+                era: 2,
+                period: 1,
+            },
+            staked: StakeAmount {
+                voting: 100,
+                build_and_earn: 150,
+                era: 3,
+                period: 1,
+            },
+            bonus_status: 1, // bonus is preserved
+        };
+        let dest_staking_info = StakerInfo::<Test>::get(&account, &dest_contract)
+            .expect("Should exist after a successful move operation");
+        assert_eq!(dest_staking_info, expected_dest_staking_info);
+
+        // Move 2 - source -> dest - VOTING CONVERSION 2
+        let move_amount = 50; // full move
+        assert_move_stake(account, &source_contract, &dest_contract, move_amount);
+
+        assert!(StakerInfo::<Test>::get(&account, &source_contract).is_none());
+
+        let expected_dest_staking_info = SingularStakingInfo {
+            previous_staked: StakeAmount {
+                voting: 100,
+                build_and_earn: 150, // TODO: should it not be 0 here?
+                era: 2,
+                period: 1,
+            },
+            staked: StakeAmount {
+                voting: 100,
+                build_and_earn: 200,
+                era: 3,
+                period: 1,
+            },
+            bonus_status: 1, // bonus is still preserved
+        };
+        let dest_staking_info = StakerInfo::<Test>::get(&account, &dest_contract)
+            .expect("Should exist after a successful move operation");
+        assert_eq!(dest_staking_info, expected_dest_staking_info);
     })
 }
 

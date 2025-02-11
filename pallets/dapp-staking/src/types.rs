@@ -908,6 +908,17 @@ impl StakeAmount {
             period: other.period,
         }
     }
+
+    /// Converts all `Voting` stake into `BuildAndEarn`, effectively forfeiting bonus eligibility.
+    ///
+    /// This is used when a user loses bonus eligibility, ensuring that previously staked
+    /// voting amounts are not lost or mixed with destination 'voting amount' during a move
+    /// operation, but instead reallocated to `BuildAndEarn`.
+    pub fn convert_bonus_into_regular_stake(&mut self) {
+        let forfeited_bonus = self.voting;
+        self.voting = 0;
+        self.add(forfeited_bonus, Subperiod::BuildAndEarn);
+    }
 }
 
 /// Info about an era, including the rewards, how much is locked, unlocking, etc.
@@ -1087,11 +1098,7 @@ impl SingularStakingInfo {
             self.previous_staked = Default::default();
         }
 
-        // If bonus is forfeited, previously existing Voting stake amount is moved to BuildAndEarn stake amount
         if self.bonus_status == 0 {
-            let prev_amount = self.staked.voting;
-            self.staked.voting.saturating_reduce(prev_amount);
-            self.staked.add(prev_amount, Subperiod::BuildAndEarn);
             self.bonus_status = bonus_status;
         }
 
@@ -1123,19 +1130,29 @@ impl SingularStakingInfo {
     ) -> (Vec<StakeAmount>, BonusStatus) {
         let mut result = Vec::new();
         let staked_snapshot = self.staked;
+        let was_bonus_eligible_snapshot = self.is_bonus_eligible();
 
-        // 1. Modify 'current' staked amount, and update the result.
+        // 1. Modify 'current' staked amount.
         self.staked.subtract(amount);
         self.staked.era = self.staked.era.max(current_era);
 
         let mut unstaked_amount = staked_snapshot.subtracted_stake_amount(&self.staked);
-        result.push(unstaked_amount);
 
         // 2. Update bonus status accordingly.
         // In case voting subperiod has passed, and the the 'voting' stake amount was reduced, we need to reduce the bonus eligibility counter.
         if subperiod != Subperiod::Voting && self.staked.voting < staked_snapshot.voting {
             self.bonus_status = self.bonus_status.saturating_sub(1);
         }
+        let is_bonus_lost = was_bonus_eligible_snapshot && !self.is_bonus_eligible();
+
+        // If bonus is just forfeited, previously existing Voting stake amount is moved to BuildAndEarn stake amount
+        if is_bonus_lost && unstaked_amount.voting > 0 {
+            self.staked.convert_bonus_into_regular_stake();
+            unstaked_amount.convert_bonus_into_regular_stake();
+        }
+
+        // Store the unstaked amount result
+        result.push(unstaked_amount);
 
         // 3. Determine what was the previous staked amount.
         // This is done by simply comparing where does the _previous era_ fit in the current context.
@@ -1180,13 +1197,17 @@ impl SingularStakingInfo {
                     let previous_staked_snapshot = self.previous_staked;
                     self.previous_staked.subtract(overflow_amount);
 
-                    let temp_unstaked_amount =
+                    let mut temp_unstaked_amount =
                         previous_staked_snapshot.subtracted_stake_amount(&self.previous_staked);
                     assert_eq!(
                         temp_unstaked_amount.total(),
                         overflow_amount,
                         "Sanity check, behavior should remain the same as before."
                     );
+
+                    if is_bonus_lost && temp_unstaked_amount.voting > 0 {
+                        temp_unstaked_amount.convert_bonus_into_regular_stake();
+                    }
 
                     result.insert(0, temp_unstaked_amount);
                 }

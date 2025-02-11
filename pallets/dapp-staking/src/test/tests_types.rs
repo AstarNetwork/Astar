@@ -2543,18 +2543,19 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
 
     // 4th scenario - Bonus forfeited
     // Fully exhaust the bonus by performing another unstake during the B&E subperiod
+    // Voting stake amount should migrate to B&E stake
     let era_3 = era_2 + 2;
     let unstake_3 = 5;
 
     let expected_stake_amount_1 = StakeAmount {
-        voting: unstake_3,
-        build_and_earn: 0,
+        voting: 0,
+        build_and_earn: unstake_3,
         era: era_3,
         period: period_number,
     };
     let expected_stake_amount_2 = StakeAmount {
-        voting: unstake_3,
-        build_and_earn: 0,
+        voting: 0,
+        build_and_earn: unstake_3,
         era: era_3 + 1,
         period: period_number,
     };
@@ -2700,13 +2701,13 @@ fn singular_staking_stake_with_bonus_status() {
     // Ensure that the previous voting stake amount was moved to BuildAndEarn
     assert_eq!(
         staking_info.staked_amount(Subperiod::Voting),
-        voting_amount,
+        voting_amount + voting_amount,
         "Voting amount should increase correctly"
     );
     assert_eq!(
         staking_info.staked_amount(Subperiod::BuildAndEarn),
-        (voting_amount + bep_amount) + bep_amount,
-        "BuildAndEarn amount should have increased including previous voting stake"
+        bep_amount + bep_amount,
+        "BuildAndEarn amount should increase correctly"
     );
 
     // Scenario 2 - bonus_status is not 0 anymore and new voting amount is staked on same staking_info
