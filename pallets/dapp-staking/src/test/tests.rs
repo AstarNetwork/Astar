@@ -2354,6 +2354,45 @@ fn unstake_from_future_stake_does_not_chip_current_era_stake() {
     })
 }
 
+// Tests bonus stake conversion into regular stake for just forfeited bonus
+#[test]
+fn unstake_forfeited_bonus_to_regular_stake_conversion() {
+    ExtBuilder::default().build_and_execute(|| {
+        // Sanity check - default bonus status value must be 1
+        let default_bonus_status = BonusStatusWrapperFor::<Test>::default().0;
+        assert_eq!(default_bonus_status, 1, "Sanity check");
+
+        // Prep - Register smart contract, lock&stake some amounts
+        let contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(1, &contract);
+
+        let account = 2;
+        let amount = 100;
+        assert_lock(account, amount);
+        assert_stake(account, &contract, amount);
+
+        // Advance to B&E subperiod for bonus forfeiting
+        advance_to_next_subperiod();
+        let unstake_ammount = 10;
+        assert_unstake(account, &contract, unstake_ammount);
+
+        let expected_staking_info = SingularStakingInfo {
+            previous_staked: StakeAmount::default(),
+            staked: StakeAmount {
+                voting: 0,
+                build_and_earn: amount - unstake_ammount,
+                era: 2,
+                period: 1,
+            },
+            bonus_status: 0, // bonus has been forfeited
+        };
+
+        let staking_info = StakerInfo::<Test>::get(&account, &contract)
+            .expect("Should exist after a successful move operation");
+        assert_eq!(staking_info, expected_staking_info);
+    })
+}
+
 #[test]
 fn cleanup_expired_entries_is_ok() {
     ExtBuilder::default().build_and_execute(|| {
