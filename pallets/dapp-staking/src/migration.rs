@@ -137,7 +137,7 @@ mod v9 {
 }
 
 // TierThreshold as percentage of the total issuance
-mod v8 {
+pub mod v8 {
     use super::*;
     use crate::migration::v7::TierParameters as TierParametersV7;
     use crate::migration::v7::TiersConfiguration as TiersConfigurationV7;
