@@ -108,31 +108,31 @@ mod v9 {
                 consumed_weight
             }
         }
-    }
 
-    #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
-        log::info!(
-            target: LOG_TARGET,
-            "Out of {} already existing stakers are expected to have their bonus updated.",
-            v8::StakerInfo::<T>::iter().count(),
-        );
-        Ok(Vec::new())
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade(_: Vec<u8>) -> Result<(), TryRuntimeError> {
-        ensure!(
-            Pallet::<T>::on_chain_storage_version() >= 9,
-            "dapp-staking::migration::v9: wrong storage version"
-        );
-
-        let new_default_bonus_status = crate::types::BonusStatusWrapperFor::<T>::default().0;
-        for (_, _, staking_info) in StakerInfo::<T>::iter() {
-            assert_eq!(staking_info.bonus_status, new_default_bonus_status);
+        #[cfg(feature = "try-runtime")]
+        fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
+            log::info!(
+                target: LOG_TARGET,
+                "Out of {} already existing stakers are expected to have their bonus updated.",
+                v8::StakerInfo::<T>::iter().count(),
+            );
+            Ok(Vec::new())
         }
 
-        Ok(())
+        #[cfg(feature = "try-runtime")]
+        fn post_upgrade(_: Vec<u8>) -> Result<(), TryRuntimeError> {
+            ensure!(
+                Pallet::<T>::on_chain_storage_version() >= 9,
+                "dapp-staking::migration::v9: wrong storage version"
+            );
+
+            let new_default_bonus_status = crate::types::BonusStatusWrapperFor::<T>::default().0;
+            for (_, _, staking_info) in StakerInfo::<T>::iter() {
+                assert_eq!(staking_info.bonus_status, new_default_bonus_status);
+            }
+
+            Ok(())
+        }
     }
 }
 
