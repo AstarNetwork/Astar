@@ -306,6 +306,82 @@ fn unstake_is_ok() {
 }
 
 #[test]
+fn move_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
+
+        // Register a dApp for staking
+        let staker_h160 = ALICE;
+        let source_contract_address = [0xAF; 32];
+        let source_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
+            source_contract_address.into(),
+        );
+        let destination_contract_address = [0xB0; 32];
+        let destination_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
+            destination_contract_address.into(),
+        );
+        assert_ok!(DappStaking::register(
+            RawOrigin::Root.into(),
+            AddressMapper::into_account_id(staker_h160),
+            source_contract.clone()
+        ));
+        assert_ok!(DappStaking::register(
+            RawOrigin::Root.into(),
+            AddressMapper::into_account_id(staker_h160),
+            destination_contract.clone()
+        ));
+
+        // Lock & stake some amount
+        let amount = 2000;
+        assert_ok!(DappStaking::lock(
+            RawOrigin::Signed(AddressMapper::into_account_id(staker_h160)).into(),
+            amount,
+        ));
+        assert_ok!(DappStaking::stake(
+            RawOrigin::Signed(AddressMapper::into_account_id(staker_h160)).into(),
+            source_contract.clone(),
+            amount,
+        ));
+
+        let source_contract_v2 = SmartContractV2 {
+            contract_type: SmartContractTypes::Wasm,
+            address: source_contract_address.into(),
+        };
+        let destination_contract_v2 = SmartContractV2 {
+            contract_type: SmartContractTypes::Wasm,
+            address: destination_contract_address.into(),
+        };
+
+        // Move some amount from source contract to destination contract and verify event
+        System::reset_events();
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::move_stake {
+                    source_contract: source_contract_v2,
+                    destination_contract: destination_contract_v2,
+                    amount,
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(true);
+
+        let events = dapp_staking_events();
+        assert_eq!(events.len(), 1);
+        assert_matches!(
+            events[0].clone(),
+            pallet_dapp_staking::Event::StakeMoved {
+                source_contract,
+                destination_contract,
+                amount,
+                ..
+            } if source_contract == source_contract && destination_contract == destination_contract && amount == amount
+        );
+    });
+}
+
+#[test]
 fn claim_staker_rewards_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize();

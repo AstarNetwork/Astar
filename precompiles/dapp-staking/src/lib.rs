@@ -766,6 +766,28 @@ where
         Ok(true)
     }
 
+    #[precompile::public("move_stake((uint8,bytes),(uint8,bytes),uint128)")]
+    fn move_stake(
+        handle: &mut impl PrecompileHandle,
+        source_contract: SmartContractV2,
+        destination_contract: SmartContractV2,
+        amount: Balance,
+    ) -> EvmResult<bool> {
+        let source_contract = Self::decode_smart_contract(source_contract)?;
+        let destination_contract = Self::decode_smart_contract(destination_contract)?;
+
+        // Prepare call & dispatch it
+        let origin = R::AddressMapping::into_account_id(handle.context().caller);
+        let move_call = pallet_dapp_staking::Call::<R>::move_stake {
+            source_contract,
+            destination_contract,
+            amount,
+        };
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), move_call)?;
+
+        Ok(true)
+    }
+
     // Utility functions
 
     /// Helper method to decode smart contract struct for v2 calls
