@@ -1048,7 +1048,7 @@ pub struct BonusStatusWrapper<MaxBonusMoves: Get<u8>>(pub BonusStatus, PhantomDa
 impl<MaxBonusMoves: Get<u8>> Default for BonusStatusWrapper<MaxBonusMoves> {
     fn default() -> Self {
         let max = MaxBonusMoves::get();
-        BonusStatusWrapper::<MaxBonusMoves>(max.saturating_add(1), PhantomData::default())
+        BonusStatusWrapper::<MaxBonusMoves>(max.saturating_add(1), PhantomData)
     }
 }
 
