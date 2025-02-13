@@ -159,7 +159,7 @@ impl PeriodInfo {
 /// Struct with relevant information for a finished period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct PeriodEndInfo {
-    /// Bonus reward pool allocated for 'loyal' stakers
+    /// Bonus reward pool allocated for eligible stakers with a non-null bonus status
     #[codec(compact)]
     pub(crate) bonus_reward_pool: Balance,
     /// Total amount staked (remaining) from the voting subperiod.

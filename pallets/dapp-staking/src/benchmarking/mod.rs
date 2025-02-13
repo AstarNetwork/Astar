@@ -259,7 +259,7 @@ mod benchmarks {
             amount,
         ));
 
-        // Move over to the build&earn subperiod to ensure 'non-loyal' staking.
+        // Move over to the build&earn subperiod to ensure staking without a bonus status.
         // This is needed so we can achieve staker entry cleanup after claiming unlocked tokens.
         force_advance_to_next_subperiod::<T>();
         assert_eq!(
@@ -782,7 +782,7 @@ mod benchmarks {
     fn cleanup_expired_entries(x: Linear<1, { T::MaxNumberOfStakedContracts::get() }>) {
         initial_config::<T>();
 
-        // Move over to the build&earn subperiod to ensure 'non-loyal' staking.
+        // Move over to the build&earn subperiod to ensure staking without a bonus status.
         force_advance_to_next_subperiod::<T>();
 
         // Prepare staker & lock some amount

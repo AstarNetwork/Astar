@@ -688,7 +688,7 @@ where
         Ok(true)
     }
 
-    /// Attempts to claim bonus reward for being a loyal staker of the given dApp.
+    /// Attempts to claim a bonus reward for maintaining an eligible bonus status with the given dApp.
     #[precompile::public("claim_bonus_reward((uint8,bytes))")]
     fn claim_bonus_reward(
         handle: &mut impl PrecompileHandle,

@@ -297,7 +297,7 @@ pub mod pallet {
             era: EraNumber,
             amount: Balance,
         },
-        /// Bonus reward has been paid out to a loyal staker.
+        /// Bonus reward has been paid out to a staker with an eligible bonus status.
         BonusReward {
             account: T::AccountId,
             smart_contract: T::SmartContract,
@@ -1217,8 +1217,8 @@ pub mod pallet {
         /// Cleanup expired stake entries for the contract.
         ///
         /// Entry is considered to be expired if:
-        /// 1. It's from a past period & the account wasn't a loyal staker, meaning there's no claimable bonus reward.
-        /// 2. It's from a period older than the oldest claimable period, regardless whether the account was loyal or not.
+        /// 1. It's from a past period & the account did not maintain an eligible bonus status, meaning there's no claimable bonus reward.
+        /// 2. It's from a period older than the oldest claimable period, regardless of whether the account had an eligible bonus status or not.
         #[pallet::call_index(17)]
         #[pallet::weight(T::WeightInfo::cleanup_expired_entries(
             T::MaxNumberOfStakedContracts::get()
@@ -1529,8 +1529,6 @@ pub mod pallet {
 
             Self::update_ledger(&account, ledger)?;
 
-            // Implementation comment, remove once production code is ready:
-            // We need to know what & how much was unstaked. The code can be made cleaner later, maybe there are redundant parts now.
             // Return the `StakeAmount` that has max total value - that's the one that is equal to the `amount` parameter.
             let unstake_amount = stake_amount_iter
                 .iter()
@@ -2373,7 +2371,7 @@ pub mod pallet {
 
             // Ensure:
             // 1. Period for which rewards are being claimed has ended.
-            // 2. Account has been a loyal staker.
+            // 2. Account has maintained an eligible bonus status.
             // 3. Rewards haven't expired.
             let staked_period = staker_info.period_number();
             ensure!(

@@ -1285,7 +1285,7 @@ fn stake_fails_due_to_too_many_staked_contracts() {
         let account = 1;
         assert_lock(account, 100 as Balance * max_number_of_contracts as Balance);
 
-        // Advance to build&earn subperiod so we ensure 'non-loyal' staking
+        // Advance to the build&earn subperiod to ensure staking without a bonus status.
         advance_to_next_subperiod();
 
         // Register smart contracts up to the max allowed number
@@ -1333,7 +1333,7 @@ fn move_fails_due_to_too_many_staked_contracts() {
         let account = 1;
         assert_lock(account, 100 as Balance * max_number_of_contracts as Balance);
 
-        // Advance to build&earn subperiod so we ensure 'non-loyal' staking
+        // Advance to the build&earn subperiod to ensure staking without a bonus status.
         advance_to_next_subperiod();
 
         let source_contract = MockSmartContract::Wasm(1);
