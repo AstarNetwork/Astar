@@ -1570,7 +1570,7 @@ pub mod pallet {
                         let preserved_bonus_status = staking_info.bonus_status;
                         // This need to be built before 'unstake', otherwise voting amount is converted into B&E amount
                         let unstake_amount_iter: Vec<StakeAmount> =
-                            vec![staking_info.previous_staked, staking_info.staked]
+                            Vec::from([staking_info.previous_staked, staking_info.staked])
                                 .into_iter()
                                 .filter(|stake_amount| !stake_amount.is_empty())
                                 .collect();
