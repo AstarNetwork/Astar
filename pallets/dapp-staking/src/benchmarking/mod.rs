@@ -1247,6 +1247,48 @@ mod benchmarks {
         );
     }
 
+    /// TODO: remove this benchmark once BonusStatus update is done
+    #[benchmark]
+    fn update_bonus_step_success() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let source_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            source_contract.clone(),
+        ));
+
+        let amount = T::MinimumLockedAmount::get();
+        T::BenchmarkHelper::set_balance(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            source_contract.clone(),
+            amount
+        ));
+
+        #[block]
+        {
+            assert!(DappStaking::<T>::update_bonus_step(&mut StakerInfo::<T>::iter()).is_ok());
+        }
+    }
+
+    /// TODO: remove this benchmark once BonusStatus update is done
+    #[benchmark]
+    fn update_bonus_step_noop() {
+        #[block]
+        {
+            assert!(DappStaking::<T>::update_bonus_step(&mut StakerInfo::<T>::iter()).is_err());
+        }
+    }
+
     impl_benchmark_test_suite!(
         Pallet,
         crate::benchmarking::tests::new_test_ext(),
