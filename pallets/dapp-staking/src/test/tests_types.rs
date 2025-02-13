@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use astar_primitives::{
-    dapp_staking::{RankedTier, StandardTierSlots},
+    dapp_staking::{RankedTier, StandardTierSlots, STANDARD_TIER_SLOTS_ARGS},
     Balance,
 };
 use frame_support::{assert_ok, parameter_types};
@@ -2828,7 +2828,7 @@ fn tier_params_check_is_ok() {
             },
         ])
         .unwrap(),
-        slot_number_args: (100, 50),
+        slot_number_args: STANDARD_TIER_SLOTS_ARGS,
     };
     assert!(params.is_valid());
 
@@ -2914,7 +2914,7 @@ fn tier_configuration_basic_tests() {
             },
         ])
         .unwrap(),
-        slot_number_args: (100, 50),
+        slot_number_args: STANDARD_TIER_SLOTS_ARGS,
     };
     assert!(params.is_valid(), "Example params must be valid!");
 
