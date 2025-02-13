@@ -655,6 +655,12 @@ pub mod pallet {
             assert!(T::CycleConfiguration::eras_per_voting_subperiod() > 0);
             assert!(T::CycleConfiguration::eras_per_build_and_earn_subperiod() > 0);
             assert!(T::CycleConfiguration::blocks_per_era() > 0);
+
+            /// TODO: remove these checks once BonusStatus update is done
+            assert!(Self::max_call_weight().all_gte(Self::min_call_weight()));
+            assert!(Self::max_call_weight()
+                .all_lte(<T as frame_system::Config>::BlockWeights::get().max_block));
+            assert!(Self::update_weight_margin().all_lte(Self::min_call_weight()));
         }
 
         #[cfg(feature = "try-runtime")]
