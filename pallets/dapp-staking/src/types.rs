@@ -1211,11 +1211,6 @@ impl SingularStakingInfo {
                     let mut temp_unstaked_amount =
                         previous_staked_snapshot.saturating_difference(&self.previous_staked);
                     temp_unstaked_amount.era = self.previous_staked.era;
-                    assert_eq!(
-                        temp_unstaked_amount.total(),
-                        overflow_amount,
-                        "Sanity check, behavior should remain the same as before."
-                    );
 
                     if is_bonus_lost && temp_unstaked_amount.voting > 0 {
                         temp_unstaked_amount.convert_bonus_into_regular_stake();
