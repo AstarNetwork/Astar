@@ -2719,11 +2719,12 @@ pub mod pallet {
                 ))
             } else {
                 // Enable maintenance mode on the first run
-                // ActiveProtocolState::<T>::mutate(|state| {
-                //     state.maintenance = true;
-                // });
-                // log::warn!("Maintenance mode enabled.");
-                // consumed_weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
+                // Likely to be already set in the runtime upgrade migration
+                ActiveProtocolState::<T>::mutate(|state| {
+                    state.maintenance = true;
+                });
+                log::warn!("Maintenance mode enabled.");
+                consumed_weight.saturating_add(T::DbWeight::get().reads_writes(1, 2));
                 StakerInfo::<T>::iter()
             };
 

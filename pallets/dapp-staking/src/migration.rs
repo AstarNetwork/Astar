@@ -116,6 +116,10 @@ mod v9 {
                 "Out of {} already existing stakers are expected to have their bonus updated.",
                 v8::StakerInfo::<T>::iter().count(),
             );
+            assert!(
+                !ActiveProtocolState::<T>::get().maintenance,
+                "Maintenance mode must be disabled before the runtime upgrade."
+            );
             Ok(Vec::new())
         }
 
@@ -125,11 +129,19 @@ mod v9 {
                 Pallet::<T>::on_chain_storage_version() >= 9,
                 "dapp-staking::migration::v9: wrong storage version"
             );
+            assert!(
+                !ActiveProtocolState::<T>::get().maintenance,
+                "Maintenance mode must be disabled after the successful runtime upgrade."
+            );
 
             let new_default_bonus_status = *crate::types::BonusStatusWrapperFor::<T>::default();
             for (_, _, staking_info) in StakerInfo::<T>::iter() {
                 assert_eq!(staking_info.bonus_status, new_default_bonus_status);
             }
+            log::info!(
+                target: LOG_TARGET,
+                "All entries updated to new_default_bonus_status {}", new_default_bonus_status,
+            );
 
             Ok(())
         }
