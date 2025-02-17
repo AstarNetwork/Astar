@@ -2380,10 +2380,11 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
 
     // Prep actions
     let era_1 = 3;
-    let vote_stake_amount_1 = 11;
+    let vote_stake_amount_prep = 11;
+    let bep_stake_amount_prep = 1;
     let stake_amount_1 = StakeAmount {
-        voting: vote_stake_amount_1,
-        build_and_earn: 0,
+        voting: vote_stake_amount_prep,
+        build_and_earn: bep_stake_amount_prep,
         era: era_1 - 1,
         period: period_number,
     };
@@ -2398,7 +2399,8 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
     };
     staking_info.stake(stake_amount_2, era_1, 0);
 
-    assert_eq!(staking_info.previous_staked.total(), vote_stake_amount_1);
+    let expected_prep_amount = vote_stake_amount_prep + bep_stake_amount_prep;
+    assert_eq!(staking_info.previous_staked.total(), expected_prep_amount);
     assert_eq!(staking_info.previous_staked.era, era_1);
 
     // 1st scenario - Unstake some of the amount staked during B&E period
@@ -2416,15 +2418,15 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
     );
     assert_eq!(
         staking_info.total_staked_amount(),
-        vote_stake_amount_1 + bep_stake_amount_1 - unstake_1
+        expected_prep_amount + bep_stake_amount_1 - unstake_1
     );
     assert_eq!(
         staking_info.staked_amount(Subperiod::Voting),
-        vote_stake_amount_1
+        vote_stake_amount_prep
     );
     assert_eq!(
         staking_info.staked_amount(Subperiod::BuildAndEarn),
-        bep_stake_amount_1 - unstake_1
+        bep_stake_amount_prep + bep_stake_amount_1 - unstake_1
     );
     assert!(staking_info.is_bonus_eligible());
     assert_eq!(
@@ -2434,7 +2436,7 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
     );
 
     // No changes to the previous staked amount
-    assert_eq!(staking_info.previous_staked.total(), vote_stake_amount_1);
+    assert_eq!(staking_info.previous_staked.total(), expected_prep_amount);
     assert_eq!(staking_info.previous_staked.era, era_1);
 
     // 2nd scenario - Ensure that staked amount is larger than the previous stake amount, and then
@@ -2447,6 +2449,10 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         period: period_number,
     };
     staking_info.stake(stake_amount, era_1, 0);
+    // This must remain unchanged since we are still staking for era_1 (same as previous stake operation)
+    assert_eq!(staking_info.previous_staked.total(), expected_prep_amount);
+    assert_eq!(staking_info.previous_staked.era, era_1);
+
     let previous_total_stake = staking_info.previous_staked.total();
     let delta = staking_info.staked.total() - staking_info.previous_staked.total();
     let overflow = 1;
@@ -2474,15 +2480,15 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
 
     assert_eq!(
         staking_info.total_staked_amount(),
-        vote_stake_amount_1 + bep_stake_amount_1 + bep_stake_amount_2 - unstake_1 - unstake_2
+        expected_prep_amount + bep_stake_amount_1 + bep_stake_amount_2 - unstake_1 - unstake_2
     );
     assert_eq!(
         staking_info.staked_amount(Subperiod::Voting),
-        vote_stake_amount_1
+        vote_stake_amount_prep
     );
     assert_eq!(
         staking_info.staked_amount(Subperiod::BuildAndEarn),
-        bep_stake_amount_1 + bep_stake_amount_2 - unstake_1 - unstake_2
+        bep_stake_amount_prep + bep_stake_amount_1 + bep_stake_amount_2 - unstake_1 - unstake_2
     );
 
     assert_eq!(
@@ -2525,7 +2531,7 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
     );
     assert_eq!(
         staking_info.staked_amount(Subperiod::Voting),
-        vote_stake_amount_1 - voting_stake_overflow
+        vote_stake_amount_prep - voting_stake_overflow
     );
     assert!(staking_info
         .staked_amount(Subperiod::BuildAndEarn)

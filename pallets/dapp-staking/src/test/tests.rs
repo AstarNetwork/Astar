@@ -4029,7 +4029,7 @@ fn move_stake_multiple_conversions_are_ok() {
         let expected_dest_staking_info = SingularStakingInfo {
             previous_staked: StakeAmount {
                 voting: 100,
-                build_and_earn: 150, // TODO: should it not be 0 here?
+                build_and_earn: 0,
                 era: 2,
                 period: 1,
             },

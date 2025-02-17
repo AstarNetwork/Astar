@@ -1100,10 +1100,12 @@ impl SingularStakingInfo {
         bonus_status: BonusStatus,
     ) {
         // Keep the previous stake amount for future reference
-        self.previous_staked = self.staked;
-        self.previous_staked.era = current_era;
-        if self.previous_staked.total().is_zero() {
-            self.previous_staked = Default::default();
+        if self.previous_staked.era < current_era {
+            self.previous_staked = self.staked;
+            self.previous_staked.era = current_era;
+            if self.previous_staked.total().is_zero() {
+                self.previous_staked = Default::default();
+            }
         }
 
         // This is necessary for move operations, when bonus is transferred to this own staking info
