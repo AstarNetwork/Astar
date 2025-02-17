@@ -519,7 +519,7 @@ pub mod pallet {
     /// Temporary cursor to persist latest BonusStatus item updated.
     /// TODO: remove it once all BonusStatus are updated and this storage value is cleanup.
     #[pallet::storage]
-    pub type LazyBonusUpdateCursor<T: Config> =
+    pub type ActiveBonusUpdateCursor<T: Config> =
         StorageValue<_, (T::AccountId, T::SmartContract), OptionQuery>;
 
     #[pallet::genesis_config]
@@ -656,7 +656,7 @@ pub mod pallet {
             assert!(T::CycleConfiguration::eras_per_build_and_earn_subperiod() > 0);
             assert!(T::CycleConfiguration::blocks_per_era() > 0);
 
-            /// TODO: remove these checks once BonusStatus update is done
+            // TODO: remove these checks once BonusStatus update is done
             assert!(Self::max_call_weight().all_gte(Self::min_call_weight()));
             assert!(Self::max_call_weight()
                 .all_lte(<T as frame_system::Config>::BlockWeights::get().max_block));
@@ -1057,7 +1057,7 @@ pub mod pallet {
                         era: protocol_state.era,
                         period: protocol_state.period_number(),
                     },
-                    BonusStatusWrapperFor::<T>::default().0,
+                    *BonusStatusWrapperFor::<T>::default(),
                 ),
                 Subperiod::BuildAndEarn => (
                     StakeAmount {
@@ -1353,7 +1353,7 @@ pub mod pallet {
         /// Transfers stake between two smart contracts, ensuring bonus status preservation if eligible.
         /// Emits a `StakeMoved` event.
         #[pallet::call_index(21)]
-        #[pallet::weight(T::WeightInfo::move_stake_unregistered_source().max(T::WeightInfo::move_stake()))]
+        #[pallet::weight(T::WeightInfo::move_stake_unregistered_source().max(T::WeightInfo::move_stake_from_registered_source()))]
         pub fn move_stake(
             origin: OriginFor<T>,
             source_contract: T::SmartContract,
@@ -1394,12 +1394,12 @@ pub mod pallet {
             Ok(Some(if is_source_unregistered {
                 T::WeightInfo::move_stake_unregistered_source()
             } else {
-                T::WeightInfo::move_stake()
+                T::WeightInfo::move_stake_from_registered_source()
             })
             .into())
         }
 
-        /// Lazy update `BonusStatus` according to the new MaxBonusSafeMovesPerPeriod from config
+        /// Active update `BonusStatus` according to the new MaxBonusSafeMovesPerPeriod from config
         /// for all already existing StakerInfo in steps, consuming up to the specified amount of
         /// weight.
         ///
@@ -2695,8 +2695,8 @@ pub mod pallet {
         }
     }
 
-    /// LazyBonusMigration helpers
-    /// red/reusedReused from: https://github.com/AstarNetwork/Astar/blob/a13ef8e40ab8d26b1080236deafb8a609317f099/pallets/dapp-staking-migration/src/lib.rs
+    /// ActiveBonusMigration helpers
+    /// rework/reused from: https://github.com/AstarNetwork/Astar/blob/a13ef8e40ab8d26b1080236deafb8a609317f099/pallets/dapp-staking-migration/src/lib.rs
     /// TODO: remove these helpers once BonusStatus update is done
     impl<T: Config> Pallet<T> {
         /// Execute update steps until the specified weight limit has been consumed.
@@ -2707,7 +2707,7 @@ pub mod pallet {
         /// If no progress is made, `Err(_)` is returned.
         pub fn do_update(weight_limit: Weight) -> Result<Weight, Weight> {
             // Find out if update is still in progress
-            let maybe_cursor = LazyBonusUpdateCursor::<T>::get();
+            let maybe_cursor = ActiveBonusUpdateCursor::<T>::get();
             let mut consumed_weight = T::DbWeight::get().reads(1);
             let mut new_cursor = None;
             let mut entries_updated = 0u32;
@@ -2746,9 +2746,11 @@ pub mod pallet {
             }
 
             if let Some(c) = new_cursor {
-                LazyBonusUpdateCursor::<T>::put(c); // Save latest progress
+                ActiveBonusUpdateCursor::<T>::put(c); // Save latest progress
+                consumed_weight = T::DbWeight::get().writes(1);
             } else if maybe_cursor.is_some() {
-                LazyBonusUpdateCursor::<T>::take(); // Clear storage if update is finished
+                consumed_weight = T::DbWeight::get().reads_writes(1, 3);
+                ActiveBonusUpdateCursor::<T>::take(); // Clear storage if update is finished
                 ActiveProtocolState::<T>::mutate(|state| {
                     state.maintenance = false;
                 });
@@ -2762,7 +2764,7 @@ pub mod pallet {
         pub(crate) fn update_bonus_step(
             iter: &mut impl Iterator<Item = (T::AccountId, T::SmartContract, SingularStakingInfo)>,
         ) -> Result<(Weight, (T::AccountId, T::SmartContract)), Weight> {
-            let new_default_bonus_status = crate::types::BonusStatusWrapperFor::<T>::default().0;
+            let new_default_bonus_status = *BonusStatusWrapperFor::<T>::default();
 
             if let Some((account, smart_contract, staking_info)) = iter.next() {
                 let new_staking_info = SingularStakingInfo {

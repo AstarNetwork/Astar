@@ -2219,7 +2219,7 @@ fn singular_staking_info_basics_are_ok() {
     type TestBonusStatusWrapper = BonusStatusWrapper<MaxMoves>;
 
     let period_number = 3;
-    let bonus_status = TestBonusStatusWrapper::default().0;
+    let bonus_status = *TestBonusStatusWrapper::default();
     let mut staking_info = SingularStakingInfo::new(period_number, bonus_status);
 
     // Sanity checks
@@ -2292,7 +2292,7 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
     type TestBonusStatusWrapper = BonusStatusWrapper<MaxMoves>;
 
     let period_number = 3;
-    let bonus_status = TestBonusStatusWrapper::default().0;
+    let bonus_status = *TestBonusStatusWrapper::default();
     let mut staking_info = SingularStakingInfo::new(period_number, bonus_status);
 
     // Prep actions
@@ -2368,7 +2368,7 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
     type TestBonusStatusWrapper = BonusStatusWrapper<MaxMoves>;
 
     let period_number = 3;
-    let bonus_status = TestBonusStatusWrapper::default().0;
+    let bonus_status = *TestBonusStatusWrapper::default();
     let mut staking_info = SingularStakingInfo::new(period_number, bonus_status);
 
     // Sanity check
@@ -2674,16 +2674,16 @@ fn singular_staking_info_unstake_stake_amount_entries_are_ok() {
 fn singular_staking_stake_with_bonus_status() {
     let voting_amount = 100;
     let bep_amount = 30;
-    let stake_amount = StakeAmount {
+    let prep_stake_amount = StakeAmount {
         era: 1,
-        voting: voting_amount,
+        voting: 0,
         build_and_earn: bep_amount,
         period: 0,
     };
 
     // Prep - StakeAmount with forfeited bonus and voting stake
     let mut staking_info = SingularStakingInfo::new(0, 0);
-    staking_info.stake(stake_amount, 1, 0);
+    staking_info.stake(prep_stake_amount, 1, 0);
     assert_eq!(
         staking_info.bonus_status, 0,
         "Bonus status should be initialized to 0 before staking"
@@ -2691,6 +2691,12 @@ fn singular_staking_stake_with_bonus_status() {
 
     // Scenario 1 - Stake again but with incoming bonus status
     let incoming_bonus_status = 1;
+    let stake_amount = StakeAmount {
+        era: 1,
+        voting: voting_amount,
+        build_and_earn: bep_amount,
+        period: 0,
+    };
     staking_info.stake(stake_amount, 1, incoming_bonus_status);
 
     // Check if the bonus status is updated
@@ -2701,7 +2707,7 @@ fn singular_staking_stake_with_bonus_status() {
     // Ensure that the previous voting stake amount was moved to BuildAndEarn
     assert_eq!(
         staking_info.staked_amount(Subperiod::Voting),
-        voting_amount + voting_amount,
+        voting_amount,
         "Voting amount should increase correctly"
     );
     assert_eq!(

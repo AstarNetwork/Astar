@@ -64,6 +64,7 @@
 //! * `DAppTierRewards` - composite of `DAppTier` objects, describing the entire reward distribution for a particular era.
 //!
 
+use core::ops::Deref;
 use frame_support::{pallet_prelude::*, BoundedBTreeMap, BoundedVec, DefaultNoBound};
 use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
@@ -900,13 +901,12 @@ impl StakeAmount {
     }
 
     /// Returns a new `StakeAmount` representing the difference between `self` and `other`,
-    /// keeping `other`'s era and period.
-    pub fn difference(&self, other: &StakeAmount) -> StakeAmount {
+    /// without modifying era or period.
+    pub fn saturating_difference(&self, other: &StakeAmount) -> StakeAmount {
         StakeAmount {
             voting: self.voting.saturating_sub(other.voting),
             build_and_earn: self.build_and_earn.saturating_sub(other.build_and_earn),
-            era: other.era,
-            period: other.period,
+            ..*self // Keep the original `era` and `period`
         }
     }
 
@@ -917,8 +917,8 @@ impl StakeAmount {
     /// operation, but instead reallocated to `BuildAndEarn`.
     pub fn convert_bonus_into_regular_stake(&mut self) {
         let forfeited_bonus = self.voting;
-        self.voting = 0;
-        self.add(forfeited_bonus, Subperiod::BuildAndEarn);
+        self.voting = Balance::zero();
+        self.build_and_earn.saturating_accrue(forfeited_bonus);
     }
 }
 
@@ -1043,7 +1043,15 @@ impl EraInfo {
 pub type BonusStatus = u8;
 
 /// Wrapper struct that provides additional methods for `BonusStatus`.
-pub struct BonusStatusWrapper<MaxBonusMoves: Get<u8>>(pub BonusStatus, PhantomData<MaxBonusMoves>);
+pub struct BonusStatusWrapper<MaxBonusMoves: Get<u8>>(BonusStatus, PhantomData<MaxBonusMoves>);
+
+impl<MaxBonusMoves: Get<u8>> Deref for BonusStatusWrapper<MaxBonusMoves> {
+    type Target = BonusStatus;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl<MaxBonusMoves: Get<u8>> Default for BonusStatusWrapper<MaxBonusMoves> {
     fn default() -> Self {
@@ -1098,6 +1106,7 @@ impl SingularStakingInfo {
             self.previous_staked = Default::default();
         }
 
+        // This is necessary for move operations, when bonus is transferred to this own staking info
         if self.bonus_status == 0 {
             self.bonus_status = bonus_status;
         }
@@ -1136,7 +1145,8 @@ impl SingularStakingInfo {
         self.staked.subtract(amount);
         self.staked.era = self.staked.era.max(current_era);
 
-        let mut unstaked_amount = staked_snapshot.difference(&self.staked);
+        let mut unstaked_amount = staked_snapshot.saturating_difference(&self.staked);
+        unstaked_amount.era = self.staked.era;
 
         // 2. Update bonus status accordingly.
         // In case voting subperiod has passed, and the 'voting' stake amount was reduced, we need to reduce the bonus eligibility counter.
@@ -1198,7 +1208,8 @@ impl SingularStakingInfo {
                     self.previous_staked.subtract(overflow_amount);
 
                     let mut temp_unstaked_amount =
-                        previous_staked_snapshot.difference(&self.previous_staked);
+                        previous_staked_snapshot.saturating_difference(&self.previous_staked);
+                    temp_unstaked_amount.era = self.previous_staked.era;
                     assert_eq!(
                         temp_unstaked_amount.total(),
                         overflow_amount,

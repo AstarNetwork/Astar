@@ -25,7 +25,7 @@ use frame_support::{assert_ok, migrations::SteppedMigration, weights::WeightMete
 use frame_system::{Pallet as System, RawOrigin};
 use sp_std::prelude::*;
 
-use ::assert_matches::assert_matches;
+use assert_matches::assert_matches;
 
 mod utils;
 use utils::*;
@@ -840,7 +840,7 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn move_stake() {
+    fn move_stake_from_registered_source() {
         initial_config::<T>();
 
         let staker: T::AccountId = whitelisted_caller();

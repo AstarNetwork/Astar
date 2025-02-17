@@ -378,7 +378,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(179), added: 2654, mode: `MaxEncodedLen`)
 	/// Storage: `DappStaking::ContractStake` (r:2 w:2)
 	/// Proof: `DappStaking::ContractStake` (`max_values`: Some(65535), `max_size`: Some(91), added: 2071, mode: `MaxEncodedLen`)
-	fn move_stake() -> Weight {
+	fn move_stake_from_registered_source() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `373`
 		//  Estimated: `6298`

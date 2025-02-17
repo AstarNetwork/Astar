@@ -68,7 +68,7 @@ pub trait WeightInfo {
 	fn unstake_from_unregistered() -> Weight;
 	fn cleanup_expired_entries(x: u32, ) -> Weight;
 	fn force() -> Weight;
-	fn move_stake() -> Weight;
+	fn move_stake_from_registered_source() -> Weight;
 	fn move_stake_unregistered_source() -> Weight;
 	fn on_initialize_voting_to_build_and_earn() -> Weight;
 	fn on_initialize_build_and_earn_to_voting() -> Weight;
@@ -412,7 +412,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Balances::Freezes` (`max_values`: None, `max_size`: Some(67), added: 2542, mode: `MaxEncodedLen`)
 	/// Storage: `Balances::Locks` (r:1 w:0)
 	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
-	fn move_stake() -> Weight {
+	fn move_stake_from_registered_source() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `536`
 		//  Estimated: `6298`
@@ -891,7 +891,7 @@ impl WeightInfo for () {
 	/// Proof: `Balances::Freezes` (`max_values`: None, `max_size`: Some(67), added: 2542, mode: `MaxEncodedLen`)
 	/// Storage: `Balances::Locks` (r:1 w:0)
 	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
-	fn move_stake() -> Weight {
+	fn move_stake_from_registered_source() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `536`
 		//  Estimated: `6298`

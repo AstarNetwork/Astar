@@ -544,7 +544,7 @@ pub(crate) fn assert_stake(
                 era: stake_era,
                 period: stake_period,
             },
-            BonusStatusWrapperFor::<Test>::default().0,
+            *BonusStatusWrapperFor::<Test>::default(),
         ),
         Subperiod::BuildAndEarn => (
             StakeAmount {
@@ -557,7 +557,7 @@ pub(crate) fn assert_stake(
         ),
     };
 
-    assert_staker_info_stake(
+    assert_staker_info_after_stake(
         &pre_snapshot,
         &post_snapshot,
         account,
@@ -588,7 +588,7 @@ pub(crate) fn assert_stake(
     // 3. verify contract stake
     // =========================
     // =========================
-    assert_contract_stake_stake(
+    assert_contract_stake_after_stake(
         &pre_contract_stake,
         &post_contract_stake,
         &pre_snapshot,
@@ -685,7 +685,7 @@ pub(crate) fn assert_unstake(
     // 2. verify staker info
     // =====================
     // =====================
-    let (unstake_amount_entries, _) = assert_staker_info_and_unstake(
+    let (unstake_amount_entries, _) = assert_staker_info_after_unstake(
         &pre_snapshot,
         &post_snapshot,
         account,
@@ -697,7 +697,7 @@ pub(crate) fn assert_unstake(
     // 3. verify contract stake
     // =========================
     // =========================
-    assert_contract_stake_unstake(
+    assert_contract_stake_after_unstake(
         &pre_contract_stake,
         &post_contract_stake,
         &pre_snapshot,
@@ -709,7 +709,7 @@ pub(crate) fn assert_unstake(
     // =========================
     // =========================
 
-    assert_era_info_current_stake(&pre_era_info, &post_era_info, unstake_amount_entries);
+    assert_era_info_current(&pre_era_info, &post_era_info, unstake_amount_entries);
 
     assert_eq!(
         post_era_info.total_staked_amount_next_era(),
@@ -828,7 +828,7 @@ pub(crate) fn assert_move_stake(
     // =====================
     // =====================
 
-    let (amount_entries, bonus_status) = assert_staker_info_and_unstake(
+    let (amount_entries, bonus_status) = assert_staker_info_after_unstake(
         &pre_snapshot,
         &post_snapshot,
         account,
@@ -858,7 +858,7 @@ pub(crate) fn assert_move_stake(
         .expect("At least one value exists, otherwise we wouldn't be here.");
     assert_eq!(stake_amount.total(), amount_to_move);
 
-    assert_staker_info_stake(
+    assert_staker_info_after_stake(
         &pre_snapshot,
         &post_snapshot,
         account,
@@ -887,7 +887,7 @@ pub(crate) fn assert_move_stake(
         maybe_pre_source_contract_stake,
         maybe_post_source_contract_stake,
     ) {
-        assert_contract_stake_unstake(
+        assert_contract_stake_after_unstake(
             &pre_source_contract_stake,
             &post_source_contract_stake,
             &pre_snapshot,
@@ -896,7 +896,7 @@ pub(crate) fn assert_move_stake(
         );
     }
 
-    assert_contract_stake_stake(
+    assert_contract_stake_after_stake(
         &pre_destination_contract_stake,
         &post_destination_contract_stake,
         &pre_snapshot,
@@ -933,7 +933,7 @@ pub(crate) fn assert_move_stake(
     // =========================
     // =========================
 
-    assert_era_info_current_stake(&pre_era_info, &post_era_info, unstake_amount_entries);
+    assert_era_info_current(&pre_era_info, &post_era_info, unstake_amount_entries);
 
     assert_eq!(
         post_era_info.total_staked_amount_next_era(),
@@ -1265,7 +1265,7 @@ pub(crate) fn assert_unstake_from_unregistered(
         pre_staker_info
             .clone()
             .unstake(amount, unstake_era, unstake_subperiod);
-    assert_era_info_current_stake(&pre_era_info, &post_era_info, stake_amount_entries);
+    assert_era_info_current(&pre_era_info, &post_era_info, stake_amount_entries);
 
     assert_eq!(
         post_era_info.total_staked_amount_next_era(),
@@ -1701,7 +1701,7 @@ pub(crate) fn is_account_ledger_expired(
 
 /// Helpers to compose StakerInfo verification
 
-fn assert_staker_info_and_unstake(
+fn assert_staker_info_after_unstake(
     pre_snapshot: &MemorySnapshot,
     post_snapshot: &MemorySnapshot,
     account: AccountId,
@@ -1815,7 +1815,7 @@ fn assert_staker_info_and_unstake(
     (stake_amount_entries, bonus_status)
 }
 
-fn assert_staker_info_stake(
+fn assert_staker_info_after_stake(
     pre_snapshot: &MemorySnapshot,
     post_snapshot: &MemorySnapshot,
     account: AccountId,
@@ -1828,6 +1828,7 @@ fn assert_staker_info_stake(
         .get(&(account, smart_contract.clone()));
 
     let stake_period = pre_snapshot.active_protocol_state.period_number();
+    let stake_subperiod = pre_snapshot.active_protocol_state.subperiod();
 
     // Verify post-state
     let post_staker_info = post_snapshot
@@ -1888,11 +1889,26 @@ fn assert_staker_info_stake(
             assert_eq!(post_staker_info.period_number(), stake_period);
         }
     }
+
+    // Verify BonusStatus value for new staking info during voting subperiods
+    if stake_subperiod == Subperiod::Voting {
+        assert_default_bonus_status_after_voting_stake(account, &smart_contract);
+    }
+}
+
+pub(crate) fn assert_default_bonus_status_after_voting_stake(
+    account: AccountId,
+    smart_contract: &MockSmartContract,
+) {
+    let default_bonus_status = *BonusStatusWrapperFor::<Test>::default();
+    let staking_info = StakerInfo::<Test>::get(account, &smart_contract)
+        .expect("Should exist since stake operation was successful.");
+    assert_eq!(staking_info.bonus_status, default_bonus_status);
 }
 
 /// Helpers to compose ContractStake verification
 
-fn assert_contract_stake_unstake(
+fn assert_contract_stake_after_unstake(
     pre_contract_stake: &ContractStakeAmount,
     post_contract_stake: &ContractStakeAmount,
     pre_snapshot: &MemorySnapshot,
@@ -1945,7 +1961,7 @@ fn assert_contract_stake_unstake(
     }
 }
 
-fn assert_contract_stake_stake(
+fn assert_contract_stake_after_stake(
     pre_contract_stake: &ContractStakeAmount,
     post_contract_stake: &ContractStakeAmount,
     pre_snapshot: &MemorySnapshot,
@@ -2008,7 +2024,7 @@ fn assert_ledger_contract_stake_count(
 
 /// Helpers to compose EraInfo verification
 
-fn assert_era_info_current_stake(
+fn assert_era_info_current(
     pre_era_info: &EraInfo,
     post_era_info: &EraInfo,
     stake_amount_entries: impl IntoIterator<Item = StakeAmount>,

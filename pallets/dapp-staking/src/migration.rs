@@ -59,7 +59,7 @@ pub mod versioned_migrations {
     pub type V8ToV9<T> = frame_support::migrations::VersionedMigration<
         8,
         9,
-        v9::LazyUpdateBonusStatus<T>,
+        v9::ActiveUpdateBonusStatus<T>,
         Pallet<T>,
         <T as frame_system::Config>::DbWeight,
     >;
@@ -70,9 +70,9 @@ mod v9 {
 
     // The loyal staker flag is updated to `u8` with the new MaxBonusSafeMovesPerPeriod from config
     // for all already existing StakerInfo.
-    pub struct LazyUpdateBonusStatus<T>(PhantomData<T>);
+    pub struct ActiveUpdateBonusStatus<T>(PhantomData<T>);
 
-    impl<T: Config> UncheckedOnRuntimeUpgrade for LazyUpdateBonusStatus<T> {
+    impl<T: Config> UncheckedOnRuntimeUpgrade for ActiveUpdateBonusStatus<T> {
         fn on_runtime_upgrade() -> Weight {
             // When upgrade happens, we need to put dApp staking v3 into maintenance mode immediately.
             let mut consumed_weight = T::DbWeight::get().reads_writes(1, 2);
