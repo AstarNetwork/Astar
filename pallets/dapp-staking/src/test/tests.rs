@@ -4050,7 +4050,7 @@ fn move_stake_multiple_conversions_are_ok() {
 #[test]
 // Tests moving stake with bonus preservation to an already lost bonus contract but that has some voting stake amount leftover. Verify that:
 // - total staked amount is preserved (the voting leftover stake should have been moved to bep stake),
-// - bonus status is updated (decreased but bonus is preserved)
+// - bonus status is updated (decreased but bonus is transferred and preserved)
 fn move_stake_in_bep_to_contract_with_voting_leftover_and_no_bonus_is_ok() {
     ExtBuilder::default()
         .with_max_bonus_safe_moves(1)
@@ -4095,6 +4095,50 @@ fn move_stake_in_bep_to_contract_with_voting_leftover_and_no_bonus_is_ok() {
             let staking_info = StakerInfo::<Test>::get(account, &dest_contract)
                 .expect("Should exist since move operation was successful.");
             assert_eq!(staking_info.bonus_status, default_bonus_status - 1);
+        })
+}
+
+// Tests bonus status merging when source and destination stake infos have both non zero statuses.
+// The expected result is to take the middle.
+#[test]
+fn move_stake_merge_bonus_status() {
+    ExtBuilder::default()
+        .with_max_bonus_safe_moves(2)
+        .build_and_execute(|| {
+            // Register smart contracts 1 & 2, lock&stake some amount on 1 & 2
+            let source_contract = MockSmartContract::wasm(1 as AccountId);
+            let dest_contract = MockSmartContract::wasm(2 as AccountId);
+            assert_register(1, &source_contract);
+            assert_register(1, &dest_contract);
+
+            let account = 2;
+            let amount = 300;
+            assert_lock(account, amount);
+
+            let stake = 100;
+            assert_stake(account, &source_contract, stake);
+            assert_stake(account, &dest_contract, stake);
+
+            advance_to_next_subperiod();
+
+            // This is done to reduce the bonus status and increase the gap for future merging in move.
+            let unstake = 20;
+            assert_unstake(account, &source_contract, unstake);
+
+            assert_move_stake(
+                account,
+                &source_contract,
+                &dest_contract,
+                stake - unstake, // full move
+            );
+
+            let staking_info = StakerInfo::<Test>::get(account, &dest_contract)
+                .expect("Should exist since move operation was successful.");
+            let incoming_bonus_status_from_source = 1; // default (3) - 2 move actions
+            let bonus_status_for_dest = 3; // default (3)
+            let expected_merged_bonus_status =
+                (incoming_bonus_status_from_source + bonus_status_for_dest) / 2;
+            assert_eq!(staking_info.bonus_status, expected_merged_bonus_status);
         })
 }
 

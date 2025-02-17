@@ -159,6 +159,8 @@ Once period finishes, all stakes are reset back to zero. This means that no unst
 
 During the `Build&Earn` subperiod, if unstaking reduces the voting stake, the bonus status will be updated, and the number of allowed _move actions_ for the ongoing period will be reduced.
 
+Any forfeited bonus is converted into `Build&Earn` stake, ensuring that voting amounts are not lost but instead reallocated appropriately.
+
 If dApp has been unregistered, a special operation to unstake from unregistered contract must be used that preserves bonus elegibility.
 
 #### Moving Stake Between Contracts
@@ -175,6 +177,12 @@ Key details about moving stake:
 
 This feature is particularly useful for stakers who wish to rebalance their stake across multiple contracts (including new registrations) or move their stake to better-performing dApps while retaining the potential for rewards and maintaining bonus eligibility.
 
+#### Bonus Status Handling in Moves
+
+When moving stake, if the destination contract has no existing bonus eligibility, it inherits the incoming bonus status from the source contract. If both the source and destination have nonzero bonus statuses, they are merged by averaging their values. This prevents unintended bonus gains or losses while ensuring fairness in bonus distribution.
+
+For example, if the configuration allows **2** safe moves, the default bonus status starts at **3**. If the source contract's bonus status decreases from **3** to **1** after an unstake and the move operation, and the destination contract retains the default **3**, the new bonus status is calculated as: **(1 + 3) / 2**, resulting into **2**.
+This ensures a smooth and fair adjustment while keeping stake amounts properly aligned.
 
 #### Claiming Staker Rewards
 

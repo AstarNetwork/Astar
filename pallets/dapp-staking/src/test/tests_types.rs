@@ -2726,11 +2726,12 @@ fn singular_staking_stake_with_bonus_status() {
     );
 
     let incoming_bonus_status_2 = 10;
+    let expected_merged_bonus_status = (incoming_bonus_status_2 + staking_info.bonus_status) / 2; // (both bonus_status are not 0)
     staking_info.stake(stake_amount, 1, incoming_bonus_status_2);
 
-    // Ensure that the StakeAmount is increased with bonus status remaining the same
+    // Ensure that the StakeAmount is increased with bonus status merged
     assert_eq!(
-        staking_info.bonus_status, incoming_bonus_status,
+        staking_info.bonus_status, expected_merged_bonus_status,
         "Bonus status should remain the same"
     );
     assert_eq!(

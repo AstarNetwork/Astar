@@ -1109,6 +1109,9 @@ impl SingularStakingInfo {
         // This is necessary for move operations, when bonus is transferred to this own staking info
         if self.bonus_status == 0 {
             self.bonus_status = bonus_status;
+        } else if self.bonus_status > 0 && bonus_status > 0 {
+            let merged = (bonus_status + self.bonus_status) / 2;
+            self.bonus_status = merged;
         }
 
         // Stake is only valid from the next era so we keep it consistent here
