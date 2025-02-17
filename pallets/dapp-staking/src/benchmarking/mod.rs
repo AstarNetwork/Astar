@@ -875,7 +875,7 @@ mod benchmarks {
         let amount_to_move = T::MinimumLockedAmount::get();
 
         #[extrinsic_call]
-        _(
+        move_stake(
             RawOrigin::Signed(staker.clone()),
             source_contract.clone(),
             destination_contract.clone(),

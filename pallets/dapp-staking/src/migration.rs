@@ -126,7 +126,7 @@ mod v9 {
                 "dapp-staking::migration::v9: wrong storage version"
             );
 
-            let new_default_bonus_status = crate::types::BonusStatusWrapperFor::<T>::default().0;
+            let new_default_bonus_status = *crate::types::BonusStatusWrapperFor::<T>::default();
             for (_, _, staking_info) in StakerInfo::<T>::iter() {
                 assert_eq!(staking_info.bonus_status, new_default_bonus_status);
             }
