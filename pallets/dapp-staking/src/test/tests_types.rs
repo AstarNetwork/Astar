@@ -2050,7 +2050,7 @@ fn era_info_unstake_works() {
     };
     era_info.unstake_amount(vec![unstake_amount_2_current]);
 
-    // Current era remains unchanged
+    // Current era
     assert_eq!(
         era_info.total_staked_amount(),
         total_staked - unstake_amount_1_current.total() - unstake_amount_2_current.total()
@@ -2061,10 +2061,10 @@ fn era_info_unstake_works() {
     );
     assert!(era_info.staked_amount(Subperiod::BuildAndEarn).is_zero());
 
-    // Next era
+    // Next era remains unchanged
     assert_eq!(
         era_info.total_staked_amount_next_era(),
-        total_staked_next_era - unstake_amount_1_next.total() - unstake_amount_2_current.total()
+        total_staked_next_era - unstake_amount_1_next.total()
     );
     assert_eq!(
         era_info.staked_amount_next_era(Subperiod::Voting),
@@ -2072,7 +2072,7 @@ fn era_info_unstake_works() {
     );
     assert_eq!(
         era_info.staked_amount_next_era(Subperiod::BuildAndEarn),
-        bep_stake_amount_2 - unstake_amount_1_next.build_and_earn - overflow
+        bep_stake_amount_2 - unstake_amount_1_next.build_and_earn
     );
 }
 

@@ -979,18 +979,14 @@ impl EraInfo {
     /// - If an entry belongs to the `next_era`, it reduces `next_stake_amount`.
     /// - If the entry is from a past era or invalid, it is ignored.
     pub fn unstake_amount(&mut self, stake_amount_entries: impl IntoIterator<Item = StakeAmount>) {
-        let entries: Vec<StakeAmount> = stake_amount_entries.into_iter().collect();
-        match entries.as_slice() {
-            [single_entry] => {
-                let amount = single_entry.total();
+        for entry in stake_amount_entries {
+            let (era, amount) = (entry.era, entry.total());
+
+            if era == self.current_stake_amount.era {
                 self.current_stake_amount.subtract(amount);
+            } else if era == self.next_stake_amount.era {
                 self.next_stake_amount.subtract(amount);
             }
-            [entry_current, entry_next] => {
-                self.current_stake_amount.subtract(entry_current.total());
-                self.next_stake_amount.subtract(entry_next.total());
-            }
-            _ => {} // Ignore cases with more than 2 entries or empty input - this should never happen
         }
     }
 

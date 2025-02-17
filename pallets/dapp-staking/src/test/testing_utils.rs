@@ -2030,17 +2030,19 @@ fn assert_era_info_current(
     stake_amount_entries: impl IntoIterator<Item = StakeAmount>,
 ) {
     let entries: Vec<StakeAmount> = stake_amount_entries.into_iter().collect();
-    if let Some(first_entry) = entries.first() {
-        let amount = first_entry.total();
-        // It's possible next era has staked more than the current era. This is because 'stake' (or 'move') will always stake for the NEXT era.
-        if pre_era_info.total_staked_amount() < amount {
-            assert!(post_era_info.total_staked_amount().is_zero());
-        } else {
-            assert_eq!(
-                post_era_info.total_staked_amount(),
-                pre_era_info.total_staked_amount() - amount,
-                "Total staked amount for the current era must decrease by 'amount'."
-            );
+    for entry in entries {
+        let (era, amount) = (entry.era, entry.total());
+
+        if era == pre_era_info.current_stake_amount.era {
+            if pre_era_info.total_staked_amount() < amount {
+                assert!(post_era_info.total_staked_amount().is_zero());
+            } else {
+                assert_eq!(
+                    post_era_info.total_staked_amount(),
+                    pre_era_info.total_staked_amount() - amount,
+                    "Total staked amount for the current era must decrease by 'amount'."
+                );
+            }
         }
     }
 }
