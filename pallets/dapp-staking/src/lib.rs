@@ -2804,7 +2804,9 @@ pub mod pallet {
                     let new_staking_info = SingularStakingInfo {
                         previous_staked: staking_info.previous_staked,
                         staked: staking_info.staked,
-                        bonus_status: *BonusStatusWrapperFor::<T>::default(),
+                        bonus_status: staking_info
+                            .bonus_status
+                            .saturating_add(T::MaxBonusSafeMovesPerPeriod::get()),
                     };
 
                     StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
