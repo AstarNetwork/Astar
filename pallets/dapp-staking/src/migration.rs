@@ -188,7 +188,7 @@ mod v9 {
             let new_default_bonus_status = *crate::types::BonusStatusWrapperFor::<T>::default();
             for (_, _, staking_info) in StakerInfo::<T>::iter() {
                 assert!(
-                    staking_info.bonus_status >= new_default_bonus_status.saturating_dec(1)
+                    staking_info.bonus_status >= new_default_bonus_status.saturating_sub(1)
                         && staking_info.bonus_status <= new_default_bonus_status
                 );
             }
