@@ -25,7 +25,7 @@ use frame_support::{assert_ok, migrations::SteppedMigration, weights::WeightMete
 use frame_system::{Pallet as System, RawOrigin};
 use sp_std::prelude::*;
 
-use ::assert_matches::assert_matches;
+use assert_matches::assert_matches;
 
 mod utils;
 use utils::*;
@@ -259,7 +259,7 @@ mod benchmarks {
             amount,
         ));
 
-        // Move over to the build&earn subperiod to ensure 'non-loyal' staking.
+        // Move over to the build&earn subperiod to ensure staking without a bonus status.
         // This is needed so we can achieve staker entry cleanup after claiming unlocked tokens.
         force_advance_to_next_subperiod::<T>();
         assert_eq!(
@@ -782,7 +782,7 @@ mod benchmarks {
     fn cleanup_expired_entries(x: Linear<1, { T::MaxNumberOfStakedContracts::get() }>) {
         initial_config::<T>();
 
-        // Move over to the build&earn subperiod to ensure 'non-loyal' staking.
+        // Move over to the build&earn subperiod to ensure staking without a bonus status.
         force_advance_to_next_subperiod::<T>();
 
         // Prepare staker & lock some amount
@@ -837,6 +837,116 @@ mod benchmarks {
         _(RawOrigin::Root, forcing_type);
 
         assert_last_event::<T>(Event::<T>::Force { forcing_type }.into());
+    }
+
+    #[benchmark]
+    fn move_stake_from_registered_source() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let source_contract = T::BenchmarkHelper::get_smart_contract(1);
+        let destination_contract = T::BenchmarkHelper::get_smart_contract(2);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            source_contract.clone(),
+        ));
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            destination_contract.clone(),
+        ));
+
+        // To preserve source staking and create destination staking
+        let amount = T::MinimumLockedAmount::get() + T::MinimumLockedAmount::get();
+        T::BenchmarkHelper::set_balance(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            source_contract.clone(),
+            amount
+        ));
+
+        let amount_to_move = T::MinimumLockedAmount::get();
+
+        #[extrinsic_call]
+        move_stake(
+            RawOrigin::Signed(staker.clone()),
+            source_contract.clone(),
+            destination_contract.clone(),
+            amount_to_move.clone(),
+        );
+
+        assert_last_event::<T>(
+            Event::<T>::StakeMoved {
+                account: staker,
+                source_contract,
+                destination_contract,
+                amount: amount_to_move,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn move_stake_unregistered_source() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let source_contract = T::BenchmarkHelper::get_smart_contract(1);
+        let destination_contract = T::BenchmarkHelper::get_smart_contract(2);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            source_contract.clone(),
+        ));
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            destination_contract.clone(),
+        ));
+
+        let amount = T::MinimumLockedAmount::get();
+        T::BenchmarkHelper::set_balance(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            source_contract.clone(),
+            amount
+        ));
+
+        assert_ok!(DappStaking::<T>::unregister(
+            RawOrigin::Root.into(),
+            source_contract.clone(),
+        ));
+
+        #[extrinsic_call]
+        move_stake(
+            RawOrigin::Signed(staker.clone()),
+            source_contract.clone(),
+            destination_contract.clone(),
+            amount.clone(),
+        );
+
+        assert_last_event::<T>(
+            Event::<T>::StakeMoved {
+                account: staker,
+                source_contract,
+                destination_contract,
+                amount,
+            }
+            .into(),
+        );
     }
 
     #[benchmark]
@@ -1135,6 +1245,48 @@ mod benchmarks {
                 contract_stake_count: 0,
             }
         );
+    }
+
+    /// TODO: remove this benchmark once BonusStatus update is done
+    #[benchmark]
+    fn update_bonus_step_success() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let source_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            source_contract.clone(),
+        ));
+
+        let amount = T::MinimumLockedAmount::get();
+        T::BenchmarkHelper::set_balance(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            source_contract.clone(),
+            amount
+        ));
+
+        #[block]
+        {
+            assert!(DappStaking::<T>::update_bonus_step(&mut StakerInfo::<T>::iter()).is_ok());
+        }
+    }
+
+    /// TODO: remove this benchmark once BonusStatus update is done
+    #[benchmark]
+    fn update_bonus_step_noop() {
+        #[block]
+        {
+            assert!(DappStaking::<T>::update_bonus_step(&mut StakerInfo::<T>::iter()).is_err());
+        }
     }
 
     impl_benchmark_test_suite!(

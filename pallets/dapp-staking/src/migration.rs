@@ -54,13 +54,131 @@ pub mod versioned_migrations {
             Pallet<T>,
             <T as frame_system::Config>::DbWeight,
         >;
+    /// Migration V8 to V9 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
+    /// the migration is only performed when on-chain version is 9.
+    pub type V8ToV9<T> = frame_support::migrations::VersionedMigration<
+        8,
+        9,
+        v9::ActiveUpdateBonusStatus<T>,
+        Pallet<T>,
+        <T as frame_system::Config>::DbWeight,
+    >;
+}
+
+mod v9 {
+    use super::*;
+
+    // The loyal staker flag is updated to `u8` with the new MaxBonusSafeMovesPerPeriod from config
+    // for all already existing StakerInfo.
+    pub struct ActiveUpdateBonusStatus<T>(PhantomData<T>);
+
+    impl<T: Config> UncheckedOnRuntimeUpgrade for ActiveUpdateBonusStatus<T> {
+        fn on_runtime_upgrade() -> Weight {
+            // When upgrade happens, we need to put dApp staking v3 into maintenance mode immediately.
+            let mut consumed_weight = T::DbWeight::get().reads_writes(1, 2);
+            ActiveProtocolState::<T>::mutate(|state| {
+                state.maintenance = true;
+            });
+            log::info!("Maintenance mode enabled.");
+
+            // In case of try-runtime, we want to execute the whole logic, to ensure it works
+            // with on-chain data.
+            if cfg!(feature = "try-runtime") {
+                let mut steps = 0_u32;
+                while ActiveProtocolState::<T>::get().maintenance {
+                    match Pallet::<T>::do_update(crate::Pallet::<T>::max_call_weight()) {
+                        Ok(weight) => {
+                            consumed_weight.saturating_accrue(weight);
+                            steps.saturating_inc();
+                        }
+                        Err(_) => {
+                            panic!("Must never happen since we check whether the update is finished before calling `do_update` by checking maintenance mode.");
+                        }
+                    }
+                }
+
+                log::trace!(
+                    target: LOG_TARGET,
+                    "dApp Staking bonus update finished after {} steps with total weight of {}.",
+                    steps,
+                    consumed_weight,
+                );
+
+                consumed_weight
+            } else {
+                consumed_weight
+            }
+        }
+
+        #[cfg(feature = "try-runtime")]
+        fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
+            log::info!(
+                target: LOG_TARGET,
+                "Out of {} already existing stakers are expected to have their bonus updated.",
+                v8::StakerInfo::<T>::iter().count(),
+            );
+            assert!(
+                !ActiveProtocolState::<T>::get().maintenance,
+                "Maintenance mode must be disabled before the runtime upgrade."
+            );
+            Ok(Vec::new())
+        }
+
+        #[cfg(feature = "try-runtime")]
+        fn post_upgrade(_: Vec<u8>) -> Result<(), TryRuntimeError> {
+            ensure!(
+                Pallet::<T>::on_chain_storage_version() >= 9,
+                "dapp-staking::migration::v9: wrong storage version"
+            );
+            assert!(
+                !ActiveProtocolState::<T>::get().maintenance,
+                "Maintenance mode must be disabled after the successful runtime upgrade."
+            );
+
+            let new_default_bonus_status = *crate::types::BonusStatusWrapperFor::<T>::default();
+            for (_, _, staking_info) in StakerInfo::<T>::iter() {
+                assert_eq!(staking_info.bonus_status, new_default_bonus_status);
+            }
+            log::info!(
+                target: LOG_TARGET,
+                "All entries updated to new_default_bonus_status {}", new_default_bonus_status,
+            );
+
+            Ok(())
+        }
+    }
 }
 
 // TierThreshold as percentage of the total issuance
-mod v8 {
+pub mod v8 {
     use super::*;
     use crate::migration::v7::TierParameters as TierParametersV7;
     use crate::migration::v7::TiersConfiguration as TiersConfigurationV7;
+
+    /// Information about how much a particular staker staked on a particular smart contract.
+    #[derive(
+        Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default,
+    )]
+    pub struct SingularStakingInfo {
+        /// Amount staked before, if anything.
+        pub(crate) previous_staked: StakeAmount,
+        /// Staked amount
+        pub(crate) staked: StakeAmount,
+        /// Indicates whether a staker is a loyal staker or not.
+        pub(crate) loyal_staker: bool,
+    }
+
+    /// v8 type for [`crate::StakerInfo`]
+    #[storage_alias]
+    pub type StakerInfo<T: Config> = StorageDoubleMap<
+        Pallet<T>,
+        Blake2_128Concat,
+        <T as frame_system::Config>::AccountId,
+        Blake2_128Concat,
+        <T as Config>::SmartContract,
+        SingularStakingInfo,
+        OptionQuery,
+    >;
 
     pub struct VersionMigrateV7ToV8<T, TierThresholds, ThresholdVariationPercentage>(
         PhantomData<(T, TierThresholds, ThresholdVariationPercentage)>,

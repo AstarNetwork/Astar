@@ -71,6 +71,13 @@ interface DAppStaking {
     /// @param amount: The amount of tokens to be unstaked.
     function unstake(SmartContract calldata smart_contract, uint128 amount) external returns (bool);
 
+    /// @notice Move the given amount of tokens from the specified source contract to the specified destination contract.
+    ///         The amount specified must be precise, otherwise the call will fail.
+    /// @param source_contract: The source smart contract to be moved from.
+    /// @param destination_contract: The destination smart contract to be moved on.
+    /// @param amount: The amount of tokens to be moved.
+    function move_stake(SmartContract calldata source_contract, SmartContract calldata destination_contract, uint128 amount) external returns (bool);
+
     /// @notice Claims one or more pending staker rewards.
     function claim_staker_rewards() external returns (bool);
 

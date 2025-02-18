@@ -104,6 +104,7 @@ thread_local! {
     pub(crate) static DOES_PAYOUT_SUCCEED: RefCell<bool> = RefCell::new(false);
     pub(crate) static BLOCK_BEFORE_NEW_ERA: RefCell<EraNumber> = RefCell::new(0);
     pub(crate) static NATIVE_PRICE: RefCell<FixedU128> = RefCell::new(BaseNativeCurrencyPrice::get());
+    pub(crate) static MAX_BONUS_SAFE_MOVES: RefCell<u8> = RefCell::new(0);
 }
 
 pub struct DummyStakingRewardHandler;
@@ -183,6 +184,13 @@ impl AccountCheck<AccountId> for DummyAccountCheck {
     }
 }
 
+pub struct DynamicMaxBonusSafeMovesPerPeriod;
+impl Get<u8> for DynamicMaxBonusSafeMovesPerPeriod {
+    fn get() -> u8 {
+        MAX_BONUS_SAFE_MOVES.with(|v| *v.borrow())
+    }
+}
+
 parameter_types! {
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
@@ -222,6 +230,7 @@ impl pallet_dapp_staking::Config for Test {
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
+    type MaxBonusSafeMovesPerPeriod = DynamicMaxBonusSafeMovesPerPeriod;
     type WeightInfo = weights::SubstrateWeight<Test>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
@@ -367,6 +376,11 @@ impl ExtBuilder {
             test();
             DappStaking::do_try_state().unwrap();
         })
+    }
+
+    pub fn with_max_bonus_safe_moves(self, value: u8) -> Self {
+        MAX_BONUS_SAFE_MOVES.with(|v| *v.borrow_mut() = value);
+        self
     }
 }
 
