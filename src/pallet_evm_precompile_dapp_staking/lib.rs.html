@@ -832,6 +832,28 @@
 <a href="#830" id="830">830</a>
 <a href="#831" id="831">831</a>
 <a href="#832" id="832">832</a>
+<a href="#833" id="833">833</a>
+<a href="#834" id="834">834</a>
+<a href="#835" id="835">835</a>
+<a href="#836" id="836">836</a>
+<a href="#837" id="837">837</a>
+<a href="#838" id="838">838</a>
+<a href="#839" id="839">839</a>
+<a href="#840" id="840">840</a>
+<a href="#841" id="841">841</a>
+<a href="#842" id="842">842</a>
+<a href="#843" id="843">843</a>
+<a href="#844" id="844">844</a>
+<a href="#845" id="845">845</a>
+<a href="#846" id="846">846</a>
+<a href="#847" id="847">847</a>
+<a href="#848" id="848">848</a>
+<a href="#849" id="849">849</a>
+<a href="#850" id="850">850</a>
+<a href="#851" id="851">851</a>
+<a href="#852" id="852">852</a>
+<a href="#853" id="853">853</a>
+<a href="#854" id="854">854</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1522,7 +1544,7 @@
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
 
-    <span class="doccomment">/// Attempts to claim bonus reward for being a loyal staker of the given dApp.
+    <span class="doccomment">/// Attempts to claim a bonus reward for maintaining an eligible bonus status with the given dApp.
     </span><span class="attr">#[precompile::public(<span class="string">"claim_bonus_reward((uint8,bytes))"</span>)]
     </span><span class="kw">fn </span>claim_bonus_reward(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
@@ -1596,6 +1618,28 @@
             <span class="prelude-val">Some</span>(origin).into(),
             cleanup_expired_entries_call,
         )<span class="question-mark">?</span>;
+
+        <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
+    }
+
+    <span class="attr">#[precompile::public(<span class="string">"move_stake((uint8,bytes),(uint8,bytes),uint128)"</span>)]
+    </span><span class="kw">fn </span>move_stake(
+        handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
+        source_contract: SmartContractV2,
+        destination_contract: SmartContractV2,
+        amount: Balance,
+    ) -&gt; EvmResult&lt;bool&gt; {
+        <span class="kw">let </span>source_contract = <span class="self">Self</span>::decode_smart_contract(source_contract)<span class="question-mark">?</span>;
+        <span class="kw">let </span>destination_contract = <span class="self">Self</span>::decode_smart_contract(destination_contract)<span class="question-mark">?</span>;
+
+        <span class="comment">// Prepare call &amp; dispatch it
+        </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
+        <span class="kw">let </span>move_call = pallet_dapp_staking::Call::&lt;R&gt;::move_stake {
+            source_contract,
+            destination_contract,
+            amount,
+        };
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), move_call)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }

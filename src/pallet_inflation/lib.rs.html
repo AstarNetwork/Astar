@@ -1122,7 +1122,7 @@
     /// This is provided to the stakers according to formula: 'pool * min(1, total_staked / ideal_staked)'.
     </span><span class="attr">#[codec(compact)]
     </span><span class="kw">pub </span>adjustable_staker_reward_pool_per_era: Balance,
-    <span class="doccomment">/// Bonus reward pool per period, for loyal stakers.
+    <span class="doccomment">/// Bonus reward pool per period, for eligible stakers.
     </span><span class="attr">#[codec(compact)]
     </span><span class="kw">pub </span>bonus_reward_pool_per_period: Balance,
     <span class="doccomment">/// The ideal staking rate, in respect to total issuance.

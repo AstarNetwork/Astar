@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["SingularStakingInfo","StakerInfo_Storage_Instance","VersionMigrateV7ToV8"],"type":["StakerInfo"]};
