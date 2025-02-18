@@ -2707,10 +2707,10 @@ pub mod pallet {
         /// If no progress is made, `Err(_)` is returned.
         pub fn do_update(weight_limit: Weight) -> Result<Weight, Weight> {
             // Find out if update is still in progress
-            let init_bonus_update_state = ActiveBonusUpdateState::<T>::get();
+            let mut bonus_update_state = ActiveBonusUpdateState::<T>::get();
             let mut consumed_weight = T::DbWeight::get().reads(1);
 
-            if init_bonus_update_state == BonusUpdateStateFor::<T>::Finished {
+            if bonus_update_state == BonusUpdateStateFor::<T>::Finished {
                 log::trace!(
                     target: LOG_TARGET,
                     "Update has finished, skipping any action."
@@ -2718,18 +2718,18 @@ pub mod pallet {
                 return Err(consumed_weight);
             }
 
-            let mut bonus_update_state = init_bonus_update_state.clone();
             let mut entries_updated = 0u32;
 
-            let mut iter =
-                if let BonusUpdateStateFor::<T>::InProgress(last_key_pair) = &bonus_update_state {
-                    StakerInfo::<T>::iter_from(StakerInfo::<T>::hashed_key_for(
-                        last_key_pair.0.clone(),
-                        last_key_pair.1.clone(),
-                    ))
-                } else {
-                    StakerInfo::<T>::iter()
-                };
+            let mut iter = if let BonusUpdateStateFor::<T>::InProgress((account, contract)) =
+                &bonus_update_state
+            {
+                StakerInfo::<T>::iter_from(StakerInfo::<T>::hashed_key_for(
+                    account.clone(),
+                    contract.clone(),
+                ))
+            } else {
+                StakerInfo::<T>::iter()
+            };
 
             let weight_margin = Self::update_weight_margin();
             while weight_limit
@@ -2750,10 +2750,8 @@ pub mod pallet {
                 }
             }
 
-            if bonus_update_state != init_bonus_update_state {
-                consumed_weight.saturating_accrue(T::DbWeight::get().writes(1));
-                ActiveBonusUpdateState::<T>::put(bonus_update_state.clone());
-            }
+            consumed_weight.saturating_accrue(T::DbWeight::get().writes(1));
+            ActiveBonusUpdateState::<T>::put(bonus_update_state.clone());
 
             if bonus_update_state == crate::types::BonusUpdateStateFor::<T>::Finished {
                 consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 2));
