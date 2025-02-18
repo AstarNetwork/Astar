@@ -36,6 +36,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
+    dispatch::PostDispatchInfo,
     pallet_prelude::*,
     traits::{
         fungible::{Inspect as FunInspect, MutateFreeze as FunMutateFreeze},
@@ -211,6 +212,12 @@ pub mod pallet {
         #[pallet::constant]
         type RankingEnabled: Get<bool>;
 
+        /// The maximum number of 'safe move actions' allowed within a single period while
+        /// retaining eligibility for bonus rewards. Exceeding this limit will result in the
+        /// forfeiture of the bonus rewards for the affected stake.
+        #[pallet::constant]
+        type MaxBonusSafeMovesPerPeriod: Get<u8>;
+
         /// Weight info for various calls & operations in the pallet.
         type WeightInfo: WeightInfo;
 
@@ -290,7 +297,7 @@ pub mod pallet {
             era: EraNumber,
             amount: Balance,
         },
-        /// Bonus reward has been paid out to a loyal staker.
+        /// Bonus reward has been paid out to a staker with an eligible bonus status.
         BonusReward {
             account: T::AccountId,
             smart_contract: T::SmartContract,
@@ -316,6 +323,13 @@ pub mod pallet {
         ExpiredEntriesRemoved { account: T::AccountId, count: u16 },
         /// Privileged origin has forced a new era and possibly a subperiod to start from next block.
         Force { forcing_type: ForcingType },
+        /// Account has moved some stake from a source smart contract to a destination smart contract.
+        StakeMoved {
+            account: T::AccountId,
+            source_contract: T::SmartContract,
+            destination_contract: T::SmartContract,
+            amount: Balance,
+        },
         /// Tier parameters, used to calculate tier configuration, have been updated, and will be applicable from next era.
         NewTierParameters {
             params: TierParameters<T::NumberOfTiers>,
@@ -398,6 +412,8 @@ pub mod pallet {
         ForceNotAllowed,
         /// Invalid tier parameters were provided. This can happen if any number exceeds 100% or if number of elements does not match the number of tiers.
         InvalidTierParams,
+        /// Same contract specified as source and destination.
+        SameContracts,
     }
 
     /// General information about dApp staking protocol state.
@@ -505,6 +521,12 @@ pub mod pallet {
     /// chain-fork debugging if required.
     #[pallet::storage]
     pub type Safeguard<T: Config> = StorageValue<_, bool, ValueQuery, DefaultSafeguard<T>>;
+
+    /// Temporary cursor to persist latest BonusStatus item updated.
+    /// TODO: remove it once all BonusStatus are updated and this storage value is cleanup.
+    #[pallet::storage]
+    pub type ActiveBonusUpdateState<T: Config> =
+        StorageValue<_, BonusUpdateStateFor<T>, ValueQuery>;
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
@@ -642,6 +664,12 @@ pub mod pallet {
             assert!(T::CycleConfiguration::eras_per_voting_subperiod() > 0);
             assert!(T::CycleConfiguration::eras_per_build_and_earn_subperiod() > 0);
             assert!(T::CycleConfiguration::blocks_per_era() > 0);
+
+            // TODO: remove these checks once BonusStatus update is done
+            assert!(Self::max_call_weight().all_gte(Self::min_call_weight()));
+            assert!(Self::max_call_weight()
+                .all_lte(<T as frame_system::Config>::BlockWeights::get().max_block));
+            assert!(Self::update_weight_margin().all_lte(Self::min_call_weight()));
         }
 
         #[cfg(feature = "try-runtime")]
@@ -1024,103 +1052,35 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            ensure!(amount > 0, Error::<T>::ZeroAmount);
-
-            let dapp_info =
-                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
-
+            // User is only eligible for the bonus reward if their first time stake is in the `Voting` subperiod.
+            //
+            // `StakeAmount` is prepared based on the current subperiod.
+            // If the user is staking for the first time in the `Voting` subperiod, they are eligible for the bonus reward, and the max number of bonus moves is set.
+            // If the user is staking for the first time in the `Build&Earn` subperiod, they are not eligible for the bonus reward, and the bonus moves are set to 0.
             let protocol_state = ActiveProtocolState::<T>::get();
-            let current_era = protocol_state.era;
-            ensure!(
-                !protocol_state
-                    .period_info
-                    .is_next_period(current_era.saturating_add(1)),
-                Error::<T>::PeriodEndsInNextEra
-            );
+            let (stake_amount, bonus_status) = match protocol_state.subperiod() {
+                Subperiod::Voting => (
+                    StakeAmount {
+                        voting: amount,
+                        build_and_earn: 0,
+                        era: protocol_state.era,
+                        period: protocol_state.period_number(),
+                    },
+                    *BonusStatusWrapperFor::<T>::default(),
+                ),
+                Subperiod::BuildAndEarn => (
+                    StakeAmount {
+                        voting: 0,
+                        build_and_earn: amount,
+                        era: protocol_state.era,
+                        period: protocol_state.period_number(),
+                    },
+                    0,
+                ),
+            };
 
-            let mut ledger = Ledger::<T>::get(&account);
-
-            // In case old stake rewards are unclaimed & have expired, clean them up.
-            let threshold_period = Self::oldest_claimable_period(protocol_state.period_number());
-            let _ignore = ledger.maybe_cleanup_expired(threshold_period);
-
-            // 1.
-            // Increase stake amount for the next era & current period in staker's ledger
-            ledger
-                .add_stake_amount(amount, current_era, protocol_state.period_info)
-                .map_err(|err| match err {
-                    AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
-                        Error::<T>::UnclaimedRewards
-                    }
-                    AccountLedgerError::UnavailableStakeFunds => Error::<T>::UnavailableStakeFunds,
-                    // Defensive check, should never happen
-                    _ => Error::<T>::InternalStakeError,
-                })?;
-
-            // 2.
-            // Update `StakerInfo` storage with the new stake amount on the specified contract.
-            //
-            // There are two distinct scenarios:
-            // 1. Existing entry matches the current period number - just update it.
-            // 2. Entry doesn't exist or it's for an older period - create a new one.
-            //
-            // This is ok since we only use this storage entry to keep track of how much each staker
-            // has staked on each contract in the current period. We only ever need the latest information.
-            // This is because `AccountLedger` is the one keeping information about how much was staked when.
-            let (mut new_staking_info, is_new_entry) =
-                match StakerInfo::<T>::get(&account, &smart_contract) {
-                    // Entry with matching period exists
-                    Some(staking_info)
-                        if staking_info.period_number() == protocol_state.period_number() =>
-                    {
-                        (staking_info, false)
-                    }
-                    // Entry exists but period doesn't match. Bonus reward might still be claimable.
-                    Some(staking_info)
-                        if staking_info.period_number() >= threshold_period
-                            && staking_info.is_loyal() =>
-                    {
-                        return Err(Error::<T>::UnclaimedRewards.into());
-                    }
-                    // No valid entry exists
-                    _ => (
-                        SingularStakingInfo::new(
-                            protocol_state.period_number(),
-                            protocol_state.subperiod(),
-                        ),
-                        true,
-                    ),
-                };
-            new_staking_info.stake(amount, current_era, protocol_state.subperiod());
-            ensure!(
-                new_staking_info.total_staked_amount() >= T::MinimumStakeAmount::get(),
-                Error::<T>::InsufficientStakeAmount
-            );
-
-            if is_new_entry {
-                ledger.contract_stake_count.saturating_inc();
-                ensure!(
-                    ledger.contract_stake_count <= T::MaxNumberOfStakedContracts::get(),
-                    Error::<T>::TooManyStakedContracts
-                );
-            }
-
-            // 3.
-            // Update `ContractStake` storage with the new stake amount on the specified contract.
-            let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
-            contract_stake_info.stake(amount, protocol_state.period_info, current_era);
-
-            // 4.
-            // Update total staked amount for the next era.
-            CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.add_stake_amount(amount, protocol_state.subperiod());
-            });
-
-            // 5.
-            // Update remaining storage entries
-            Self::update_ledger(&account, ledger)?;
-            StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
-            ContractStake::<T>::insert(&dapp_info.id, contract_stake_info);
+            // The `inner_stake` function takes a `StakeAmount` struct allowing modification of both `voting` and `build_and_earn` amounts at the same time.
+            Self::inner_stake(&account, &smart_contract, stake_amount, bonus_status)?;
 
             Self::deposit_event(Event::<T>::Stake {
                 account,
@@ -1150,97 +1110,12 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            ensure!(amount > 0, Error::<T>::ZeroAmount);
-
-            let dapp_info =
-                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
-
-            let protocol_state = ActiveProtocolState::<T>::get();
-            let current_era = protocol_state.era;
-
-            let mut ledger = Ledger::<T>::get(&account);
-
-            // 1.
-            // Update `StakerInfo` storage with the reduced stake amount on the specified contract.
-            let (new_staking_info, amount, era_and_amount_pairs) =
-                match StakerInfo::<T>::get(&account, &smart_contract) {
-                    Some(mut staking_info) => {
-                        ensure!(
-                            staking_info.period_number() == protocol_state.period_number(),
-                            Error::<T>::UnstakeFromPastPeriod
-                        );
-                        ensure!(
-                            staking_info.total_staked_amount() >= amount,
-                            Error::<T>::UnstakeAmountTooLarge
-                        );
-
-                        // If unstaking would take the total staked amount below the minimum required value,
-                        // unstake everything.
-                        let amount = if staking_info.total_staked_amount().saturating_sub(amount)
-                            < T::MinimumStakeAmount::get()
-                        {
-                            staking_info.total_staked_amount()
-                        } else {
-                            amount
-                        };
-
-                        let era_and_amount_pairs =
-                            staking_info.unstake(amount, current_era, protocol_state.subperiod());
-
-                        (staking_info, amount, era_and_amount_pairs)
-                    }
-                    None => {
-                        return Err(Error::<T>::NoStakingInfo.into());
-                    }
-                };
-
-            // 2.
-            // Reduce stake amount
-            ledger
-                .unstake_amount(amount, current_era, protocol_state.period_info)
-                .map_err(|err| match err {
-                    AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
-                        Error::<T>::UnclaimedRewards
-                    }
-                    // This is a defensive check, which should never happen since we calculate the correct value above.
-                    AccountLedgerError::UnstakeAmountLargerThanStake => {
-                        Error::<T>::UnstakeAmountTooLarge
-                    }
-                    _ => Error::<T>::InternalUnstakeError,
-                })?;
-
-            // 3.
-            // Update `ContractStake` storage with the reduced stake amount on the specified contract.
-            let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
-            contract_stake_info.unstake(
-                era_and_amount_pairs,
-                protocol_state.period_info,
-                current_era,
-            );
-
-            // 4.
-            // Update total staked amount for the next era.
-            CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.unstake_amount(amount);
-            });
-
-            // 5.
-            // Update remaining storage entries
-            ContractStake::<T>::insert(&dapp_info.id, contract_stake_info);
-
-            if new_staking_info.is_empty() {
-                ledger.contract_stake_count.saturating_dec();
-                StakerInfo::<T>::remove(&account, &smart_contract);
-            } else {
-                StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
-            }
-
-            Self::update_ledger(&account, ledger)?;
+            let (unstake_amount, _) = Self::inner_unstake(&account, &smart_contract, amount)?;
 
             Self::deposit_event(Event::<T>::Unstake {
                 account,
                 smart_contract,
-                amount,
+                amount: unstake_amount.total(),
             });
 
             Ok(())
@@ -1342,56 +1217,13 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            ensure!(
-                !IntegratedDApps::<T>::contains_key(&smart_contract),
-                Error::<T>::ContractStillActive
-            );
-
-            let protocol_state = ActiveProtocolState::<T>::get();
-            let current_era = protocol_state.era;
-
-            // Extract total staked amount on the specified unregistered contract
-            let amount = match StakerInfo::<T>::get(&account, &smart_contract) {
-                Some(staking_info) => {
-                    ensure!(
-                        staking_info.period_number() == protocol_state.period_number(),
-                        Error::<T>::UnstakeFromPastPeriod
-                    );
-
-                    staking_info.total_staked_amount()
-                }
-                None => {
-                    return Err(Error::<T>::NoStakingInfo.into());
-                }
-            };
-
-            // Reduce stake amount in ledger
-            let mut ledger = Ledger::<T>::get(&account);
-            ledger
-                .unstake_amount(amount, current_era, protocol_state.period_info)
-                .map_err(|err| match err {
-                    // These are all defensive checks, which should never fail since we already checked them above.
-                    AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
-                        Error::<T>::UnclaimedRewards
-                    }
-                    _ => Error::<T>::InternalUnstakeError,
-                })?;
-
-            // Update total staked amount for the next era.
-            // This means 'fake' stake total amount has been kept until now, even though contract was unregistered.
-            // Although strange, it's been requested to keep it like this from the team.
-            CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.unstake_amount(amount);
-            });
-
-            // Update remaining storage entries
-            Self::update_ledger(&account, ledger)?;
-            StakerInfo::<T>::remove(&account, &smart_contract);
+            let (unstake_amount, _) =
+                Self::inner_unstake_from_unregistered(&account, &smart_contract)?;
 
             Self::deposit_event(Event::<T>::UnstakeFromUnregistered {
                 account,
                 smart_contract,
-                amount,
+                amount: unstake_amount.total(),
             });
 
             Ok(())
@@ -1400,8 +1232,8 @@ pub mod pallet {
         /// Cleanup expired stake entries for the contract.
         ///
         /// Entry is considered to be expired if:
-        /// 1. It's from a past period & the account wasn't a loyal staker, meaning there's no claimable bonus reward.
-        /// 2. It's from a period older than the oldest claimable period, regardless whether the account was loyal or not.
+        /// 1. It's from a past period & the account did not maintain an eligible bonus status, meaning there's no claimable bonus reward.
+        /// 2. It's from a period older than the oldest claimable period, regardless of whether the account had an eligible bonus status or not.
         #[pallet::call_index(17)]
         #[pallet::weight(T::WeightInfo::cleanup_expired_entries(
             T::MaxNumberOfStakedContracts::get()
@@ -1418,7 +1250,8 @@ pub mod pallet {
             // This is bounded by max allowed number of stake entries per account.
             let to_be_deleted: Vec<T::SmartContract> = StakerInfo::<T>::iter_prefix(&account)
                 .filter_map(|(smart_contract, stake_info)| {
-                    if stake_info.period_number() < current_period && !stake_info.is_loyal()
+                    if stake_info.period_number() < current_period
+                        && !stake_info.is_bonus_eligible()
                         || stake_info.period_number() < threshold_period
                     {
                         Some(smart_contract)
@@ -1526,12 +1359,61 @@ pub mod pallet {
             Self::internal_claim_bonus_reward_for(account, smart_contract)
         }
 
+        /// Transfers stake between two smart contracts, ensuring bonus status preservation if eligible.
+        /// Emits a `StakeMoved` event.
+        #[pallet::call_index(21)]
+        #[pallet::weight(T::WeightInfo::move_stake_unregistered_source().max(T::WeightInfo::move_stake_from_registered_source()))]
+        pub fn move_stake(
+            origin: OriginFor<T>,
+            source_contract: T::SmartContract,
+            destination_contract: T::SmartContract,
+            #[pallet::compact] amount: Balance,
+        ) -> DispatchResultWithPostInfo {
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            ensure!(
+                !source_contract.eq(&destination_contract),
+                Error::<T>::SameContracts
+            );
+
+            ensure!(
+                IntegratedDApps::<T>::contains_key(&destination_contract),
+                Error::<T>::ContractNotFound
+            );
+
+            let maybe_source_dapp_info = IntegratedDApps::<T>::get(&source_contract);
+            let is_source_unregistered = maybe_source_dapp_info.is_none();
+
+            let (move_amount, bonus_status) = if is_source_unregistered {
+                Self::inner_unstake_from_unregistered(&account, &source_contract)?
+            } else {
+                Self::inner_unstake(&account, &source_contract, amount)?
+            };
+
+            Self::inner_stake(&account, &destination_contract, move_amount, bonus_status)?;
+
+            Self::deposit_event(Event::<T>::StakeMoved {
+                account,
+                source_contract,
+                destination_contract,
+                amount: move_amount.total(),
+            });
+
+            Ok(Some(if is_source_unregistered {
+                T::WeightInfo::move_stake_unregistered_source()
+            } else {
+                T::WeightInfo::move_stake_from_registered_source()
+            })
+            .into())
+        }
+
         /// Used to set static tier parameters, which are used to calculate tier configuration.
         /// Tier configuration defines tier entry threshold values, number of slots, and reward portions.
         ///
         /// This is a delicate call and great care should be taken when changing these
         /// values since it has a significant impact on the reward system.
-        #[pallet::call_index(21)]
+        #[pallet::call_index(22)]
         #[pallet::weight(T::WeightInfo::set_static_tier_params())]
         pub fn set_static_tier_params(
             origin: OriginFor<T>,
@@ -1547,9 +1429,345 @@ pub mod pallet {
 
             Ok(())
         }
+
+        /// Active update `BonusStatus` according to the new MaxBonusSafeMovesPerPeriod from config
+        /// for all already existing StakerInfo in steps, consuming up to the specified amount of
+        /// weight.
+        ///
+        /// If no weight is specified, max allowed weight is used.
+        /// In any case the weight_limit is clamped between the minimum & maximum allowed values.
+        ///
+        /// TODO: remove this extrinsic once BonusStatus update is done
+        #[pallet::call_index(200)]
+        #[pallet::weight({
+            Pallet::<T>::clamp_call_weight(*weight_limit)
+        })]
+        pub fn update_bonus(
+            origin: OriginFor<T>,
+            weight_limit: Option<Weight>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_signed(origin)?;
+
+            let weight_to_use = Self::clamp_call_weight(weight_limit);
+            let consumed_weight = Self::do_update(weight_to_use);
+
+            // Refund the user in case migration call was needed.
+            match consumed_weight {
+                Ok(weight) => Ok(PostDispatchInfo {
+                    actual_weight: Some(weight),
+                    pays_fee: Pays::No,
+                }),
+                // No refunds or adjustments!
+                Err(_) => Ok(().into()),
+            }
+        }
     }
 
     impl<T: Config> Pallet<T> {
+        /// Inner `unstake` functionality for an **active** smart contract.
+        /// If successful returns the `StakeAmount` that was unstaked, and the updated bonus status.
+        ///
+        /// - Ensures the contract is still registered.
+        /// - Updates staker info, ledger, and contract stake info.
+        /// - Returns the unstaked amount and updated bonus status.
+        pub fn inner_unstake(
+            account: &T::AccountId,
+            smart_contract: &T::SmartContract,
+            amount: Balance,
+        ) -> Result<(StakeAmount, BonusStatus), DispatchError> {
+            ensure!(amount > 0, Error::<T>::ZeroAmount);
+            let dapp_info =
+                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
+
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let current_era = protocol_state.era;
+
+            let mut ledger = Ledger::<T>::get(&account);
+
+            // 1.
+            // Update `StakerInfo` storage with the reduced stake amount on the specified contract.
+            let (new_staking_info, amount, stake_amount_iter, updated_bonus_status) =
+                match StakerInfo::<T>::get(&account, &smart_contract) {
+                    Some(mut staking_info) => {
+                        ensure!(
+                            staking_info.period_number() == protocol_state.period_number(),
+                            Error::<T>::UnstakeFromPastPeriod
+                        );
+                        ensure!(
+                            staking_info.total_staked_amount() >= amount,
+                            Error::<T>::UnstakeAmountTooLarge
+                        );
+
+                        // If unstaking would take the total staked amount below the minimum required value,
+                        // unstake everything.
+                        let amount = if staking_info.total_staked_amount().saturating_sub(amount)
+                            < T::MinimumStakeAmount::get()
+                        {
+                            staking_info.total_staked_amount()
+                        } else {
+                            amount
+                        };
+
+                        let (stake_amount_iter, updated_bonus_status) =
+                            staking_info.unstake(amount, current_era, protocol_state.subperiod());
+
+                        (
+                            staking_info,
+                            amount,
+                            stake_amount_iter,
+                            updated_bonus_status,
+                        )
+                    }
+                    None => {
+                        return Err(Error::<T>::NoStakingInfo.into());
+                    }
+                };
+
+            // 2.
+            // Reduce stake amount
+            ledger
+                .unstake_amount(amount, current_era, protocol_state.period_info)
+                .map_err(|err| match err {
+                    AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
+                        Error::<T>::UnclaimedRewards
+                    }
+                    // This is a defensive check, which should never happen since we calculate the correct value above.
+                    AccountLedgerError::UnstakeAmountLargerThanStake => {
+                        Error::<T>::UnstakeAmountTooLarge
+                    }
+                    _ => Error::<T>::InternalUnstakeError,
+                })?;
+
+            // 3.
+            // Update `ContractStake` storage with the reduced stake amount on the specified contract.
+            let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
+            contract_stake_info.unstake(
+                &stake_amount_iter,
+                protocol_state.period_info,
+                current_era,
+            );
+
+            // 4.
+            // Update total staked amount for the next era.
+            CurrentEraInfo::<T>::mutate(|era_info| {
+                era_info.unstake_amount(stake_amount_iter.clone());
+            });
+
+            // 5.
+            // Update remaining storage entries
+            ContractStake::<T>::insert(&dapp_info.id, contract_stake_info);
+
+            if new_staking_info.is_empty() {
+                ledger.contract_stake_count.saturating_dec();
+                StakerInfo::<T>::remove(&account, &smart_contract);
+            } else {
+                StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
+            }
+
+            Self::update_ledger(&account, ledger)?;
+
+            // Return the `StakeAmount` that has max total value - that's the one that is equal to the `amount` parameter.
+            let unstake_amount = stake_amount_iter
+                .iter()
+                .max_by(|a, b| a.total().cmp(&b.total()))
+                .expect("At least one value exists, otherwise we wouldn't be here.");
+            assert_eq!(unstake_amount.total(), amount);
+
+            Ok((*unstake_amount, updated_bonus_status))
+        }
+
+        /// Handles unstaking from an **unregistered** smart contract.
+        ///
+        /// - Ensures the contract is no longer active.
+        /// - Updates staker info and ledger.
+        /// - Returns the unstaked amount and preserves the original bonus status.
+        pub fn inner_unstake_from_unregistered(
+            account: &T::AccountId,
+            smart_contract: &T::SmartContract,
+        ) -> Result<(StakeAmount, BonusStatus), DispatchError> {
+            ensure!(
+                !IntegratedDApps::<T>::contains_key(&smart_contract),
+                Error::<T>::ContractStillActive
+            );
+
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let current_era = protocol_state.era;
+
+            // Extract total staked amount on the specified unregistered contract
+            let (amount, unstake_amount_iter, preserved_bonus_status) =
+                match StakerInfo::<T>::get(&account, &smart_contract) {
+                    Some(mut staking_info) => {
+                        ensure!(
+                            staking_info.period_number() == protocol_state.period_number(),
+                            Error::<T>::UnstakeFromPastPeriod
+                        );
+
+                        let preserved_bonus_status = staking_info.bonus_status;
+                        // This need to be built before 'unstake', otherwise voting amount is converted into B&E amount
+                        let unstake_amount_iter: Vec<StakeAmount> =
+                            Vec::from([staking_info.previous_staked, staking_info.staked])
+                                .into_iter()
+                                .filter(|stake_amount| !stake_amount.is_empty())
+                                .collect();
+                        let amount = staking_info.staked.total();
+
+                        staking_info.unstake(amount, current_era, protocol_state.subperiod());
+
+                        (amount, unstake_amount_iter, preserved_bonus_status)
+                    }
+                    None => {
+                        return Err(Error::<T>::NoStakingInfo.into());
+                    }
+                };
+
+            // Reduce stake amount in ledger
+            let mut ledger = Ledger::<T>::get(&account);
+            ledger
+                .unstake_amount(amount, current_era, protocol_state.period_info)
+                .map_err(|err| match err {
+                    // These are all defensive checks, which should never fail since we already checked them above.
+                    AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
+                        Error::<T>::UnclaimedRewards
+                    }
+                    _ => Error::<T>::InternalUnstakeError,
+                })?;
+            ledger.contract_stake_count.saturating_dec();
+
+            // Update total staked amount for the next era.
+            // This means 'fake' stake total amount has been kept until now, even though contract was unregistered.
+            // Although strange, it's been requested to keep it like this from the team.
+            CurrentEraInfo::<T>::mutate(|era_info| {
+                era_info.unstake_amount(unstake_amount_iter.clone());
+            });
+
+            // Update remaining storage entries
+            Self::update_ledger(&account, ledger)?;
+            StakerInfo::<T>::remove(&account, &smart_contract);
+
+            let unstake_amount = unstake_amount_iter
+                .iter()
+                .max_by(|a, b| a.total().cmp(&b.total()))
+                .expect("At least one value exists, otherwise we wouldn't be here.");
+            assert_eq!(unstake_amount.total(), amount);
+
+            Ok((*unstake_amount, preserved_bonus_status))
+        }
+
+        /// Inner `stake` functionality.
+        ///
+        /// Specifies the amount in the form of the `StakeAmount` struct, allowing simultaneous update of both `voting` and `build_and_earn` amounts.
+        /// The `bonus_status` is used to determine if the staker is still eligible for the bonus reward. This is useful for the `move` extrinsic.
+        pub fn inner_stake(
+            account: &T::AccountId,
+            smart_contract: &T::SmartContract,
+            amount: StakeAmount,
+            bonus_status: BonusStatus,
+        ) -> Result<(), DispatchError> {
+            ensure!(amount.total() > 0, Error::<T>::ZeroAmount);
+
+            let dapp_info =
+                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
+
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let current_era = protocol_state.era;
+            let period_number = protocol_state.period_info.number;
+            ensure!(
+                !protocol_state
+                    .period_info
+                    .is_next_period(current_era.saturating_add(1)),
+                Error::<T>::PeriodEndsInNextEra
+            );
+
+            let mut ledger = Ledger::<T>::get(&account);
+
+            // In case old stake rewards are unclaimed & have expired, clean them up.
+            let threshold_period = Self::oldest_claimable_period(protocol_state.period_number());
+            let _ignore = ledger.maybe_cleanup_expired(threshold_period);
+
+            // 1.
+            // Increase stake amount for the next era & current period in staker's ledger
+            ledger
+                .add_stake_amount(amount, current_era, protocol_state.period_info)
+                .map_err(|err| match err {
+                    AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
+                        Error::<T>::UnclaimedRewards
+                    }
+                    AccountLedgerError::UnavailableStakeFunds => Error::<T>::UnavailableStakeFunds,
+                    // Defensive check, should never happen
+                    _ => Error::<T>::InternalStakeError,
+                })?;
+
+            // 2.
+            // Update `StakerInfo` storage with the new stake amount on the specified contract.
+            //
+            // There are two distinct scenarios:
+            // 1. Existing entry matches the current period number - just update it.
+            // 2. Entry doesn't exist or it's for an older period - create a new one.
+            //
+            // This is ok since we only use this storage entry to keep track of how much each staker
+            // has staked on each contract in the current period. We only ever need the latest information.
+            // This is because `AccountLedger` is the one keeping information about how much was staked when.
+            let (mut new_staking_info, is_new_entry) =
+                match StakerInfo::<T>::get(&account, &smart_contract) {
+                    // Entry with matching period exists
+                    Some(staking_info)
+                        if staking_info.period_number() == protocol_state.period_number() =>
+                    {
+                        (staking_info, false)
+                    }
+                    // Entry exists but period doesn't match. Bonus reward might still be claimable.
+                    Some(staking_info)
+                        if staking_info.period_number() >= threshold_period
+                            && staking_info.is_bonus_eligible() =>
+                    {
+                        return Err(Error::<T>::UnclaimedRewards.into());
+                    }
+                    // No valid entry exists
+                    _ => (
+                        SingularStakingInfo::new(
+                            protocol_state.period_number(),
+                            // Important to account for the remaining bonus moves since it's possible to retain the bonus
+                            // after moving the stake to another contract.
+                            bonus_status,
+                        ),
+                        true,
+                    ),
+                };
+
+            new_staking_info.stake(amount, current_era, bonus_status);
+            ensure!(
+                new_staking_info.total_staked_amount() >= T::MinimumStakeAmount::get(),
+                Error::<T>::InsufficientStakeAmount
+            );
+
+            if is_new_entry {
+                ledger.contract_stake_count.saturating_inc();
+                ensure!(
+                    ledger.contract_stake_count <= T::MaxNumberOfStakedContracts::get(),
+                    Error::<T>::TooManyStakedContracts
+                );
+            }
+
+            // 3.
+            // Update `ContractStake` storage with the new stake amount on the specified contract.
+            let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
+            contract_stake_info.stake(amount, current_era, period_number);
+
+            // 4.
+            // Update total staked amount for the next era.
+            CurrentEraInfo::<T>::mutate(|era_info| {
+                era_info.add_stake_amount(amount);
+            });
+
+            // 5.
+            // Update remaining storage entries
+            Self::update_ledger(&account, ledger)?;
+            StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
+            ContractStake::<T>::insert(&dapp_info.id, contract_stake_info);
+
+            Ok(())
+        }
+
         /// `true` if the account is a staker, `false` otherwise.
         pub fn is_staker(account: &T::AccountId) -> bool {
             Ledger::<T>::contains_key(account)
@@ -2190,7 +2408,7 @@ pub mod pallet {
 
             // Ensure:
             // 1. Period for which rewards are being claimed has ended.
-            // 2. Account has been a loyal staker.
+            // 2. Account has maintained an eligible bonus status.
             // 3. Rewards haven't expired.
             let staked_period = staker_info.period_number();
             ensure!(
@@ -2198,7 +2416,7 @@ pub mod pallet {
                 Error::<T>::NoClaimableRewards
             );
             ensure!(
-                staker_info.is_loyal(),
+                staker_info.is_bonus_eligible(),
                 Error::<T>::NotEligibleForBonusReward
             );
             ensure!(
@@ -2505,6 +2723,136 @@ pub mod pallet {
             }
 
             Ok(())
+        }
+    }
+
+    /// ActiveBonusMigration helpers
+    /// rework/reused from: https://github.com/AstarNetwork/Astar/blob/a13ef8e40ab8d26b1080236deafb8a609317f099/pallets/dapp-staking-migration/src/lib.rs
+    /// TODO: remove these helpers once BonusStatus update is done
+    impl<T: Config> Pallet<T> {
+        /// Execute update steps until the specified weight limit has been consumed.
+        ///
+        /// Depending on the number of entries updated and/or deleted, appropriate events are emitted.
+        ///
+        /// In case at least some progress is made, `Ok(_)` is returned.
+        /// If no progress is made, `Err(_)` is returned.
+        pub fn do_update(weight_limit: Weight) -> Result<Weight, Weight> {
+            // Find out if update is still in progress
+            let mut bonus_update_state = ActiveBonusUpdateState::<T>::get();
+            let mut consumed_weight = T::DbWeight::get().reads(1);
+
+            if bonus_update_state == BonusUpdateStateFor::<T>::Finished {
+                log::trace!(
+                    target: LOG_TARGET,
+                    "Update has finished, skipping any action."
+                );
+                return Err(consumed_weight);
+            }
+
+            let mut entries_updated = 0u32;
+
+            let mut iter = if let BonusUpdateStateFor::<T>::InProgress((account, contract)) =
+                &bonus_update_state
+            {
+                StakerInfo::<T>::iter_from(StakerInfo::<T>::hashed_key_for(
+                    account.clone(),
+                    contract.clone(),
+                ))
+            } else {
+                StakerInfo::<T>::iter()
+            };
+
+            let weight_margin = Self::update_weight_margin();
+            while weight_limit
+                .saturating_sub(consumed_weight)
+                .all_gte(weight_margin)
+            {
+                match Self::update_bonus_step(&mut iter) {
+                    Ok((weight, updated_cursor)) => {
+                        consumed_weight.saturating_accrue(weight);
+                        entries_updated.saturating_inc();
+                        bonus_update_state = BonusUpdateStateFor::<T>::InProgress(updated_cursor);
+                    }
+                    Err(weight) => {
+                        consumed_weight.saturating_accrue(weight);
+                        bonus_update_state = BonusUpdateStateFor::<T>::Finished; // Mark migration as complete
+                        break;
+                    }
+                }
+            }
+
+            consumed_weight.saturating_accrue(T::DbWeight::get().writes(1));
+            ActiveBonusUpdateState::<T>::put(bonus_update_state.clone());
+
+            if bonus_update_state == crate::types::BonusUpdateStateFor::<T>::Finished {
+                consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 2));
+                ActiveProtocolState::<T>::mutate(|state| {
+                    state.maintenance = false;
+                });
+                log::info!("Maintenance mode disabled.");
+            }
+
+            log::info!(target: LOG_TARGET, "🚚 updated entries {entries_updated}");
+            Ok(consumed_weight)
+        }
+
+        pub(crate) fn update_bonus_step(
+            iter: &mut impl Iterator<Item = (T::AccountId, T::SmartContract, SingularStakingInfo)>,
+        ) -> Result<(Weight, BonusUpdateCursorFor<T>), Weight> {
+            iter.next()
+                .map(|(account, smart_contract, staking_info)| {
+                    let new_staking_info = SingularStakingInfo {
+                        previous_staked: staking_info.previous_staked,
+                        staked: staking_info.staked,
+                        bonus_status: *BonusStatusWrapperFor::<T>::default(),
+                    };
+
+                    StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
+
+                    Ok((
+                        <T as Config>::WeightInfo::update_bonus_step_success(),
+                        (account, smart_contract),
+                    ))
+                })
+                .unwrap_or_else(|| Err(<T as Config>::WeightInfo::update_bonus_step_noop()))
+        }
+
+        /// Max allowed weight that update should be allowed to consume.
+        pub(crate) fn max_call_weight() -> Weight {
+            // 50% of block should be fine
+            T::BlockWeights::get().max_block / 2
+        }
+
+        /// Min allowed weight that update should be allowed to consume.
+        ///
+        /// This serves as a safety margin, to prevent accidental overspending, due to
+        /// imprecision in implementation or benchmarks, when small weight limit is specified.
+        pub(crate) fn min_call_weight() -> Weight {
+            // 5% of block should be fine
+            T::BlockWeights::get().max_block / 10
+        }
+
+        /// Calculate call weight to use.
+        ///
+        /// In case of `None`, use the max allowed call weight.
+        /// Otherwise clamp the specified weight between the allowed min & max values.
+        fn clamp_call_weight(weight: Option<Weight>) -> Weight {
+            weight
+                .unwrap_or(Self::max_call_weight())
+                .min(Self::max_call_weight())
+                .max(Self::min_call_weight())
+        }
+
+        /// Returns the least amount of weight which should be remaining for migration in order to attempt another step.
+        ///
+        /// This is used to ensure we don't go over the limit.
+        fn update_weight_margin() -> Weight {
+            // Consider the weight of a single step
+            <T as Config>::WeightInfo::update_bonus_step_success()
+                // and add the weight of updating cursor
+                .saturating_add(T::DbWeight::get().writes(1))
+                // and add the weight of disabling maintenance mode
+                .saturating_add(T::DbWeight::get().reads_writes(1, 2))
         }
     }
 

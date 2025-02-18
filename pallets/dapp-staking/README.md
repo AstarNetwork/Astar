@@ -141,7 +141,7 @@ The protocol keeps track of how much was staked by the user in `voting` and `bui
 
 It is not possible to stake on a dApp that has been unregistered.
 However, if dApp is unregistered after user has staked on it, user will keep earning
-rewards for the staked amount.
+rewards for the staked amount, or can 'move' his stake without impacting his number of allowed _safe move actions_ for the ongoing period.
 
 #### Unstaking Tokens
 
@@ -157,7 +157,32 @@ If unstake would reduce the staked amount below `MinimumStakeAmount`, everything
 
 Once period finishes, all stakes are reset back to zero. This means that no unstake operation is needed after period ends to _unstake_ funds - it's done automatically.
 
-If dApp has been unregistered, a special operation to unstake from unregistered contract must be used.
+During the `Build&Earn` subperiod, if unstaking reduces the voting stake, the bonus status will be updated, and the number of allowed _move actions_ for the ongoing period will be reduced.
+
+Any forfeited bonus is converted into `Build&Earn` stake, ensuring that voting amounts are not lost but instead reallocated appropriately.
+
+If dApp has been unregistered, a special operation to unstake from unregistered contract must be used that preserves bonus elegibility.
+
+#### Moving Stake Between Contracts
+
+The moving stake feature allows users to transfer their staked amount between two smart contracts without undergoing the unstake and stake process separately. This feature ensures that the transferred stake remains aligned with the current staking period (effective in the next era), and any bonus eligibility is preserved as long as the conditions for the bonus reward are not violated (move actions are limited by `MaxBonusSafeMovesPerPeriod`).
+
+Key details about moving stake:
+
+-   The destination contract must be different from the source contract.
+-   The user must ensure that unclaimed rewards are claimed before initiating a stake move.
+-   Only a limited number of move actions (defined by `MaxBonusSafeMovesPerPeriod`) are allowed during a single period to preserve bonus reward eligibility (check "Claiming Bonus Reward" section below).
+-   If the destination contract is newly staked, the user's total staked contracts must not exceed the maximum allowed number of staked contracts.
+-   The destination contract must not be unregistered, but moving stake away from an unregistered contract is allowed without affecting bonus eligibility.
+
+This feature is particularly useful for stakers who wish to rebalance their stake across multiple contracts (including new registrations) or move their stake to better-performing dApps while retaining the potential for rewards and maintaining bonus eligibility.
+
+#### Bonus Status Handling in Moves
+
+When moving stake, if the destination contract has no existing bonus eligibility, it inherits the incoming bonus status from the source contract. If both the source and destination have nonzero bonus statuses, they are merged by averaging their values. This prevents unintended bonus gains or losses while ensuring fairness in bonus distribution.
+
+For example, if the configuration allows **2** safe moves, the default bonus status starts at **3**. If the source contract's bonus status decreases from **3** to **1** after an unstake and the move operation, and the destination contract retains the default **3**, the new bonus status is calculated as: **(1 + 3) / 2**, resulting into **2**.
+This ensures a smooth and fair adjustment while keeping stake amounts properly aligned.
 
 #### Claiming Staker Rewards
 
@@ -175,7 +200,20 @@ Rewards are calculated using a simple formula: `staker_reward_pool * staker_stak
 
 #### Claiming Bonus Reward
 
-If staker staked on a dApp during the voting subperiod, and didn't reduce their staked amount below what was staked at the end of the voting subperiod, this makes them eligible for the bonus reward.
+If a staker has staked on a dApp during the voting subperiod, and the bonus status for the associated staked amount has not been forfeited due to excessive move actions, they remain eligible for the bonus reward.
+
+Only a limited number of _safe move actions_ are allowed during the `build&earn` subperiod to preserve bonus reward eligibility. Move actions refer to either:
+
+-   A 'partial unstake that decreases the voting stake',
+-   A 'stake transfer between two contracts'. (check previous "Moving Stake Between Contracts" section)
+
+The number of authorized safe move actions is defined by `MaxBonusSafeMovesPerPeriod`. For example:
+If 2 safe bonus move actions are allowed for one period, and a user has staked **100** on contract A during the `voting` subperiod and **50** during the `build&earn` subperiod, they can safely:
+
+1. Unstake **70**, reducing the `voting` stake to **80**.
+2. Transfer **50** to contract B.
+
+After these actions, the user will still be eligible for bonus rewards (**20** on contract A and **50** on contract B). However, if an additional move action is performed on contract A, the bonus eligibility will be forfeited.
 
 Bonus rewards need to be claimed per contract, unlike staker rewards.
 
