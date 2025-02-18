@@ -519,8 +519,8 @@ pub mod pallet {
     /// Temporary cursor to persist latest BonusStatus item updated.
     /// TODO: remove it once all BonusStatus are updated and this storage value is cleanup.
     #[pallet::storage]
-    pub type ActiveBonusUpdateCursor<T: Config> =
-        StorageValue<_, (T::AccountId, T::SmartContract), OptionQuery>;
+    pub type ActiveBonusUpdateState<T: Config> =
+        StorageValue<_, BonusUpdateStateFor<T>, ValueQuery>;
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T> {
@@ -2707,55 +2707,60 @@ pub mod pallet {
         /// If no progress is made, `Err(_)` is returned.
         pub fn do_update(weight_limit: Weight) -> Result<Weight, Weight> {
             // Find out if update is still in progress
-            let maybe_cursor = ActiveBonusUpdateCursor::<T>::get();
+            let init_bonus_update_state = ActiveBonusUpdateState::<T>::get();
             let mut consumed_weight = T::DbWeight::get().reads(1);
-            let mut new_cursor = None;
+
+            if init_bonus_update_state == BonusUpdateStateFor::<T>::Finished {
+                log::trace!(
+                    target: LOG_TARGET,
+                    "Update has finished, skipping any action."
+                );
+                return Err(consumed_weight);
+            }
+
+            let mut bonus_update_state = init_bonus_update_state.clone();
             let mut entries_updated = 0u32;
 
-            let mut iter = if let Some(last_key_pair) = maybe_cursor.clone() {
-                StakerInfo::<T>::iter_from(StakerInfo::<T>::hashed_key_for(
-                    last_key_pair.0,
-                    last_key_pair.1,
-                ))
-            } else {
-                // Enable maintenance mode on the first run
-                // Likely to be already set in the runtime upgrade migration
-                ActiveProtocolState::<T>::mutate(|state| {
-                    state.maintenance = true;
-                });
-                log::warn!("Maintenance mode enabled.");
-                consumed_weight.saturating_add(T::DbWeight::get().reads_writes(1, 2));
-                StakerInfo::<T>::iter()
-            };
+            let mut iter =
+                if let BonusUpdateStateFor::<T>::InProgress(last_key_pair) = &bonus_update_state {
+                    StakerInfo::<T>::iter_from(StakerInfo::<T>::hashed_key_for(
+                        last_key_pair.0.clone(),
+                        last_key_pair.1.clone(),
+                    ))
+                } else {
+                    StakerInfo::<T>::iter()
+                };
 
+            let weight_margin = Self::update_weight_margin();
             while weight_limit
                 .saturating_sub(consumed_weight)
-                .all_gte(Self::update_weight_margin())
+                .all_gte(weight_margin)
             {
                 match Self::update_bonus_step(&mut iter) {
                     Ok((weight, updated_cursor)) => {
                         consumed_weight.saturating_accrue(weight);
                         entries_updated.saturating_inc();
-                        new_cursor = Some(updated_cursor);
+                        bonus_update_state = BonusUpdateStateFor::<T>::InProgress(updated_cursor);
                     }
                     Err(weight) => {
                         consumed_weight.saturating_accrue(weight);
-                        new_cursor = None; // Mark migration as complete
+                        bonus_update_state = BonusUpdateStateFor::<T>::Finished; // Mark migration as complete
                         break;
                     }
                 }
             }
 
-            if let Some(c) = new_cursor {
-                ActiveBonusUpdateCursor::<T>::put(c); // Save latest progress
-                consumed_weight = T::DbWeight::get().writes(1);
-            } else if maybe_cursor.is_some() {
-                consumed_weight = T::DbWeight::get().reads_writes(1, 3);
-                ActiveBonusUpdateCursor::<T>::take(); // Clear storage if update is finished
+            if bonus_update_state != init_bonus_update_state {
+                consumed_weight.saturating_accrue(T::DbWeight::get().writes(1));
+                ActiveBonusUpdateState::<T>::put(bonus_update_state.clone());
+            }
+
+            if bonus_update_state == crate::types::BonusUpdateStateFor::<T>::Finished {
+                consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 2));
                 ActiveProtocolState::<T>::mutate(|state| {
                     state.maintenance = false;
                 });
-                log::warn!("Maintenance mode disabled.");
+                log::info!("Maintenance mode disabled.");
             }
 
             log::info!(target: LOG_TARGET, "🚚 updated entries {entries_updated}");
@@ -2764,26 +2769,23 @@ pub mod pallet {
 
         pub(crate) fn update_bonus_step(
             iter: &mut impl Iterator<Item = (T::AccountId, T::SmartContract, SingularStakingInfo)>,
-        ) -> Result<(Weight, (T::AccountId, T::SmartContract)), Weight> {
-            let new_default_bonus_status = *BonusStatusWrapperFor::<T>::default();
+        ) -> Result<(Weight, BonusUpdateCursorFor<T>), Weight> {
+            iter.next()
+                .map(|(account, smart_contract, staking_info)| {
+                    let new_staking_info = SingularStakingInfo {
+                        previous_staked: staking_info.previous_staked,
+                        staked: staking_info.staked,
+                        bonus_status: *BonusStatusWrapperFor::<T>::default(),
+                    };
 
-            if let Some((account, smart_contract, staking_info)) = iter.next() {
-                let new_staking_info = SingularStakingInfo {
-                    previous_staked: staking_info.previous_staked,
-                    staked: staking_info.staked,
-                    bonus_status: new_default_bonus_status,
-                };
+                    StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
 
-                StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
-
-                Ok((
-                    <T as Config>::WeightInfo::update_bonus_step_success(),
-                    (account, smart_contract), // new cursor
-                ))
-            } else {
-                // No more entries to process, update is finished
-                Err(<T as Config>::WeightInfo::update_bonus_step_noop())
-            }
+                    Ok((
+                        <T as Config>::WeightInfo::update_bonus_step_success(),
+                        (account, smart_contract),
+                    ))
+                })
+                .unwrap_or_else(|| Err(<T as Config>::WeightInfo::update_bonus_step_noop()))
         }
 
         /// Max allowed weight that update should be allowed to consume.

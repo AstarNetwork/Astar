@@ -79,6 +79,7 @@ mod v9 {
             ActiveProtocolState::<T>::mutate(|state| {
                 state.maintenance = true;
             });
+            log::info!("Maintenance mode enabled.");
 
             // In case of try-runtime, we want to execute the whole logic, to ensure it works
             // with on-chain data.

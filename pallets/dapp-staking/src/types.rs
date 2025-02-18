@@ -98,6 +98,33 @@ pub type DAppInfoFor<T> = DAppInfo<<T as frame_system::Config>::AccountId>;
 // Convenience type for `BonusStatusWrapper` usage.
 pub type BonusStatusWrapperFor<T> = BonusStatusWrapper<<T as Config>::MaxBonusSafeMovesPerPeriod>;
 
+/// TODO: remove it once all BonusStatus are updated and the `ActiveBonusUpdateCursor` storage value is cleanup.
+pub type BonusUpdateStateFor<T> =
+    BonusUpdateState<<T as frame_system::Config>::AccountId, <T as Config>::SmartContract>;
+
+pub type BonusUpdateCursorFor<T> = (
+    <T as frame_system::Config>::AccountId,
+    <T as Config>::SmartContract,
+);
+
+pub type BonusUpdateCursor<AccountId, SmartContract> = (AccountId, SmartContract);
+
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
+pub enum BonusUpdateState<AccountId, SmartContract> {
+    /// No update in progress yet
+    NotInProgress,
+    /// Update in progress for the current cursor
+    InProgress(BonusUpdateCursor<AccountId, SmartContract>),
+    /// All updates have been finished
+    Finished,
+}
+
+impl<AccountId, SmartContract> Default for BonusUpdateState<AccountId, SmartContract> {
+    fn default() -> Self {
+        BonusUpdateState::<AccountId, SmartContract>::NotInProgress
+    }
+}
+
 /// Simple enum representing errors possible when using sparse bounded vector.
 #[derive(Debug, PartialEq, Eq)]
 pub enum AccountLedgerError {
