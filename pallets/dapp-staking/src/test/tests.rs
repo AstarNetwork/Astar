@@ -22,7 +22,7 @@ use crate::{
     DAppId, DAppTierRewardsFor, DAppTiers, EraReward, EraRewards, Error, Event, ForcingType,
     GenesisConfig, IntegratedDApps, Ledger, NextDAppId, Perbill, PeriodNumber, Permill, Safeguard,
     SingularStakingInfo, StakeAmount, StakerInfo, StaticTierParams, Subperiod, TierConfig,
-    TierThreshold,
+    TierParameters, TierThreshold,
 };
 
 use frame_support::{
@@ -3441,7 +3441,11 @@ fn base_number_of_slots_is_respected() {
         // 0. Get expected number of slots for the base price
         let total_issuance = <Test as Config>::Currency::total_issuance();
         let base_native_price = <Test as Config>::BaseNativeCurrencyPrice::get();
-        let base_number_of_slots = <Test as Config>::TierSlots::number_of_slots(base_native_price);
+        let tier_params = StaticTierParams::<Test>::get();
+        let base_number_of_slots = <Test as Config>::TierSlots::number_of_slots(
+            base_native_price,
+            tier_params.slot_number_args,
+        );
 
         // 1. Make sure base native price is set initially and calculate the new config. Store the thresholds for later comparison.
         NATIVE_PRICE.with(|v| *v.borrow_mut() = base_native_price);
@@ -3468,7 +3472,10 @@ fn base_number_of_slots_is_respected() {
         );
         assert_eq!(
             TierConfig::<Test>::get().total_number_of_slots(),
-            <Test as Config>::TierSlots::number_of_slots(higher_price),
+            <Test as Config>::TierSlots::number_of_slots(
+                higher_price,
+                tier_params.slot_number_args
+            ),
         );
 
         for (amount, static_tier_threshold) in TierConfig::<Test>::get()
@@ -3516,7 +3523,7 @@ fn base_number_of_slots_is_respected() {
         );
         assert_eq!(
             TierConfig::<Test>::get().total_number_of_slots(),
-            <Test as Config>::TierSlots::number_of_slots(lower_price),
+            <Test as Config>::TierSlots::number_of_slots(lower_price, tier_params.slot_number_args),
         );
 
         // 5. Bring it back to the base price, and expect number of slots to be the same as the base number of slots,
@@ -3805,10 +3812,21 @@ fn claim_bonus_reward_for_works() {
 }
 
 #[test]
+fn set_static_tier_params_incorrect_origin_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        let tier_params = StaticTierParams::<Test>::get();
+        assert_noop!(
+            DappStaking::set_static_tier_params(RuntimeOrigin::signed(1), tier_params),
+            BadOrigin
+        );
+    })
+}
+
 // Tests moving stakes from unregistered contracts to another contract while verifying that:
 // - All staked funds are moved from the unregistered contracts.
 // - The bonus_status is preserved during the move from an unregistered contract.
 // - Destination stake is successfully created if entry does not exist yet.
+#[test]
 fn move_stake_from_unregistered_contract_is_ok() {
     ExtBuilder::default().build_and_execute(|| {
         // Register smart contracts 1 & 2, lock&stake some amount on 1, unregister the smart contract 1
@@ -4177,6 +4195,51 @@ fn move_to_invalid_dapp_fails() {
             ),
             Error::<Test>::ContractNotFound
         );
+    })
+}
+
+#[test]
+fn set_static_tier_params_invalid_params_fails() {
+    ExtBuilder::default().build_and_execute(|| {
+        // Base value is assumed to be correct
+        let tier_params = StaticTierParams::<Test>::get();
+        assert!(tier_params.is_valid(), "Sanity check");
+        type NumberOfTiers = <Test as Config>::NumberOfTiers;
+
+        let invalid_tier_params = TierParameters::<NumberOfTiers> {
+            reward_portion: tier_params.reward_portion[1..].to_vec().try_into().unwrap(),
+            ..tier_params.clone()
+        };
+        assert!(!invalid_tier_params.is_valid(), "Sanity check");
+
+        assert_noop!(
+            DappStaking::set_static_tier_params(RuntimeOrigin::root(), invalid_tier_params),
+            Error::<Test>::InvalidTierParams
+        );
+    })
+}
+
+#[test]
+fn set_static_tier_params_works() {
+    ExtBuilder::default().build_and_execute(|| {
+        let mut tier_params = StaticTierParams::<Test>::get();
+
+        // An example of complete invalidation of the first tier - still valid params.
+        tier_params.reward_portion[0] = Permill::zero();
+        tier_params.slot_distribution[0] = Permill::zero();
+        tier_params.tier_thresholds[0] = TierThreshold::FixedPercentage {
+            required_percentage: Perbill::one(),
+        };
+
+        assert_ok!(DappStaking::set_static_tier_params(
+            RuntimeOrigin::root(),
+            tier_params.clone()
+        ));
+
+        assert_eq!(StaticTierParams::<Test>::get(), tier_params);
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::NewTierParameters {
+            params: tier_params,
+        }));
     })
 }
 

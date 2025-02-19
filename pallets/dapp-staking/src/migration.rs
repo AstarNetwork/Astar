@@ -54,12 +54,13 @@ pub mod versioned_migrations {
             Pallet<T>,
             <T as frame_system::Config>::DbWeight,
         >;
+
     /// Migration V8 to V9 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
     /// the migration is only performed when on-chain version is 9.
-    pub type V8ToV9<T> = frame_support::migrations::VersionedMigration<
+    pub type V8ToV9<T, InitArgs> = frame_support::migrations::VersionedMigration<
         8,
         9,
-        v9::ActiveUpdateBonusStatus<T>,
+        v9::VersionMigrateV8ToV9<T, InitArgs>,
         Pallet<T>,
         <T as frame_system::Config>::DbWeight,
     >;
@@ -67,19 +68,67 @@ pub mod versioned_migrations {
 
 mod v9 {
     use super::*;
+    use frame_support::DefaultNoBound;
+
+    #[derive(
+        Encode,
+        Decode,
+        MaxEncodedLen,
+        RuntimeDebugNoBound,
+        PartialEqNoBound,
+        DefaultNoBound,
+        EqNoBound,
+        CloneNoBound,
+        TypeInfo,
+    )]
+    #[scale_info(skip_type_params(NT))]
+    pub struct TierParametersV8<NT: Get<u32>> {
+        /// Reward distribution per tier, in percentage.
+        /// First entry refers to the first tier, and so on.
+        /// The sum of all values must not exceed 100%.
+        /// In case it is less, portion of rewards will never be distributed.
+        pub(crate) reward_portion: BoundedVec<Permill, NT>,
+        /// Distribution of number of slots per tier, in percentage.
+        /// First entry refers to the first tier, and so on.
+        /// The sum of all values must not exceed 100%.
+        /// In case it is less, slot capacity will never be fully filled.
+        pub(crate) slot_distribution: BoundedVec<Permill, NT>,
+        /// Requirements for entry into each tier.
+        /// First entry refers to the first tier, and so on.
+        pub(crate) tier_thresholds: BoundedVec<TierThreshold, NT>,
+    }
 
     // The loyal staker flag is updated to `u8` with the new MaxBonusSafeMovesPerPeriod from config
     // for all already existing StakerInfo.
-    pub struct ActiveUpdateBonusStatus<T>(PhantomData<T>);
+    pub struct VersionMigrateV8ToV9<T, InitArgs>(PhantomData<(T, InitArgs)>);
 
-    impl<T: Config> UncheckedOnRuntimeUpgrade for ActiveUpdateBonusStatus<T> {
+    impl<T: Config, InitArgs: Get<(u64, u64)>> UncheckedOnRuntimeUpgrade
+        for VersionMigrateV8ToV9<T, InitArgs>
+    {
         fn on_runtime_upgrade() -> Weight {
-            // When upgrade happens, we need to put dApp staking v3 into maintenance mode immediately.
-            let mut consumed_weight = T::DbWeight::get().reads_writes(1, 2);
+            let mut consumed_weight = T::DbWeight::get().reads_writes(2, 3);
+
+            // When upgrade happens, we need to put dApp staking into maintenance mode immediately.
             ActiveProtocolState::<T>::mutate(|state| {
                 state.maintenance = true;
             });
             log::info!("Maintenance mode enabled.");
+
+            // Result is ignored - upgrade must succeed, there's no fallback in case it doesn't.
+            let _ignore = StaticTierParams::<T>::translate::<TierParametersV8<T::NumberOfTiers>, _>(
+                |maybe_old_params| match maybe_old_params {
+                    Some(old_params) => Some(TierParameters {
+                        slot_distribution: old_params.slot_distribution,
+                        reward_portion: old_params.reward_portion,
+                        tier_thresholds: old_params.tier_thresholds,
+                        slot_number_args: InitArgs::get(),
+                    }),
+                    _ => {
+                        log::error!("Failed to translate StaticTierParams from previous V8 type to current V9 type.");
+                        None
+                    }
+                },
+            );
 
             // In case of try-runtime, we want to execute the whole logic, to ensure it works
             // with on-chain data.
@@ -126,10 +175,11 @@ mod v9 {
 
         #[cfg(feature = "try-runtime")]
         fn post_upgrade(_: Vec<u8>) -> Result<(), TryRuntimeError> {
-            ensure!(
+            assert!(
                 Pallet::<T>::on_chain_storage_version() >= 9,
                 "dapp-staking::migration::v9: wrong storage version"
             );
+
             assert!(
                 !ActiveProtocolState::<T>::get().maintenance,
                 "Maintenance mode must be disabled after the successful runtime upgrade."
@@ -137,12 +187,22 @@ mod v9 {
 
             let new_default_bonus_status = *crate::types::BonusStatusWrapperFor::<T>::default();
             for (_, _, staking_info) in StakerInfo::<T>::iter() {
-                assert_eq!(staking_info.bonus_status, new_default_bonus_status);
+                assert!(
+                    staking_info.bonus_status >= new_default_bonus_status.saturating_sub(1)
+                        && staking_info.bonus_status <= new_default_bonus_status
+                );
             }
             log::info!(
                 target: LOG_TARGET,
                 "All entries updated to new_default_bonus_status {}", new_default_bonus_status,
             );
+
+            let new_tier_params = StaticTierParams::<T>::get();
+            assert!(
+                new_tier_params.is_valid(),
+                "New tier params are invalid, re-check the values!"
+            );
+            assert_eq!(new_tier_params.slot_number_args, InitArgs::get());
 
             Ok(())
         }
@@ -206,6 +266,7 @@ pub mod v8 {
                                 slot_distribution: old_params.slot_distribution,
                                 reward_portion: old_params.reward_portion,
                                 tier_thresholds,
+                                slot_number_args: Default::default(),
                             }),
                             Err(err) => {
                                 log::error!(

@@ -56,7 +56,7 @@ use astar_primitives::{
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver,
         PeriodNumber, Rank, RankedTier, SmartContractHandle, StakingRewardHandler, TierId,
-        TierSlots as TierSlotFunc,
+        TierSlots as TierSlotFunc, STANDARD_TIER_SLOTS_ARGS,
     },
     oracle::PriceProvider,
     Balance, BlockNumber,
@@ -330,6 +330,10 @@ pub mod pallet {
             destination_contract: T::SmartContract,
             amount: Balance,
         },
+        /// Tier parameters, used to calculate tier configuration, have been updated, and will be applicable from next era.
+        NewTierParameters {
+            params: TierParameters<T::NumberOfTiers>,
+        },
     }
 
     #[pallet::error]
@@ -406,6 +410,8 @@ pub mod pallet {
         NoExpiredEntries,
         /// Force call is not allowed in production.
         ForceNotAllowed,
+        /// Invalid tier parameters were provided. This can happen if any number exceeds 100% or if number of elements does not match the number of tiers.
+        InvalidTierParams,
         /// Same contract specified as source and destination.
         SameContracts,
     }
@@ -523,10 +529,11 @@ pub mod pallet {
         StorageValue<_, BonusUpdateStateFor<T>, ValueQuery>;
 
     #[pallet::genesis_config]
-    pub struct GenesisConfig<T> {
+    pub struct GenesisConfig<T: Config> {
         pub reward_portion: Vec<Permill>,
         pub slot_distribution: Vec<Permill>,
         pub tier_thresholds: Vec<TierThreshold>,
+        pub slot_number_args: (u64, u64),
         pub slots_per_tier: Vec<u16>,
         pub safeguard: Option<bool>,
         #[serde(skip)]
@@ -546,6 +553,7 @@ pub mod pallet {
                         required_percentage: Perbill::from_percent(i),
                     })
                     .collect(),
+                slot_number_args: STANDARD_TIER_SLOTS_ARGS,
                 slots_per_tier: vec![100; num_tiers as usize],
                 safeguard: None,
                 _config: Default::default(),
@@ -570,6 +578,7 @@ pub mod pallet {
                     self.tier_thresholds.clone(),
                 )
                 .expect("Invalid number of tier thresholds provided."),
+                slot_number_args: self.slot_number_args,
             };
             assert!(
                 tier_params.is_valid(),
@@ -1399,6 +1408,28 @@ pub mod pallet {
             .into())
         }
 
+        /// Used to set static tier parameters, which are used to calculate tier configuration.
+        /// Tier configuration defines tier entry threshold values, number of slots, and reward portions.
+        ///
+        /// This is a delicate call and great care should be taken when changing these
+        /// values since it has a significant impact on the reward system.
+        #[pallet::call_index(22)]
+        #[pallet::weight(T::WeightInfo::set_static_tier_params())]
+        pub fn set_static_tier_params(
+            origin: OriginFor<T>,
+            params: TierParameters<T::NumberOfTiers>,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            ensure_root(origin)?;
+            ensure!(params.is_valid(), Error::<T>::InvalidTierParams);
+
+            StaticTierParams::<T>::set(params.clone());
+
+            Self::deposit_event(Event::<T>::NewTierParameters { params });
+
+            Ok(())
+        }
+
         /// Active update `BonusStatus` according to the new MaxBonusSafeMovesPerPeriod from config
         /// for all already existing StakerInfo in steps, consuming up to the specified amount of
         /// weight.
@@ -1407,7 +1438,7 @@ pub mod pallet {
         /// In any case the weight_limit is clamped between the minimum & maximum allowed values.
         ///
         /// TODO: remove this extrinsic once BonusStatus update is done
-        #[pallet::call_index(22)]
+        #[pallet::call_index(200)]
         #[pallet::weight({
             Pallet::<T>::clamp_call_weight(*weight_limit)
         })]
@@ -2773,7 +2804,9 @@ pub mod pallet {
                     let new_staking_info = SingularStakingInfo {
                         previous_staked: staking_info.previous_staked,
                         staked: staking_info.staked,
-                        bonus_status: *BonusStatusWrapperFor::<T>::default(),
+                        bonus_status: staking_info
+                            .bonus_status
+                            .saturating_add(T::MaxBonusSafeMovesPerPeriod::get()),
                     };
 
                     StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);

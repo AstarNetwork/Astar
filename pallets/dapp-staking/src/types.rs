@@ -1687,6 +1687,10 @@ pub struct TierParameters<NT: Get<u32>> {
     /// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
     pub(crate) tier_thresholds: BoundedVec<TierThreshold, NT>,
+    /// Arguments for the linear equation used to calculate the number of slots.
+    /// This can be made more generic in the future in case more complex equations are required.
+    /// But for now this simple tuple serves the purpose.
+    pub(crate) slot_number_args: (u64, u64),
 }
 
 impl<NT: Get<u32>> TierParameters<NT> {
@@ -1778,8 +1782,8 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
         total_issuance: Balance,
     ) -> Self {
         // It must always be at least 1 slot.
-        let base_number_of_slots = T::number_of_slots(P::get()).max(1);
-        let new_number_of_slots = T::number_of_slots(native_price).max(1);
+        let base_number_of_slots = T::number_of_slots(P::get(), params.slot_number_args).max(1);
+        let new_number_of_slots = T::number_of_slots(native_price, params.slot_number_args).max(1);
 
         // Calculate how much each tier gets slots.
         let new_slots_per_tier: Vec<u16> = params
