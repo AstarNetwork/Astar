@@ -1972,6 +1972,10 @@
 <a href="#1970" id="1970">1970</a>
 <a href="#1971" id="1971">1971</a>
 <a href="#1972" id="1972">1972</a>
+<a href="#1973" id="1973">1973</a>
+<a href="#1974" id="1974">1974</a>
+<a href="#1975" id="1975">1975</a>
+<a href="#1976" id="1976">1976</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3661,6 +3665,10 @@
     <span class="doccomment">/// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) tier_thresholds: BoundedVec&lt;TierThreshold, NT&gt;,
+    <span class="doccomment">/// Arguments for the linear equation used to calculate the number of slots.
+    /// This can be made more generic in the future in case more complex equations are required.
+    /// But for now this simple tuple serves the purpose.
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) slot_number_args: (u64, u64),
 }
 
 <span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;&gt; TierParameters&lt;NT&gt; {
@@ -3752,8 +3760,8 @@
         total_issuance: Balance,
     ) -&gt; <span class="self">Self </span>{
         <span class="comment">// It must always be at least 1 slot.
-        </span><span class="kw">let </span>base_number_of_slots = T::number_of_slots(P::get()).max(<span class="number">1</span>);
-        <span class="kw">let </span>new_number_of_slots = T::number_of_slots(native_price).max(<span class="number">1</span>);
+        </span><span class="kw">let </span>base_number_of_slots = T::number_of_slots(P::get(), params.slot_number_args).max(<span class="number">1</span>);
+        <span class="kw">let </span>new_number_of_slots = T::number_of_slots(native_price, params.slot_number_args).max(<span class="number">1</span>);
 
         <span class="comment">// Calculate how much each tier gets slots.
         </span><span class="kw">let </span>new_slots_per_tier: Vec&lt;u16&gt; = params

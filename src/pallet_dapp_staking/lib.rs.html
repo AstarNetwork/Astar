@@ -2840,6 +2840,39 @@
 <a href="#2838" id="2838">2838</a>
 <a href="#2839" id="2839">2839</a>
 <a href="#2840" id="2840">2840</a>
+<a href="#2841" id="2841">2841</a>
+<a href="#2842" id="2842">2842</a>
+<a href="#2843" id="2843">2843</a>
+<a href="#2844" id="2844">2844</a>
+<a href="#2845" id="2845">2845</a>
+<a href="#2846" id="2846">2846</a>
+<a href="#2847" id="2847">2847</a>
+<a href="#2848" id="2848">2848</a>
+<a href="#2849" id="2849">2849</a>
+<a href="#2850" id="2850">2850</a>
+<a href="#2851" id="2851">2851</a>
+<a href="#2852" id="2852">2852</a>
+<a href="#2853" id="2853">2853</a>
+<a href="#2854" id="2854">2854</a>
+<a href="#2855" id="2855">2855</a>
+<a href="#2856" id="2856">2856</a>
+<a href="#2857" id="2857">2857</a>
+<a href="#2858" id="2858">2858</a>
+<a href="#2859" id="2859">2859</a>
+<a href="#2860" id="2860">2860</a>
+<a href="#2861" id="2861">2861</a>
+<a href="#2862" id="2862">2862</a>
+<a href="#2863" id="2863">2863</a>
+<a href="#2864" id="2864">2864</a>
+<a href="#2865" id="2865">2865</a>
+<a href="#2866" id="2866">2866</a>
+<a href="#2867" id="2867">2867</a>
+<a href="#2868" id="2868">2868</a>
+<a href="#2869" id="2869">2869</a>
+<a href="#2870" id="2870">2870</a>
+<a href="#2871" id="2871">2871</a>
+<a href="#2872" id="2872">2872</a>
+<a href="#2873" id="2873">2873</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2898,7 +2931,7 @@
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer <span class="kw">as </span>DAppStakingObserver,
         PeriodNumber, Rank, RankedTier, SmartContractHandle, StakingRewardHandler, TierId,
-        TierSlots <span class="kw">as </span>TierSlotFunc,
+        TierSlots <span class="kw">as </span>TierSlotFunc, STANDARD_TIER_SLOTS_ARGS,
     },
     oracle::PriceProvider,
     Balance, BlockNumber,
@@ -3172,6 +3205,10 @@
             destination_contract: T::SmartContract,
             amount: Balance,
         },
+        <span class="doccomment">/// Tier parameters, used to calculate tier configuration, have been updated, and will be applicable from next era.
+        </span>NewTierParameters {
+            params: TierParameters&lt;T::NumberOfTiers&gt;,
+        },
     }
 
     <span class="attr">#[pallet::error]
@@ -3248,6 +3285,8 @@
         </span>NoExpiredEntries,
         <span class="doccomment">/// Force call is not allowed in production.
         </span>ForceNotAllowed,
+        <span class="doccomment">/// Invalid tier parameters were provided. This can happen if any number exceeds 100% or if number of elements does not match the number of tiers.
+        </span>InvalidTierParams,
         <span class="doccomment">/// Same contract specified as source and destination.
         </span>SameContracts,
     }
@@ -3365,10 +3404,11 @@
         StorageValue&lt;<span class="kw">_</span>, BonusUpdateStateFor&lt;T&gt;, ValueQuery&gt;;
 
     <span class="attr">#[pallet::genesis_config]
-    </span><span class="kw">pub struct </span>GenesisConfig&lt;T&gt; {
+    </span><span class="kw">pub struct </span>GenesisConfig&lt;T: Config&gt; {
         <span class="kw">pub </span>reward_portion: Vec&lt;Permill&gt;,
         <span class="kw">pub </span>slot_distribution: Vec&lt;Permill&gt;,
         <span class="kw">pub </span>tier_thresholds: Vec&lt;TierThreshold&gt;,
+        <span class="kw">pub </span>slot_number_args: (u64, u64),
         <span class="kw">pub </span>slots_per_tier: Vec&lt;u16&gt;,
         <span class="kw">pub </span>safeguard: <span class="prelude-ty">Option</span>&lt;bool&gt;,
         <span class="attr">#[serde(skip)]
@@ -3388,6 +3428,7 @@
                         required_percentage: Perbill::from_percent(i),
                     })
                     .collect(),
+                slot_number_args: STANDARD_TIER_SLOTS_ARGS,
                 slots_per_tier: <span class="macro">vec!</span>[<span class="number">100</span>; num_tiers <span class="kw">as </span>usize],
                 safeguard: <span class="prelude-val">None</span>,
                 _config: Default::default(),
@@ -3412,6 +3453,7 @@
                     <span class="self">self</span>.tier_thresholds.clone(),
                 )
                 .expect(<span class="string">"Invalid number of tier thresholds provided."</span>),
+                slot_number_args: <span class="self">self</span>.slot_number_args,
             };
             <span class="macro">assert!</span>(
                 tier_params.is_valid(),
@@ -4241,6 +4283,28 @@
             .into())
         }
 
+        <span class="doccomment">/// Used to set static tier parameters, which are used to calculate tier configuration.
+        /// Tier configuration defines tier entry threshold values, number of slots, and reward portions.
+        ///
+        /// This is a delicate call and great care should be taken when changing these
+        /// values since it has a significant impact on the reward system.
+        </span><span class="attr">#[pallet::call_index(<span class="number">22</span>)]
+        #[pallet::weight(T::WeightInfo::set_static_tier_params())]
+        </span><span class="kw">pub fn </span>set_static_tier_params(
+            origin: OriginFor&lt;T&gt;,
+            params: TierParameters&lt;T::NumberOfTiers&gt;,
+        ) -&gt; DispatchResult {
+            <span class="self">Self</span>::ensure_pallet_enabled()<span class="question-mark">?</span>;
+            ensure_root(origin)<span class="question-mark">?</span>;
+            <span class="macro">ensure!</span>(params.is_valid(), Error::&lt;T&gt;::InvalidTierParams);
+
+            StaticTierParams::&lt;T&gt;::set(params.clone());
+
+            <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::NewTierParameters { params });
+
+            <span class="prelude-val">Ok</span>(())
+        }
+
         <span class="doccomment">/// Active update `BonusStatus` according to the new MaxBonusSafeMovesPerPeriod from config
         /// for all already existing StakerInfo in steps, consuming up to the specified amount of
         /// weight.
@@ -4249,7 +4313,7 @@
         /// In any case the weight_limit is clamped between the minimum &amp; maximum allowed values.
         ///
         /// TODO: remove this extrinsic once BonusStatus update is done
-        </span><span class="attr">#[pallet::call_index(<span class="number">22</span>)]
+        </span><span class="attr">#[pallet::call_index(<span class="number">200</span>)]
         #[pallet::weight({
             Pallet::&lt;T&gt;::clamp_call_weight(<span class="kw-2">*</span>weight_limit)
         })]
@@ -5615,7 +5679,9 @@
                     <span class="kw">let </span>new_staking_info = SingularStakingInfo {
                         previous_staked: staking_info.previous_staked,
                         staked: staking_info.staked,
-                        bonus_status: <span class="kw-2">*</span>BonusStatusWrapperFor::&lt;T&gt;::default(),
+                        bonus_status: staking_info
+                            .bonus_status
+                            .saturating_add(T::MaxBonusSafeMovesPerPeriod::get()),
                     };
 
                     StakerInfo::&lt;T&gt;::insert(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>smart_contract, new_staking_info);

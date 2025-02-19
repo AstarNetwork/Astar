@@ -2384,10 +2384,6 @@
 <a href="#2382" id="2382">2382</a>
 <a href="#2383" id="2383">2383</a>
 <a href="#2384" id="2384">2384</a>
-<a href="#2385" id="2385">2385</a>
-<a href="#2386" id="2386">2386</a>
-<a href="#2387" id="2387">2387</a>
-<a href="#2388" id="2388">2388</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2468,7 +2464,7 @@
 <span class="kw">use </span>astar_primitives::{
     dapp_staking::{
         AccountCheck <span class="kw">as </span>DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, RankedTier, SmartContract, TierSlots <span class="kw">as </span>TierSlotsFunc,
+        PeriodNumber, RankedTier, SmartContract, StandardTierSlots,
     },
     evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler},
     governance::OracleMembershipInst,
@@ -2801,15 +2797,6 @@
     }
 }
 
-<span class="kw">pub struct </span>ShidenTierSlots;
-<span class="kw">impl </span>TierSlotsFunc <span class="kw">for </span>ShidenTierSlots {
-    <span class="kw">fn </span>number_of_slots(price: Price) -&gt; u16 {
-        <span class="comment">// According to the forum proposal, the original formula's factor is reduced from 1000x to 100x.
-        </span><span class="kw">let </span>result: u64 = price.saturating_mul_int(<span class="number">100_u64</span>).saturating_add(<span class="number">50</span>);
-        result.unique_saturated_into()
-    }
-}
-
 <span class="macro">parameter_types! </span>{
     <span class="kw">pub const </span>MinimumStakingAmount: Balance = <span class="number">50 </span>* SDN;
     <span class="kw">pub const </span>BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(<span class="number">5</span>, <span class="number">100</span>);
@@ -2828,7 +2815,7 @@
     <span class="kw">type </span>CycleConfiguration = InflationCycleConfig;
     <span class="kw">type </span>Observers = Inflation;
     <span class="kw">type </span>AccountCheck = AccountCheck;
-    <span class="kw">type </span>TierSlots = ShidenTierSlots;
+    <span class="kw">type </span>TierSlots = StandardTierSlots;
     <span class="kw">type </span>BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     <span class="kw">type </span>EraRewardSpanLength = ConstU32&lt;<span class="number">16</span>&gt;;
     <span class="kw">type </span>RewardRetentionInPeriods = ConstU32&lt;<span class="number">3</span>&gt;;
@@ -3684,10 +3671,15 @@
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = pallet_dapp_staking::migration::versioned_migrations::V8ToV9&lt;Runtime&gt;;
+</span><span class="kw">pub type </span>Unreleased =
+    (pallet_dapp_staking::migration::versioned_migrations::V8ToV9&lt;Runtime, TierSlotsArgs&gt;,);
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);
+
+<span class="macro">parameter_types! </span>{
+    <span class="kw">pub const </span>TierSlotsArgs: (u64, u64) = (<span class="number">100</span>, <span class="number">50</span>);
+}
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,

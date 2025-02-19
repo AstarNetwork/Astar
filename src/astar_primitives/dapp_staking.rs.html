@@ -319,6 +319,16 @@
 <a href="#317" id="317">317</a>
 <a href="#318" id="318">318</a>
 <a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -507,17 +517,27 @@
 <span class="doccomment">/// Trait for calculating the total number of tier slots for the given price.
 </span><span class="kw">pub trait </span>TierSlots {
     <span class="doccomment">/// Returns the total number of tier slots for the given price.
-    </span><span class="kw">fn </span>number_of_slots(price: CurrencyAmount) -&gt; u16;
+    ///
+    /// # Arguments
+    /// * `price` - price (e.g. moving average over some time period) of the native currency.
+    /// * `args` - arguments, `a` &amp; `b`, for the linear equation `number_of_slots = a * price + b`.
+    ///
+    /// Returns the total number of tier slots.
+    </span><span class="kw">fn </span>number_of_slots(price: CurrencyAmount, args: (u64, u64)) -&gt; u16;
 }
 
 <span class="doccomment">/// Standard tier slots implementation, as proposed in the Tokenomics 2.0 document.
 </span><span class="kw">pub struct </span>StandardTierSlots;
 <span class="kw">impl </span>TierSlots <span class="kw">for </span>StandardTierSlots {
-    <span class="kw">fn </span>number_of_slots(price: CurrencyAmount) -&gt; u16 {
-        <span class="kw">let </span>result: u64 = price.saturating_mul_int(<span class="number">1000_u64</span>).saturating_add(<span class="number">50</span>);
+    <span class="kw">fn </span>number_of_slots(price: CurrencyAmount, args: (u64, u64)) -&gt; u16 {
+        <span class="kw">let </span>result: u64 = price.saturating_mul_int(args.<span class="number">0</span>).saturating_add(args.<span class="number">1</span>);
         result.unique_saturated_into()
     }
 }
+
+<span class="doccomment">/// Standard tier slots arguments.
+/// Initially decided for Astar, during the Tokenomics 2.0 work.
+</span><span class="kw">pub const </span>STANDARD_TIER_SLOTS_ARGS: (u64, u64) = (<span class="number">1000</span>, <span class="number">50</span>);
 
 <span class="doccomment">/// RankedTier is wrapper around u8 to hold both tier and rank. u8 has 2 bytes (8bits) and they're using in this order `0xrank_tier`.
 /// First 4 bits are used to hold rank and second 4 bits are used to hold tier.

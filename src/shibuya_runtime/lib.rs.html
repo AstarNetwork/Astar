@@ -2784,6 +2784,11 @@
 <a href="#2782" id="2782">2782</a>
 <a href="#2783" id="2783">2783</a>
 <a href="#2784" id="2784">2784</a>
+<a href="#2785" id="2785">2785</a>
+<a href="#2786" id="2786">2786</a>
+<a href="#2787" id="2787">2787</a>
+<a href="#2788" id="2788">2788</a>
+<a href="#2789" id="2789">2789</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -4473,10 +4478,15 @@
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = pallet_dapp_staking::migration::versioned_migrations::V8ToV9&lt;Runtime&gt;;
+</span><span class="kw">pub type </span>Unreleased =
+    (pallet_dapp_staking::migration::versioned_migrations::V8ToV9&lt;Runtime, TierSlotsArgs&gt;,);
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);
+
+<span class="macro">parameter_types! </span>{
+    <span class="kw">pub const </span>TierSlotsArgs: (u64, u64) = (<span class="number">1000</span>, <span class="number">50</span>);
+}
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,
