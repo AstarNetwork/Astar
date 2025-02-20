@@ -2325,8 +2325,14 @@ fn singular_previous_stake_is_ok() {
         period: period_number,
     };
     staking_info.stake(stake_amount_3, era_2, 0);
-    assert_eq!(staking_info.previous_staked.total(), stake_amount_1.total() + stake_amount_2.total());
-    assert_eq!(staking_info.staked.total(), stake_amount_1.total() + stake_amount_2.total() + stake_amount_3.total());
+    assert_eq!(
+        staking_info.previous_staked.total(),
+        stake_amount_1.total() + stake_amount_2.total()
+    );
+    assert_eq!(
+        staking_info.staked.total(),
+        stake_amount_1.total() + stake_amount_2.total() + stake_amount_3.total()
+    );
 }
 
 #[test]
