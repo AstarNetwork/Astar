@@ -3916,12 +3916,7 @@ fn move_stake_bonus_preserved_with_transfer_conversion_is_ok() {
             let default_bonus_status = *BonusStatusWrapperFor::<Test>::default();
             let expected_bonus_status = default_bonus_status - 1; // B&E subperiod + full move
             let expected_stopover_staking_info = SingularStakingInfo {
-                previous_staked: StakeAmount {
-                    voting: 0,
-                    build_and_earn: 100,
-                    era: 2,
-                    period: 1,
-                },
+                previous_staked: StakeAmount::default(),
                 staked: StakeAmount {
                     voting: 100,
                     build_and_earn: 200,
@@ -4274,6 +4269,70 @@ fn active_update_bonus_status() {
 
             assert_eq!(
                 StakerInfo::<Test>::get(&account_1, &contract_1),
+                Some(expected_staker_info)
+            );
+        })
+}
+
+// Tests a previous bug where previous_stake was storing future stake amounts (amounts that should be eligible in the next era)
+#[test]
+fn previous_stake_unchanged_for_future_era_staking() {
+    ExtBuilder::default()
+        .with_max_bonus_safe_moves(2)
+        .build_and_execute(|| {
+            // Register smart contracts 1 & 2, lock&stake some amount on 1 & 2
+            let smart_contract = MockSmartContract::wasm(1 as AccountId);
+            assert_register(1, &smart_contract);
+
+            let account = 2;
+            let amount = 100;
+            assert_lock(account, amount);
+
+            let stake_1 = 10;
+            let stake_2 = 20;
+            let stake_era_origin = ActiveProtocolState::<Test>::get().era;
+            assert_stake(account, &smart_contract, stake_1);
+            assert_stake(account, &smart_contract, stake_2);
+
+            let expected_bonus_status = *BonusStatusWrapperFor::<Test>::default();
+            let expected_staker_info = SingularStakingInfo {
+                previous_staked: Default::default(),
+                staked: StakeAmount {
+                    voting: stake_1 + stake_2,
+                    build_and_earn: 0,
+                    era: stake_era_origin + 1,
+                    period: 1,
+                },
+                bonus_status: expected_bonus_status,
+            };
+            assert_eq!(
+                StakerInfo::<Test>::get(&account, &smart_contract),
+                Some(expected_staker_info)
+            );
+
+            advance_to_next_era();
+            let stake_era_next = ActiveProtocolState::<Test>::get().era;
+            let stake_3 = 20;
+            assert_stake(account, &smart_contract, stake_3);
+
+            let expected_bonus_status = *BonusStatusWrapperFor::<Test>::default();
+            let expected_staker_info = SingularStakingInfo {
+                previous_staked: StakeAmount {
+                    voting: stake_1 + stake_2,
+                    build_and_earn: 0,
+                    era: stake_era_origin + 1,
+                    period: 1,
+                },
+                staked: StakeAmount {
+                    voting: stake_1 + stake_2,
+                    build_and_earn: stake_3,
+                    era: stake_era_next + 1,
+                    period: 1,
+                },
+                bonus_status: expected_bonus_status,
+            };
+            assert_eq!(
+                StakerInfo::<Test>::get(&account, &smart_contract),
                 Some(expected_staker_info)
             );
         })
