@@ -2287,6 +2287,55 @@ fn singular_staking_info_basics_are_ok() {
 }
 
 #[test]
+fn singular_previous_stake_is_ok() {
+    let period_number = 1;
+    let bonus_status = 0;
+    let mut staking_info = SingularStakingInfo::new(period_number, bonus_status);
+
+    // Add some staked amount during `Build&Earn` period
+    let era_1 = 7;
+    let bep_stake_amount_1 = 10;
+    let stake_amount_1 = StakeAmount {
+        voting: 0,
+        build_and_earn: bep_stake_amount_1,
+        era: era_1,
+        period: period_number,
+    };
+    staking_info.stake(stake_amount_1, era_1, 0);
+    assert!(staking_info.previous_staked.is_empty());
+
+    // Add more staked amount during same era
+    let bep_stake_amount_2 = 20;
+    let stake_amount_2 = StakeAmount {
+        voting: 0,
+        build_and_earn: bep_stake_amount_2,
+        era: era_1,
+        period: period_number,
+    };
+    staking_info.stake(stake_amount_2, era_1, 0);
+    assert!(staking_info.previous_staked.is_empty());
+
+    // Add more staked amount during a future era
+    let era_2 = 17;
+    let bep_stake_amount_3 = 30;
+    let stake_amount_3 = StakeAmount {
+        voting: 0,
+        build_and_earn: bep_stake_amount_3,
+        era: era_2,
+        period: period_number,
+    };
+    staking_info.stake(stake_amount_3, era_2, 0);
+    assert_eq!(
+        staking_info.previous_staked.total(),
+        stake_amount_1.total() + stake_amount_2.total()
+    );
+    assert_eq!(
+        staking_info.staked.total(),
+        stake_amount_1.total() + stake_amount_2.total() + stake_amount_3.total()
+    );
+}
+
+#[test]
 fn singular_staking_info_unstake_during_voting_is_ok() {
     get_u8_type!(MaxMoves, 1);
     type TestBonusStatusWrapper = BonusStatusWrapper<MaxMoves>;
