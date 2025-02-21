@@ -3101,7 +3101,7 @@
         bonus_status: BonusStatus,
     ) {
         <span class="comment">// Keep the previous stake amount for future reference
-        </span><span class="kw">if </span><span class="self">self</span>.previous_staked.era &lt; current_era {
+        </span><span class="kw">if </span><span class="self">self</span>.staked.era &lt;= current_era {
             <span class="self">self</span>.previous_staked = <span class="self">self</span>.staked;
             <span class="self">self</span>.previous_staked.era = current_era;
             <span class="kw">if </span><span class="self">self</span>.previous_staked.total().is_zero() {
