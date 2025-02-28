@@ -30,7 +30,7 @@ Execute the following command from your terminal to set up the development envir
 
 ```bash
 # install Substrate development environment via the automatic script
-$ curl https://getsubstrate.io -sSf | bash -s -- --fast
+$ curl https://docs.substrate.io/install/ -sSf | bash -s -- --fast
 
 # clone the Git repository
 $ git clone --recurse-submodules https://github.com/AstarNetwork/Astar.git
@@ -112,7 +112,7 @@ The runtime crate version will align its major and minor versions with the Rust 
 All dependencies should be listed inside the workspace's root `Cargo.toml` file.
 This allows us to easily change version of a crate used by the entire repo by modifying the version in a single place.
 
-Right now, if **non_std** is required, `default-features = false` must be set in the root `Cargo.toml` file (related to this [issue](https://github.com/rust-lang/cargo/pull/11409)). Otherwise, it will have no effect, causing your compilation to fail.
+Right now, if **no_std** is required, `default-features = false` must be set in the root `Cargo.toml` file (related to this [issue](https://github.com/rust-lang/cargo/pull/11409)). Otherwise, it will have no effect, causing your compilation to fail.
 Also `package` imports aren't properly propagated from root to sub-crates, so defining those should be avoided.
 
 Defining _features_ in the root `Cargo.toml` is additive with the features defined in concrete crate's `Cargo.toml`.
