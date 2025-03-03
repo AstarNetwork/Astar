@@ -106,16 +106,7 @@ mod v9 {
         for VersionMigrateV8ToV9<T, InitArgs>
     {
         fn on_runtime_upgrade() -> Weight {
-            let mut consumed_weight = T::DbWeight::get().reads_writes(2, 3);
-
-            // When upgrade happens, we need to put dApp staking into maintenance mode immediately.
-            ActiveProtocolState::<T>::mutate(|state| {
-                state.maintenance = true;
-            });
-            log::info!("Maintenance mode enabled.");
-
-            // Result is ignored - upgrade must succeed, there's no fallback in case it doesn't.
-            let _ignore = StaticTierParams::<T>::translate::<TierParametersV8<T::NumberOfTiers>, _>(
+            let result = StaticTierParams::<T>::translate::<TierParametersV8<T::NumberOfTiers>, _>(
                 |maybe_old_params| match maybe_old_params {
                     Some(old_params) => Some(TierParameters {
                         slot_distribution: old_params.slot_distribution,
@@ -124,48 +115,26 @@ mod v9 {
                         slot_number_args: InitArgs::get(),
                     }),
                     _ => {
-                        log::error!("Failed to translate StaticTierParams from previous V8 type to current V9 type.");
                         None
                     }
                 },
             );
 
-            // In case of try-runtime, we want to execute the whole logic, to ensure it works
-            // with on-chain data.
-            if cfg!(feature = "try-runtime") {
-                let mut steps = 0_u32;
-                while ActiveProtocolState::<T>::get().maintenance {
-                    match Pallet::<T>::do_update(crate::Pallet::<T>::max_call_weight()) {
-                        Ok(weight) => {
-                            consumed_weight.saturating_accrue(weight);
-                            steps.saturating_inc();
-                        }
-                        Err(_) => {
-                            panic!("Must never happen since we check whether the update is finished before calling `do_update` by checking maintenance mode.");
-                        }
-                    }
-                }
-
-                log::trace!(
-                    target: LOG_TARGET,
-                    "dApp Staking bonus update finished after {} steps with total weight of {}.",
-                    steps,
-                    consumed_weight,
-                );
-
-                consumed_weight
-            } else {
-                consumed_weight
+            if result.is_err() {
+                log::error!("Failed to translate StaticTierParams from previous V8 type to current V9 type.");
+                // Enable maintenance mode.
+                ActiveProtocolState::<T>::mutate(|state| {
+                    state.maintenance = true;
+                });
+                log::warn!("Maintenance mode enabled.");
+                return T::DbWeight::get().reads_writes(2, 1);
             }
+
+            T::DbWeight::get().reads_writes(1, 1)
         }
 
         #[cfg(feature = "try-runtime")]
         fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
-            log::info!(
-                target: LOG_TARGET,
-                "Out of {} already existing stakers are expected to have their bonus updated.",
-                v8::StakerInfo::<T>::iter().count(),
-            );
             assert!(
                 !ActiveProtocolState::<T>::get().maintenance,
                 "Maintenance mode must be disabled before the runtime upgrade."
@@ -183,18 +152,6 @@ mod v9 {
             assert!(
                 !ActiveProtocolState::<T>::get().maintenance,
                 "Maintenance mode must be disabled after the successful runtime upgrade."
-            );
-
-            let new_default_bonus_status = *crate::types::BonusStatusWrapperFor::<T>::default();
-            for (_, _, staking_info) in StakerInfo::<T>::iter() {
-                assert!(
-                    staking_info.bonus_status >= new_default_bonus_status.saturating_sub(1)
-                        && staking_info.bonus_status <= new_default_bonus_status
-                );
-            }
-            log::info!(
-                target: LOG_TARGET,
-                "All entries updated to new_default_bonus_status {}", new_default_bonus_status,
             );
 
             let new_tier_params = StaticTierParams::<T>::get();

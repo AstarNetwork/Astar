@@ -533,25 +533,4 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(7_452_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	/// Storage: `DappStaking::StakerInfo` (r:2 w:1)
-	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(178), added: 2653, mode: `MaxEncodedLen`)
-	fn update_bonus_step_success() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `142`
-		//  Estimated: `6296`
-		// Minimum execution time: 12_431_000 picoseconds.
-		Weight::from_parts(12_622_000, 6296)
-			.saturating_add(T::DbWeight::get().reads(2_u64))
-			.saturating_add(T::DbWeight::get().writes(1_u64))
-	}
-	/// Storage: `DappStaking::StakerInfo` (r:1 w:0)
-	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(178), added: 2653, mode: `MaxEncodedLen`)
-	fn update_bonus_step_noop() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `19`
-		//  Estimated: `3643`
-		// Minimum execution time: 2_434_000 picoseconds.
-		Weight::from_parts(2_573_000, 3643)
-			.saturating_add(T::DbWeight::get().reads(1_u64))
-	}
 }
