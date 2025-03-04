@@ -4238,42 +4238,6 @@ fn set_static_tier_params_works() {
     })
 }
 
-#[test]
-fn active_update_bonus_status() {
-    ExtBuilder::default()
-        .with_max_bonus_safe_moves(2)
-        .build_and_execute(|| {
-            let account_1 = 1;
-            let contract_1 = MockSmartContract::wasm(1 as AccountId);
-
-            crate::migration::v8::StakerInfo::<Test>::set(
-                &account_1,
-                &contract_1,
-                Some(crate::migration::v8::SingularStakingInfo {
-                    previous_staked: Default::default(),
-                    staked: Default::default(),
-                    loyal_staker: true,
-                }),
-            );
-
-            assert_ok!(crate::Pallet::<Test>::do_update(
-                crate::Pallet::<Test>::max_call_weight()
-            ));
-
-            let expected_bonus_status = *BonusStatusWrapperFor::<Test>::default();
-            let expected_staker_info = SingularStakingInfo {
-                previous_staked: Default::default(),
-                staked: Default::default(),
-                bonus_status: expected_bonus_status,
-            };
-
-            assert_eq!(
-                StakerInfo::<Test>::get(&account_1, &contract_1),
-                Some(expected_staker_info)
-            );
-        })
-}
-
 // Tests a previous bug where previous_stake was storing future stake amounts (amounts that should be eligible in the next era)
 #[test]
 fn previous_stake_unchanged_for_future_era_staking() {
