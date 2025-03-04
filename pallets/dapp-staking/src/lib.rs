@@ -36,7 +36,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-    dispatch::PostDispatchInfo,
     pallet_prelude::*,
     traits::{
         fungible::{Inspect as FunInspect, MutateFreeze as FunMutateFreeze},

@@ -17,10 +17,12 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use core::marker::PhantomData;
 use frame_support::{
+    migration::clear_storage_prefix,
     migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
     storage_alias,
-    traits::{OnRuntimeUpgrade, UncheckedOnRuntimeUpgrade},
+    traits::{GetStorageVersion, OnRuntimeUpgrade, UncheckedOnRuntimeUpgrade},
     weights::WeightMeter,
 };
 
@@ -114,9 +116,7 @@ mod v9 {
                         tier_thresholds: old_params.tier_thresholds,
                         slot_number_args: InitArgs::get(),
                     }),
-                    _ => {
-                        None
-                    }
+                    _ => None,
                 },
             );
 
@@ -658,6 +658,30 @@ impl<T: Config> OnRuntimeUpgrade for AdjustEraMigration<T> {
                 state.next_era_start.saturating_accrue(remaining);
             }
         });
+        T::DbWeight::get().reads_writes(1, 1)
+    }
+}
+
+pub const EXPECTED_PALLET_DAPP_STAKING_VERSION: u16 = 9;
+
+pub struct DappStakingCleanupMigration<T>(PhantomData<T>);
+impl<T: Config> OnRuntimeUpgrade for DappStakingCleanupMigration<T> {
+    fn on_runtime_upgrade() -> Weight {
+        let dapp_staking_storage_version =
+            <Pallet<T> as GetStorageVersion>::on_chain_storage_version();
+        if dapp_staking_storage_version != EXPECTED_PALLET_DAPP_STAKING_VERSION {
+            log::info!("Aborting migration due to unexpected on-chain storage versions for pallet-dapp-staking: {:?}. Expectation was: {:?}.", dapp_staking_storage_version, EXPECTED_PALLET_DAPP_STAKING_VERSION);
+            return T::DbWeight::get().reads(1);
+        }
+
+        let pallet_prefix: &[u8] = b"DappStaking";
+        let result =
+            clear_storage_prefix(pallet_prefix, b"ActiveBonusUpdateState", &[], None, None);
+        log::info!(
+            "cleanup dAppStaking migration result: {:?}",
+            result.deconstruct()
+        );
+
         T::DbWeight::get().reads_writes(1, 1)
     }
 }
