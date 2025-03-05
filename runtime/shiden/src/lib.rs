@@ -1284,8 +1284,22 @@ pub type Executive = frame_executive::Executive<
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
+use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
+use pallet_dapp_staking::migration::EXPECTED_PALLET_DAPP_STAKING_VERSION;
+
+// Bump dAppStaking pallet version to 9 (move extrinsic release)
+pub struct BumpDappStakingVersion;
+
+impl OnRuntimeUpgrade for BumpDappStakingVersion {
+    fn on_runtime_upgrade() -> Weight {
+        StorageVersion::new(EXPECTED_PALLET_DAPP_STAKING_VERSION)
+            .put::<pallet_dapp_staking::Pallet<Runtime>>();
+        <Runtime as frame_system::pallet::Config>::DbWeight::get().writes(1)
+    }
+}
+
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased = BumpDappStakingVersion;
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
