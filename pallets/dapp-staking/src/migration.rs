@@ -36,7 +36,7 @@ pub mod versioned_migrations {
     use super::*;
 
     /// Migration V8 to V9 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
-    /// the migration is only performed when on-chain version is 9.
+    /// the migration is only performed when on-chain version is 8.
     pub type V8ToV9<T, InitArgs> = frame_support::migrations::VersionedMigration<
         8,
         9,
