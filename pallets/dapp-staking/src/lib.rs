@@ -36,7 +36,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-    dispatch::PostDispatchInfo,
     pallet_prelude::*,
     traits::{
         fungible::{Inspect as FunInspect, MutateFreeze as FunMutateFreeze},
@@ -522,12 +521,6 @@ pub mod pallet {
     #[pallet::storage]
     pub type Safeguard<T: Config> = StorageValue<_, bool, ValueQuery, DefaultSafeguard<T>>;
 
-    /// Temporary cursor to persist latest BonusStatus item updated.
-    /// TODO: remove it once all BonusStatus are updated and this storage value is cleanup.
-    #[pallet::storage]
-    pub type ActiveBonusUpdateState<T: Config> =
-        StorageValue<_, BonusUpdateStateFor<T>, ValueQuery>;
-
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         pub reward_portion: Vec<Permill>,
@@ -664,12 +657,6 @@ pub mod pallet {
             assert!(T::CycleConfiguration::eras_per_voting_subperiod() > 0);
             assert!(T::CycleConfiguration::eras_per_build_and_earn_subperiod() > 0);
             assert!(T::CycleConfiguration::blocks_per_era() > 0);
-
-            // TODO: remove these checks once BonusStatus update is done
-            assert!(Self::max_call_weight().all_gte(Self::min_call_weight()));
-            assert!(Self::max_call_weight()
-                .all_lte(<T as frame_system::Config>::BlockWeights::get().max_block));
-            assert!(Self::update_weight_margin().all_lte(Self::min_call_weight()));
         }
 
         #[cfg(feature = "try-runtime")]
@@ -1428,38 +1415,6 @@ pub mod pallet {
             Self::deposit_event(Event::<T>::NewTierParameters { params });
 
             Ok(())
-        }
-
-        /// Active update `BonusStatus` according to the new MaxBonusSafeMovesPerPeriod from config
-        /// for all already existing StakerInfo in steps, consuming up to the specified amount of
-        /// weight.
-        ///
-        /// If no weight is specified, max allowed weight is used.
-        /// In any case the weight_limit is clamped between the minimum & maximum allowed values.
-        ///
-        /// TODO: remove this extrinsic once BonusStatus update is done
-        #[pallet::call_index(200)]
-        #[pallet::weight({
-            Pallet::<T>::clamp_call_weight(*weight_limit)
-        })]
-        pub fn update_bonus(
-            origin: OriginFor<T>,
-            weight_limit: Option<Weight>,
-        ) -> DispatchResultWithPostInfo {
-            ensure_signed(origin)?;
-
-            let weight_to_use = Self::clamp_call_weight(weight_limit);
-            let consumed_weight = Self::do_update(weight_to_use);
-
-            // Refund the user in case migration call was needed.
-            match consumed_weight {
-                Ok(weight) => Ok(PostDispatchInfo {
-                    actual_weight: Some(weight),
-                    pays_fee: Pays::No,
-                }),
-                // No refunds or adjustments!
-                Err(_) => Ok(().into()),
-            }
         }
     }
 
@@ -2723,138 +2678,6 @@ pub mod pallet {
             }
 
             Ok(())
-        }
-    }
-
-    /// ActiveBonusMigration helpers
-    /// rework/reused from: https://github.com/AstarNetwork/Astar/blob/a13ef8e40ab8d26b1080236deafb8a609317f099/pallets/dapp-staking-migration/src/lib.rs
-    /// TODO: remove these helpers once BonusStatus update is done
-    impl<T: Config> Pallet<T> {
-        /// Execute update steps until the specified weight limit has been consumed.
-        ///
-        /// Depending on the number of entries updated and/or deleted, appropriate events are emitted.
-        ///
-        /// In case at least some progress is made, `Ok(_)` is returned.
-        /// If no progress is made, `Err(_)` is returned.
-        pub fn do_update(weight_limit: Weight) -> Result<Weight, Weight> {
-            // Find out if update is still in progress
-            let mut bonus_update_state = ActiveBonusUpdateState::<T>::get();
-            let mut consumed_weight = T::DbWeight::get().reads(1);
-
-            if bonus_update_state == BonusUpdateStateFor::<T>::Finished {
-                log::trace!(
-                    target: LOG_TARGET,
-                    "Update has finished, skipping any action."
-                );
-                return Err(consumed_weight);
-            }
-
-            let mut entries_updated = 0u32;
-
-            let mut iter = if let BonusUpdateStateFor::<T>::InProgress((account, contract)) =
-                &bonus_update_state
-            {
-                StakerInfo::<T>::iter_from(StakerInfo::<T>::hashed_key_for(
-                    account.clone(),
-                    contract.clone(),
-                ))
-            } else {
-                StakerInfo::<T>::iter()
-            };
-
-            let weight_margin = Self::update_weight_margin();
-            while weight_limit
-                .saturating_sub(consumed_weight)
-                .all_gte(weight_margin)
-            {
-                match Self::update_bonus_step(&mut iter) {
-                    Ok((weight, updated_cursor)) => {
-                        consumed_weight.saturating_accrue(weight);
-                        entries_updated.saturating_inc();
-                        bonus_update_state = BonusUpdateStateFor::<T>::InProgress(updated_cursor);
-                    }
-                    Err(weight) => {
-                        consumed_weight.saturating_accrue(weight);
-                        bonus_update_state = BonusUpdateStateFor::<T>::Finished; // Mark migration as complete
-                        break;
-                    }
-                }
-            }
-
-            consumed_weight.saturating_accrue(T::DbWeight::get().writes(1));
-            ActiveBonusUpdateState::<T>::put(bonus_update_state.clone());
-
-            if bonus_update_state == crate::types::BonusUpdateStateFor::<T>::Finished {
-                consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 2));
-                ActiveProtocolState::<T>::mutate(|state| {
-                    state.maintenance = false;
-                });
-                log::info!("Maintenance mode disabled.");
-            }
-
-            log::info!(target: LOG_TARGET, "🚚 updated entries {entries_updated}");
-            Ok(consumed_weight)
-        }
-
-        pub(crate) fn update_bonus_step(
-            iter: &mut impl Iterator<Item = (T::AccountId, T::SmartContract, SingularStakingInfo)>,
-        ) -> Result<(Weight, BonusUpdateCursorFor<T>), Weight> {
-            iter.next()
-                .map(|(account, smart_contract, staking_info)| {
-                    let new_staking_info = SingularStakingInfo {
-                        previous_staked: staking_info.previous_staked,
-                        staked: staking_info.staked,
-                        bonus_status: staking_info
-                            .bonus_status
-                            .saturating_add(T::MaxBonusSafeMovesPerPeriod::get()),
-                    };
-
-                    StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
-
-                    Ok((
-                        <T as Config>::WeightInfo::update_bonus_step_success(),
-                        (account, smart_contract),
-                    ))
-                })
-                .unwrap_or_else(|| Err(<T as Config>::WeightInfo::update_bonus_step_noop()))
-        }
-
-        /// Max allowed weight that update should be allowed to consume.
-        pub(crate) fn max_call_weight() -> Weight {
-            // 50% of block should be fine
-            T::BlockWeights::get().max_block / 2
-        }
-
-        /// Min allowed weight that update should be allowed to consume.
-        ///
-        /// This serves as a safety margin, to prevent accidental overspending, due to
-        /// imprecision in implementation or benchmarks, when small weight limit is specified.
-        pub(crate) fn min_call_weight() -> Weight {
-            // 5% of block should be fine
-            T::BlockWeights::get().max_block / 10
-        }
-
-        /// Calculate call weight to use.
-        ///
-        /// In case of `None`, use the max allowed call weight.
-        /// Otherwise clamp the specified weight between the allowed min & max values.
-        fn clamp_call_weight(weight: Option<Weight>) -> Weight {
-            weight
-                .unwrap_or(Self::max_call_weight())
-                .min(Self::max_call_weight())
-                .max(Self::min_call_weight())
-        }
-
-        /// Returns the least amount of weight which should be remaining for migration in order to attempt another step.
-        ///
-        /// This is used to ensure we don't go over the limit.
-        fn update_weight_margin() -> Weight {
-            // Consider the weight of a single step
-            <T as Config>::WeightInfo::update_bonus_step_success()
-                // and add the weight of updating cursor
-                .saturating_add(T::DbWeight::get().writes(1))
-                // and add the weight of disabling maintenance mode
-                .saturating_add(T::DbWeight::get().reads_writes(1, 2))
         }
     }
 

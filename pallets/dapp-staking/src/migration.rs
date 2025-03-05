@@ -17,10 +17,11 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use core::marker::PhantomData;
 use frame_support::{
+    migration::clear_storage_prefix,
     migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
-    storage_alias,
-    traits::{OnRuntimeUpgrade, UncheckedOnRuntimeUpgrade},
+    traits::{GetStorageVersion, OnRuntimeUpgrade, UncheckedOnRuntimeUpgrade},
     weights::WeightMeter,
 };
 
@@ -34,29 +35,8 @@ use sp_runtime::TryRuntimeError;
 pub mod versioned_migrations {
     use super::*;
 
-    /// Migration V6 to V7 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
-    /// the migration is only performed when on-chain version is 6.
-    pub type V6ToV7<T> = frame_support::migrations::VersionedMigration<
-        6,
-        7,
-        v7::VersionMigrateV6ToV7<T>,
-        Pallet<T>,
-        <T as frame_system::Config>::DbWeight,
-    >;
-
-    /// Migration V7 to V8 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
-    /// the migration is only performed when on-chain version is 7.
-    pub type V7ToV8<T, TierThresholds, ThresholdVariationPercentage> =
-        frame_support::migrations::VersionedMigration<
-            7,
-            8,
-            v8::VersionMigrateV7ToV8<T, TierThresholds, ThresholdVariationPercentage>,
-            Pallet<T>,
-            <T as frame_system::Config>::DbWeight,
-        >;
-
     /// Migration V8 to V9 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
-    /// the migration is only performed when on-chain version is 9.
+    /// the migration is only performed when on-chain version is 8.
     pub type V8ToV9<T, InitArgs> = frame_support::migrations::VersionedMigration<
         8,
         9,
@@ -106,16 +86,7 @@ mod v9 {
         for VersionMigrateV8ToV9<T, InitArgs>
     {
         fn on_runtime_upgrade() -> Weight {
-            let mut consumed_weight = T::DbWeight::get().reads_writes(2, 3);
-
-            // When upgrade happens, we need to put dApp staking into maintenance mode immediately.
-            ActiveProtocolState::<T>::mutate(|state| {
-                state.maintenance = true;
-            });
-            log::info!("Maintenance mode enabled.");
-
-            // Result is ignored - upgrade must succeed, there's no fallback in case it doesn't.
-            let _ignore = StaticTierParams::<T>::translate::<TierParametersV8<T::NumberOfTiers>, _>(
+            let result = StaticTierParams::<T>::translate::<TierParametersV8<T::NumberOfTiers>, _>(
                 |maybe_old_params| match maybe_old_params {
                     Some(old_params) => Some(TierParameters {
                         slot_distribution: old_params.slot_distribution,
@@ -123,49 +94,25 @@ mod v9 {
                         tier_thresholds: old_params.tier_thresholds,
                         slot_number_args: InitArgs::get(),
                     }),
-                    _ => {
-                        log::error!("Failed to translate StaticTierParams from previous V8 type to current V9 type.");
-                        None
-                    }
+                    _ => None,
                 },
             );
 
-            // In case of try-runtime, we want to execute the whole logic, to ensure it works
-            // with on-chain data.
-            if cfg!(feature = "try-runtime") {
-                let mut steps = 0_u32;
-                while ActiveProtocolState::<T>::get().maintenance {
-                    match Pallet::<T>::do_update(crate::Pallet::<T>::max_call_weight()) {
-                        Ok(weight) => {
-                            consumed_weight.saturating_accrue(weight);
-                            steps.saturating_inc();
-                        }
-                        Err(_) => {
-                            panic!("Must never happen since we check whether the update is finished before calling `do_update` by checking maintenance mode.");
-                        }
-                    }
-                }
-
-                log::trace!(
-                    target: LOG_TARGET,
-                    "dApp Staking bonus update finished after {} steps with total weight of {}.",
-                    steps,
-                    consumed_weight,
-                );
-
-                consumed_weight
-            } else {
-                consumed_weight
+            if result.is_err() {
+                log::error!("Failed to translate StaticTierParams from previous V8 type to current V9 type.");
+                // Enable maintenance mode.
+                ActiveProtocolState::<T>::mutate(|state| {
+                    state.maintenance = true;
+                });
+                log::warn!("Maintenance mode enabled.");
+                return T::DbWeight::get().reads_writes(2, 1);
             }
+
+            T::DbWeight::get().reads_writes(1, 1)
         }
 
         #[cfg(feature = "try-runtime")]
         fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
-            log::info!(
-                target: LOG_TARGET,
-                "Out of {} already existing stakers are expected to have their bonus updated.",
-                v8::StakerInfo::<T>::iter().count(),
-            );
             assert!(
                 !ActiveProtocolState::<T>::get().maintenance,
                 "Maintenance mode must be disabled before the runtime upgrade."
@@ -175,26 +122,15 @@ mod v9 {
 
         #[cfg(feature = "try-runtime")]
         fn post_upgrade(_: Vec<u8>) -> Result<(), TryRuntimeError> {
-            assert!(
-                Pallet::<T>::on_chain_storage_version() >= 9,
+            assert_eq!(
+                Pallet::<T>::on_chain_storage_version(),
+                EXPECTED_PALLET_DAPP_STAKING_VERSION,
                 "dapp-staking::migration::v9: wrong storage version"
             );
 
             assert!(
                 !ActiveProtocolState::<T>::get().maintenance,
                 "Maintenance mode must be disabled after the successful runtime upgrade."
-            );
-
-            let new_default_bonus_status = *crate::types::BonusStatusWrapperFor::<T>::default();
-            for (_, _, staking_info) in StakerInfo::<T>::iter() {
-                assert!(
-                    staking_info.bonus_status >= new_default_bonus_status.saturating_sub(1)
-                        && staking_info.bonus_status <= new_default_bonus_status
-                );
-            }
-            log::info!(
-                target: LOG_TARGET,
-                "All entries updated to new_default_bonus_status {}", new_default_bonus_status,
             );
 
             let new_tier_params = StaticTierParams::<T>::get();
@@ -206,394 +142,6 @@ mod v9 {
 
             Ok(())
         }
-    }
-}
-
-// TierThreshold as percentage of the total issuance
-pub mod v8 {
-    use super::*;
-    use crate::migration::v7::TierParameters as TierParametersV7;
-    use crate::migration::v7::TiersConfiguration as TiersConfigurationV7;
-
-    /// Information about how much a particular staker staked on a particular smart contract.
-    #[derive(
-        Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default,
-    )]
-    pub struct SingularStakingInfo {
-        /// Amount staked before, if anything.
-        pub(crate) previous_staked: StakeAmount,
-        /// Staked amount
-        pub(crate) staked: StakeAmount,
-        /// Indicates whether a staker is a loyal staker or not.
-        pub(crate) loyal_staker: bool,
-    }
-
-    /// v8 type for [`crate::StakerInfo`]
-    #[storage_alias]
-    pub type StakerInfo<T: Config> = StorageDoubleMap<
-        Pallet<T>,
-        Blake2_128Concat,
-        <T as frame_system::Config>::AccountId,
-        Blake2_128Concat,
-        <T as Config>::SmartContract,
-        SingularStakingInfo,
-        OptionQuery,
-    >;
-
-    pub struct VersionMigrateV7ToV8<T, TierThresholds, ThresholdVariationPercentage>(
-        PhantomData<(T, TierThresholds, ThresholdVariationPercentage)>,
-    );
-
-    impl<
-            T: Config,
-            TierThresholds: Get<[TierThreshold; 4]>,
-            ThresholdVariationPercentage: Get<u32>,
-        > UncheckedOnRuntimeUpgrade
-        for VersionMigrateV7ToV8<T, TierThresholds, ThresholdVariationPercentage>
-    {
-        fn on_runtime_upgrade() -> Weight {
-            // 1. Update static tier parameters with new thresholds from the runtime configurable param TierThresholds
-            let result = StaticTierParams::<T>::translate::<TierParametersV7<T::NumberOfTiers>, _>(
-                |maybe_old_params| match maybe_old_params {
-                    Some(old_params) => {
-                        let tier_thresholds: Result<
-                            BoundedVec<TierThreshold, T::NumberOfTiers>,
-                            _,
-                        > = BoundedVec::try_from(TierThresholds::get().to_vec());
-
-                        match tier_thresholds {
-                            Ok(tier_thresholds) => Some(TierParameters {
-                                slot_distribution: old_params.slot_distribution,
-                                reward_portion: old_params.reward_portion,
-                                tier_thresholds,
-                                slot_number_args: Default::default(),
-                            }),
-                            Err(err) => {
-                                log::error!(
-                                    "Failed to convert TierThresholds parameters: {:?}",
-                                    err
-                                );
-                                None
-                            }
-                        }
-                    }
-                    _ => None,
-                },
-            );
-
-            if result.is_err() {
-                log::error!("Failed to translate StaticTierParams from previous V7 type to current V8 type. Check TierParametersV7 decoding.");
-                // Enable maintenance mode.
-                ActiveProtocolState::<T>::mutate(|state| {
-                    state.maintenance = true;
-                });
-                log::warn!("Maintenance mode enabled.");
-                return T::DbWeight::get().reads_writes(1, 0);
-            }
-
-            // 2. Translate tier thresholds from V7 TierThresholds to Balance
-            let result = TierConfig::<T>::translate::<
-                TiersConfigurationV7<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice>,
-                _,
-            >(|maybe_old_config| match maybe_old_config {
-                Some(old_config) => {
-                    let new_tier_thresholds: Result<BoundedVec<Balance, T::NumberOfTiers>, _> =
-                        old_config
-                            .tier_thresholds
-                            .iter()
-                            .map(|t| match t {
-                                v7::TierThreshold::DynamicTvlAmount { amount, .. } => *amount,
-                                v7::TierThreshold::FixedTvlAmount { amount } => *amount,
-                            })
-                            .collect::<Vec<Balance>>()
-                            .try_into();
-
-                    match new_tier_thresholds {
-                        Ok(new_tier_thresholds) => Some(TiersConfiguration {
-                            slots_per_tier: old_config.slots_per_tier,
-                            reward_portion: old_config.reward_portion,
-                            tier_thresholds: new_tier_thresholds,
-                            _phantom: Default::default(),
-                        }),
-                        Err(err) => {
-                            log::error!("Failed to convert tier thresholds to balances: {:?}", err);
-                            None
-                        }
-                    }
-                }
-                _ => None,
-            });
-
-            if result.is_err() {
-                log::error!("Failed to translate TierConfig from previous V7 type to current V8 type. Check TiersConfigurationV7 decoding.");
-                // Enable maintenance mode.
-                ActiveProtocolState::<T>::mutate(|state| {
-                    state.maintenance = true;
-                });
-                log::warn!("Maintenance mode enabled.");
-                return T::DbWeight::get().reads_writes(2, 1);
-            }
-
-            T::DbWeight::get().reads_writes(2, 2)
-        }
-
-        #[cfg(feature = "try-runtime")]
-        fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
-            let tier_thresholds: Result<BoundedVec<TierThreshold, T::NumberOfTiers>, _> =
-                BoundedVec::try_from(TierThresholds::get().to_vec());
-            assert!(tier_thresholds.is_ok());
-
-            let old_config = v7::TierConfig::<T>::get().ok_or_else(|| {
-                TryRuntimeError::Other(
-                    "dapp-staking::migration::v8: No old configuration found for TierConfig",
-                )
-            })?;
-            Ok((old_config.number_of_slots, old_config.tier_thresholds).encode())
-        }
-
-        #[cfg(feature = "try-runtime")]
-        fn post_upgrade(data: Vec<u8>) -> Result<(), TryRuntimeError> {
-            let (old_number_of_slots, old_tier_thresholds): (
-                u16,
-                BoundedVec<v7::TierThreshold, T::NumberOfTiers>,
-            ) = Decode::decode(&mut &data[..]).map_err(|_| {
-                TryRuntimeError::Other(
-                    "dapp-staking::migration::v8: Failed to decode old v7 version of tier config",
-                )
-            })?;
-
-            // 0. Prerequisites
-            let actual_config = TierConfig::<T>::get();
-            assert!(actual_config.is_valid());
-
-            ensure!(
-                Pallet::<T>::on_chain_storage_version() >= 8,
-                "dapp-staking::migration::v8: Wrong storage version."
-            );
-
-            // 1. Ensure the number of slots is preserved
-            let actual_number_of_slots = actual_config.total_number_of_slots();
-            let within_tolerance =
-                (old_number_of_slots.saturating_sub(1))..=old_number_of_slots.saturating_add(1);
-
-            assert!(
-                within_tolerance.contains(&actual_number_of_slots),
-                "dapp-staking::migration::v8: New TiersConfiguration format not set correctly, number of slots has diverged. Old: {}. Actual: {}.",
-                old_number_of_slots,
-                actual_number_of_slots
-            );
-
-            // 2. Ensure the provided static tier params are applied
-            let actual_tier_params = StaticTierParams::<T>::get();
-            assert!(actual_tier_params.is_valid());
-
-            let expected_tier_thresholds: Result<BoundedVec<TierThreshold, T::NumberOfTiers>, _> =
-                BoundedVec::try_from(TierThresholds::get().to_vec());
-            ensure!(
-                expected_tier_thresholds.is_ok(),
-                "dapp-staking::migration::v8: Failed to convert expected tier thresholds."
-            );
-            let actual_tier_thresholds = actual_tier_params.clone().tier_thresholds;
-            assert_eq!(expected_tier_thresholds.unwrap(), actual_tier_thresholds);
-
-            // 3. Double check new threshold amounts allowing
-            let variation_percentage = ThresholdVariationPercentage::get();
-            let total_issuance = T::Currency::total_issuance();
-            let average_price = T::NativePriceProvider::average_price();
-
-            let old_threshold_amounts: Result<BoundedVec<Balance, T::NumberOfTiers>, _> =
-                old_tier_thresholds
-                    .iter()
-                    .map(|t| t.threshold())
-                    .collect::<Vec<Balance>>()
-                    .try_into();
-
-            ensure!(
-                old_threshold_amounts.is_ok(),
-                "dapp-staking::migration::v8: Failed to convert old v7 version tier thresholds to balance amounts."
-            );
-            let old_threshold_amounts = old_threshold_amounts.unwrap();
-            let expected_new_threshold_amounts = actual_config
-                .calculate_new(&actual_tier_params, average_price, total_issuance)
-                .tier_thresholds;
-
-            for (old_amount, actual_amount) in old_threshold_amounts
-                .iter()
-                .zip(expected_new_threshold_amounts)
-            {
-                let lower_bound = old_amount
-                    .saturating_mul(100u32.saturating_sub(variation_percentage).into())
-                    .saturating_div(100u32.into());
-                let upper_bound = old_amount
-                    .saturating_mul(100u32.saturating_add(variation_percentage).into())
-                    .saturating_div(100u32.into());
-
-                assert!(
-                    (lower_bound..=upper_bound).contains(&actual_amount),
-                    "dapp-staking::migration::v8: New tier threshold amounts diverged to much from old values, consider adjusting static tier parameters. Old: {}. Actual: {}.",
-                    old_amount,
-                    actual_amount
-                );
-            }
-
-            Ok(())
-        }
-    }
-}
-/// Translate DAppTiers to include rank rewards.
-mod v7 {
-    use super::*;
-    use crate::migration::v6::DAppTierRewards as DAppTierRewardsV6;
-    use astar_primitives::dapp_staking::TierSlots as TierSlotsFunc;
-
-    /// Description of tier entry requirement.
-    #[derive(Encode, Decode)]
-    pub enum TierThreshold {
-        FixedTvlAmount {
-            amount: Balance,
-        },
-        DynamicTvlAmount {
-            amount: Balance,
-            minimum_amount: Balance,
-        },
-    }
-
-    #[cfg(feature = "try-runtime")]
-    impl TierThreshold {
-        /// Return threshold for the tier.
-        pub fn threshold(&self) -> Balance {
-            match self {
-                Self::FixedTvlAmount { amount } => *amount,
-                Self::DynamicTvlAmount { amount, .. } => *amount,
-            }
-        }
-    }
-
-    /// Top level description of tier slot parameters used to calculate tier configuration.
-    #[derive(Encode, Decode)]
-    pub struct TierParameters<NT: Get<u32>> {
-        /// Reward distribution per tier, in percentage.
-        /// First entry refers to the first tier, and so on.
-        /// The sum of all values must not exceed 100%.
-        /// In case it is less, portion of rewards will never be distributed.
-        pub reward_portion: BoundedVec<Permill, NT>,
-        /// Distribution of number of slots per tier, in percentage.
-        /// First entry refers to the first tier, and so on.
-        /// The sum of all values must not exceed 100%.
-        /// In case it is less, slot capacity will never be fully filled.
-        pub slot_distribution: BoundedVec<Permill, NT>,
-        /// Requirements for entry into each tier.
-        /// First entry refers to the first tier, and so on.
-        pub tier_thresholds: BoundedVec<v7::TierThreshold, NT>,
-    }
-
-    /// v7 type for configuration of dApp tiers.
-    #[derive(Encode, Decode)]
-    pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> {
-        /// Total number of slots.
-        #[codec(compact)]
-        pub number_of_slots: u16,
-        /// Number of slots per tier.
-        /// First entry refers to the first tier, and so on.
-        pub slots_per_tier: BoundedVec<u16, NT>,
-        /// Reward distribution per tier, in percentage.
-        /// First entry refers to the first tier, and so on.
-        /// The sum of all values must be exactly equal to 1.
-        pub reward_portion: BoundedVec<Permill, NT>,
-        /// Requirements for entry into each tier.
-        /// First entry refers to the first tier, and so on.
-        pub tier_thresholds: BoundedVec<v7::TierThreshold, NT>,
-        /// Phantom data to keep track of the tier slots function.
-        #[codec(skip)]
-        pub(crate) _phantom: PhantomData<(T, P)>,
-    }
-
-    /// v7 type for [`crate::StaticTierParams`]
-    #[storage_alias]
-    pub type StaticTierParams<T: Config> =
-        StorageValue<Pallet<T>, TierParameters<<T as Config>::NumberOfTiers>, ValueQuery>;
-
-    /// v7 type for [`crate::TierConfig`]
-    #[storage_alias]
-    pub type TierConfig<T: Config> = StorageValue<
-        Pallet<T>,
-        TiersConfiguration<
-            <T as Config>::NumberOfTiers,
-            <T as Config>::TierSlots,
-            <T as Config>::BaseNativeCurrencyPrice,
-        >,
-        OptionQuery,
-    >;
-
-    pub struct VersionMigrateV6ToV7<T>(PhantomData<T>);
-
-    impl<T: Config> UncheckedOnRuntimeUpgrade for VersionMigrateV6ToV7<T> {
-        fn on_runtime_upgrade() -> Weight {
-            let current = Pallet::<T>::in_code_storage_version();
-
-            let mut translated = 0usize;
-            DAppTiers::<T>::translate::<
-                DAppTierRewardsV6<T::MaxNumberOfContracts, T::NumberOfTiers>,
-                _,
-            >(|_key, old_value| {
-                translated.saturating_inc();
-
-                // fill rank_rewards with zero
-                let mut rank_rewards = Vec::new();
-                rank_rewards.resize_with(old_value.rewards.len(), || Balance::zero());
-
-                Some(DAppTierRewards {
-                    dapps: old_value.dapps,
-                    rewards: old_value.rewards,
-                    period: old_value.period,
-                    rank_rewards: BoundedVec::<Balance, T::NumberOfTiers>::try_from(rank_rewards)
-                        .unwrap_or_default(),
-                })
-            });
-
-            current.put::<Pallet<T>>();
-
-            log::info!("Upgraded {translated} dAppTiers to {current:?}");
-
-            T::DbWeight::get().reads_writes(1 + translated as u64, 1 + translated as u64)
-        }
-
-        #[cfg(feature = "try-runtime")]
-        fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
-            Ok(Vec::new())
-        }
-
-        #[cfg(feature = "try-runtime")]
-        fn post_upgrade(_data: Vec<u8>) -> Result<(), TryRuntimeError> {
-            ensure!(
-                Pallet::<T>::on_chain_storage_version() >= 7,
-                "dapp-staking::migration::v7: wrong storage version"
-            );
-            Ok(())
-        }
-    }
-}
-
-pub mod v6 {
-    use astar_primitives::{
-        dapp_staking::{DAppId, PeriodNumber, RankedTier},
-        Balance,
-    };
-    use frame_support::{
-        pallet_prelude::{Decode, Get},
-        BoundedBTreeMap, BoundedVec,
-    };
-
-    /// Information about all of the dApps that got into tiers, and tier rewards
-    #[derive(Decode)]
-    pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
-        /// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
-        pub dapps: BoundedBTreeMap<DAppId, RankedTier, MD>,
-        /// Rewards for each tier. First entry refers to the first tier, and so on.
-        pub rewards: BoundedVec<Balance, NT>,
-        /// Period during which this struct was created.
-        #[codec(compact)]
-        pub period: PeriodNumber,
     }
 }
 
@@ -701,6 +249,30 @@ impl<T: Config> OnRuntimeUpgrade for AdjustEraMigration<T> {
                 state.next_era_start.saturating_accrue(remaining);
             }
         });
+        T::DbWeight::get().reads_writes(1, 1)
+    }
+}
+
+pub const EXPECTED_PALLET_DAPP_STAKING_VERSION: u16 = 9;
+
+pub struct DappStakingCleanupMigration<T>(PhantomData<T>);
+impl<T: Config> OnRuntimeUpgrade for DappStakingCleanupMigration<T> {
+    fn on_runtime_upgrade() -> Weight {
+        let dapp_staking_storage_version =
+            <Pallet<T> as GetStorageVersion>::on_chain_storage_version();
+        if dapp_staking_storage_version != EXPECTED_PALLET_DAPP_STAKING_VERSION {
+            log::info!("Aborting migration due to unexpected on-chain storage versions for pallet-dapp-staking: {:?}. Expectation was: {:?}.", dapp_staking_storage_version, EXPECTED_PALLET_DAPP_STAKING_VERSION);
+            return T::DbWeight::get().reads(1);
+        }
+
+        let pallet_prefix: &[u8] = b"DappStaking";
+        let result =
+            clear_storage_prefix(pallet_prefix, b"ActiveBonusUpdateState", &[], None, None);
+        log::info!(
+            "cleanup dAppStaking migration result: {:?}",
+            result.deconstruct()
+        );
+
         T::DbWeight::get().reads_writes(1, 1)
     }
 }

@@ -184,7 +184,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 1301,
+    spec_version: 1302,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -1590,15 +1590,10 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased =
-    (pallet_dapp_staking::migration::versioned_migrations::V8ToV9<Runtime, TierSlotsArgs>,);
+pub type Unreleased = (pallet_dapp_staking::migration::DappStakingCleanupMigration<Runtime>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
-
-parameter_types! {
-    pub const TierSlotsArgs: (u64, u64) = (1000, 50);
-}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
