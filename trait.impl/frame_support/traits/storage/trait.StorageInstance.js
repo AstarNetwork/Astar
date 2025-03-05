@@ -1,3 +1,0 @@
-(function() {var implementors = {
-"pallet_dapp_staking":[["impl&lt;T: <a class=\"trait\" href=\"pallet_dapp_staking/pallet/trait.Config.html\" title=\"trait pallet_dapp_staking::pallet::Config\">Config</a>&gt; StorageInstance for <a class=\"struct\" href=\"pallet_dapp_staking/migration/v8/struct.StakerInfo_Storage_Instance.html\" title=\"struct pallet_dapp_staking::migration::v8::StakerInfo_Storage_Instance\">StakerInfo_Storage_Instance</a>&lt;T&gt;"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

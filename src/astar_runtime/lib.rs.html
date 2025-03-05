@@ -2680,11 +2680,6 @@
 <a href="#2678" id="2678">2678</a>
 <a href="#2679" id="2679">2679</a>
 <a href="#2680" id="2680">2680</a>
-<a href="#2681" id="2681">2681</a>
-<a href="#2682" id="2682">2682</a>
-<a href="#2683" id="2683">2683</a>
-<a href="#2684" id="2684">2684</a>
-<a href="#2685" id="2685">2685</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2871,7 +2866,7 @@
     spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">"astar"</span>),
     impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">"astar"</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">1301</span>,
+    spec_version: <span class="number">1302</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">3</span>,
@@ -4277,15 +4272,10 @@
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased =
-    (pallet_dapp_staking::migration::versioned_migrations::V8ToV9&lt;Runtime, TierSlotsArgs&gt;,);
+</span><span class="kw">pub type </span>Unreleased = (pallet_dapp_staking::migration::DappStakingCleanupMigration&lt;Runtime&gt;,);
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);
-
-<span class="macro">parameter_types! </span>{
-    <span class="kw">pub const </span>TierSlotsArgs: (u64, u64) = (<span class="number">1000</span>, <span class="number">50</span>);
-}
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,

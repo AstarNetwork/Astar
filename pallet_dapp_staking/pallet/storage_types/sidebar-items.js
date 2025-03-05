@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ActiveBonusUpdateState","ActiveProtocolState","ContractStake","CurrentEraInfo","DAppTiers","EraRewards","HistoryCleanupMarker","IntegratedDApps","Ledger","NextDAppId","PeriodEnd","Safeguard","StakerInfo","StaticTierParams","TierConfig"]};
+window.SIDEBAR_ITEMS = {"struct":["ActiveProtocolState","ContractStake","CurrentEraInfo","DAppTiers","EraRewards","HistoryCleanupMarker","IntegratedDApps","Ledger","NextDAppId","PeriodEnd","Safeguard","StakerInfo","StaticTierParams","TierConfig"]};

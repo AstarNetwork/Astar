@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["v6","v8","versioned_migrations"],"struct":["AdjustEraMigration","LazyMigration"]};
+window.SIDEBAR_ITEMS = {"constant":["EXPECTED_PALLET_DAPP_STAKING_VERSION"],"mod":["versioned_migrations"],"struct":["AdjustEraMigration","DappStakingCleanupMigration","LazyMigration"]};
