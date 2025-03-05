@@ -1595,10 +1595,6 @@ pub type Unreleased = pallet_dapp_staking::migration::DappStakingCleanupMigratio
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
 
-parameter_types! {
-    pub const TierSlotsArgs: (u64, u64) = (1000, 50);
-}
-
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
     <Runtime as frame_system::Config>::Hash,
