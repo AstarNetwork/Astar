@@ -2,7 +2,7 @@
 
 ## Benchmarks
 Benchmark workflow does pallet benchmarks automatically when detecting PR comments start with `/bench`.
-As of now, it is a simple workflow, users can get artifacts (pallet benchmarks results & machine benchmark result) as downloadale artifacts of Github actions.
+As of now, it is a simple workflow, users can get artifacts (pallet benchmarks results & machine benchmark result) as downloadable artifacts of Github actions.
 Latest commit hash in PR branch will be built and used for benchmarking.
 
 ### How to execute
