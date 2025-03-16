@@ -19,6 +19,7 @@
 use crate::setup::*;
 use astar_primitives::dapp_staking::SmartContractHandle;
 use pallet_dapp_staking::ForcingType;
+use parity_scale_codec::Decode;
 
 #[test]
 fn test_utility_call_pass_for_any() {
@@ -218,4 +219,57 @@ fn test_staker_reward_claim_proxy_works() {
 
         expect_events(vec![ProxyEvent::ProxyExecuted { result: Ok(()) }.into()]);
     })
+}
+
+#[test]
+fn test_set_keys_pass_for_session_proxy() {
+    new_test_ext().execute_with(|| {
+        assert_ok!(Proxy::add_proxy(
+            RuntimeOrigin::signed(ALICE),
+            MultiAddress::Id(BOB),
+            ProxyType::Session,
+            0
+        ));
+
+        let keys = [0u8; 128];
+        let set_keys_call = Box::new(RuntimeCall::Session(SessionCall::set_keys {
+            keys: Decode::decode(&mut &keys[..]).unwrap(),
+            proof: Vec::new(),
+        }));
+
+        assert_ok!(Proxy::proxy(
+            RuntimeOrigin::signed(BOB),
+            MultiAddress::Id(ALICE),
+            None,
+            set_keys_call
+        ));
+        expect_events(vec![ProxyEvent::ProxyExecuted { result: Ok(()) }.into()]);
+    });
+}
+
+#[test]
+fn test_balance_transfer_fail_for_session_proxy() {
+    new_test_ext().execute_with(|| {
+        assert_ok!(Proxy::add_proxy(
+            RuntimeOrigin::signed(ALICE),
+            MultiAddress::Id(BOB),
+            ProxyType::Session,
+            0
+        ));
+
+        let transfer_call = Box::new(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+            dest: MultiAddress::Id(CAT),
+            value: 100_000_000_000,
+        }));
+        assert_ok!(Proxy::proxy(
+            RuntimeOrigin::signed(BOB),
+            MultiAddress::Id(ALICE),
+            None,
+            transfer_call
+        ));
+        expect_events(vec![ProxyEvent::ProxyExecuted {
+            result: Err(SystemError::CallFiltered.into()),
+        }
+        .into()]);
+    });
 }

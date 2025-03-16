@@ -108,6 +108,7 @@ use cumulus_pallet_parachain_system::RelaychainDataProvider;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_dapp_staking as DappStakingCall;
 pub use pallet_proxy::Event as ProxyEvent;
+pub use pallet_session::Call as SessionCall;
 pub use pallet_utility::{Call as UtilityCall, Event as UtilityEvent};
 use parity_scale_codec::Decode;
 use sp_runtime::traits::BlockNumberProvider;

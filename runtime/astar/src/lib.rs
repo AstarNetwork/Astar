@@ -1045,6 +1045,8 @@ pub enum ProxyType {
     StakerRewardClaim,
     /// All governance related calls allowed for proxy account
     Governance,
+    /// All session related calls allowed for proxy account
+    Session,
 }
 
 impl Default for ProxyType {
@@ -1113,6 +1115,9 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::TechnicalCommittee(..)
                         | RuntimeCall::CommunityCouncil(..)
                 )
+            }
+            ProxyType::Session => {
+                matches!(c, RuntimeCall::Session(..))
             }
         }
     }
