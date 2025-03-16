@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Integration Action](https://github.com/AstarNetwork/Astar/workflows/Integration/badge.svg)](https://github.com/AstarNetwork/Astar/actions)
+[![Build](https://github.com/AstarNetwork/Astar/actions/workflows/enforce-labels.yml/badge.svg)](https://github.com/AstarNetwork/Astar/actions)
 [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/AstarNetwork/Astar)](https://github.com/AstarNetwork/Astar/tags)
 [![Substrate version](https://img.shields.io/badge/Substrate-3.0.0-brightgreen?logo=Parity%20Substrate)](https://substrate.dev/)
 [![License](https://img.shields.io/github/license/AstarNetwork/Astar?color=green)](https://github.com/AstarNetwork/Astar/blob/production/shiden/LICENSE)
