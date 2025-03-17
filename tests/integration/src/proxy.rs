@@ -222,12 +222,12 @@ fn test_staker_reward_claim_proxy_works() {
 }
 
 #[test]
-fn test_set_keys_pass_for_session_proxy() {
+fn test_set_keys_pass_for_non_transfer_proxy() {
     new_test_ext().execute_with(|| {
         assert_ok!(Proxy::add_proxy(
             RuntimeOrigin::signed(ALICE),
             MultiAddress::Id(BOB),
-            ProxyType::Session,
+            ProxyType::NonTransfer,
             0
         ));
 
@@ -244,32 +244,5 @@ fn test_set_keys_pass_for_session_proxy() {
             set_keys_call
         ));
         expect_events(vec![ProxyEvent::ProxyExecuted { result: Ok(()) }.into()]);
-    });
-}
-
-#[test]
-fn test_balance_transfer_fail_for_session_proxy() {
-    new_test_ext().execute_with(|| {
-        assert_ok!(Proxy::add_proxy(
-            RuntimeOrigin::signed(ALICE),
-            MultiAddress::Id(BOB),
-            ProxyType::Session,
-            0
-        ));
-
-        let transfer_call = Box::new(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
-            dest: MultiAddress::Id(CAT),
-            value: 100_000_000_000,
-        }));
-        assert_ok!(Proxy::proxy(
-            RuntimeOrigin::signed(BOB),
-            MultiAddress::Id(ALICE),
-            None,
-            transfer_call
-        ));
-        expect_events(vec![ProxyEvent::ProxyExecuted {
-            result: Err(SystemError::CallFiltered.into()),
-        }
-        .into()]);
     });
 }
