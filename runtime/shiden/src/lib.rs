@@ -1011,6 +1011,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         )
                         | RuntimeCall::DappStaking(..)
                         | RuntimeCall::CollatorSelection(..)
+                        | RuntimeCall::Session(..)
                 )
             }
             ProxyType::Balances => {

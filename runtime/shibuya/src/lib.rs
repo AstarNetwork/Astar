@@ -1067,6 +1067,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         )
                         | RuntimeCall::DappStaking(..)
                         | RuntimeCall::CollatorSelection(..)
+                        | RuntimeCall::Session(..)
                 )
             }
             // All Runtime calls from Pallet Balances allowed for proxy account
