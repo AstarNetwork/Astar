@@ -287,7 +287,7 @@ pub mod pallet {
         ///
         /// Purpose of the call is testing & handling unforeseen circumstances.
         #[pallet::call_index(1)]
-        #[pallet::weight(T::WeightInfo::force_inflation_recalculation())]
+        #[pallet::weight(T::WeightInfo::force_inflation_recalculation().saturating_add(T::DbWeight::get().writes(1)))]
         pub fn force_inflation_recalculation(
             origin: OriginFor<T>,
             next_era: EraNumber,
@@ -310,9 +310,14 @@ pub mod pallet {
         /// (The 'force' approach uses the current total issuance)
         ///
         /// This call should be used in case inflation parameters have changed during the cycle, and the configuration should be adjusted now.
+        ///
+        /// NOTE:
+        /// The call will do the best possible approximation of what the calculated max emission was at the moment when last inflation recalculation was done.
+        /// But due to rounding losses, it's not possible to get the exact same value. As a consequence, repeated calls to this function
+        /// might result in changes to the configuration, even though the inflation parameters haven't changed.
+        /// However, since this function isn't supposed to be called often, and changes are minimal, this is acceptable.
         #[pallet::call_index(2)]
-        // TODO
-        #[pallet::weight(T::WeightInfo::force_inflation_recalculation())]
+        #[pallet::weight(T::WeightInfo::force_readjust_config().saturating_add(T::DbWeight::get().writes(1)))]
         pub fn force_readjust_config(origin: OriginFor<T>) -> DispatchResult {
             ensure_root(origin)?;
 

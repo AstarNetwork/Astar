@@ -92,4 +92,15 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
+	/// Reuse from Astar
+	/// Storage: `Inflation::InflationParams` (r:1 w:0)
+	/// Proof: `Inflation::InflationParams` (`max_values`: Some(1), `max_size`: Some(64), added: 559, mode: `MaxEncodedLen`)
+	fn force_readjust_config() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `40`
+		//  Estimated: `1549`
+		// Minimum execution time: 9_652_000 picoseconds.
+		Weight::from_parts(9_828_000, 1549)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+	}
 }
