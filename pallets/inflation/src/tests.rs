@@ -152,6 +152,14 @@ fn force_readjust_config_works() {
             new_config.bonus_reward_pool_per_period,
             old_config.bonus_reward_pool_per_period
         );
+        assert_eq!(
+            new_config.ideal_staking_rate,
+            old_config.ideal_staking_rate,
+        );
+        assert_eq!(
+            new_config.recalculation_era,
+            old_config.recalculation_era,
+        );
 
         // These should change
         assert!(
