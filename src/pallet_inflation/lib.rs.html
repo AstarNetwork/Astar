@@ -626,6 +626,74 @@
 <a href="#624" id="624">624</a>
 <a href="#625" id="625">625</a>
 <a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
+<a href="#628" id="628">628</a>
+<a href="#629" id="629">629</a>
+<a href="#630" id="630">630</a>
+<a href="#631" id="631">631</a>
+<a href="#632" id="632">632</a>
+<a href="#633" id="633">633</a>
+<a href="#634" id="634">634</a>
+<a href="#635" id="635">635</a>
+<a href="#636" id="636">636</a>
+<a href="#637" id="637">637</a>
+<a href="#638" id="638">638</a>
+<a href="#639" id="639">639</a>
+<a href="#640" id="640">640</a>
+<a href="#641" id="641">641</a>
+<a href="#642" id="642">642</a>
+<a href="#643" id="643">643</a>
+<a href="#644" id="644">644</a>
+<a href="#645" id="645">645</a>
+<a href="#646" id="646">646</a>
+<a href="#647" id="647">647</a>
+<a href="#648" id="648">648</a>
+<a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a>
+<a href="#651" id="651">651</a>
+<a href="#652" id="652">652</a>
+<a href="#653" id="653">653</a>
+<a href="#654" id="654">654</a>
+<a href="#655" id="655">655</a>
+<a href="#656" id="656">656</a>
+<a href="#657" id="657">657</a>
+<a href="#658" id="658">658</a>
+<a href="#659" id="659">659</a>
+<a href="#660" id="660">660</a>
+<a href="#661" id="661">661</a>
+<a href="#662" id="662">662</a>
+<a href="#663" id="663">663</a>
+<a href="#664" id="664">664</a>
+<a href="#665" id="665">665</a>
+<a href="#666" id="666">666</a>
+<a href="#667" id="667">667</a>
+<a href="#668" id="668">668</a>
+<a href="#669" id="669">669</a>
+<a href="#670" id="670">670</a>
+<a href="#671" id="671">671</a>
+<a href="#672" id="672">672</a>
+<a href="#673" id="673">673</a>
+<a href="#674" id="674">674</a>
+<a href="#675" id="675">675</a>
+<a href="#676" id="676">676</a>
+<a href="#677" id="677">677</a>
+<a href="#678" id="678">678</a>
+<a href="#679" id="679">679</a>
+<a href="#680" id="680">680</a>
+<a href="#681" id="681">681</a>
+<a href="#682" id="682">682</a>
+<a href="#683" id="683">683</a>
+<a href="#684" id="684">684</a>
+<a href="#685" id="685">685</a>
+<a href="#686" id="686">686</a>
+<a href="#687" id="687">687</a>
+<a href="#688" id="688">688</a>
+<a href="#689" id="689">689</a>
+<a href="#690" id="690">690</a>
+<a href="#691" id="691">691</a>
+<a href="#692" id="692">692</a>
+<a href="#693" id="693">693</a>
+<a href="#694" id="694">694</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -797,8 +865,6 @@
     </span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
         <span class="doccomment">/// Inflation parameters have been force changed. This will have effect on the next inflation recalculation.
         </span>InflationParametersForceChanged,
-        <span class="doccomment">/// Inflation configuration has been force changed. This will have an immediate effect from this block.
-        </span>InflationConfigurationForceChanged { config: InflationConfiguration },
         <span class="doccomment">/// Inflation recalculation has been forced.
         </span>ForcedInflationRecalculation { config: InflationConfiguration },
         <span class="doccomment">/// New inflation configuration has been set.
@@ -917,7 +983,7 @@
         ///
         /// Purpose of the call is testing &amp; handling unforeseen circumstances.
         </span><span class="attr">#[pallet::call_index(<span class="number">1</span>)]
-        #[pallet::weight(T::WeightInfo::force_inflation_recalculation())]
+        #[pallet::weight(T::WeightInfo::force_inflation_recalculation().saturating_add(T::DbWeight::get().writes(<span class="number">1</span>)))]
         </span><span class="kw">pub fn </span>force_inflation_recalculation(
             origin: OriginFor&lt;T&gt;,
             next_era: EraNumber,
@@ -926,6 +992,32 @@
 
             <span class="kw">let </span>config = <span class="self">Self</span>::recalculate_inflation(next_era);
 
+            ActiveInflationConfig::&lt;T&gt;::put(config.clone());
+
+            <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::ForcedInflationRecalculation { config });
+
+            <span class="prelude-val">Ok</span>(().into())
+        }
+
+        <span class="doccomment">/// Re-adjust the existing inflation configuration using the current inflation parameters.
+        ///
+        /// It might seem similar to forcing the inflation recalculation, but it's not.
+        /// This function adjusts the existing configuration, respecting the `max_emission` value used to calculate the current inflation config.
+        /// (The 'force' approach uses the current total issuance)
+        ///
+        /// This call should be used in case inflation parameters have changed during the cycle, and the configuration should be adjusted now.
+        ///
+        /// NOTE:
+        /// The call will do the best possible approximation of what the calculated max emission was at the moment when last inflation recalculation was done.
+        /// But due to rounding losses, it's not possible to get the exact same value. As a consequence, repeated calls to this function
+        /// might result in changes to the configuration, even though the inflation parameters haven't changed.
+        /// However, since this function isn't supposed to be called often, and changes are minimal, this is acceptable.
+        </span><span class="attr">#[pallet::call_index(<span class="number">2</span>)]
+        #[pallet::weight(T::WeightInfo::force_readjust_config().saturating_add(T::DbWeight::get().writes(<span class="number">1</span>)))]
+        </span><span class="kw">pub fn </span>force_readjust_config(origin: OriginFor&lt;T&gt;) -&gt; DispatchResult {
+            ensure_root(origin)<span class="question-mark">?</span>;
+
+            <span class="kw">let </span>config = <span class="self">Self</span>::readjusted_config();
             ActiveInflationConfig::&lt;T&gt;::put(config.clone());
 
             <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::ForcedInflationRecalculation { config });
@@ -950,18 +1042,90 @@
             config.collator_reward_per_block + config.treasury_reward_per_block
         }
 
-        <span class="doccomment">/// Recalculates the inflation based on the total issuance &amp; inflation parameters.
+        <span class="doccomment">/// Recalculates the inflation based on the current total issuance &amp; inflation parameters.
         ///
         /// Returns the new inflation configuration.
         </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>recalculate_inflation(next_era: EraNumber) -&gt; InflationConfiguration {
-            <span class="kw">let </span>params = InflationParams::&lt;T&gt;::get();
+            <span class="comment">// Calculate max emission based on the current total issuance.
+            </span><span class="kw">let </span>params = InflationParams::&lt;T&gt;::get();
             <span class="kw">let </span>total_issuance = T::Currency::total_issuance();
+            <span class="kw">let </span>max_emission = params.max_inflation_rate * total_issuance;
 
-            <span class="comment">// 1. Calculate maximum emission over the period before the next recalculation.
-            </span><span class="kw">let </span>max_emission = params.max_inflation_rate * total_issuance;
-            <span class="kw">let </span>issuance_safety_cap = total_issuance.saturating_add(max_emission);
+            <span class="kw">let </span>recalculation_era =
+                next_era.saturating_add(T::CycleConfiguration::eras_per_cycle());
 
-            <span class="comment">// 2. Calculate distribution of max emission between different purposes.
+            <span class="self">Self</span>::new_config(recalculation_era, max_emission)
+        }
+
+        <span class="doccomment">/// Re-adjust the existing inflation configuration using the current inflation parameters.
+        ///
+        /// It might seem similar to forcing the inflation recalculation, but it's not.
+        /// This function adjusts the existing configuration, respecting the `max_emission` value used to calculate the current inflation config.
+        /// (The 'force' approach uses the current total issuance)
+        ///
+        /// This call should be used in case inflation parameters have changed during the cycle, and the configuration should be adjusted now.
+        </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>readjusted_config() -&gt; InflationConfiguration {
+            <span class="comment">// 1. First calculate the params needed to derive the `max_emission` value used to calculate the current inflation config.
+            </span><span class="kw">let </span>config = ActiveInflationConfig::&lt;T&gt;::get();
+
+            <span class="comment">// This is reuse from `new_config` function.
+            </span><span class="kw">let </span>blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle().max(<span class="number">1</span>));
+            <span class="kw">let </span>build_and_earn_eras_per_cycle =
+                Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle().max(<span class="number">1</span>));
+            <span class="kw">let </span>periods_per_cycle =
+                Balance::from(T::CycleConfiguration::periods_per_cycle().max(<span class="number">1</span>));
+
+            <span class="comment">// 2. Calculate reward pool amounts per cycle from the existing inflation configuration.
+            </span><span class="kw">let </span>collator_reward_pool = config
+                .collator_reward_per_block
+                .saturating_mul(blocks_per_cycle);
+
+            <span class="kw">let </span>treasury_reward_pool = config
+                .treasury_reward_per_block
+                .saturating_mul(blocks_per_cycle);
+
+            <span class="kw">let </span>dapp_reward_pool = config
+                .dapp_reward_pool_per_era
+                .saturating_mul(build_and_earn_eras_per_cycle);
+
+            <span class="kw">let </span>base_staker_reward_pool = config
+                .base_staker_reward_pool_per_era
+                .saturating_mul(build_and_earn_eras_per_cycle);
+            <span class="kw">let </span>adjustable_staker_reward_pool = config
+                .adjustable_staker_reward_pool_per_era
+                .saturating_mul(build_and_earn_eras_per_cycle);
+
+            <span class="kw">let </span>bonus_reward_pool = config
+                .bonus_reward_pool_per_period
+                .saturating_mul(periods_per_cycle);
+
+            <span class="comment">// 3. Sum up all values to get the old `max_emission` value.
+            </span><span class="kw">let </span>max_emission = collator_reward_pool
+                .saturating_add(treasury_reward_pool)
+                .saturating_add(dapp_reward_pool)
+                .saturating_add(base_staker_reward_pool)
+                .saturating_add(adjustable_staker_reward_pool)
+                .saturating_add(bonus_reward_pool);
+
+            <span class="comment">// 4. Calculate new inflation configuration
+            </span><span class="self">Self</span>::new_config(config.recalculation_era, max_emission)
+        }
+
+        <span class="comment">// Calculate new inflation configuration, based on the provided `max_emission`.
+        </span><span class="kw">fn </span>new_config(
+            recalculation_era: EraNumber,
+            max_emission: Balance,
+        ) -&gt; InflationConfiguration {
+            <span class="kw">let </span>params = InflationParams::&lt;T&gt;::get();
+
+            <span class="comment">// Invalidated parameter, should be cleaned up in the future.
+            // The reason for it's invalidity is because since we've entered the 2nd cycle, it's possible for total
+            // issuance to exceed this cap if unclaimed rewards from previous cycle are claimed.
+            //
+            // In future upgrades, the storage scheme can be updated to completely clean this up.
+            </span><span class="kw">let </span>issuance_safety_cap = Balance::MAX / <span class="number">1000</span>;
+
+            <span class="comment">// 1. Calculate distribution of max emission between different purposes.
             </span><span class="kw">let </span>treasury_emission = params.treasury_part * max_emission;
             <span class="kw">let </span>collators_emission = params.collators_part * max_emission;
             <span class="kw">let </span>dapps_emission = params.dapps_part * max_emission;
@@ -969,9 +1133,9 @@
             <span class="kw">let </span>adjustable_stakers_emission = params.adjustable_stakers_part * max_emission;
             <span class="kw">let </span>bonus_emission = params.bonus_part * max_emission;
 
-            <span class="comment">// 3. Calculate concrete rewards per block, era or period
+            <span class="comment">// 2. Calculate concrete rewards per block, era or period
 
-            // 3.0 Convert all 'per cycle' values to the correct type (Balance).
+            // 2.0 Convert all 'per cycle' values to the correct type (Balance).
             // Also include a safety check that none of the values is zero since this would cause a division by zero.
             // The configuration &amp; integration tests must ensure this never happens, so the following code is just an additional safety measure.
             </span><span class="kw">let </span>blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle().max(<span class="number">1</span>));
@@ -980,28 +1144,24 @@
             <span class="kw">let </span>periods_per_cycle =
                 Balance::from(T::CycleConfiguration::periods_per_cycle().max(<span class="number">1</span>));
 
-            <span class="comment">// 3.1. Collator &amp; Treasury rewards per block
+            <span class="comment">// 2.1. Collator &amp; Treasury rewards per block
             </span><span class="kw">let </span>collator_reward_per_block = collators_emission.saturating_div(blocks_per_cycle);
             <span class="kw">let </span>treasury_reward_per_block = treasury_emission.saturating_div(blocks_per_cycle);
 
-            <span class="comment">// 3.2. dApp reward pool per era
+            <span class="comment">// 2.2. dApp reward pool per era
             </span><span class="kw">let </span>dapp_reward_pool_per_era =
                 dapps_emission.saturating_div(build_and_earn_eras_per_cycle);
 
-            <span class="comment">// 3.3. Staking reward pools per era
+            <span class="comment">// 2.3. Staking reward pools per era
             </span><span class="kw">let </span>base_staker_reward_pool_per_era =
                 base_stakers_emission.saturating_div(build_and_earn_eras_per_cycle);
             <span class="kw">let </span>adjustable_staker_reward_pool_per_era =
                 adjustable_stakers_emission.saturating_div(build_and_earn_eras_per_cycle);
 
-            <span class="comment">// 3.4. Bonus reward pool per period
+            <span class="comment">// 2.4. Bonus reward pool per period
             </span><span class="kw">let </span>bonus_reward_pool_per_period = bonus_emission.saturating_div(periods_per_cycle);
 
-            <span class="comment">// 4. Block at which the inflation must be recalculated.
-            </span><span class="kw">let </span>recalculation_era =
-                next_era.saturating_add(T::CycleConfiguration::eras_per_cycle());
-
-            <span class="comment">// 5. Prepare config &amp; do sanity check of its values.
+            <span class="comment">// 3. Prepare config &amp; do sanity check of its values.
             </span><span class="kw">let </span>new_inflation_config = InflationConfiguration {
                 recalculation_era,
                 issuance_safety_cap,
@@ -1016,27 +1176,6 @@
             new_inflation_config.sanity_check();
 
             new_inflation_config
-        }
-
-        <span class="doccomment">/// Check if payout cap limit would be reached after payout.
-        </span><span class="kw">fn </span>is_payout_cap_limit_exceeded(payout: Balance) -&gt; bool {
-            <span class="kw">let </span>config = ActiveInflationConfig::&lt;T&gt;::get();
-            <span class="kw">let </span>total_issuance = T::Currency::total_issuance();
-
-            <span class="kw">let </span>new_issuance = total_issuance.saturating_add(payout);
-
-            <span class="kw">if </span>new_issuance &gt; config.issuance_safety_cap {
-                <span class="macro">log::error!</span>(<span class="string">"Issuance cap has been exceeded. Please report this issue ASAP!"</span>);
-            }
-
-            <span class="comment">// Allow for 1% safety cap overflow, to prevent bad UX for users in case of rounding errors.
-            // This will be removed in the future once we know everything is working as expected.
-            </span><span class="kw">let </span>relaxed_issuance_safety_cap = config
-                .issuance_safety_cap
-                .saturating_mul(<span class="number">101</span>)
-                .saturating_div(<span class="number">100</span>);
-
-            new_issuance &gt; relaxed_issuance_safety_cap
         }
     }
 
@@ -1079,9 +1218,6 @@
         }
 
         <span class="kw">fn </span>payout_reward(account: <span class="kw-2">&amp;</span>T::AccountId, reward: Balance) -&gt; <span class="prelude-ty">Result</span>&lt;(), ()&gt; {
-            <span class="comment">// This is a safety measure to prevent excessive minting.
-            </span><span class="macro">ensure!</span>(!<span class="self">Self</span>::is_payout_cap_limit_exceeded(reward), ());
-
             <span class="comment">// This can fail only if the amount is below existential deposit &amp; the account doesn't exist,
             // or if the account has no provider references.
             // Another possibility is overflow, but if that happens, we already have a huge problem.

@@ -2384,6 +2384,7 @@
 <a href="#2382" id="2382">2382</a>
 <a href="#2383" id="2383">2383</a>
 <a href="#2384" id="2384">2384</a>
+<a href="#2385" id="2385">2385</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3397,6 +3398,7 @@
                         )
                         | RuntimeCall::DappStaking(..)
                         | RuntimeCall::CollatorSelection(..)
+                        | RuntimeCall::Session(..)
                 )
             }
             ProxyType::Balances =&gt; {

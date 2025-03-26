@@ -95,6 +95,17 @@
 <a href="#93" id="93">93</a>
 <a href="#94" id="94">94</a>
 <a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
 </pre></div><pre class="rust"><code>
 <span class="comment">// This file is part of Astar.
 
@@ -188,6 +199,17 @@
 		</span>Weight::from_parts(<span class="number">37_046_000</span>, <span class="number">6196</span>)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+	}
+	<span class="doccomment">/// Reuse from Astar
+	/// Storage: `Inflation::InflationParams` (r:1 w:0)
+	/// Proof: `Inflation::InflationParams` (`max_values`: Some(1), `max_size`: Some(64), added: 559, mode: `MaxEncodedLen`)
+	</span><span class="kw">fn </span>force_readjust_config() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `40`
+		//  Estimated: `1549`
+		// Minimum execution time: 9_652_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">9_828_000</span>, <span class="number">1549</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
 	}
 }
 </code></pre></div></section></main></body></html>

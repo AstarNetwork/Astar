@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["force_inflation_recalculation","force_set_inflation_params"]};
+window.SIDEBAR_ITEMS = {"fn":["force_inflation_recalculation","force_readjust_config","force_set_inflation_params"]};
