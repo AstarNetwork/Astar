@@ -103,6 +103,17 @@ mod benchmarks {
     }
 
     #[benchmark]
+    fn force_readjust_config() {
+        initial_config::<T>();
+
+        #[extrinsic_call]
+        _(RawOrigin::Root);
+
+        let config = ActiveInflationConfig::<T>::get();
+        assert_last_event::<T>(Event::<T>::ForcedInflationRecalculation { config }.into());
+    }
+
+    #[benchmark]
     fn recalculation() {
         initial_config::<T>();
 

@@ -144,3 +144,23 @@ impl ExternalityBuilder {
         ext
     }
 }
+
+/// Assert the equality between two balances, with some leniency factor.
+#[macro_export]
+macro_rules! lenient_balance_assert_eq {
+    ($x:expr, $y:expr) => {{
+        use sp_runtime::Permill;
+
+        let ratio = if $x > $y {
+            Permill::from_rational($y, $x)
+        } else {
+            Permill::from_rational($x, $y)
+        };
+
+        assert!(
+            ratio >= Permill::from_rational(999_u32, 1000),
+            "Ratio between old and new balance is too small: {:?}",
+            ratio,
+        );
+    }};
+}
