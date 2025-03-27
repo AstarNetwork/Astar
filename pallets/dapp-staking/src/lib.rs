@@ -1521,12 +1521,12 @@ pub mod pallet {
 
             Self::update_ledger(&account, ledger)?;
 
-            // Return the `StakeAmount` that has max total value - that's the one that is equal to the `amount` parameter.
+            // Return the `StakeAmount` that has max total value
             let unstake_amount = stake_amount_iter
                 .iter()
                 .max_by(|a, b| a.total().cmp(&b.total()))
-                .expect("At least one value exists, otherwise we wouldn't be here.");
-            assert_eq!(unstake_amount.total(), amount);
+                // At least one value exists, otherwise we wouldn't be here.
+                .ok_or(Error::<T>::InternalUnstakeError)?;
 
             Ok((*unstake_amount, updated_bonus_status))
         }
@@ -1549,7 +1549,7 @@ pub mod pallet {
             let current_era = protocol_state.era;
 
             // Extract total staked amount on the specified unregistered contract
-            let (amount, unstake_amount_iter, preserved_bonus_status) =
+            let (unstake_amount, unstake_amount_iter, preserved_bonus_status) =
                 match StakerInfo::<T>::get(&account, &smart_contract) {
                     Some(mut staking_info) => {
                         ensure!(
@@ -1559,16 +1559,28 @@ pub mod pallet {
 
                         let preserved_bonus_status = staking_info.bonus_status;
                         // This need to be built before 'unstake', otherwise voting amount is converted into B&E amount
-                        let unstake_amount_iter: Vec<StakeAmount> =
+                        let unstake_amount =
                             Vec::from([staking_info.previous_staked, staking_info.staked])
                                 .into_iter()
                                 .filter(|stake_amount| !stake_amount.is_empty())
-                                .collect();
-                        let amount = staking_info.staked.total();
+                                .map(|mut stake_amount| {
+                                    stake_amount.era = stake_amount.era.max(current_era);
+                                    stake_amount
+                                })
+                                .max_by(|a, b| a.total().cmp(&b.total()))
+                                // At least one value exists, otherwise we wouldn't be here.
+                                .ok_or(Error::<T>::InternalUnstakeError)?;
 
-                        staking_info.unstake(amount, current_era, protocol_state.subperiod());
+                        let (unstake_amount_iter, _) = staking_info.unstake(
+                            unstake_amount.total(),
+                            current_era,
+                            protocol_state.subperiod(),
+                        );
 
-                        (amount, unstake_amount_iter, preserved_bonus_status)
+                        // 'unstake_amount_iter' may include voting stake merged into B&E stake.
+                        // This is safe to use now since it's only needed for the 'era_info' update,
+                        // which considers the total stake across both subperiods.
+                        (unstake_amount, unstake_amount_iter, preserved_bonus_status)
                     }
                     None => {
                         return Err(Error::<T>::NoStakingInfo.into());
@@ -1578,7 +1590,11 @@ pub mod pallet {
             // Reduce stake amount in ledger
             let mut ledger = Ledger::<T>::get(&account);
             ledger
-                .unstake_amount(amount, current_era, protocol_state.period_info)
+                .unstake_amount(
+                    unstake_amount.total(),
+                    current_era,
+                    protocol_state.period_info,
+                )
                 .map_err(|err| match err {
                     // These are all defensive checks, which should never fail since we already checked them above.
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
@@ -1599,13 +1615,7 @@ pub mod pallet {
             Self::update_ledger(&account, ledger)?;
             StakerInfo::<T>::remove(&account, &smart_contract);
 
-            let unstake_amount = unstake_amount_iter
-                .iter()
-                .max_by(|a, b| a.total().cmp(&b.total()))
-                .expect("At least one value exists, otherwise we wouldn't be here.");
-            assert_eq!(unstake_amount.total(), amount);
-
-            Ok((*unstake_amount, preserved_bonus_status))
+            Ok((unstake_amount, preserved_bonus_status))
         }
 
         /// Inner `stake` functionality.
@@ -2557,7 +2567,7 @@ pub mod pallet {
         pub fn try_state_ledger() -> Result<(), sp_runtime::TryRuntimeError> {
             let current_period_number = ActiveProtocolState::<T>::get().period_number();
             let current_era_info = CurrentEraInfo::<T>::get();
-            let current_era_total_stake = current_era_info.total_staked_amount_next_era();
+            let next_era_total_stake = current_era_info.total_staked_amount_next_era();
 
             // Yield amounts in [`Ledger`]
             let mut ledger_total_stake = Balance::zero();
@@ -2599,7 +2609,7 @@ pub mod pallet {
             }
 
             // Invariant 1
-            if ledger_total_stake != current_era_total_stake {
+            if ledger_total_stake != next_era_total_stake {
                 return Err(
                     "Mismatch between Ledger total staked amounts and CurrentEraInfo total.".into(),
                 );

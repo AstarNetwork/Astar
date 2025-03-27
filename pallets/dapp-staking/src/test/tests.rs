@@ -4301,3 +4301,47 @@ fn previous_stake_unchanged_for_future_era_staking() {
             );
         })
 }
+
+#[test]
+fn unstake_from_unregistered_matching_next_era_total_stake() {
+    ExtBuilder::default().build_and_execute(|| {
+        let smart_contract_1 = MockSmartContract::wasm(1 as AccountId);
+        assert_register(1, &smart_contract_1);
+        let smart_contract_2 = MockSmartContract::wasm(2 as AccountId);
+        assert_register(1, &smart_contract_2);
+
+        let amount = 100;
+        let account_2 = 3;
+        assert_lock(account_2, amount);
+        let account_3 = 4;
+        assert_lock(account_3, amount);
+
+        let current_period_number = ActiveProtocolState::<Test>::get().period_number();
+
+        assert_stake(account_2, &smart_contract_1, 50);
+        assert_stake(account_2, &smart_contract_2, 50);
+        assert_stake(account_3, &smart_contract_1, amount);
+
+        advance_to_next_era();
+        assert_unregister(&smart_contract_2);
+
+        advance_to_next_era();
+        assert_claim_staker_rewards(account_2);
+        assert_unstake_from_unregistered(account_2, &smart_contract_2);
+        assert_stake(account_2, &smart_contract_1, 50);
+
+        let mut ledger_total_stake = Balance::zero();
+        for (_, ledger) in Ledger::<Test>::iter() {
+            let account_stake = ledger.staked_amount(current_period_number);
+            ledger_total_stake += account_stake;
+        }
+
+        let current_era_info = CurrentEraInfo::<Test>::get();
+        let next_era_total_stake = current_era_info.total_staked_amount_next_era();
+
+        assert_eq!(
+            ledger_total_stake, next_era_total_stake,
+            "Total stake amount across all ledger has to be equal to the next era total stake"
+        )
+    })
+}
