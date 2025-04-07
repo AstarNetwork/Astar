@@ -372,12 +372,11 @@ pub mod pallet {
             // 1. First calculate the params needed to derive the `max_emission` value used to calculate the current inflation config.
             let config = ActiveInflationConfig::<T>::get();
 
-            // This is reuse from `new_config` function.
-            let blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle().max(1));
+            // Simple type conversion.
+            let blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle());
             let build_and_earn_eras_per_cycle =
-                Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle().max(1));
-            let periods_per_cycle =
-                Balance::from(T::CycleConfiguration::periods_per_cycle().max(1));
+                Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle());
+            let periods_per_cycle = Balance::from(T::CycleConfiguration::periods_per_cycle());
 
             // 2. Calculate reward pool amounts per cycle from the existing inflation configuration.
             let collator_reward_pool = config
@@ -442,6 +441,9 @@ pub mod pallet {
             // 2.0 Convert all 'per cycle' values to the correct type (Balance).
             // Also include a safety check that none of the values is zero since this would cause a division by zero.
             // The configuration & integration tests must ensure this never happens, so the following code is just an additional safety measure.
+            //
+            // NOTE: Using `max(1)` to eliminate possibility of division by zero.
+            // These values should never be 0 anyways, but this is just a safety measure.
             let blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle().max(1));
             let build_and_earn_eras_per_cycle =
                 Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle().max(1));
