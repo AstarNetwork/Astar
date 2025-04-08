@@ -75,7 +75,7 @@ env_logger = "0.10.0"
 futures = { version = "0.3.30" }
 serde = { version = "1.0.151", default-features = false, features = ["derive", "alloc"] }
 serde_json = { version = "1.0.121", default-features = false }
-tokio = { version = "1.24.2", features = ["macros", "sync"] }
+tokio = { version = "1.44.2", features = ["macros", "sync"] }
 url = "2.2.2"
 jsonrpsee = { version = "0.23.2", features = ["server"] }
 hex-literal = "0.4.1"
