@@ -30,7 +30,7 @@ jobs:
       run: rustup show
 
     - name: Install Zepter
-      run: cargo install zepter -f --locked && zepter --version
+      run: cargo install zepter --version 1.5.1 --locked -f && zepter --version
 
     - name: Check Rust features
       run: zepter run check
