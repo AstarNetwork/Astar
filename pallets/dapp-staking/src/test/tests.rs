@@ -2755,13 +2755,40 @@ fn tier_config_recalculation_works() {
                 .all(|(new, init)| new < init),
             "Number of slots per tier should decrease with lower price"
         );
+
+        let total_issuance = <Test as Config>::Currency::total_issuance();
+        let tier_params = StaticTierParams::<Test>::get();
+
+        // Compute maximum amounts for each tier
+        let max_amounts: Vec<Balance> = tier_params
+            .tier_thresholds
+            .iter()
+            .map(|threshold| {
+                match threshold {
+                    TierThreshold::DynamicPercentage {
+                        maximum_possible_percentage,
+                        ..
+                    } => {
+                        let max_percent =
+                            maximum_possible_percentage.unwrap_or(Perbill::from_percent(100)); // Default to 100%
+                        max_percent * total_issuance
+                    }
+                    TierThreshold::FixedPercentage {
+                        required_percentage,
+                    } => *required_percentage * total_issuance,
+                }
+            })
+            .collect();
+
+        // Check that each tier's threshold has increased but doesn't exceed its maximum
         assert!(
             new_tier_config
                 .tier_thresholds
                 .iter()
                 .zip(init_tier_config.tier_thresholds.iter())
-                .all(|(new, init)| new >= init),
-            "Tier threshold values should increase with lower price"
+                .zip(max_amounts.iter())
+                .all(|((new, init), max_amount)| new >= init && new <= max_amount),
+            "Tier threshold values should increase with lower price but not exceed their maximums"
         );
     })
 }

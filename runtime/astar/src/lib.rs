@@ -1590,8 +1590,33 @@ pub type Executive = frame_executive::Executive<
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
+parameter_types! {
+    // max percentages are derived from an Astar token price of $0.035
+    pub const TierThresholds: [TierThreshold; 4] = [
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(35_700_000), // 3.57%
+            minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
+            maximum_possible_percentage: Some(Perbill::from_parts(42_000_000)), // 4.20%
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(8_900_000), // 0.89%
+            minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+            maximum_possible_percentage: Some(Perbill::from_parts(10_400_000)), // 1.04%
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(2_380_000), // 0.238%
+            minimum_required_percentage: Perbill::from_parts(1_790_000), // 0.179%
+            maximum_possible_percentage: Some(Perbill::from_parts(2_800_000)), // 0.280%
+        },
+        TierThreshold::FixedPercentage {
+            required_percentage: Perbill::from_parts(200_000), // 0.02%
+        },
+    ];
+}
+
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (pallet_dapp_staking::migration::DappStakingCleanupMigration<Runtime>,);
+pub type Unreleased =
+    (pallet_dapp_staking::migration::versioned_migrations::V9ToV10<Runtime, TierThresholds>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);

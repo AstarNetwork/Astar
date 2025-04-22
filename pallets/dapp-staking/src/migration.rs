@@ -35,77 +35,66 @@ use sp_runtime::TryRuntimeError;
 pub mod versioned_migrations {
     use super::*;
 
-    /// Migration V8 to V9 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
-    /// the migration is only performed when on-chain version is 8.
-    pub type V8ToV9<T, InitArgs> = frame_support::migrations::VersionedMigration<
-        8,
+    /// Migration V9 to V10 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
+    /// the migration is only performed when on-chain version is 9.
+    pub type V9ToV10<T, TierThresholds> = frame_support::migrations::VersionedMigration<
         9,
-        v9::VersionMigrateV8ToV9<T, InitArgs>,
+        10,
+        v10::VersionMigrateV9ToV10<T, TierThresholds>,
         Pallet<T>,
         <T as frame_system::Config>::DbWeight,
     >;
 }
 
-mod v9 {
+mod v10 {
     use super::*;
-    use frame_support::DefaultNoBound;
+    use crate::migration::v9::{
+        TierParameters as TierParametersV9, TierThreshold as TierThresholdV9,
+    };
 
-    #[derive(
-        Encode,
-        Decode,
-        MaxEncodedLen,
-        RuntimeDebugNoBound,
-        PartialEqNoBound,
-        DefaultNoBound,
-        EqNoBound,
-        CloneNoBound,
-        TypeInfo,
-    )]
-    #[scale_info(skip_type_params(NT))]
-    pub struct TierParametersV8<NT: Get<u32>> {
-        /// Reward distribution per tier, in percentage.
-        /// First entry refers to the first tier, and so on.
-        /// The sum of all values must not exceed 100%.
-        /// In case it is less, portion of rewards will never be distributed.
-        pub(crate) reward_portion: BoundedVec<Permill, NT>,
-        /// Distribution of number of slots per tier, in percentage.
-        /// First entry refers to the first tier, and so on.
-        /// The sum of all values must not exceed 100%.
-        /// In case it is less, slot capacity will never be fully filled.
-        pub(crate) slot_distribution: BoundedVec<Permill, NT>,
-        /// Requirements for entry into each tier.
-        /// First entry refers to the first tier, and so on.
-        pub(crate) tier_thresholds: BoundedVec<TierThreshold, NT>,
-    }
+    pub struct VersionMigrateV9ToV10<T, TierThresholds>(PhantomData<(T, TierThresholds)>);
 
-    // The loyal staker flag is updated to `u8` with the new MaxBonusSafeMovesPerPeriod from config
-    // for all already existing StakerInfo.
-    pub struct VersionMigrateV8ToV9<T, InitArgs>(PhantomData<(T, InitArgs)>);
-
-    impl<T: Config, InitArgs: Get<(u64, u64)>> UncheckedOnRuntimeUpgrade
-        for VersionMigrateV8ToV9<T, InitArgs>
+    impl<T: Config, TierThresholds: Get<[TierThreshold; 4]>> UncheckedOnRuntimeUpgrade
+        for VersionMigrateV9ToV10<T, TierThresholds>
     {
         fn on_runtime_upgrade() -> Weight {
-            let result = StaticTierParams::<T>::translate::<TierParametersV8<T::NumberOfTiers>, _>(
+            // Update static tier parameters with new max thresholds from the runtime configurable param TierThresholds
+            let result = StaticTierParams::<T>::translate::<TierParametersV9<T::NumberOfTiers>, _>(
                 |maybe_old_params| match maybe_old_params {
-                    Some(old_params) => Some(TierParameters {
-                        slot_distribution: old_params.slot_distribution,
-                        reward_portion: old_params.reward_portion,
-                        tier_thresholds: old_params.tier_thresholds,
-                        slot_number_args: InitArgs::get(),
-                    }),
+                    Some(old_params) => {
+                        let tier_thresholds: Result<
+                            BoundedVec<TierThreshold, T::NumberOfTiers>,
+                            _,
+                        > = BoundedVec::try_from(TierThresholds::get().to_vec());
+
+                        match tier_thresholds {
+                            Ok(tier_thresholds) => Some(TierParameters {
+                                slot_distribution: old_params.slot_distribution,
+                                reward_portion: old_params.reward_portion,
+                                tier_thresholds,
+                                slot_number_args: old_params.slot_number_args,
+                            }),
+                            Err(err) => {
+                                log::error!(
+                                    "Failed to convert TierThresholds parameters: {:?}",
+                                    err
+                                );
+                                None
+                            }
+                        }
+                    }
                     _ => None,
                 },
             );
 
             if result.is_err() {
-                log::error!("Failed to translate StaticTierParams from previous V8 type to current V9 type.");
+                log::error!("Failed to translate StaticTierParams from previous V9 type to current V10 type. Check TierParametersV9 decoding.");
                 // Enable maintenance mode.
                 ActiveProtocolState::<T>::mutate(|state| {
                     state.maintenance = true;
                 });
                 log::warn!("Maintenance mode enabled.");
-                return T::DbWeight::get().reads_writes(2, 1);
+                return T::DbWeight::get().reads_writes(1, 0);
             }
 
             T::DbWeight::get().reads_writes(1, 1)
@@ -113,36 +102,139 @@ mod v9 {
 
         #[cfg(feature = "try-runtime")]
         fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
-            assert!(
-                !ActiveProtocolState::<T>::get().maintenance,
-                "Maintenance mode must be disabled before the runtime upgrade."
-            );
-            Ok(Vec::new())
+            let old_params = v9::StaticTierParams::<T>::get().ok_or_else(|| {
+                TryRuntimeError::Other(
+                    "dapp-staking-v3::migration::v10: No old params found for StaticTierParams",
+                )
+            })?;
+            Ok(old_params.encode())
         }
 
         #[cfg(feature = "try-runtime")]
-        fn post_upgrade(_: Vec<u8>) -> Result<(), TryRuntimeError> {
+        fn post_upgrade(data: Vec<u8>) -> Result<(), TryRuntimeError> {
+            // Decode the old values
+            let old_params: TierParametersV9<T::NumberOfTiers> = Decode::decode(&mut &data[..])
+                .map_err(|_| {
+                    TryRuntimeError::Other(
+                        "dapp-staking-v3::migration::v10: Failed to decode old values",
+                    )
+                })?;
+
+            // Get the new values
+            let new_config = TierConfig::<T>::get();
+            let new_params = StaticTierParams::<T>::get();
+
+            // Verify that new params and new config are valid
+            assert!(new_params.is_valid());
+            assert!(new_config.is_valid());
+
+            // Verify parameters remain unchanged
             assert_eq!(
-                Pallet::<T>::on_chain_storage_version(),
-                EXPECTED_PALLET_DAPP_STAKING_VERSION,
-                "dapp-staking::migration::v9: wrong storage version"
+                old_params.slot_distribution, new_params.slot_distribution,
+                "dapp-staking-v3::migration::v10: Slot distribution has changed"
+            );
+            assert_eq!(
+                old_params.reward_portion, new_params.reward_portion,
+                "dapp-staking-v3::migration::v10: Reward portion has changed"
+            );
+            assert_eq!(
+                old_params.tier_thresholds.len(),
+                new_params.tier_thresholds.len(),
+                "dapp-staking-v3::migration::v10: Number of tier thresholds has changed"
             );
 
-            assert!(
-                !ActiveProtocolState::<T>::get().maintenance,
-                "Maintenance mode must be disabled after the successful runtime upgrade."
-            );
+            for (_, (old_threshold, new_threshold)) in old_params
+                .tier_thresholds
+                .iter()
+                .zip(new_params.tier_thresholds.iter())
+                .enumerate()
+            {
+                match (old_threshold, new_threshold) {
+                    (
+                        TierThresholdV9::FixedPercentage {
+                            required_percentage: old_req,
+                        },
+                        TierThreshold::FixedPercentage {
+                            required_percentage: new_req,
+                        },
+                    ) => {
+                        assert_eq!(
+                            old_req, new_req,
+                            "dapp-staking-v3::migration::v10: Fixed percentage changed",
+                        );
+                    }
+                    (
+                        TierThresholdV9::DynamicPercentage {
+                            percentage: old_percentage,
+                            minimum_required_percentage: old_min,
+                        },
+                        TierThreshold::DynamicPercentage {
+                            percentage: new_percentage,
+                            minimum_required_percentage: new_min,
+                            maximum_possible_percentage: _, // We don't verify this as it's new
+                        },
+                    ) => {
+                        assert_eq!(
+                            old_percentage, new_percentage,
+                            "dapp-staking-v3::migration::v10: Percentage changed"
+                        );
+                        assert_eq!(
+                            old_min, new_min,
+                            "dapp-staking-v3::migration::v10: Minimum percentage changed"
+                        );
+                    }
+                    _ => {
+                        return Err(TryRuntimeError::Other(
+                            "dapp-staking-v3::migration::v10: Tier threshold type mismatch",
+                        ));
+                    }
+                }
+            }
 
-            let new_tier_params = StaticTierParams::<T>::get();
-            assert!(
-                new_tier_params.is_valid(),
-                "New tier params are invalid, re-check the values!"
+            // Verify new maximum_possible_percentage values
+            let expected_tier_thresholds: BoundedVec<TierThreshold, T::NumberOfTiers> =
+                BoundedVec::try_from(TierThresholds::get().to_vec()).unwrap();
+            let actual_tier_thresholds = new_params.tier_thresholds;
+            assert_eq!(expected_tier_thresholds, actual_tier_thresholds);
+
+            // Verify storage version has been updated
+            ensure!(
+                Pallet::<T>::on_chain_storage_version() >= 10,
+                "dapp-staking-v3::migration::v10: Wrong storage version."
             );
-            assert_eq!(new_tier_params.slot_number_args, InitArgs::get());
 
             Ok(())
         }
     }
+}
+
+mod v9 {
+    use super::*;
+    use frame_support::storage_alias;
+
+    #[derive(Encode, Decode)]
+    pub struct TierParameters<NT: Get<u32>> {
+        pub reward_portion: BoundedVec<Permill, NT>,
+        pub slot_distribution: BoundedVec<Permill, NT>,
+        pub tier_thresholds: BoundedVec<TierThreshold, NT>,
+        pub slot_number_args: (u64, u64),
+    }
+
+    #[derive(Encode, Decode)]
+    pub enum TierThreshold {
+        FixedPercentage {
+            required_percentage: Perbill,
+        },
+        DynamicPercentage {
+            percentage: Perbill,
+            minimum_required_percentage: Perbill,
+        },
+    }
+
+    /// v9 type for [`crate::StaticTierParams`]
+    #[storage_alias]
+    pub type StaticTierParams<T: Config> =
+        StorageValue<Pallet<T>, TierParameters<<T as Config>::NumberOfTiers>>;
 }
 
 const PALLET_MIGRATIONS_ID: &[u8; 16] = b"dapp-staking-mbm";

@@ -136,14 +136,17 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
                 TierThreshold::DynamicPercentage {
                     percentage: Perbill::from_parts(35_700_000), // 3.57%
                     minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
+                    maximum_possible_percentage: None,
                 },
                 TierThreshold::DynamicPercentage {
                     percentage: Perbill::from_parts(8_900_000), // 0.89%
                     minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+                    maximum_possible_percentage: None,
                 },
                 TierThreshold::DynamicPercentage {
                     percentage: Perbill::from_parts(2_380_000), // 0.238%
                     minimum_required_percentage: Perbill::from_parts(1_790_000), // 0.179%
+                    maximum_possible_percentage: None,
                 },
                 TierThreshold::FixedPercentage {
                     required_percentage: Perbill::from_parts(600_000), // 0.06%

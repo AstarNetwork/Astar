@@ -1640,11 +1640,13 @@ pub enum TierThreshold {
     /// This value is constant and does not change between periods.
     FixedPercentage { required_percentage: Perbill },
     /// Entry into the tier is mandated by a percentage of the total issuance as staked funds.
-    /// The `percentage` is the amount required, which can change in-between periods, while `minimum_required_percentage`
-    /// is the minimum percentage that should not be reduced below.
+    /// This `percentage` can change between periods, but must stay within the defined
+    /// `minimum_required_percentage` and `maximum_possible_percentage`.
+    /// If `maximum_possible_percentage` is not specified, the default value used is 100%.
     DynamicPercentage {
         percentage: Perbill,
         minimum_required_percentage: Perbill,
+        maximum_possible_percentage: Option<Perbill>,
     },
 }
 
@@ -1846,6 +1848,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
                 TierThreshold::DynamicPercentage {
                     percentage,
                     minimum_required_percentage,
+                    maximum_possible_percentage,
                 } => {
                     let amount = *percentage * total_issuance;
                     let adjusted_amount = if new_number_of_slots >= base_number_of_slots {
@@ -1854,7 +1857,10 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
                         amount.saturating_add(delta_threshold.saturating_mul_int(amount))
                     };
                     let minimum_amount = *minimum_required_percentage * total_issuance;
-                    adjusted_amount.max(minimum_amount)
+                    let maximum_amount = maximum_possible_percentage
+                        .unwrap_or(Perbill::from_percent(100)) // Default to 100% if not specified
+                        * total_issuance;
+                    adjusted_amount.max(minimum_amount).min(maximum_amount)
                 }
                 TierThreshold::FixedPercentage {
                     required_percentage,
