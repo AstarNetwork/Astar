@@ -1596,17 +1596,17 @@ parameter_types! {
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_parts(35_700_000), // 3.57%
             minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
-            maximum_possible_percentage: Some(Perbill::from_parts(42_000_000)), // 4.20%
+            maximum_possible_percentage: Some(Perbill::from_parts(35_700_000)), // 3.57%
         },
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_parts(8_900_000), // 0.89%
             minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
-            maximum_possible_percentage: Some(Perbill::from_parts(10_400_000)), // 1.04%
+            maximum_possible_percentage: Some(Perbill::from_parts(8_900_000)), // 0.89%
         },
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_parts(2_380_000), // 0.238%
             minimum_required_percentage: Perbill::from_parts(1_790_000), // 0.179%
-            maximum_possible_percentage: Some(Perbill::from_parts(2_800_000)), // 0.280%
+            maximum_possible_percentage: Some(Perbill::from_parts(2_380_000)), // 0.238%
         },
         TierThreshold::FixedPercentage {
             required_percentage: Perbill::from_parts(200_000), // 0.02%
