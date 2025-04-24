@@ -321,17 +321,17 @@ impl ExtBuilder {
                     TierThreshold::DynamicPercentage {
                         percentage: Perbill::from_parts(11_112_000), // 1.1112%
                         minimum_required_percentage: Perbill::from_parts(8_889_000), // 0.8889%
-                        maximum_possible_percentage: Some(Perbill::from_parts(13_000_000)), // 1.3%
+                        maximum_possible_percentage: Perbill::from_parts(13_000_000), // 1.3%
                     },
                     TierThreshold::DynamicPercentage {
                         percentage: Perbill::from_parts(5_556_000), // 0.5556%
                         minimum_required_percentage: Perbill::from_parts(4_400_000), // 0.44%
-                        maximum_possible_percentage: None,
+                        maximum_possible_percentage: Perbill::from_percent(100),
                     },
                     TierThreshold::DynamicPercentage {
                         percentage: Perbill::from_parts(2_223_000), // 0.2223%
                         minimum_required_percentage: Perbill::from_parts(2_223_000), // 0.2223%
-                        maximum_possible_percentage: None,
+                        maximum_possible_percentage: Perbill::from_percent(100),
                     },
                     TierThreshold::FixedPercentage {
                         required_percentage: Perbill::from_parts(1_667_000), // 0.1667%

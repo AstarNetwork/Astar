@@ -1646,7 +1646,7 @@ pub enum TierThreshold {
     DynamicPercentage {
         percentage: Perbill,
         minimum_required_percentage: Perbill,
-        maximum_possible_percentage: Option<Perbill>,
+        maximum_possible_percentage: Perbill,
     },
 }
 
@@ -1857,9 +1857,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
                         amount.saturating_add(delta_threshold.saturating_mul_int(amount))
                     };
                     let minimum_amount = *minimum_required_percentage * total_issuance;
-                    let maximum_amount = maximum_possible_percentage
-                        .unwrap_or(Perbill::from_percent(100)) // Default to 100% if not specified
-                        * total_issuance;
+                    let maximum_amount = *maximum_possible_percentage * total_issuance;
                     adjusted_amount.max(minimum_amount).min(maximum_amount)
                 }
                 TierThreshold::FixedPercentage {

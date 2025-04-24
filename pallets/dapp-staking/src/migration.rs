@@ -37,10 +37,10 @@ pub mod versioned_migrations {
 
     /// Migration V9 to V10 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
     /// the migration is only performed when on-chain version is 9.
-    pub type V9ToV10<T, TierThresholds> = frame_support::migrations::VersionedMigration<
+    pub type V9ToV10<T, MaxPercentages> = frame_support::migrations::VersionedMigration<
         9,
         10,
-        v10::VersionMigrateV9ToV10<T, TierThresholds>,
+        v10::VersionMigrateV9ToV10<T, MaxPercentages>,
         Pallet<T>,
         <T as frame_system::Config>::DbWeight,
     >;
@@ -52,20 +52,36 @@ mod v10 {
         TierParameters as TierParametersV9, TierThreshold as TierThresholdV9,
     };
 
-    pub struct VersionMigrateV9ToV10<T, TierThresholds>(PhantomData<(T, TierThresholds)>);
+    pub struct VersionMigrateV9ToV10<T, MaxPercentages>(PhantomData<(T, MaxPercentages)>);
 
-    impl<T: Config, TierThresholds: Get<[TierThreshold; 4]>> UncheckedOnRuntimeUpgrade
-        for VersionMigrateV9ToV10<T, TierThresholds>
+    impl<T: Config, MaxPercentages: Get<[Option<Perbill>; 4]>> UncheckedOnRuntimeUpgrade
+        for VersionMigrateV9ToV10<T, MaxPercentages>
     {
         fn on_runtime_upgrade() -> Weight {
+            let max_percentages = MaxPercentages::get();
+
             // Update static tier parameters with new max thresholds from the runtime configurable param TierThresholds
             let result = StaticTierParams::<T>::translate::<TierParametersV9<T::NumberOfTiers>, _>(
                 |maybe_old_params| match maybe_old_params {
                     Some(old_params) => {
-                        let tier_thresholds: Result<
-                            BoundedVec<TierThreshold, T::NumberOfTiers>,
-                            _,
-                        > = BoundedVec::try_from(TierThresholds::get().to_vec());
+                        let new_tier_thresholds: Vec<TierThreshold> = old_params
+                            .tier_thresholds
+                            .iter()
+                            .enumerate()
+                            .map(|(idx, old_threshold)| {
+                                let maximum_percentage = if idx < max_percentages.len() {
+                                    max_percentages[idx]
+                                } else {
+                                    None
+                                };
+                                map_threshold(old_threshold, maximum_percentage)
+                            })
+                            .collect();
+
+                        let tier_thresholds =
+                            BoundedVec::<TierThreshold, T::NumberOfTiers>::try_from(
+                                new_tier_thresholds,
+                            );
 
                         match tier_thresholds {
                             Ok(tier_thresholds) => Some(TierParameters {
@@ -191,11 +207,25 @@ mod v10 {
                 }
             }
 
-            // Verify new maximum_possible_percentage values
-            let expected_tier_thresholds: BoundedVec<TierThreshold, T::NumberOfTiers> =
-                BoundedVec::try_from(TierThresholds::get().to_vec()).unwrap();
-            let actual_tier_thresholds = new_params.tier_thresholds;
-            assert_eq!(expected_tier_thresholds, actual_tier_thresholds);
+            let expected_max_percentages = MaxPercentages::get();
+            for (idx, tier_threshold) in new_params.tier_thresholds.iter().enumerate() {
+                if let TierThreshold::DynamicPercentage {
+                    maximum_possible_percentage,
+                    ..
+                } = tier_threshold
+                {
+                    let expected_maximum_percentage = if idx < expected_max_percentages.len() {
+                        expected_max_percentages[idx]
+                    } else {
+                        None
+                    }
+                    .unwrap_or(Perbill::from_percent(100));
+                    assert_eq!(
+                        *maximum_possible_percentage, expected_maximum_percentage,
+                        "dapp-staking-v3::migration::v10: Max percentage differs from expected",
+                    );
+                }
+            }
 
             // Verify storage version has been updated
             ensure!(
@@ -204,6 +234,24 @@ mod v10 {
             );
 
             Ok(())
+        }
+    }
+
+    pub fn map_threshold(old: &TierThresholdV9, max_percentage: Option<Perbill>) -> TierThreshold {
+        match old {
+            TierThresholdV9::FixedPercentage {
+                required_percentage,
+            } => TierThreshold::FixedPercentage {
+                required_percentage: *required_percentage,
+            },
+            TierThresholdV9::DynamicPercentage {
+                percentage,
+                minimum_required_percentage,
+            } => TierThreshold::DynamicPercentage {
+                percentage: *percentage,
+                minimum_required_percentage: *minimum_required_percentage,
+                maximum_possible_percentage: max_percentage.unwrap_or(Perbill::from_percent(100)), // Default to 100% if not specified,
+            },
         }
     }
 }

@@ -2787,7 +2787,7 @@ fn tier_config_recalculation_works() {
                 .iter()
                 .zip(init_tier_config.tier_thresholds.iter())
                 .zip(max_amounts.iter())
-                .all(|((new, init), max_amount)| new >= init && new <= max_amount),
+                .all(|((new, init), max_amount)| new > init && new <= max_amount),
             "Tier threshold values should increase with lower price but not exceed their maximums"
         );
     })

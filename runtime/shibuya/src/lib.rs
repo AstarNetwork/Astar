@@ -1688,31 +1688,12 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 parameter_types! {
-    pub const TierThresholds: [TierThreshold; 4] = [
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(20_000), // 0.0020%
-            minimum_required_percentage: Perbill::from_parts(17_000), // 0.0017%
-            maximum_possible_percentage: None,
-        },
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(13_000), // 0.0013%
-            minimum_required_percentage: Perbill::from_parts(10_000), // 0.0010%
-            maximum_possible_percentage: None,
-        },
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(5_400), // 0.00054%
-            minimum_required_percentage: Perbill::from_parts(3_400), // 0.00034%
-            maximum_possible_percentage: None,
-        },
-        TierThreshold::FixedPercentage {
-            required_percentage: Perbill::from_parts(1_400), // 0.00014%
-        },
-    ];
+    pub const MaxPercentages: [Option<Perbill>; 4] = [None, None, None, None];
 }
 
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased =
-    (pallet_dapp_staking::migration::versioned_migrations::V9ToV10<Runtime, TierThresholds>,);
+    (pallet_dapp_staking::migration::versioned_migrations::V9ToV10<Runtime, MaxPercentages>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);

@@ -3489,17 +3489,17 @@ fn tier_configuration_basic_tests() {
             TierThreshold::DynamicPercentage {
                 percentage: Perbill::from_percent(12),
                 minimum_required_percentage: Perbill::from_percent(8),
-                maximum_possible_percentage: None,
+                maximum_possible_percentage: Perbill::from_percent(100),
             },
             TierThreshold::DynamicPercentage {
                 percentage: Perbill::from_percent(7),
                 minimum_required_percentage: Perbill::from_percent(5),
-                maximum_possible_percentage: None,
+                maximum_possible_percentage: Perbill::from_percent(100),
             },
             TierThreshold::DynamicPercentage {
                 percentage: Perbill::from_percent(4),
                 minimum_required_percentage: Perbill::from_percent(3),
-                maximum_possible_percentage: None,
+                maximum_possible_percentage: Perbill::from_percent(100),
             },
             TierThreshold::FixedPercentage {
                 required_percentage: Perbill::from_percent(3),
@@ -3695,7 +3695,7 @@ fn tier_thresholds_conversion_test() {
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_percent(5),
             minimum_required_percentage: Perbill::from_percent(2),
-            maximum_possible_percentage: None,
+            maximum_possible_percentage: Perbill::from_percent(100),
         },
     ])
     .unwrap();
@@ -3736,17 +3736,17 @@ fn tier_configuration_calculate_new_with_maximum_threshold() {
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_percent(4),
             minimum_required_percentage: Perbill::from_percent(3),
-            maximum_possible_percentage: None,
+            maximum_possible_percentage: Perbill::from_percent(100),
         },
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_percent(3),
             minimum_required_percentage: Perbill::from_percent(2),
-            maximum_possible_percentage: None,
+            maximum_possible_percentage: Perbill::from_percent(100),
         },
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_percent(2),
             minimum_required_percentage: Perbill::from_percent(1),
-            maximum_possible_percentage: None,
+            maximum_possible_percentage: Perbill::from_percent(100),
         },
         TierThreshold::FixedPercentage {
             required_percentage: Perbill::from_parts(5_000_000), // 0.5%
@@ -3759,17 +3759,17 @@ fn tier_configuration_calculate_new_with_maximum_threshold() {
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_percent(4),
             minimum_required_percentage: Perbill::from_percent(3),
-            maximum_possible_percentage: Some(Perbill::from_percent(5)),
+            maximum_possible_percentage: Perbill::from_percent(5),
         },
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_percent(3),
             minimum_required_percentage: Perbill::from_percent(2),
-            maximum_possible_percentage: Some(Perbill::from_percent(4)),
+            maximum_possible_percentage: Perbill::from_percent(4),
         },
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_percent(2),
             minimum_required_percentage: Perbill::from_percent(1),
-            maximum_possible_percentage: Some(Perbill::from_percent(3)),
+            maximum_possible_percentage: Perbill::from_percent(3),
         },
         TierThreshold::FixedPercentage {
             required_percentage: Perbill::from_parts(5_000_000), // 0.5%
