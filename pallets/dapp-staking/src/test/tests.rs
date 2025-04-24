@@ -2763,20 +2763,17 @@ fn tier_config_recalculation_works() {
         let max_amounts: Vec<Balance> = tier_params
             .tier_thresholds
             .iter()
-            .map(|threshold| {
-                match threshold {
-                    TierThreshold::DynamicPercentage {
-                        maximum_possible_percentage,
-                        ..
-                    } => {
-                        let max_percent =
-                            maximum_possible_percentage.unwrap_or(Perbill::from_percent(100)); // Default to 100%
-                        max_percent * total_issuance
-                    }
-                    TierThreshold::FixedPercentage {
-                        required_percentage,
-                    } => *required_percentage * total_issuance,
+            .map(|threshold| match threshold {
+                TierThreshold::DynamicPercentage {
+                    maximum_possible_percentage,
+                    ..
+                } => {
+                    let max_percent = maximum_possible_percentage;
+                    *max_percent * total_issuance
                 }
+                TierThreshold::FixedPercentage {
+                    required_percentage,
+                } => *required_percentage * total_issuance,
             })
             .collect();
 
