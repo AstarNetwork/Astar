@@ -2777,14 +2777,14 @@ fn tier_config_recalculation_works() {
             })
             .collect();
 
-        // Check that each tier's threshold has increased but doesn't exceed its maximum
+        // Check that each tier's threshold has increased (or remains equal for fixed percentages) but doesn't exceed its maximum
         assert!(
             new_tier_config
                 .tier_thresholds
                 .iter()
                 .zip(init_tier_config.tier_thresholds.iter())
                 .zip(max_amounts.iter())
-                .all(|((new, init), max_amount)| new > init && new <= max_amount),
+                .all(|((new, init), max_amount)| new >= init && new <= max_amount),
             "Tier threshold values should increase with lower price but not exceed their maximums"
         );
     })
