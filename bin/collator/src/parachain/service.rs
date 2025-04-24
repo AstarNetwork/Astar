@@ -57,7 +57,7 @@ use substrate_prometheus_endpoint::Registry;
 use super::shell_upgrade::*;
 
 use crate::{
-    evm_tracing_types::{EthApi as EthApiCmd, EvmTracingConfig},
+    evm_tracing_types::{EthApi as EthApiCmd, RpcConfig},
     rpc::tracing,
 };
 
@@ -79,6 +79,7 @@ type FullClient =
 /// be able to perform chain operations.
 pub fn new_partial(
     config: &Configuration,
+    evm_tracing_config: &RpcConfig,
 ) -> Result<
     PartialComponents<
         FullClient,
@@ -94,7 +95,7 @@ pub fn new_partial(
             >,
             Option<Telemetry>,
             Option<TelemetryWorkerHandle>,
-            Arc<fc_db::kv::Backend<Block, FullClient>>,
+            Arc<fc_db::Backend<Block, FullClient>>,
         ),
     >,
     sc_service::Error,
@@ -150,7 +151,11 @@ pub fn new_partial(
         client.clone(),
     );
 
-    let frontier_backend = crate::rpc::open_frontier_backend(client.clone(), config)?;
+    let frontier_backend = Arc::new(crate::rpc::open_frontier_backend(
+        client.clone(),
+        config,
+        evm_tracing_config,
+    )?);
     let frontier_block_import = FrontierBlockImport::new(client.clone(), client.clone());
 
     let parachain_block_import: ParachainBlockImport<_, _, _> =
@@ -214,7 +219,7 @@ async fn build_relay_chain_interface(
 /// To add additional config to start_xyz_node functions
 pub struct AdditionalConfig {
     /// EVM tracing configuration
-    pub evm_tracing_config: EvmTracingConfig,
+    pub evm_tracing_config: RpcConfig,
 
     /// Whether EVM RPC be enabled
     pub enable_evm_rpc: bool,
@@ -254,7 +259,7 @@ where
         import_queue,
         transaction_pool,
         other: (parachain_block_import, mut telemetry, telemetry_worker_handle, frontier_backend),
-    } = new_partial(&parachain_config)?;
+    } = new_partial(&parachain_config, &additional_config.evm_tracing_config)?;
 
     let net_config =
         sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&parachain_config.network);
@@ -324,24 +329,47 @@ where
 
     // Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
-    task_manager.spawn_essential_handle().spawn(
-        "frontier-mapping-sync-worker",
-        Some("frontier"),
-        fc_mapping_sync::kv::MappingSyncWorker::new(
-            client.import_notification_stream(),
-            Duration::new(6, 0),
-            client.clone(),
-            backend.clone(),
-            storage_override.clone(),
-            frontier_backend.clone(),
-            3,
-            0,
-            fc_mapping_sync::SyncStrategy::Parachain,
-            sync_service.clone(),
-            pubsub_notification_sinks.clone(),
-        )
-        .for_each(|()| futures::future::ready(())),
-    );
+    match frontier_backend.as_ref() {
+        fc_db::Backend::KeyValue(ref b) => {
+            task_manager.spawn_essential_handle().spawn(
+                "frontier-mapping-sync-worker",
+                Some("frontier"),
+                fc_mapping_sync::kv::MappingSyncWorker::new(
+                    client.import_notification_stream(),
+                    Duration::new(6, 0),
+                    client.clone(),
+                    backend.clone(),
+                    storage_override.clone(),
+                    b.clone(),
+                    3,
+                    0,
+                    fc_mapping_sync::SyncStrategy::Parachain,
+                    sync_service.clone(),
+                    pubsub_notification_sinks.clone(),
+                )
+                .for_each(|()| futures::future::ready(())),
+            );
+        }
+        fc_db::Backend::Sql(ref b) => {
+            task_manager.spawn_essential_handle().spawn_blocking(
+                "frontier-mapping-sync-worker",
+                Some("frontier"),
+                fc_mapping_sync::sql::SyncWorker::run(
+                    client.clone(),
+                    backend.clone(),
+                    b.clone(),
+                    client.import_notification_stream(),
+                    fc_mapping_sync::sql::SyncWorkerConfig {
+                        read_notification_timeout: Duration::from_secs(10),
+                        check_indexed_blocks_interval: Duration::from_secs(60),
+                    },
+                    fc_mapping_sync::SyncStrategy::Parachain,
+                    sync_service.clone(),
+                    pubsub_notification_sinks.clone(),
+                ),
+            );
+        }
+    }
 
     // Frontier `EthFilterApi` maintenance. Manages the pool of user-created Filters.
     // Each filter is allowed to stay in the pool for 100 blocks.
@@ -397,7 +425,10 @@ where
                 sync: sync.clone(),
                 is_authority,
                 deny_unsafe,
-                frontier_backend: frontier_backend.clone(),
+                frontier_backend: match *frontier_backend {
+                    fc_db::Backend::KeyValue(ref b) => b.clone(),
+                    fc_db::Backend::Sql(ref b) => b.clone(),
+                },
                 filter_pool: filter_pool.clone(),
                 fee_history_limit: FEE_HISTORY_LIMIT,
                 fee_history_cache: fee_history_cache.clone(),

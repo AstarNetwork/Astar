@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+use crate::rpc::{FrontierBackendConfig, FrontierBackendType};
 use clap::Parser;
 
 /// EVM tracing CLI flags.
@@ -50,7 +51,7 @@ impl std::str::FromStr for EthApi {
 #[allow(dead_code)]
 #[derive(Clone)]
 /// EVM tracing CLI config.
-pub struct EvmTracingConfig {
+pub struct RpcConfig {
     /// Enabled EVM tracing flags.
     pub ethapi: Vec<EthApi>,
     /// Number of concurrent tracing tasks.
@@ -71,6 +72,8 @@ pub struct EvmTracingConfig {
     /// Size in bytes of data a raw tracing request is allowed to use.
     /// Bound the size of memory, stack and storage data.
     pub tracing_raw_max_memory_usage: usize,
+    /// Configuration for the frontier db backend.
+    pub frontier_backend_config: FrontierBackendConfig,
 }
 
 #[derive(Debug, Parser)]
@@ -120,4 +123,49 @@ pub struct EthApiOptions {
     /// Maximum number of logs in a query.
     #[clap(long, default_value = "10000")]
     pub max_past_logs: u32,
+
+    /// Sets the backend type (KeyValue or Sql)
+    #[clap(long, value_enum, ignore_case = true, default_value_t = FrontierBackendType::default())]
+    pub frontier_backend_type: FrontierBackendType,
+
+    /// Sets the SQL backend's pool size.
+    #[arg(long, default_value = "100")]
+    pub frontier_sql_backend_pool_size: u32,
+
+    /// Sets the SQL backend's query timeout in number of VM ops.
+    #[clap(long, default_value = "10000000")]
+    pub frontier_sql_backend_num_ops_timeout: u32,
+
+    /// Sets the SQL backend's auxiliary thread limit.
+    #[clap(long, default_value = "4")]
+    pub frontier_sql_backend_thread_count: u32,
+
+    /// Sets the SQL backend's query timeout in number of VM ops.
+    /// Default value is 200MB.
+    #[clap(long, default_value = "209715200")]
+    pub frontier_sql_backend_cache_size: u64,
+}
+
+impl EthApiOptions {
+    pub fn new_rpc_config(&self) -> RpcConfig {
+        RpcConfig {
+            ethapi: self.ethapi.clone(),
+            ethapi_max_permits: self.ethapi_max_permits,
+            ethapi_trace_max_count: self.ethapi_trace_max_count,
+            ethapi_trace_cache_duration: self.ethapi_trace_cache_duration,
+            eth_log_block_cache: self.eth_log_block_cache,
+            eth_statuses_cache: self.eth_statuses_cache,
+            max_past_logs: self.max_past_logs,
+            tracing_raw_max_memory_usage: self.tracing_raw_max_memory_usage,
+            frontier_backend_config: match self.frontier_backend_type {
+                FrontierBackendType::KeyValue => FrontierBackendConfig::KeyValue,
+                FrontierBackendType::Sql => FrontierBackendConfig::Sql {
+                    pool_size: self.frontier_sql_backend_pool_size,
+                    num_ops_timeout: self.frontier_sql_backend_num_ops_timeout,
+                    thread_count: self.frontier_sql_backend_thread_count,
+                    cache_size: self.frontier_sql_backend_cache_size,
+                },
+            },
+        }
+    }
 }

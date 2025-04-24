@@ -85,7 +85,7 @@ pallet-evm = { workspace = true, features = ["std"] }
 fc-api = { workspace = true }
 fc-consensus = { workspace = true }
 fc-db = { workspace = true }
-fc-mapping-sync = { workspace = true }
+fc-mapping-sync = { workspace = true, features = ["sql"] }
 fc-rpc = { workspace = true }
 fc-rpc-core = { workspace = true }
 fc-storage = { workspace = true }
