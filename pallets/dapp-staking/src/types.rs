@@ -1642,7 +1642,10 @@ pub enum TierThreshold {
     /// Entry into the tier is mandated by a percentage of the total issuance as staked funds.
     /// This `percentage` can change between periods, but must stay within the defined
     /// `minimum_required_percentage` and `maximum_possible_percentage`.
-    /// If `maximum_possible_percentage` is not specified, the default value used is 100%.
+    /// If minimum is greater than maximum, the configuration is invalid.
+    ///
+    /// NOTE: It's up to the user to ensure that minimum_required_percentage is
+    /// less than or equal to maximum_possible_percentage to avoid potential issues.
     DynamicPercentage {
         percentage: Perbill,
         minimum_required_percentage: Perbill,
@@ -1723,6 +1726,20 @@ impl<NT: Get<u32>> TierParameters<NT> {
             .is_none()
         {
             return false;
+        }
+
+        // Validate that the minimum percentage is less than or equal to maximum percentage.
+        for threshold in self.tier_thresholds.iter() {
+            if let TierThreshold::DynamicPercentage {
+                minimum_required_percentage,
+                maximum_possible_percentage,
+                ..
+            } = threshold
+            {
+                if minimum_required_percentage > maximum_possible_percentage {
+                    return false;
+                }
+            }
         }
 
         let number_of_tiers: usize = NT::get() as usize;

@@ -1688,7 +1688,12 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 parameter_types! {
-    pub const MaxPercentages: [Option<Perbill>; 4] = [None, None, None, None];
+    pub const MaxPercentages: [Option<Perbill>; 4] = [
+        Some(Perbill::from_parts(30_000)), // 0.0030%
+        Some(Perbill::from_parts(20_000)), // 0.0020%
+        Some(Perbill::from_parts(10_000)), // 0.0010%
+        None
+    ];
 }
 
 /// Unreleased migrations. Add new ones here:

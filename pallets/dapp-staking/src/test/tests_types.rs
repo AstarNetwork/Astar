@@ -3464,6 +3464,44 @@ fn tier_params_check_is_ok() {
     }])
     .unwrap();
     assert!(!new_params.is_valid());
+
+    // 5th scenario - DynamicPercentage with valid min/max (min <= max)
+    let mut valid_dynamic_params = params.clone();
+    valid_dynamic_params.tier_thresholds = BoundedVec::try_from(vec![
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_percent(2),
+            minimum_required_percentage: Perbill::from_percent(1),
+            maximum_possible_percentage: Perbill::from_percent(3),
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_percent(2),
+            minimum_required_percentage: Perbill::from_percent(2), // equal min and max is valid
+            maximum_possible_percentage: Perbill::from_percent(2),
+        },
+        TierThreshold::FixedPercentage {
+            required_percentage: Perbill::from_percent(1),
+        },
+    ])
+    .unwrap();
+    assert!(valid_dynamic_params.is_valid());
+
+    // 6th scenario - DynamicPercentage with invalid min/max (min > max)
+    let mut invalid_dynamic_params = params.clone();
+    invalid_dynamic_params.tier_thresholds = BoundedVec::try_from(vec![
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_percent(2),
+            minimum_required_percentage: Perbill::from_percent(4), // min > max is invalid
+            maximum_possible_percentage: Perbill::from_percent(3),
+        },
+        TierThreshold::FixedPercentage {
+            required_percentage: Perbill::from_percent(2),
+        },
+        TierThreshold::FixedPercentage {
+            required_percentage: Perbill::from_percent(1),
+        },
+    ])
+    .unwrap();
+    assert!(!invalid_dynamic_params.is_valid());
 }
 
 #[test]

@@ -4235,6 +4235,26 @@ fn set_static_tier_params_invalid_params_fails() {
             DappStaking::set_static_tier_params(RuntimeOrigin::root(), invalid_tier_params),
             Error::<Test>::InvalidTierParams
         );
+
+        // invalid dynamic percentage (min > max)
+        let mut tier_thresholds = tier_params.tier_thresholds.clone().to_vec();
+        tier_thresholds[0] = TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_percent(2),
+            minimum_required_percentage: Perbill::from_percent(5),
+            maximum_possible_percentage: Perbill::from_percent(3),
+        };
+
+        let invalid_min_max_params = TierParameters::<NumberOfTiers> {
+            tier_thresholds: tier_thresholds.try_into().unwrap(),
+            ..tier_params.clone()
+        };
+
+        assert!(!invalid_min_max_params.is_valid(), "Invalid min/max");
+
+        assert_noop!(
+            DappStaking::set_static_tier_params(RuntimeOrigin::root(), invalid_min_max_params),
+            Error::<Test>::InvalidTierParams
+        );
     })
 }
 
