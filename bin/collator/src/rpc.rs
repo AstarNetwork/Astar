@@ -52,7 +52,7 @@ use moonbeam_rpc_trace::{Trace, TraceServer};
 // TODO: get rid of this completely now that it's part of frontier?
 use moonbeam_rpc_txpool::{TxPool as MoonbeamTxPool, TxPoolServer};
 
-use crate::evm_tracing_types::RpcConfig;
+use crate::evm_tracing_types::{FrontierBackendConfig, RpcConfig};
 use astar_primitives::*;
 
 pub mod tracing;
@@ -72,24 +72,6 @@ pub enum FrontierBackendType {
     KeyValue,
     /// SQL database with custom log indexing.
     Sql,
-}
-
-/// Defines the frontier backend configuration.
-#[derive(Clone)]
-pub enum FrontierBackendConfig {
-    KeyValue,
-    Sql {
-        pool_size: u32,
-        num_ops_timeout: u32,
-        thread_count: u32,
-        cache_size: u64,
-    },
-}
-
-impl Default for FrontierBackendConfig {
-    fn default() -> FrontierBackendConfig {
-        FrontierBackendConfig::KeyValue
-    }
 }
 
 // TODO This is copied from frontier. It should be imported instead after

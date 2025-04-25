@@ -16,8 +16,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::rpc::{FrontierBackendConfig, FrontierBackendType};
+use crate::rpc::FrontierBackendType;
 use clap::Parser;
+
+/// Defines the frontier backend configuration.
+#[derive(Clone)]
+pub enum FrontierBackendConfig {
+    KeyValue,
+    Sql {
+        pool_size: u32,
+        num_ops_timeout: u32,
+        thread_count: u32,
+        cache_size: u64,
+    },
+}
+
+impl Default for FrontierBackendConfig {
+    fn default() -> FrontierBackendConfig {
+        FrontierBackendConfig::KeyValue
+    }
+}
 
 /// EVM tracing CLI flags.
 #[derive(Debug, PartialEq, Clone)]
@@ -50,7 +68,7 @@ impl std::str::FromStr for EthApi {
 
 #[allow(dead_code)]
 #[derive(Clone)]
-/// EVM tracing CLI config.
+/// EVM Rpc configuration.
 pub struct RpcConfig {
     /// Enabled EVM tracing flags.
     pub ethapi: Vec<EthApi>,
