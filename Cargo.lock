@@ -491,7 +491,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "futures 0.3.31",
- "jsonrpsee 0.23.2",
+ "jsonrpsee 0.24.9",
  "local-runtime",
  "log",
  "moonbeam-primitives-ext",
@@ -499,7 +499,6 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "moonbeam-rpc-trace",
- "moonbeam-rpc-txpool",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-transaction-payment",
@@ -3802,9 +3801,9 @@ dependencies = [
  "auto_impl",
  "environmental",
  "ethereum",
- "evm-core 0.42.0",
- "evm-gasometer 0.42.0",
- "evm-runtime 0.42.0",
+ "evm-core",
+ "evm-gasometer",
+ "evm-runtime",
  "log",
  "parity-scale-codec",
  "primitive-types 0.13.1",
@@ -3816,18 +3815,6 @@ dependencies = [
 
 [[package]]
 name = "evm-core"
-version = "0.41.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1da6cedc5cedb4208e59467106db0d1f50db01b920920589f8e672c02fdc04f"
-dependencies = [
- "parity-scale-codec",
- "primitive-types 0.12.2",
- "scale-info",
- "serde",
-]
-
-[[package]]
-name = "evm-core"
 version = "0.42.0"
 source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#e81732d6bb47e3d3d68d233e43919c4522598361"
 dependencies = [
@@ -3839,48 +3826,23 @@ dependencies = [
 
 [[package]]
 name = "evm-gasometer"
-version = "0.41.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1dc0eb591abc5cd7b05bef6a036c2bb6c66ab6c5e0c5ce94bfe377ab670b1fd7"
-dependencies = [
- "environmental",
- "evm-core 0.41.0",
- "evm-runtime 0.41.0",
- "primitive-types 0.12.2",
-]
-
-[[package]]
-name = "evm-gasometer"
 version = "0.42.0"
 source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#e81732d6bb47e3d3d68d233e43919c4522598361"
 dependencies = [
  "environmental",
- "evm-core 0.42.0",
- "evm-runtime 0.42.0",
+ "evm-core",
+ "evm-runtime",
  "primitive-types 0.13.1",
 ]
 
 [[package]]
 name = "evm-runtime"
-version = "0.41.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84bbe09b64ae13a29514048c1bb6fda6374ac0b4f6a1f15a443348ab88ef42cd"
-dependencies = [
- "auto_impl",
- "environmental",
- "evm-core 0.41.0",
- "primitive-types 0.12.2",
- "sha3",
-]
-
-[[package]]
-name = "evm-runtime"
 version = "0.42.0"
 source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#e81732d6bb47e3d3d68d233e43919c4522598361"
 dependencies = [
  "auto_impl",
  "environmental",
- "evm-core 0.42.0",
+ "evm-core",
  "primitive-types 0.13.1",
  "sha3",
 ]
@@ -3893,8 +3855,8 @@ dependencies = [
  "ethereum",
  "ethereum-types 0.15.1",
  "evm",
- "evm-gasometer 0.41.0",
- "evm-runtime 0.41.0",
+ "evm-gasometer",
+ "evm-runtime",
  "parity-scale-codec",
  "sp-runtime-interface",
 ]
@@ -6142,12 +6104,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62b089779ad7f80768693755a031cc14a7766aba707cbe886674e3f79e9b7e47"
 dependencies = [
  "jsonrpsee-core 0.23.2",
- "jsonrpsee-proc-macros 0.23.2",
- "jsonrpsee-server 0.23.2",
  "jsonrpsee-types 0.23.2",
  "jsonrpsee-ws-client 0.23.2",
- "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -6157,8 +6115,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37b26c20e2178756451cfeb0661fb74c47dd5988cb7e3939de7e9241fd604d42"
 dependencies = [
  "jsonrpsee-core 0.24.9",
- "jsonrpsee-proc-macros 0.24.9",
- "jsonrpsee-server 0.24.9",
+ "jsonrpsee-proc-macros",
+ "jsonrpsee-server",
  "jsonrpsee-types 0.24.9",
  "jsonrpsee-ws-client 0.24.9",
  "tokio",
@@ -6264,16 +6222,10 @@ dependencies = [
  "anyhow",
  "async-trait",
  "beef",
- "bytes",
  "futures-timer",
  "futures-util",
- "http 1.1.0",
- "http-body 1.0.1",
- "http-body-util",
  "jsonrpsee-types 0.23.2",
- "parking_lot 0.12.3",
  "pin-project",
- "rand 0.8.5",
  "rustc-hash 1.1.0",
  "serde",
  "serde_json",
@@ -6331,19 +6283,6 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee-proc-macros"
-version = "0.23.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7895f186d5921065d96e16bd795e5ca89ac8356ec423fafc6e3d7cf8ec11aee4"
-dependencies = [
- "heck 0.5.0",
- "proc-macro-crate 3.2.0",
- "proc-macro2",
- "quote",
- "syn 2.0.100",
-]
-
-[[package]]
-name = "jsonrpsee-proc-macros"
 version = "0.24.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e65763c942dfc9358146571911b0cd1c361c2d63e2d2305622d40d36376ca80"
@@ -6353,34 +6292,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.100",
-]
-
-[[package]]
-name = "jsonrpsee-server"
-version = "0.23.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "654afab2e92e5d88ebd8a39d6074483f3f2bfdf91c5ac57fe285e7127cdd4f51"
-dependencies = [
- "anyhow",
- "futures-util",
- "http 1.1.0",
- "http-body 1.0.1",
- "http-body-util",
- "hyper 1.4.1",
- "hyper-util",
- "jsonrpsee-core 0.23.2",
- "jsonrpsee-types 0.23.2",
- "pin-project",
- "route-recognizer",
- "serde",
- "serde_json",
- "soketto 0.8.0",
- "thiserror 1.0.69",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "tower",
- "tracing",
 ]
 
 [[package]]
@@ -7729,8 +7640,8 @@ version = "0.1.0"
 dependencies = [
  "ethereum-types 0.15.1",
  "evm",
- "evm-gasometer 0.41.0",
- "evm-runtime 0.41.0",
+ "evm-gasometer",
+ "evm-runtime",
  "evm-tracing-events",
  "fp-evm",
  "moonbeam-primitives-ext",
@@ -7762,7 +7673,7 @@ dependencies = [
  "ethereum-types 0.15.1",
  "fc-rpc-core",
  "futures 0.3.31",
- "jsonrpsee 0.23.2",
+ "jsonrpsee 0.24.9",
  "moonbeam-client-evm-tracing",
  "moonbeam-rpc-core-types",
  "serde",
@@ -7776,21 +7687,9 @@ version = "0.6.0"
 dependencies = [
  "ethereum-types 0.15.1",
  "futures 0.3.31",
- "jsonrpsee 0.23.2",
+ "jsonrpsee 0.24.9",
  "moonbeam-client-evm-tracing",
  "moonbeam-rpc-core-types",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "moonbeam-rpc-core-txpool"
-version = "0.6.0"
-dependencies = [
- "ethereum",
- "ethereum-types 0.15.1",
- "fc-rpc-core",
- "jsonrpsee 0.23.2",
  "serde",
  "serde_json",
 ]
@@ -7819,7 +7718,7 @@ dependencies = [
  "fp-rpc",
  "futures 0.3.31",
  "hex-literal",
- "jsonrpsee 0.23.2",
+ "jsonrpsee 0.24.9",
  "moonbeam-client-evm-tracing",
  "moonbeam-rpc-core-debug",
  "moonbeam-rpc-core-types",
@@ -7877,7 +7776,7 @@ dependencies = [
  "fc-storage",
  "fp-rpc",
  "futures 0.3.31",
- "jsonrpsee 0.23.2",
+ "jsonrpsee 0.24.9",
  "log",
  "moonbeam-client-evm-tracing",
  "moonbeam-rpc-core-trace",
@@ -7898,28 +7797,6 @@ dependencies = [
  "substrate-prometheus-endpoint",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "moonbeam-rpc-txpool"
-version = "0.6.0"
-dependencies = [
- "ethereum-types 0.15.1",
- "fc-rpc",
- "frame-system",
- "jsonrpsee 0.23.2",
- "moonbeam-rpc-core-txpool",
- "moonbeam-rpc-primitives-txpool",
- "rlp 0.6.1",
- "sc-transaction-pool",
- "sc-transaction-pool-api",
- "serde",
- "sha3",
- "sp-api",
- "sp-blockchain",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]

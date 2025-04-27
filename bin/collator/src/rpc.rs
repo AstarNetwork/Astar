@@ -20,7 +20,7 @@
 
 use fc_rpc::{
     Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
-    EthPubSubApiServer, Net, NetApiServer, Web3, Web3ApiServer,
+    EthPubSubApiServer, Net, NetApiServer, TxPool, TxPoolApiServer, Web3, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_storage::StorageOverride;
@@ -48,8 +48,6 @@ use substrate_frame_rpc_system::{System, SystemApiServer};
 
 use moonbeam_rpc_debug::{Debug, DebugServer};
 use moonbeam_rpc_trace::{Trace, TraceServer};
-// TODO: get rid of this completely now that it's part of frontier?
-use moonbeam_rpc_txpool::{TxPool as MoonbeamTxPool, TxPoolServer};
 
 use astar_primitives::*;
 
