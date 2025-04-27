@@ -24,7 +24,7 @@ use crate::Pallet as XcAssetConfig;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
 use sp_std::boxed::Box;
-use xcm::v4::Location;
+use xcm::v5::Location;
 
 benchmarks! {
 

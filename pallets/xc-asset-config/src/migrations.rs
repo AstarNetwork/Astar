@@ -146,7 +146,7 @@ impl<T: Config> UncheckedOnRuntimeUpgrade for MigrationXcmV4<T> {
         let mut consumed_weight = Weight::zero();
 
         // 1st map
-        AssetIdToLocation::<T>::translate::<xcm::VersionedMultiLocation, _>(
+        AssetIdToLocation::<T>::translate::<xcm::VersionedLocation, _>(
             |asset_id, multi_location| {
                 consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
                 VersionedLocation::try_from(multi_location)
