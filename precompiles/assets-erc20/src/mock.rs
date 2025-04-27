@@ -146,7 +146,8 @@ impl pallet_evm::Config for Runtime {
     type OnCreate = ();
     type WeightInfo = ();
     type GasLimitPovSizeRatio = ConstU64<4>;
-    type SuicideQuickClearLimit = ConstU32<0>;
+    type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
+    type GasLimitStorageGrowthRatio = ConstU64<0>;
 }
 
 // These parameters dont matter much as this will only be called by root with the forced arguments
