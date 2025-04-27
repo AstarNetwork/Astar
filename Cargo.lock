@@ -567,8 +567,8 @@ dependencies = [
 name = "astar-primitives"
 version = "0.1.0"
 dependencies = [
- "ethereum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethereum-types 0.14.1",
+ "ethereum",
+ "ethereum-types 0.15.1",
  "fp-evm",
  "frame-support",
  "frame-system",
@@ -3506,24 +3506,6 @@ dependencies = [
 [[package]]
 name = "ethereum"
 version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e04d24d20b8ff2235cffbf242d5092de3aa45f77c5270ddbfadd2778ca13fea"
-dependencies = [
- "bytes",
- "ethereum-types 0.14.1",
- "hash-db",
- "hash256-std-hasher",
- "parity-scale-codec",
- "rlp 0.5.2",
- "scale-info",
- "serde",
- "sha3",
- "trie-root",
-]
-
-[[package]]
-name = "ethereum"
-version = "0.15.0"
 source = "git+https://github.com/rust-ethereum/ethereum?rev=3be0d8fd4c2ad1ba216b69ef65b9382612efc8ba#3be0d8fd4c2ad1ba216b69ef65b9382612efc8ba"
 dependencies = [
  "bytes",
@@ -3814,33 +3796,12 @@ dependencies = [
 
 [[package]]
 name = "evm"
-version = "0.41.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "767f43e9630cc36cf8ff2777cbb0121b055f0d1fd6eaaa13b46a1808f0d0e7e9"
-dependencies = [
- "auto_impl",
- "environmental",
- "ethereum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "evm-core 0.41.0",
- "evm-gasometer 0.41.0",
- "evm-runtime 0.41.0",
- "log",
- "parity-scale-codec",
- "primitive-types 0.12.2",
- "rlp 0.5.2",
- "scale-info",
- "serde",
- "sha3",
-]
-
-[[package]]
-name = "evm"
 version = "0.42.0"
 source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#e81732d6bb47e3d3d68d233e43919c4522598361"
 dependencies = [
  "auto_impl",
  "environmental",
- "ethereum 0.15.0 (git+https://github.com/rust-ethereum/ethereum?rev=3be0d8fd4c2ad1ba216b69ef65b9382612efc8ba)",
+ "ethereum",
  "evm-core 0.42.0",
  "evm-gasometer 0.42.0",
  "evm-runtime 0.42.0",
@@ -3929,9 +3890,9 @@ name = "evm-tracing-events"
 version = "0.1.0"
 dependencies = [
  "environmental",
- "ethereum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethereum-types 0.14.1",
- "evm 0.41.1",
+ "ethereum",
+ "ethereum-types 0.15.1",
+ "evm",
  "evm-gasometer 0.41.0",
  "evm-runtime 0.41.0",
  "parity-scale-codec",
@@ -4104,9 +4065,9 @@ name = "fc-rpc"
 version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=stable2412#75ebd6c8aa198b95a2b1fc700c2635dd8d320313"
 dependencies = [
- "ethereum 0.15.0 (git+https://github.com/rust-ethereum/ethereum?rev=3be0d8fd4c2ad1ba216b69ef65b9382612efc8ba)",
+ "ethereum",
  "ethereum-types 0.15.1",
- "evm 0.42.0",
+ "evm",
  "fc-api",
  "fc-mapping-sync",
  "fc-rpc-core",
@@ -4158,7 +4119,7 @@ name = "fc-rpc-core"
 version = "1.1.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=stable2412#75ebd6c8aa198b95a2b1fc700c2635dd8d320313"
 dependencies = [
- "ethereum 0.15.0 (git+https://github.com/rust-ethereum/ethereum?rev=3be0d8fd4c2ad1ba216b69ef65b9382612efc8ba)",
+ "ethereum",
  "ethereum-types 0.15.1",
  "jsonrpsee 0.24.9",
  "rlp 0.6.1",
@@ -4173,7 +4134,7 @@ name = "fc-storage"
 version = "1.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=stable2412#75ebd6c8aa198b95a2b1fc700c2635dd8d320313"
 dependencies = [
- "ethereum 0.15.0 (git+https://github.com/rust-ethereum/ethereum?rev=3be0d8fd4c2ad1ba216b69ef65b9382612efc8ba)",
+ "ethereum",
  "ethereum-types 0.15.1",
  "fp-rpc",
  "fp-storage",
@@ -4359,7 +4320,7 @@ name = "fp-consensus"
 version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=stable2412#75ebd6c8aa198b95a2b1fc700c2635dd8d320313"
 dependencies = [
- "ethereum 0.15.0 (git+https://github.com/rust-ethereum/ethereum?rev=3be0d8fd4c2ad1ba216b69ef65b9382612efc8ba)",
+ "ethereum",
  "parity-scale-codec",
  "sp-core",
  "sp-runtime",
@@ -4370,7 +4331,7 @@ name = "fp-ethereum"
 version = "1.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=stable2412#75ebd6c8aa198b95a2b1fc700c2635dd8d320313"
 dependencies = [
- "ethereum 0.15.0 (git+https://github.com/rust-ethereum/ethereum?rev=3be0d8fd4c2ad1ba216b69ef65b9382612efc8ba)",
+ "ethereum",
  "ethereum-types 0.15.1",
  "fp-evm",
  "frame-support",
@@ -4383,7 +4344,7 @@ version = "3.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=stable2412#75ebd6c8aa198b95a2b1fc700c2635dd8d320313"
 dependencies = [
  "environmental",
- "evm 0.42.0",
+ "evm",
  "frame-support",
  "num_enum 0.7.3",
  "parity-scale-codec",
@@ -4398,7 +4359,7 @@ name = "fp-rpc"
 version = "3.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=stable2412#75ebd6c8aa198b95a2b1fc700c2635dd8d320313"
 dependencies = [
- "ethereum 0.15.0 (git+https://github.com/rust-ethereum/ethereum?rev=3be0d8fd4c2ad1ba216b69ef65b9382612efc8ba)",
+ "ethereum",
  "ethereum-types 0.15.1",
  "fp-evm",
  "parity-scale-codec",
@@ -5965,7 +5926,7 @@ dependencies = [
  "cumulus-primitives-parachain-inherent",
  "cumulus-test-relay-sproof-builder",
  "env_logger 0.10.2",
- "ethereum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ethereum",
  "fp-evm",
  "fp-rpc",
  "frame-support",
@@ -7751,7 +7712,7 @@ dependencies = [
 name = "moonbeam-client-evm-tracing"
 version = "0.1.0"
 dependencies = [
- "ethereum-types 0.14.1",
+ "ethereum-types 0.15.1",
  "evm-tracing-events",
  "hex",
  "moonbeam-rpc-primitives-debug",
@@ -7766,8 +7727,8 @@ dependencies = [
 name = "moonbeam-evm-tracer"
 version = "0.1.0"
 dependencies = [
- "ethereum-types 0.14.1",
- "evm 0.41.1",
+ "ethereum-types 0.15.1",
+ "evm",
  "evm-gasometer 0.41.0",
  "evm-runtime 0.41.0",
  "evm-tracing-events",
@@ -7785,7 +7746,7 @@ dependencies = [
 name = "moonbeam-primitives-ext"
 version = "0.1.0"
 dependencies = [
- "ethereum-types 0.14.1",
+ "ethereum-types 0.15.1",
  "evm-tracing-events",
  "parity-scale-codec",
  "sp-externalities",
@@ -7797,8 +7758,8 @@ dependencies = [
 name = "moonbeam-rpc-core-debug"
 version = "0.1.0"
 dependencies = [
- "ethereum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethereum-types 0.14.1",
+ "ethereum",
+ "ethereum-types 0.15.1",
  "fc-rpc-core",
  "futures 0.3.31",
  "jsonrpsee 0.23.2",
@@ -7813,7 +7774,7 @@ dependencies = [
 name = "moonbeam-rpc-core-trace"
 version = "0.6.0"
 dependencies = [
- "ethereum-types 0.14.1",
+ "ethereum-types 0.15.1",
  "futures 0.3.31",
  "jsonrpsee 0.23.2",
  "moonbeam-client-evm-tracing",
@@ -7826,8 +7787,8 @@ dependencies = [
 name = "moonbeam-rpc-core-txpool"
 version = "0.6.0"
 dependencies = [
- "ethereum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethereum-types 0.14.1",
+ "ethereum",
+ "ethereum-types 0.15.1",
  "fc-rpc-core",
  "jsonrpsee 0.23.2",
  "serde",
@@ -7838,7 +7799,7 @@ dependencies = [
 name = "moonbeam-rpc-core-types"
 version = "0.1.0"
 dependencies = [
- "ethereum-types 0.14.1",
+ "ethereum-types 0.15.1",
  "serde",
  "serde_json",
 ]
@@ -7847,8 +7808,8 @@ dependencies = [
 name = "moonbeam-rpc-debug"
 version = "0.1.0"
 dependencies = [
- "ethereum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethereum-types 0.14.1",
+ "ethereum",
+ "ethereum-types 0.15.1",
  "fc-api",
  "fc-consensus",
  "fc-db",
@@ -7879,8 +7840,8 @@ name = "moonbeam-rpc-primitives-debug"
 version = "0.1.0"
 dependencies = [
  "environmental",
- "ethereum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethereum-types 0.14.1",
+ "ethereum",
+ "ethereum-types 0.15.1",
  "hex",
  "parity-scale-codec",
  "serde",
@@ -7895,7 +7856,7 @@ dependencies = [
 name = "moonbeam-rpc-primitives-txpool"
 version = "0.6.0"
 dependencies = [
- "ethereum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ethereum",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -7908,8 +7869,8 @@ dependencies = [
 name = "moonbeam-rpc-trace"
 version = "0.6.0"
 dependencies = [
- "ethereum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethereum-types 0.14.1",
+ "ethereum",
+ "ethereum-types 0.15.1",
  "fc-consensus",
  "fc-rpc",
  "fc-rpc-core",
@@ -7943,13 +7904,13 @@ dependencies = [
 name = "moonbeam-rpc-txpool"
 version = "0.6.0"
 dependencies = [
- "ethereum-types 0.14.1",
+ "ethereum-types 0.15.1",
  "fc-rpc",
  "frame-system",
  "jsonrpsee 0.23.2",
  "moonbeam-rpc-core-txpool",
  "moonbeam-rpc-primitives-txpool",
- "rlp 0.5.2",
+ "rlp 0.6.1",
  "sc-transaction-pool",
  "sc-transaction-pool-api",
  "serde",
@@ -9275,9 +9236,9 @@ name = "pallet-ethereum"
 version = "4.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=stable2412#75ebd6c8aa198b95a2b1fc700c2635dd8d320313"
 dependencies = [
- "ethereum 0.15.0 (git+https://github.com/rust-ethereum/ethereum?rev=3be0d8fd4c2ad1ba216b69ef65b9382612efc8ba)",
+ "ethereum",
  "ethereum-types 0.15.1",
- "evm 0.42.0",
+ "evm",
  "fp-consensus",
  "fp-ethereum",
  "fp-evm",
@@ -9298,8 +9259,8 @@ name = "pallet-ethereum-checked"
 version = "0.1.0"
 dependencies = [
  "astar-primitives",
- "ethereum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethereum-types 0.14.1",
+ "ethereum",
+ "ethereum-types 0.15.1",
  "fp-ethereum",
  "fp-evm",
  "fp-rpc",
@@ -9324,7 +9285,7 @@ version = "6.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=stable2412#75ebd6c8aa198b95a2b1fc700c2635dd8d320313"
 dependencies = [
  "environmental",
- "evm 0.42.0",
+ "evm",
  "fp-account",
  "fp-evm",
  "frame-benchmarking",
@@ -12116,7 +12077,7 @@ source = "git+https://github.com/AstarNetwork/frontier?branch=stable2412#75ebd6c
 dependencies = [
  "derive_more 1.0.0",
  "environmental",
- "evm 0.42.0",
+ "evm",
  "fp-evm",
  "frame-support",
  "frame-system",

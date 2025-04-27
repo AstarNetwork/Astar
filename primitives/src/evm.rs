@@ -29,7 +29,7 @@ use frame_support::{
 use pallet_evm::{AddressMapping, HashedAddressMapping, OnChargeEVMTransaction};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_core::{Hasher, H160, H256, U256};
+pub use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::marker::PhantomData;
 
