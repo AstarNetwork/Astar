@@ -214,7 +214,10 @@ fn xcm_remote_transact_contract() {
             },
             Transact {
                 origin_kind: OriginKind::SovereignAccount,
-                fallback_max_weight: Some(Weight::from_parts(100_000_000_000_000, 1024 * 1024 * 1024)),
+                fallback_max_weight: Some(Weight::from_parts(
+                    100_000_000_000_000,
+                    1024 * 1024 * 1024,
+                )),
                 call: call.encode().into(),
             },
             ExpectTransactStatus(MaybeErrorCode::Success),

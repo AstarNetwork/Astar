@@ -107,7 +107,8 @@ impl pallet_evm::Config for TestRuntime {
     type WeightInfo = pallet_evm::weights::SubstrateWeight<TestRuntime>;
     type GasLimitPovSizeRatio = ConstU64<4>;
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
-    type GasLimitStorageGrowthRatio = ConstU64<0>;}
+    type GasLimitStorageGrowthRatio = ConstU64<0>;
+}
 
 parameter_types! {
     pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
@@ -115,7 +116,8 @@ parameter_types! {
 
 impl pallet_ethereum::Config for TestRuntime {
     type RuntimeEvent = RuntimeEvent;
-	type StateRoot = pallet_ethereum::IntermediateStateRoot<<TestRuntime as frame_system::Config>::Version>;
+    type StateRoot =
+        pallet_ethereum::IntermediateStateRoot<<TestRuntime as frame_system::Config>::Version>;
     type PostLogContent = PostBlockAndTxnHashes;
     type ExtraDataLength = ConstU32<30>;
 }
