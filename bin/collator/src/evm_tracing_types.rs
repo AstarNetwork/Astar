@@ -147,21 +147,37 @@ pub struct EthApiOptions {
     #[clap(long, value_enum, ignore_case = true, default_value_t = FrontierBackendType::default())]
     pub frontier_backend_type: FrontierBackendType,
 
-    /// Sets the SQL backend's pool size.
-    #[arg(long, default_value = "100")]
+    /// Sets the SQL backend's pool size. Only applies when the backend is SQL
+    #[clap(
+        long,
+        default_value = "100",
+        help = "Only used when --frontier-backend-type=Sql"
+    )]
     pub frontier_sql_backend_pool_size: u32,
 
-    /// Sets the SQL backend's query timeout in number of VM ops.
-    #[clap(long, default_value = "10000000")]
+    /// Sets the SQL backend's query timeout in number of VM ops. Only applies when the backend is SQL
+    #[clap(
+        long,
+        default_value = "10000000",
+        help = "Only used when --frontier-backend-type=Sql"
+    )]
     pub frontier_sql_backend_num_ops_timeout: u32,
 
-    /// Sets the SQL backend's auxiliary thread limit.
-    #[clap(long, default_value = "4")]
+    /// Sets the SQL backend's auxiliary thread limit. Only applies when the backend is SQL
+    #[clap(
+        long,
+        default_value = "4",
+        help = "Only used when --frontier-backend-type=Sql"
+    )]
     pub frontier_sql_backend_thread_count: u32,
 
-    /// Sets the SQL backend's query timeout in number of VM ops.
+    /// Sets the SQL backend's query timeout in number of VM ops. Only applies when the backend is SQL
     /// Default value is 200MB.
-    #[clap(long, default_value = "209715200")]
+    #[clap(
+        long,
+        default_value = "209715200",
+        help = "Only used when --frontier-backend-type=Sql"
+    )]
     pub frontier_sql_backend_cache_size: u64,
 }
 
