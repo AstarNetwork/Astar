@@ -23,9 +23,10 @@ use fc_rpc::{
     EthPubSubApiServer, Net, NetApiServer, Web3, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
-use fc_storage::StorageOverride;
+use fc_storage::{StorageOverride, StorageOverrideHandler};
 use jsonrpsee::RpcModule;
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+use std::path::Path;
 
 use sc_client_api::{
     AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider, UsageProvider,
@@ -51,6 +52,7 @@ use moonbeam_rpc_trace::{Trace, TraceServer};
 // TODO: get rid of this completely now that it's part of frontier?
 use moonbeam_rpc_txpool::{TxPool as MoonbeamTxPool, TxPoolServer};
 
+use crate::evm_tracing_types::{FrontierBackendConfig, FrontierConfig};
 use astar_primitives::*;
 
 pub mod tracing;
@@ -62,27 +64,75 @@ pub struct EvmTracingConfig {
     pub enable_txpool: bool,
 }
 
+/// Available frontier backend types.
+#[derive(Debug, Copy, Clone, Default, clap::ValueEnum)]
+pub enum FrontierBackendType {
+    /// RocksDb KV database.
+    #[default]
+    KeyValue,
+    /// SQL database with custom log indexing.
+    Sql,
+}
+
 // TODO This is copied from frontier. It should be imported instead after
 // https://github.com/paritytech/frontier/issues/333 is solved
-pub fn open_frontier_backend<C>(
+pub fn open_frontier_backend<C, BE>(
     client: Arc<C>,
     config: &sc_service::Configuration,
-) -> Result<Arc<fc_db::kv::Backend<Block, C>>, String>
+    rpc_config: &FrontierConfig,
+) -> Result<fc_db::Backend<Block, C>, String>
 where
-    C: sp_blockchain::HeaderBackend<Block>,
+    C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,
+    C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError>,
+    C: Send + Sync + 'static,
+    C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
+    BE: Backend<Block> + 'static,
+    BE::State: StateBackend<BlakeTwo256>,
 {
     let config_dir = config.base_path.config_dir(config.chain_spec.id());
     let path = config_dir.join("frontier").join("db");
 
-    Ok(Arc::new(fc_db::kv::Backend::<Block, C>::new(
-        client,
-        &fc_db::kv::DatabaseSettings {
-            source: fc_db::DatabaseSource::RocksDb {
-                path,
-                cache_size: 0,
-            },
-        },
-    )?))
+    let frontier_backend = match rpc_config.frontier_backend_config {
+        FrontierBackendConfig::KeyValue => {
+            fc_db::Backend::KeyValue(Arc::new(fc_db::kv::Backend::<Block, C>::new(
+                client,
+                &fc_db::kv::DatabaseSettings {
+                    source: fc_db::DatabaseSource::RocksDb {
+                        path,
+                        cache_size: 0,
+                    },
+                },
+            )?))
+        }
+        FrontierBackendConfig::Sql {
+            pool_size,
+            num_ops_timeout,
+            thread_count,
+            cache_size,
+        } => {
+            let overrides = Arc::new(StorageOverrideHandler::new(client.clone()));
+            std::fs::create_dir_all(&path).expect("failed creating sql db directory");
+            let backend = futures::executor::block_on(fc_db::sql::Backend::new(
+                fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
+                    path: Path::new("sqlite:///")
+                        .join(path)
+                        .join("frontier.db3")
+                        .to_str()
+                        .expect("frontier sql path error"),
+                    create_if_missing: true,
+                    thread_count: thread_count,
+                    cache_size: cache_size,
+                }),
+                pool_size,
+                std::num::NonZeroU32::new(num_ops_timeout),
+                overrides.clone(),
+            ))
+            .unwrap_or_else(|err| panic!("failed creating sql backend: {:?}", err));
+            fc_db::Backend::Sql(Arc::new(backend))
+        }
+    };
+
+    Ok(frontier_backend)
 }
 
 pub struct AstarEthConfig<C, BE>(std::marker::PhantomData<(C, BE)>);
