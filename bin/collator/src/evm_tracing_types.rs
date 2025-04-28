@@ -151,7 +151,7 @@ pub struct EthApiOptions {
     #[clap(
         long,
         default_value = "100",
-        help = "Only used when --frontier-backend-type=Sql"
+        help = "Only used when --frontier-backend-type=sql"
     )]
     pub frontier_sql_backend_pool_size: u32,
 
@@ -159,7 +159,7 @@ pub struct EthApiOptions {
     #[clap(
         long,
         default_value = "10000000",
-        help = "Only used when --frontier-backend-type=Sql"
+        help = "Only used when --frontier-backend-type=sql"
     )]
     pub frontier_sql_backend_num_ops_timeout: u32,
 
@@ -167,7 +167,7 @@ pub struct EthApiOptions {
     #[clap(
         long,
         default_value = "4",
-        help = "Only used when --frontier-backend-type=Sql"
+        help = "Only used when --frontier-backend-type=sql"
     )]
     pub frontier_sql_backend_thread_count: u32,
 
@@ -176,7 +176,7 @@ pub struct EthApiOptions {
     #[clap(
         long,
         default_value = "209715200",
-        help = "Only used when --frontier-backend-type=Sql"
+        help = "Only used when --frontier-backend-type=sql"
     )]
     pub frontier_sql_backend_cache_size: u64,
 }
