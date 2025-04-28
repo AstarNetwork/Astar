@@ -52,7 +52,7 @@ use moonbeam_rpc_trace::{Trace, TraceServer};
 // TODO: get rid of this completely now that it's part of frontier?
 use moonbeam_rpc_txpool::{TxPool as MoonbeamTxPool, TxPoolServer};
 
-use crate::evm_tracing_types::{FrontierBackendConfig, RpcConfig};
+use crate::evm_tracing_types::{FrontierBackendConfig, FrontierConfig};
 use astar_primitives::*;
 
 pub mod tracing;
@@ -79,7 +79,7 @@ pub enum FrontierBackendType {
 pub fn open_frontier_backend<C, BE>(
     client: Arc<C>,
     config: &sc_service::Configuration,
-    rpc_config: &RpcConfig,
+    rpc_config: &FrontierConfig,
 ) -> Result<fc_db::Backend<Block, C>, String>
 where
     C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,

@@ -19,7 +19,7 @@
 //! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use crate::{
-    evm_tracing_types::{EthApi as EthApiCmd, RpcConfig},
+    evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig},
     rpc::tracing,
 };
 use fc_consensus::FrontierBlockImport;
@@ -61,7 +61,7 @@ type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 /// Build a partial chain component config
 pub fn new_partial(
     config: &Configuration,
-    evm_tracing_config: &RpcConfig,
+    evm_tracing_config: &FrontierConfig,
 ) -> Result<
     sc_service::PartialComponents<
         FullClient,
@@ -202,7 +202,7 @@ pub fn new_partial(
 /// Builds a new service.
 pub fn start_node<N>(
     config: Configuration,
-    evm_tracing_config: RpcConfig,
+    evm_tracing_config: FrontierConfig,
 ) -> Result<TaskManager, ServiceError>
 where
     N: NetworkBackend<Block, <Block as BlockT>::Hash>,

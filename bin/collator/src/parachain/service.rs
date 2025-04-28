@@ -57,7 +57,7 @@ use substrate_prometheus_endpoint::Registry;
 use super::shell_upgrade::*;
 
 use crate::{
-    evm_tracing_types::{EthApi as EthApiCmd, RpcConfig},
+    evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig},
     rpc::tracing,
 };
 
@@ -79,7 +79,7 @@ type FullClient =
 /// be able to perform chain operations.
 pub fn new_partial(
     config: &Configuration,
-    evm_tracing_config: &RpcConfig,
+    evm_tracing_config: &FrontierConfig,
 ) -> Result<
     PartialComponents<
         FullClient,
@@ -219,7 +219,7 @@ async fn build_relay_chain_interface(
 /// To add additional config to start_xyz_node functions
 pub struct AdditionalConfig {
     /// EVM tracing configuration
-    pub evm_tracing_config: RpcConfig,
+    pub evm_tracing_config: FrontierConfig,
 
     /// Whether EVM RPC be enabled
     pub enable_evm_rpc: bool,

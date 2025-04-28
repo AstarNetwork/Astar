@@ -68,8 +68,9 @@ impl std::str::FromStr for EthApi {
 
 #[allow(dead_code)]
 #[derive(Clone)]
-/// EVM Rpc configuration.
-pub struct RpcConfig {
+/// Overall Frontier (EVM compatibility) configuration:
+/// Controls enabled APIs, tracing, and backend storage.
+pub struct FrontierConfig {
     /// Enabled EVM tracing flags.
     pub ethapi: Vec<EthApi>,
     /// Number of concurrent tracing tasks.
@@ -165,8 +166,8 @@ pub struct EthApiOptions {
 }
 
 impl EthApiOptions {
-    pub fn new_rpc_config(&self) -> RpcConfig {
-        RpcConfig {
+    pub fn new_rpc_config(&self) -> FrontierConfig {
+        FrontierConfig {
             ethapi: self.ethapi.clone(),
             ethapi_max_permits: self.ethapi_max_permits,
             ethapi_trace_max_count: self.ethapi_trace_max_count,

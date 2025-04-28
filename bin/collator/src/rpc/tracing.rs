@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 ///! EVM tracing RPC support.
-use crate::evm_tracing_types::{EthApi as EthApiCmd, RpcConfig};
+use crate::evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig};
 
 use fc_rpc_core::types::FilterPool;
 use fc_storage::StorageOverride;
@@ -54,7 +54,7 @@ pub struct SpawnTasksParams<'a, B: BlockT, C, BE> {
 
 /// Spawn the tasks that are required to run a EVM tracing.
 pub fn spawn_tracing_tasks<B, C, BE>(
-    rpc_config: &RpcConfig,
+    rpc_config: &FrontierConfig,
     prometheus: Option<PrometheusRegistry>,
     params: SpawnTasksParams<B, C, BE>,
 ) -> RpcRequesters
