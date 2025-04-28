@@ -332,6 +332,56 @@
 <a href="#330" id="330">330</a>
 <a href="#331" id="331">331</a>
 <a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -357,9 +407,10 @@
     EthPubSubApiServer, Net, NetApiServer, Web3, Web3ApiServer,
 };
 <span class="kw">use </span>fc_rpc_core::types::{FeeHistoryCache, FilterPool};
-<span class="kw">use </span>fc_storage::StorageOverride;
+<span class="kw">use </span>fc_storage::{StorageOverride, StorageOverrideHandler};
 <span class="kw">use </span>jsonrpsee::RpcModule;
 <span class="kw">use </span>pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+<span class="kw">use </span>std::path::Path;
 
 <span class="kw">use </span>sc_client_api::{
     AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider, UsageProvider,
@@ -385,6 +436,7 @@
 <span class="comment">// TODO: get rid of this completely now that it's part of frontier?
 </span><span class="kw">use </span>moonbeam_rpc_txpool::{TxPool <span class="kw">as </span>MoonbeamTxPool, TxPoolServer};
 
+<span class="kw">use </span><span class="kw">crate</span>::evm_tracing_types::{FrontierBackendConfig, FrontierConfig};
 <span class="kw">use </span>astar_primitives::<span class="kw-2">*</span>;
 
 <span class="kw">pub mod </span>tracing;
@@ -396,27 +448,75 @@
     <span class="kw">pub </span>enable_txpool: bool,
 }
 
+<span class="doccomment">/// Available frontier backend types.
+</span><span class="attr">#[derive(Debug, Copy, Clone, Default, clap::ValueEnum)]
+</span><span class="kw">pub enum </span>FrontierBackendType {
+    <span class="doccomment">/// RocksDb KV database.
+    </span><span class="attr">#[default]
+    </span>KeyValue,
+    <span class="doccomment">/// SQL database with custom log indexing.
+    </span>Sql,
+}
+
 <span class="comment">// TODO This is copied from frontier. It should be imported instead after
 // https://github.com/paritytech/frontier/issues/333 is solved
-</span><span class="kw">pub fn </span>open_frontier_backend&lt;C&gt;(
+</span><span class="kw">pub fn </span>open_frontier_backend&lt;C, BE&gt;(
     client: Arc&lt;C&gt;,
     config: <span class="kw-2">&amp;</span>sc_service::Configuration,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;fc_db::kv::Backend&lt;Block, C&gt;&gt;, String&gt;
+    rpc_config: <span class="kw-2">&amp;</span>FrontierConfig,
+) -&gt; <span class="prelude-ty">Result</span>&lt;fc_db::Backend&lt;Block, C&gt;, String&gt;
 <span class="kw">where
-    </span>C: sp_blockchain::HeaderBackend&lt;Block&gt;,
+    </span>C: ProvideRuntimeApi&lt;Block&gt; + StorageProvider&lt;Block, BE&gt; + AuxStore,
+    C: HeaderBackend&lt;Block&gt; + HeaderMetadata&lt;Block, Error = BlockChainError&gt;,
+    C: Send + Sync + <span class="lifetime">'static</span>,
+    C::Api: fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;,
+    BE: Backend&lt;Block&gt; + <span class="lifetime">'static</span>,
+    BE::State: StateBackend&lt;BlakeTwo256&gt;,
 {
     <span class="kw">let </span>config_dir = config.base_path.config_dir(config.chain_spec.id());
     <span class="kw">let </span>path = config_dir.join(<span class="string">"frontier"</span>).join(<span class="string">"db"</span>);
 
-    <span class="prelude-val">Ok</span>(Arc::new(fc_db::kv::Backend::&lt;Block, C&gt;::new(
-        client,
-        <span class="kw-2">&amp;</span>fc_db::kv::DatabaseSettings {
-            source: fc_db::DatabaseSource::RocksDb {
-                path,
-                cache_size: <span class="number">0</span>,
-            },
-        },
-    )<span class="question-mark">?</span>))
+    <span class="kw">let </span>frontier_backend = <span class="kw">match </span>rpc_config.frontier_backend_config {
+        FrontierBackendConfig::KeyValue =&gt; {
+            fc_db::Backend::KeyValue(Arc::new(fc_db::kv::Backend::&lt;Block, C&gt;::new(
+                client,
+                <span class="kw-2">&amp;</span>fc_db::kv::DatabaseSettings {
+                    source: fc_db::DatabaseSource::RocksDb {
+                        path,
+                        cache_size: <span class="number">0</span>,
+                    },
+                },
+            )<span class="question-mark">?</span>))
+        }
+        FrontierBackendConfig::Sql {
+            pool_size,
+            num_ops_timeout,
+            thread_count,
+            cache_size,
+        } =&gt; {
+            <span class="kw">let </span>overrides = Arc::new(StorageOverrideHandler::new(client.clone()));
+            std::fs::create_dir_all(<span class="kw-2">&amp;</span>path).expect(<span class="string">"failed creating sql db directory"</span>);
+            <span class="kw">let </span>backend = futures::executor::block_on(fc_db::sql::Backend::new(
+                fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
+                    path: Path::new(<span class="string">"sqlite:///"</span>)
+                        .join(path)
+                        .join(<span class="string">"frontier.db3"</span>)
+                        .to_str()
+                        .expect(<span class="string">"frontier sql path error"</span>),
+                    create_if_missing: <span class="bool-val">true</span>,
+                    thread_count: thread_count,
+                    cache_size: cache_size,
+                }),
+                pool_size,
+                std::num::NonZeroU32::new(num_ops_timeout),
+                overrides.clone(),
+            ))
+            .unwrap_or_else(|err| <span class="macro">panic!</span>(<span class="string">"failed creating sql backend: {:?}"</span>, err));
+            fc_db::Backend::Sql(Arc::new(backend))
+        }
+    };
+
+    <span class="prelude-val">Ok</span>(frontier_backend)
 }
 
 <span class="kw">pub struct </span>AstarEthConfig&lt;C, BE&gt;(std::marker::PhantomData&lt;(C, BE)&gt;);

@@ -129,6 +129,9 @@
 <a href="#127" id="127">127</a>
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -148,7 +151,7 @@
 // along with Astar. If not, see &lt;http://www.gnu.org/licenses/&gt;.
 
 </span><span class="doccomment">///! EVM tracing RPC support.
-</span><span class="kw">use </span><span class="kw">crate</span>::evm_tracing_types::{EthApi <span class="kw">as </span>EthApiCmd, EvmTracingConfig};
+</span><span class="kw">use </span><span class="kw">crate</span>::evm_tracing_types::{EthApi <span class="kw">as </span>EthApiCmd, FrontierConfig};
 
 <span class="kw">use </span>fc_rpc_core::types::FilterPool;
 <span class="kw">use </span>fc_storage::StorageOverride;
@@ -178,14 +181,14 @@
     <span class="kw">pub </span>task_manager: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>TaskManager,
     <span class="kw">pub </span>client: Arc&lt;C&gt;,
     <span class="kw">pub </span>substrate_backend: Arc&lt;BE&gt;,
-    <span class="kw">pub </span>frontier_backend: Arc&lt;<span class="kw">dyn </span>fc_api::Backend&lt;B&gt; + Send + Sync&gt;,
+    <span class="kw">pub </span>frontier_backend: Arc&lt;fc_db::Backend&lt;B, C&gt;&gt;,
     <span class="kw">pub </span>filter_pool: <span class="prelude-ty">Option</span>&lt;FilterPool&gt;,
     <span class="kw">pub </span>storage_override: Arc&lt;<span class="kw">dyn </span>StorageOverride&lt;B&gt;&gt;,
 }
 
 <span class="doccomment">/// Spawn the tasks that are required to run a EVM tracing.
 </span><span class="kw">pub fn </span>spawn_tracing_tasks&lt;B, C, BE&gt;(
-    rpc_config: <span class="kw-2">&amp;</span>EvmTracingConfig,
+    rpc_config: <span class="kw-2">&amp;</span>FrontierConfig,
     prometheus: <span class="prelude-ty">Option</span>&lt;PrometheusRegistry&gt;,
     params: SpawnTasksParams&lt;B, C, BE&gt;,
 ) -&gt; RpcRequesters
@@ -223,7 +226,10 @@
         <span class="kw">let </span>(debug_task, debug_requester) = DebugHandler::task(
             Arc::clone(<span class="kw-2">&amp;</span>params.client),
             Arc::clone(<span class="kw-2">&amp;</span>params.substrate_backend),
-            Arc::clone(<span class="kw-2">&amp;</span>params.frontier_backend),
+            <span class="kw">match </span><span class="kw-2">*</span>params.frontier_backend {
+                fc_db::Backend::KeyValue(<span class="kw-2">ref </span>b) =&gt; b.clone(),
+                fc_db::Backend::Sql(<span class="kw-2">ref </span>b) =&gt; b.clone(),
+            },
             Arc::clone(<span class="kw-2">&amp;</span>permit_pool),
             Arc::clone(<span class="kw-2">&amp;</span>params.storage_override),
             rpc_config.tracing_raw_max_memory_usage,

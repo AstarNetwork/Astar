@@ -562,6 +562,37 @@
 <a href="#560" id="560">560</a>
 <a href="#561" id="561">561</a>
 <a href="#562" id="562">562</a>
+<a href="#563" id="563">563</a>
+<a href="#564" id="564">564</a>
+<a href="#565" id="565">565</a>
+<a href="#566" id="566">566</a>
+<a href="#567" id="567">567</a>
+<a href="#568" id="568">568</a>
+<a href="#569" id="569">569</a>
+<a href="#570" id="570">570</a>
+<a href="#571" id="571">571</a>
+<a href="#572" id="572">572</a>
+<a href="#573" id="573">573</a>
+<a href="#574" id="574">574</a>
+<a href="#575" id="575">575</a>
+<a href="#576" id="576">576</a>
+<a href="#577" id="577">577</a>
+<a href="#578" id="578">578</a>
+<a href="#579" id="579">579</a>
+<a href="#580" id="580">580</a>
+<a href="#581" id="581">581</a>
+<a href="#582" id="582">582</a>
+<a href="#583" id="583">583</a>
+<a href="#584" id="584">584</a>
+<a href="#585" id="585">585</a>
+<a href="#586" id="586">586</a>
+<a href="#587" id="587">587</a>
+<a href="#588" id="588">588</a>
+<a href="#589" id="589">589</a>
+<a href="#590" id="590">590</a>
+<a href="#591" id="591">591</a>
+<a href="#592" id="592">592</a>
+<a href="#593" id="593">593</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -583,7 +614,7 @@
 </span><span class="doccomment">//! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 </span><span class="kw">use crate</span>::{
-    evm_tracing_types::{EthApi <span class="kw">as </span>EthApiCmd, EvmTracingConfig},
+    evm_tracing_types::{EthApi <span class="kw">as </span>EthApiCmd, FrontierConfig},
     rpc::tracing,
 };
 <span class="kw">use </span>fc_consensus::FrontierBlockImport;
@@ -625,6 +656,7 @@
 <span class="doccomment">/// Build a partial chain component config
 </span><span class="kw">pub fn </span>new_partial(
     config: <span class="kw-2">&amp;</span>Configuration,
+    evm_tracing_config: <span class="kw-2">&amp;</span>FrontierConfig,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;
     sc_service::PartialComponents&lt;
         FullClient,
@@ -645,7 +677,7 @@
             &gt;,
             sc_consensus_grandpa::LinkHalf&lt;Block, FullClient, FullSelectChain&gt;,
             <span class="prelude-ty">Option</span>&lt;Telemetry&gt;,
-            Arc&lt;fc_db::kv::Backend&lt;Block, FullClient&gt;&gt;,
+            Arc&lt;fc_db::Backend&lt;Block, FullClient&gt;&gt;,
         ),
     &gt;,
     ServiceError,
@@ -704,7 +736,11 @@
         select_chain.clone(),
         telemetry.as_ref().map(|x| x.handle()),
     )<span class="question-mark">?</span>;
-    <span class="kw">let </span>frontier_backend = <span class="kw">crate</span>::rpc::open_frontier_backend(client.clone(), config)<span class="question-mark">?</span>;
+    <span class="kw">let </span>frontier_backend = Arc::new(<span class="kw">crate</span>::rpc::open_frontier_backend(
+        client.clone(),
+        config,
+        evm_tracing_config,
+    )<span class="question-mark">?</span>);
     <span class="kw">let </span>frontier_block_import =
         FrontierBlockImport::new(grandpa_block_import.clone(), client.clone());
 
@@ -761,7 +797,7 @@
 <span class="doccomment">/// Builds a new service.
 </span><span class="kw">pub fn </span>start_node&lt;N&gt;(
     config: Configuration,
-    evm_tracing_config: EvmTracingConfig,
+    evm_tracing_config: FrontierConfig,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt;
 <span class="kw">where
     </span>N: NetworkBackend&lt;Block, &lt;Block <span class="kw">as </span>BlockT&gt;::Hash&gt;,
@@ -775,7 +811,7 @@
         select_chain,
         transaction_pool,
         other: (block_import, grandpa_link, <span class="kw-2">mut </span>telemetry, frontier_backend),
-    } = new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+    } = new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>evm_tracing_config)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>protocol_name = sc_consensus_grandpa::protocol_standard_name(
         <span class="kw-2">&amp;</span>client
@@ -874,24 +910,47 @@
 
     <span class="comment">// Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
-    </span>task_manager.spawn_essential_handle().spawn(
-        <span class="string">"frontier-mapping-sync-worker"</span>,
-        <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
-        fc_mapping_sync::kv::MappingSyncWorker::new(
-            client.import_notification_stream(),
-            Duration::new(<span class="number">6</span>, <span class="number">0</span>),
-            client.clone(),
-            backend.clone(),
-            storage_override.clone(),
-            frontier_backend.clone(),
-            <span class="number">3</span>,
-            <span class="number">0</span>,
-            fc_mapping_sync::SyncStrategy::Parachain,
-            sync_service.clone(),
-            pubsub_notification_sinks.clone(),
-        )
-        .for_each(|()| futures::future::ready(())),
-    );
+    </span><span class="kw">match </span>frontier_backend.as_ref() {
+        fc_db::Backend::KeyValue(<span class="kw-2">ref </span>b) =&gt; {
+            task_manager.spawn_essential_handle().spawn(
+                <span class="string">"frontier-mapping-sync-worker"</span>,
+                <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
+                fc_mapping_sync::kv::MappingSyncWorker::new(
+                    client.import_notification_stream(),
+                    Duration::new(<span class="number">6</span>, <span class="number">0</span>),
+                    client.clone(),
+                    backend.clone(),
+                    storage_override.clone(),
+                    b.clone(),
+                    <span class="number">3</span>,
+                    <span class="number">0</span>,
+                    fc_mapping_sync::SyncStrategy::Parachain,
+                    sync_service.clone(),
+                    pubsub_notification_sinks.clone(),
+                )
+                .for_each(|()| futures::future::ready(())),
+            );
+        }
+        fc_db::Backend::Sql(<span class="kw-2">ref </span>b) =&gt; {
+            task_manager.spawn_essential_handle().spawn_blocking(
+                <span class="string">"frontier-mapping-sync-worker"</span>,
+                <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
+                fc_mapping_sync::sql::SyncWorker::run(
+                    client.clone(),
+                    backend.clone(),
+                    b.clone(),
+                    client.import_notification_stream(),
+                    fc_mapping_sync::sql::SyncWorkerConfig {
+                        read_notification_timeout: Duration::from_secs(<span class="number">10</span>),
+                        check_indexed_blocks_interval: Duration::from_secs(<span class="number">60</span>),
+                    },
+                    fc_mapping_sync::SyncStrategy::Parachain,
+                    sync_service.clone(),
+                    pubsub_notification_sinks.clone(),
+                ),
+            );
+        }
+    }
 
     <span class="comment">// Frontier `EthFilterApi` maintenance. Manages the pool of user-created Filters.
     // Each filter is allowed to stay in the pool for 100 blocks.
@@ -957,7 +1016,10 @@
                 sync: sync.clone(),
                 is_authority,
                 deny_unsafe,
-                frontier_backend: frontier_backend.clone(),
+                frontier_backend: <span class="kw">match </span><span class="kw-2">*</span>frontier_backend {
+                    fc_db::Backend::KeyValue(<span class="kw-2">ref </span>b) =&gt; b.clone(),
+                    fc_db::Backend::Sql(<span class="kw-2">ref </span>b) =&gt; b.clone(),
+                },
                 filter_pool: filter_pool.clone(),
                 fee_history_limit: FEE_HISTORY_LIMIT,
                 fee_history_cache: fee_history_cache.clone(),

@@ -669,9 +669,6 @@
 <a href="#667" id="667">667</a>
 <a href="#668" id="668">668</a>
 <a href="#669" id="669">669</a>
-<a href="#670" id="670">670</a>
-<a href="#671" id="671">671</a>
-<a href="#672" id="672">672</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -693,11 +690,12 @@
 </span><span class="doccomment">//! Astar collator CLI handlers.
 </span><span class="kw">use crate</span>::{
     cli::{Cli, RelayChainCli, Subcommand},
-    evm_tracing_types::EvmTracingConfig,
     local::{<span class="self">self</span>, development_config},
     parachain::{<span class="self">self</span>, chain_spec, service::AdditionalConfig},
 };
 <span class="kw">use </span>cumulus_primitives_core::ParaId;
+<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+</span><span class="kw">use </span>frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
 <span class="kw">use </span>log::info;
 <span class="kw">use </span>sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -709,9 +707,6 @@
 };
 <span class="kw">use </span>sp_runtime::traits::AccountIdConversion;
 <span class="kw">use </span>std::net::SocketAddr;
-
-<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-</span><span class="kw">use </span>frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
 
 <span class="kw">trait </span>IdentifyChain {
     <span class="kw">fn </span>is_astar(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool;
@@ -870,47 +865,51 @@
         }
         <span class="prelude-val">Some</span>(Subcommand::CheckBlock(cmd)) =&gt; {
             <span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+            <span class="kw">let </span>rpc_config = cli.eth_api_options.new_rpc_config();
             runner.async_run(|config| {
                 <span class="kw">let </span>PartialComponents {
                     client,
                     task_manager,
                     import_queue,
                     ..
-                } = parachain::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                } = parachain::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>((cmd.run(client, import_queue), task_manager))
             })
         }
         <span class="prelude-val">Some</span>(Subcommand::ExportBlocks(cmd)) =&gt; {
             <span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+            <span class="kw">let </span>rpc_config = cli.eth_api_options.new_rpc_config();
             runner.async_run(|config| {
                 <span class="kw">let </span>PartialComponents {
                     client,
                     task_manager,
                     ..
-                } = parachain::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                } = parachain::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>((cmd.run(client, config.database), task_manager))
             })
         }
         <span class="prelude-val">Some</span>(Subcommand::ExportState(cmd)) =&gt; {
             <span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+            <span class="kw">let </span>rpc_config = cli.eth_api_options.new_rpc_config();
             runner.async_run(|config| {
                 <span class="kw">let </span>PartialComponents {
                     client,
                     task_manager,
                     ..
-                } = parachain::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                } = parachain::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>((cmd.run(client, config.chain_spec), task_manager))
             })
         }
         <span class="prelude-val">Some</span>(Subcommand::ImportBlocks(cmd)) =&gt; {
             <span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+            <span class="kw">let </span>rpc_config = cli.eth_api_options.new_rpc_config();
             runner.async_run(|config| {
                 <span class="kw">let </span>PartialComponents {
                     client,
                     task_manager,
                     import_queue,
                     ..
-                } = parachain::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                } = parachain::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>((cmd.run(client, import_queue), task_manager))
             })
         }
@@ -936,6 +935,7 @@
         <span class="prelude-val">Some</span>(Subcommand::Revert(cmd)) =&gt; {
             <span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
             <span class="kw">let </span>chain_spec = <span class="kw-2">&amp;</span>runner.config().chain_spec;
+            <span class="kw">let </span>rpc_config = cli.eth_api_options.new_rpc_config();
             <span class="kw">if </span>chain_spec.is_dev() {
                 runner.async_run(|config| {
                     <span class="kw">let </span>PartialComponents {
@@ -943,7 +943,7 @@
                         task_manager,
                         backend,
                         ..
-                    } = local::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                    } = local::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                     <span class="kw">let </span>aux_revert = Box::new(|client, <span class="kw">_</span>, blocks| {
                         sc_consensus_grandpa::revert(client, blocks)<span class="question-mark">?</span>;
                         <span class="prelude-val">Ok</span>(())
@@ -957,15 +957,17 @@
                         task_manager,
                         backend,
                         ..
-                    } = parachain::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                    } = parachain::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                     <span class="prelude-val">Ok</span>((cmd.run(client, backend, <span class="prelude-val">None</span>), task_manager))
                 })
             }
         }
         <span class="prelude-val">Some</span>(Subcommand::ExportGenesisState(cmd)) =&gt; {
             <span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+            <span class="kw">let </span>rpc_config = cli.eth_api_options.new_rpc_config();
             runner.sync_run(|config| {
-                <span class="kw">let </span>PartialComponents { client, .. } = parachain::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                <span class="kw">let </span>PartialComponents { client, .. } =
+                    parachain::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                 cmd.run(client)
             })
         }
@@ -988,6 +990,7 @@
             <span class="kw">use </span>sp_runtime::traits::HashingFor;
 
             <span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+            <span class="kw">let </span>rpc_config = cli.eth_api_options.new_rpc_config();
             <span class="kw">let </span>chain_spec = <span class="kw-2">&amp;</span>runner.config().chain_spec;
 
             <span class="kw">match </span>cmd {
@@ -1021,12 +1024,12 @@
                 BenchmarkCmd::Block(cmd) =&gt; {
                     <span class="kw">if </span>chain_spec.is_dev() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params = local::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = local::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                             cmd.run(params.client)
                         })
                     } <span class="kw">else </span>{
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params = parachain::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = parachain::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                             cmd.run(params.client)
                         })
                     }
@@ -1034,7 +1037,7 @@
                 BenchmarkCmd::Storage(cmd) =&gt; {
                     <span class="kw">if </span>chain_spec.is_dev() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params = local::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = local::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                             <span class="kw">let </span>db = params.backend.expose_db();
                             <span class="kw">let </span>storage = params.backend.expose_storage();
 
@@ -1042,7 +1045,7 @@
                         })
                     } <span class="kw">else </span>{
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params = parachain::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = parachain::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                             <span class="kw">let </span>db = params.backend.expose_db();
                             <span class="kw">let </span>storage = params.backend.expose_storage();
 
@@ -1053,7 +1056,7 @@
                 BenchmarkCmd::Overhead(cmd) =&gt; {
                     <span class="kw">if </span>chain_spec.is_dev() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params = local::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = local::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                             <span class="kw">let </span>ext_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>inherent_data = local_benchmark_inherent_data()
                                 .map_err(|e| <span class="macro">format!</span>(<span class="string">"generating inherent data: {:?}"</span>, e))<span class="question-mark">?</span>;
@@ -1068,7 +1071,7 @@
                         })
                     } <span class="kw">else </span>{
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params = parachain::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = parachain::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
 
                             <span class="kw">let </span>ext_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>inherent_data = para_benchmark_inherent_data()
@@ -1087,7 +1090,7 @@
                 BenchmarkCmd::Extrinsic(cmd) =&gt; {
                     <span class="kw">if </span>chain_spec.is_dev() {
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params = local::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = local::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                             <span class="kw">let </span>remark_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>tka_builder = TransferKeepAliveBuilder::new(
                                 params.client.clone(),
@@ -1105,7 +1108,7 @@
                         })
                     } <span class="kw">else </span>{
                         runner.sync_run(|config| {
-                            <span class="kw">let </span>params = parachain::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
+                            <span class="kw">let </span>params = parachain::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
                             <span class="kw">let </span>remark_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>tka_builder = TransferKeepAliveBuilder::new(
                                 params.client.clone(),
@@ -1132,16 +1135,7 @@
             <span class="kw">let </span>runner = cli.create_runner(<span class="kw-2">&amp;</span>cli.run.normalize())<span class="question-mark">?</span>;
             <span class="kw">let </span>collator_options = cli.run.collator_options();
 
-            <span class="kw">let </span>evm_tracing_config = EvmTracingConfig {
-                ethapi: cli.eth_api_options.ethapi,
-                ethapi_max_permits: cli.eth_api_options.ethapi_max_permits,
-                ethapi_trace_max_count: cli.eth_api_options.ethapi_trace_max_count,
-                ethapi_trace_cache_duration: cli.eth_api_options.ethapi_trace_cache_duration,
-                eth_log_block_cache: cli.eth_api_options.eth_log_block_cache,
-                eth_statuses_cache: cli.eth_api_options.eth_statuses_cache,
-                max_past_logs: cli.eth_api_options.max_past_logs,
-                tracing_raw_max_memory_usage: cli.eth_api_options.tracing_raw_max_memory_usage,
-            };
+            <span class="kw">let </span>evm_tracing_config = cli.eth_api_options.new_rpc_config();
 
             runner.run_node_until_exit(|config| <span class="kw">async move </span>{
                 <span class="kw">if </span>config.chain_spec.is_dev() {
