@@ -50,7 +50,8 @@ use core::marker::PhantomData;
 pub trait WeightInfo {
 	fn buy_execution() -> Weight;
 	fn expect_pallet() -> Weight;
-	fn exchange_asset() -> Weight;
+	fn report_holding() -> Weight;
+    fn exchange_asset() -> Weight;
 	fn export_message() -> Weight;
 	fn lock_asset() -> Weight;
 	fn unlock_asset() -> Weight;
@@ -58,7 +59,6 @@ pub trait WeightInfo {
 	fn request_unlock() -> Weight;
 	fn universal_origin() -> Weight;
 	fn alias_origin() -> Weight;
-	fn report_holding() -> Weight;
 	fn query_response() -> Weight;
 	fn transact() -> Weight;
 	fn refund_surplus() -> Weight;

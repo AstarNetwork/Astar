@@ -24,6 +24,10 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+extern crate alloc;
+use alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec, vec::Vec};
+use core::marker::PhantomData;
+
 use frame_support::{
     construct_runtime, genesis_builder_helper, parameter_types,
     traits::{
@@ -52,7 +56,7 @@ use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, sr25519, ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
+    generic, impl_opaque_keys,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
         DispatchInfoOf, Dispatchable, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto,
@@ -60,7 +64,6 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
     ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
 };
-use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
     dapp_staking::{
@@ -108,14 +111,14 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("local"),
-    impl_name: create_runtime_str!("local"),
+    spec_name: Cow::Borrowed("local"),
+    impl_name: Cow::Borrowed("local"),
     authoring_version: 1,
     spec_version: 1,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
-    state_version: 1,
+    system_version: 1,
 };
 
 impl_opaque_keys! {
@@ -261,6 +264,8 @@ impl frame_system::Config for Runtime {
     type PreInherents = ();
     type PostInherents = ();
     type PostTransactions = ();
+    // TODO(ash): update weights after generating them
+    type ExtensionsWeightInfo = ();
 }
 
 impl pallet_aura::Config for Runtime {
@@ -318,6 +323,7 @@ impl pallet_balances::Config for Runtime {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = RuntimeFreezeReason;
     type MaxFreezes = ConstU32<1>;
+    type DoneSlashHandler = ();
 }
 
 parameter_types! {
@@ -402,6 +408,8 @@ impl pallet_transaction_payment::Config for Runtime {
         MaximumMultiplier,
     >;
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthFeeFactor>;
+    // TODO(ash): generate weights for this
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -440,7 +448,7 @@ impl pallet_static_price_provider::Config for Runtime {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
+pub struct BenchmarkHelper<SC, ACC>(PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_dapp_staking::BenchmarkHelper<SmartContract<AccountId>, AccountId>
     for BenchmarkHelper<SmartContract<AccountId>, AccountId>
@@ -573,7 +581,7 @@ pub const GAS_PER_SECOND: u64 = 40_000_000;
 /// u64 works for approximations because Weight is a very small unit compared to gas.
 pub const WEIGHT_PER_GAS: u64 = WEIGHT_REF_TIME_PER_SECOND.saturating_div(GAS_PER_SECOND);
 
-pub struct FindAuthorTruncated<F>(sp_std::marker::PhantomData<F>);
+pub struct FindAuthorTruncated<F>(PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
     fn find_author<'a, I>(digests: I) -> Option<H160>
     where
@@ -631,7 +639,9 @@ impl pallet_evm::Config for Runtime {
     type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
     type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
-    type SuicideQuickClearLimit = ConstU32<0>;
+    type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
+    // gas based storage limit not enabled
+    type GasLimitStorageGrowthRatio = ConstU64<0>;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
@@ -641,7 +651,8 @@ parameter_types! {
 
 impl pallet_ethereum::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
+    type StateRoot =
+        pallet_ethereum::IntermediateStateRoot<<Self as frame_system::Config>::Version>;
     type PostLogContent = PostBlockAndTxnHashes;
     // Maximum length (in bytes) of revert message to include in Executed event
     type ExtraDataLength = ConstU32<30>;
@@ -947,6 +958,9 @@ impl pallet_collective::Config<MainCouncilCollectiveInst> for Runtime {
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type SetMembersOrigin = EnsureRoot<AccountId>;
     type MaxProposalWeight = MaxProposalWeight;
+    type KillOrigin = EnsureRoot<AccountId>;
+    type DisapproveOrigin = EnsureRoot<AccountId>;
+    type Consideration = ();
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -960,6 +974,9 @@ impl pallet_collective::Config<TechnicalCommitteeCollectiveInst> for Runtime {
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type SetMembersOrigin = EnsureRoot<AccountId>;
     type MaxProposalWeight = MaxProposalWeight;
+    type KillOrigin = EnsureRoot<AccountId>;
+    type DisapproveOrigin = EnsureRoot<AccountId>;
+    type Consideration = ();
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -973,6 +990,9 @@ impl pallet_collective::Config<CommunityCouncilCollectiveInst> for Runtime {
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type SetMembersOrigin = EnsureRoot<AccountId>;
     type MaxProposalWeight = MaxProposalWeight;
+    type KillOrigin = EnsureRoot<AccountId>;
+    type DisapproveOrigin = EnsureRoot<AccountId>;
+    type Consideration = ();
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -1312,8 +1332,10 @@ mod benches {
         [frame_benchmarking, BaselineBench::<Runtime>]
         [pallet_assets, pallet_assets::Pallet::<Runtime>]
         [frame_system, SystemBench::<Runtime>]
+        [frame_system_extensions, SystemExtensionsBench::<Runtime>]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
+        [pallet_transaction_payment, TransactionPayment]
         [pallet_ethereum_checked, EthereumChecked]
         [pallet_dapp_staking, DappStaking]
         [pallet_inflation, Inflation]
@@ -1347,7 +1369,7 @@ impl_runtime_apis! {
             Runtime::metadata_at_version(version)
         }
 
-        fn metadata_versions() -> sp_std::vec::Vec<u32> {
+        fn metadata_versions() -> Vec<u32> {
             Runtime::metadata_versions()
         }
     }
@@ -1516,8 +1538,7 @@ impl_runtime_apis! {
         }
 
         fn storage_at(address: H160, index: U256) -> H256 {
-            let mut tmp = [0u8; 32];
-            index.to_big_endian(&mut tmp);
+            let tmp: [u8; 32] = index.to_big_endian();
             pallet_evm::AccountStorages::<Runtime>::get(address, H256::from_slice(&tmp[..]))
         }
 
@@ -1741,7 +1762,7 @@ impl_runtime_apis! {
         fn convert_transaction(
             transaction: pallet_ethereum::Transaction
         ) -> <Block as BlockT>::Extrinsic {
-            UncheckedExtrinsic::new_unsigned(
+            UncheckedExtrinsic::new_bare(
                 pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
             )
         }
@@ -1859,7 +1880,9 @@ impl_runtime_apis! {
         ) {
             use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
-            use frame_system_benchmarking::Pallet as SystemBench;
+            pub use frame_system_benchmarking::{
+                extensions::Pallet as SystemExtensionsBench, Pallet as SystemBench
+            };
             use baseline::Pallet as BaselineBench;
 
             let mut list = Vec::<BenchmarkList>::new();
@@ -1872,9 +1895,11 @@ impl_runtime_apis! {
 
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
-        ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
+        ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, alloc::string::String> {
             use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
-            use frame_system_benchmarking::Pallet as SystemBench;
+            pub use frame_system_benchmarking::{
+                extensions::Pallet as SystemExtensionsBench, Pallet as SystemBench
+            };
             use baseline::Pallet as BaselineBench;
 
             impl frame_system_benchmarking::Config for Runtime {}

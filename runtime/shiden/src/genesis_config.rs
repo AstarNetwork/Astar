@@ -21,8 +21,8 @@ use astar_primitives::{evm::EVM_REVERT_CODE, genesis::GenesisAccount, parachain:
 
 /// Provides the JSON representation of predefined genesis config for given `id`.
 pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
-    let genesis = match id.try_into() {
-        Ok("development") => default_config(SHIDEN_ID),
+    let genesis = match id.as_str() {
+        "development" => default_config(SHIDEN_ID),
         _ => return None,
     };
     Some(
@@ -72,6 +72,7 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
                     )
                 })
                 .collect::<Vec<_>>(),
+            ..Default::default()
         },
         aura: AuraConfig {
             authorities: vec![],

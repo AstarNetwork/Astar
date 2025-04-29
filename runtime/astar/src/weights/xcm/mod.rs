@@ -24,9 +24,10 @@ use core::cmp::min;
 use frame_support::weights::Weight;
 use fungible::{SubstrateWeight as XcmFungibleWeight, WeightInfo as FungibleWeightInfo};
 use generic::{SubstrateWeight as XcmGeneric, WeightInfo as GenericWeightInfo};
+use sp_runtime::BoundedVec;
 use sp_std::prelude::*;
 use xcm::{
-    latest::{prelude::*, Weight as XCMWeight},
+    latest::{prelude::*, AssetTransferFilter, Weight as XCMWeight},
     DoubleEncoded,
 };
 
@@ -92,7 +93,7 @@ where
     }
     fn transact(
         _origin_type: &OriginKind,
-        _require_weight_at_most: &Weight,
+        _require_weight_at_most: &Option<Weight>,
         _call: &DoubleEncoded<Call>,
     ) -> XCMWeight {
         XcmGeneric::<Runtime>::transact()
@@ -240,5 +241,30 @@ where
     }
     fn unpaid_execution(_: &WeightLimit, _: &Option<Location>) -> Weight {
         XcmGeneric::<Runtime>::unpaid_execution()
+    }
+
+    fn pay_fees(_asset: &Asset) -> Weight {
+        todo!()
+    }
+
+    fn initiate_transfer(
+        _destination: &Location,
+        _remote_fees: &Option<AssetTransferFilter>,
+        _preserve_origin: &bool,
+        _assets: &BoundedVec<AssetTransferFilter, MaxAssetTransferFilters>,
+        _remote_xcm: &Xcm<()>,
+    ) -> Weight {
+        todo!()
+    }
+
+    fn execute_with_origin(
+        _descendant_origin: &Option<InteriorLocation>,
+        _xcm: &Xcm<Call>,
+    ) -> Weight {
+        todo!()
+    }
+
+    fn set_hints(_hints: &BoundedVec<Hint, HintNumVariants>) -> Weight {
+        todo!()
     }
 }
