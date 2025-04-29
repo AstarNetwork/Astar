@@ -33,7 +33,7 @@ use sc_client_api::{
 use sc_network::service::traits::NetworkService;
 use sc_network_sync::SyncingService;
 use sc_rpc::dev::DevApiServer;
-pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
+pub use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{CallApiAt, ProvideRuntimeApi};
@@ -110,8 +110,6 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub network: Arc<dyn NetworkService>,
     /// Chain syncing service
     pub sync: Arc<SyncingService<Block>>,
-    /// Whether to deny unsafe calls
-    pub deny_unsafe: DenyUnsafe,
     /// The Node authority flag
     pub is_authority: bool,
     /// Frontier Backend.
@@ -178,7 +176,7 @@ where
     let mut io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)?;
 
     if tracing_config.enable_txpool {
-        io.merge(MoonbeamTxPool::new(Arc::clone(&client), graph).into_rpc())?;
+        io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
     }
 
     if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
@@ -240,7 +238,6 @@ where
         graph,
         network,
         sync,
-        deny_unsafe,
         is_authority,
         frontier_backend,
         filter_pool,
@@ -253,9 +250,9 @@ where
         command_sink,
     } = deps;
 
-    io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+    io.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
     io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
-    io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
+    io.merge(sc_rpc::dev::Dev::new(client.clone()).into_rpc())?;
 
     #[cfg(feature = "manual-seal")]
     if let Some(command_sink) = command_sink {

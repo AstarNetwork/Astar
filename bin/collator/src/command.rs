@@ -24,10 +24,11 @@ use crate::{
     parachain::{self, chain_spec, service::AdditionalConfig},
 };
 use cumulus_primitives_core::ParaId;
+use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
 use log::info;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
-    NetworkParams, Result, SharedParams, SubstrateCli,
+    NetworkParams, Result, RpcEndpoint, SharedParams, SubstrateCli,
 };
 use sc_service::{
     config::{BasePath, PrometheusConfig},
@@ -37,7 +38,7 @@ use sp_runtime::traits::AccountIdConversion;
 use std::net::SocketAddr;
 
 #[cfg(feature = "runtime-benchmarks")]
-use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
+use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory};
 
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
@@ -73,6 +74,18 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
     }
     fn is_shibuya(&self) -> bool {
         <dyn sc_service::ChainSpec>::is_shibuya(self)
+    }
+}
+
+/// A trait to identify the network backend based on the chain spec.
+pub trait IdentifyChainNetworkBackend {
+    /// Returns the default network backend.
+    fn default_network_backend(&self) -> sc_network::config::NetworkBackendType;
+}
+
+impl IdentifyChainNetworkBackend for Box<dyn ChainSpec> {
+    fn default_network_backend(&self) -> sc_network::config::NetworkBackendType {
+        sc_network::config::NetworkBackendType::Libp2p
     }
 }
 
@@ -377,6 +390,7 @@ pub fn run() -> Result<()> {
                     }
                 }
                 BenchmarkCmd::Overhead(cmd) => {
+                    let chain_name = chain_spec.name().to_string();
                     if chain_spec.is_dev() {
                         runner.sync_run(|config| {
                             let params = local::new_partial(&config)?;
@@ -385,11 +399,12 @@ pub fn run() -> Result<()> {
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
 
                             cmd.run(
-                                config,
+                                chain_name,
                                 params.client,
                                 inherent_data,
                                 Vec::new(),
                                 &ext_builder,
+                                true,
                             )
                         })
                     } else {
@@ -401,11 +416,12 @@ pub fn run() -> Result<()> {
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
 
                             cmd.run(
-                                config,
+                                chain_name,
                                 params.client,
                                 inherent_data,
                                 Vec::new(),
                                 &ext_builder,
+                                true,
                             )
                         })
                     }
@@ -517,7 +533,10 @@ pub fn run() -> Result<()> {
                 let hwbench = (!cli.no_hardware_benchmarks)
                     .then_some(config.database.path().map(|database_path| {
                         let _ = std::fs::create_dir_all(database_path);
-                        sc_sysinfo::gather_hwbench(Some(database_path))
+                        sc_sysinfo::gather_hwbench(
+                            Some(database_path),
+                            &SUBSTRATE_REFERENCE_HARDWARE,
+                        )
                     }))
                     .flatten();
 
@@ -582,7 +601,7 @@ impl CliConfiguration<Self> for RelayChainCli {
             .or_else(|| self.base_path.clone().map(Into::into)))
     }
 
-    fn rpc_addr(&self, default_listen_port: u16) -> Result<Option<SocketAddr>> {
+    fn rpc_addr(&self, default_listen_port: u16) -> Result<Option<Vec<RpcEndpoint>>> {
         self.base.base.rpc_addr(default_listen_port)
     }
 
@@ -596,15 +615,9 @@ impl CliConfiguration<Self> for RelayChainCli {
             .prometheus_config(default_listen_port, chain_spec)
     }
 
-    fn init<F>(
-        &self,
-        _support_url: &String,
-        _impl_version: &String,
-        _logger_hook: F,
-        _config: &sc_service::Configuration,
-    ) -> Result<()>
+    fn init<F>(&self, _support_url: &String, _impl_version: &String, _logger_hook: F) -> Result<()>
     where
-        F: FnOnce(&mut sc_cli::LoggerBuilder, &sc_service::Configuration),
+        F: FnOnce(&mut sc_cli::LoggerBuilder),
     {
         unreachable!("PolkadotCli is never initialized; qed");
     }

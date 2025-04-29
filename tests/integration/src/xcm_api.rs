@@ -208,7 +208,8 @@ fn dry_run_call_is_ok() {
             remark: vec![0u8; 32],
         });
 
-        let result = Runtime::dry_run_call(origin, call, xcm::prelude::XCM_VERSION).expect("Must return some effects.");
+        let result = Runtime::dry_run_call(origin, call, xcm::prelude::XCM_VERSION)
+            .expect("Must return some effects.");
         assert_eq!(result.forwarded_xcms, vec![]);
         assert_eq!(
             result.emitted_events[0],

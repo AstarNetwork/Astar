@@ -187,6 +187,7 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 	"cumulus-primitives-core/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
+	"pallet-transaction-payment/runtime-benchmarks",
 ]
 try-runtime = [
 	"local-runtime/try-runtime",
