@@ -94,7 +94,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(9);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(10);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]

@@ -2755,13 +2755,37 @@ fn tier_config_recalculation_works() {
                 .all(|(new, init)| new < init),
             "Number of slots per tier should decrease with lower price"
         );
+
+        let total_issuance = <Test as Config>::Currency::total_issuance();
+        let tier_params = StaticTierParams::<Test>::get();
+
+        // Compute maximum amounts for each tier
+        let max_amounts: Vec<Balance> = tier_params
+            .tier_thresholds
+            .iter()
+            .map(|threshold| match threshold {
+                TierThreshold::DynamicPercentage {
+                    maximum_possible_percentage,
+                    ..
+                } => {
+                    let max_percent = maximum_possible_percentage;
+                    *max_percent * total_issuance
+                }
+                TierThreshold::FixedPercentage {
+                    required_percentage,
+                } => *required_percentage * total_issuance,
+            })
+            .collect();
+
+        // Check that each tier's threshold has increased (or remains equal for fixed percentages) but doesn't exceed its maximum
         assert!(
             new_tier_config
                 .tier_thresholds
                 .iter()
                 .zip(init_tier_config.tier_thresholds.iter())
-                .all(|(new, init)| new >= init),
-            "Tier threshold values should increase with lower price"
+                .zip(max_amounts.iter())
+                .all(|((new, init), max_amount)| new >= init && new <= max_amount),
+            "Tier threshold values should increase with lower price but not exceed their maximums"
         );
     })
 }
@@ -4209,6 +4233,26 @@ fn set_static_tier_params_invalid_params_fails() {
 
         assert_noop!(
             DappStaking::set_static_tier_params(RuntimeOrigin::root(), invalid_tier_params),
+            Error::<Test>::InvalidTierParams
+        );
+
+        // invalid dynamic percentage (min > max)
+        let mut tier_thresholds = tier_params.tier_thresholds.clone().to_vec();
+        tier_thresholds[0] = TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_percent(2),
+            minimum_required_percentage: Perbill::from_percent(5),
+            maximum_possible_percentage: Perbill::from_percent(3),
+        };
+
+        let invalid_min_max_params = TierParameters::<NumberOfTiers> {
+            tier_thresholds: tier_thresholds.try_into().unwrap(),
+            ..tier_params.clone()
+        };
+
+        assert!(!invalid_min_max_params.is_valid(), "Invalid min/max");
+
+        assert_noop!(
+            DappStaking::set_static_tier_params(RuntimeOrigin::root(), invalid_min_max_params),
             Error::<Test>::InvalidTierParams
         );
     })

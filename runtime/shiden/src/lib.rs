@@ -1285,8 +1285,13 @@ pub type Executive = frame_executive::Executive<
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
+parameter_types! {
+    pub const MaxPercentages: [Option<Perbill>; 4] = [None, None, None, None];
+}
+
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased =
+    (pallet_dapp_staking::migration::versioned_migrations::V9ToV10<Runtime, MaxPercentages>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
