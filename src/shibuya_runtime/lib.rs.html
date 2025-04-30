@@ -2785,6 +2785,16 @@
 <a href="#2783" id="2783">2783</a>
 <a href="#2784" id="2784">2784</a>
 <a href="#2785" id="2785">2785</a>
+<a href="#2786" id="2786">2786</a>
+<a href="#2787" id="2787">2787</a>
+<a href="#2788" id="2788">2788</a>
+<a href="#2789" id="2789">2789</a>
+<a href="#2790" id="2790">2790</a>
+<a href="#2791" id="2791">2791</a>
+<a href="#2792" id="2792">2792</a>
+<a href="#2793" id="2793">2793</a>
+<a href="#2794" id="2794">2794</a>
+<a href="#2795" id="2795">2795</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -4474,8 +4484,18 @@
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
+<span class="macro">parameter_types! </span>{
+    <span class="kw">pub const </span>MaxPercentages: [<span class="prelude-ty">Option</span>&lt;Perbill&gt;; <span class="number">4</span>] = [
+        <span class="prelude-val">Some</span>(Perbill::from_parts(<span class="number">30_000</span>)), <span class="comment">// 0.0030%
+        </span><span class="prelude-val">Some</span>(Perbill::from_parts(<span class="number">20_000</span>)), <span class="comment">// 0.0020%
+        </span><span class="prelude-val">Some</span>(Perbill::from_parts(<span class="number">10_000</span>)), <span class="comment">// 0.0010%
+        </span><span class="prelude-val">None
+    </span>];
+}
+
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = (pallet_dapp_staking::migration::DappStakingCleanupMigration&lt;Runtime&gt;,);
+</span><span class="kw">pub type </span>Unreleased =
+    (pallet_dapp_staking::migration::versioned_migrations::V9ToV10&lt;Runtime, MaxPercentages&gt;,);
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);

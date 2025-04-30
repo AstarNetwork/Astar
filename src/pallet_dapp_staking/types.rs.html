@@ -1976,6 +1976,27 @@
 <a href="#1974" id="1974">1974</a>
 <a href="#1975" id="1975">1975</a>
 <a href="#1976" id="1976">1976</a>
+<a href="#1977" id="1977">1977</a>
+<a href="#1978" id="1978">1978</a>
+<a href="#1979" id="1979">1979</a>
+<a href="#1980" id="1980">1980</a>
+<a href="#1981" id="1981">1981</a>
+<a href="#1982" id="1982">1982</a>
+<a href="#1983" id="1983">1983</a>
+<a href="#1984" id="1984">1984</a>
+<a href="#1985" id="1985">1985</a>
+<a href="#1986" id="1986">1986</a>
+<a href="#1987" id="1987">1987</a>
+<a href="#1988" id="1988">1988</a>
+<a href="#1989" id="1989">1989</a>
+<a href="#1990" id="1990">1990</a>
+<a href="#1991" id="1991">1991</a>
+<a href="#1992" id="1992">1992</a>
+<a href="#1993" id="1993">1993</a>
+<a href="#1994" id="1994">1994</a>
+<a href="#1995" id="1995">1995</a>
+<a href="#1996" id="1996">1996</a>
+<a href="#1997" id="1997">1997</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3618,11 +3639,16 @@
     /// This value is constant and does not change between periods.
     </span>FixedPercentage { required_percentage: Perbill },
     <span class="doccomment">/// Entry into the tier is mandated by a percentage of the total issuance as staked funds.
-    /// The `percentage` is the amount required, which can change in-between periods, while `minimum_required_percentage`
-    /// is the minimum percentage that should not be reduced below.
+    /// This `percentage` can change between periods, but must stay within the defined
+    /// `minimum_required_percentage` and `maximum_possible_percentage`.
+    /// If minimum is greater than maximum, the configuration is invalid.
+    ///
+    /// NOTE: It's up to the user to ensure that minimum_required_percentage is
+    /// less than or equal to maximum_possible_percentage to avoid potential issues.
     </span>DynamicPercentage {
         percentage: Perbill,
         minimum_required_percentage: Perbill,
+        maximum_possible_percentage: Perbill,
     },
 }
 
@@ -3699,6 +3725,20 @@
             .is_none()
         {
             <span class="kw">return </span><span class="bool-val">false</span>;
+        }
+
+        <span class="comment">// Validate that the minimum percentage is less than or equal to maximum percentage.
+        </span><span class="kw">for </span>threshold <span class="kw">in </span><span class="self">self</span>.tier_thresholds.iter() {
+            <span class="kw">if let </span>TierThreshold::DynamicPercentage {
+                minimum_required_percentage,
+                maximum_possible_percentage,
+                ..
+            } = threshold
+            {
+                <span class="kw">if </span>minimum_required_percentage &gt; maximum_possible_percentage {
+                    <span class="kw">return </span><span class="bool-val">false</span>;
+                }
+            }
         }
 
         <span class="kw">let </span>number_of_tiers: usize = NT::get() <span class="kw">as </span>usize;
@@ -3824,6 +3864,7 @@
                 TierThreshold::DynamicPercentage {
                     percentage,
                     minimum_required_percentage,
+                    maximum_possible_percentage,
                 } =&gt; {
                     <span class="kw">let </span>amount = <span class="kw-2">*</span>percentage * total_issuance;
                     <span class="kw">let </span>adjusted_amount = <span class="kw">if </span>new_number_of_slots &gt;= base_number_of_slots {
@@ -3832,7 +3873,8 @@
                         amount.saturating_add(delta_threshold.saturating_mul_int(amount))
                     };
                     <span class="kw">let </span>minimum_amount = <span class="kw-2">*</span>minimum_required_percentage * total_issuance;
-                    adjusted_amount.max(minimum_amount)
+                    <span class="kw">let </span>maximum_amount = <span class="kw-2">*</span>maximum_possible_percentage * total_issuance;
+                    adjusted_amount.max(minimum_amount).min(maximum_amount)
                 }
                 TierThreshold::FixedPercentage {
                     required_percentage,

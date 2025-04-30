@@ -2681,6 +2681,16 @@
 <a href="#2679" id="2679">2679</a>
 <a href="#2680" id="2680">2680</a>
 <a href="#2681" id="2681">2681</a>
+<a href="#2682" id="2682">2682</a>
+<a href="#2683" id="2683">2683</a>
+<a href="#2684" id="2684">2684</a>
+<a href="#2685" id="2685">2685</a>
+<a href="#2686" id="2686">2686</a>
+<a href="#2687" id="2687">2687</a>
+<a href="#2688" id="2688">2688</a>
+<a href="#2689" id="2689">2689</a>
+<a href="#2690" id="2690">2690</a>
+<a href="#2691" id="2691">2691</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -4273,8 +4283,18 @@
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
+<span class="macro">parameter_types! </span>{
+    <span class="kw">pub const </span>MaxPercentages: [<span class="prelude-ty">Option</span>&lt;Perbill&gt;; <span class="number">4</span>] = [
+        <span class="prelude-val">Some</span>(Perbill::from_parts(<span class="number">35_700_000</span>)), <span class="comment">// 3.57%
+        </span><span class="prelude-val">Some</span>(Perbill::from_parts(<span class="number">8_900_000</span>)), <span class="comment">// 0.89%
+        </span><span class="prelude-val">Some</span>(Perbill::from_parts(<span class="number">2_380_000</span>)), <span class="comment">// 0.238%
+        </span><span class="prelude-val">None
+    </span>];
+}
+
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = (pallet_dapp_staking::migration::DappStakingCleanupMigration&lt;Runtime&gt;,);
+</span><span class="kw">pub type </span>Unreleased =
+    (pallet_dapp_staking::migration::versioned_migrations::V9ToV10&lt;Runtime, MaxPercentages&gt;,);
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);

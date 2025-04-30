@@ -181,6 +181,9 @@
 <a href="#179" id="179">179</a>
 <a href="#180" id="180">180</a>
 <a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -300,15 +303,18 @@
                 TierThreshold::DynamicPercentage {
                     percentage: Perbill::from_parts(<span class="number">35_700_000</span>), <span class="comment">// 3.57%
                     </span>minimum_required_percentage: Perbill::from_parts(<span class="number">23_800_000</span>), <span class="comment">// 2.38%
-                </span>},
+                    </span>maximum_possible_percentage: Perbill::from_percent(<span class="number">100</span>),
+                },
                 TierThreshold::DynamicPercentage {
                     percentage: Perbill::from_parts(<span class="number">8_900_000</span>), <span class="comment">// 0.89%
                     </span>minimum_required_percentage: Perbill::from_parts(<span class="number">6_000_000</span>), <span class="comment">// 0.6%
-                </span>},
+                    </span>maximum_possible_percentage: Perbill::from_percent(<span class="number">100</span>),
+                },
                 TierThreshold::DynamicPercentage {
                     percentage: Perbill::from_parts(<span class="number">23_800_000</span>), <span class="comment">// 2.38%
                     </span>minimum_required_percentage: Perbill::from_parts(<span class="number">17_900_000</span>), <span class="comment">// 1.79%
-                </span>},
+                    </span>maximum_possible_percentage: Perbill::from_percent(<span class="number">100</span>),
+                },
                 TierThreshold::FixedPercentage {
                     required_percentage: Perbill::from_parts(<span class="number">600_000</span>), <span class="comment">// 0.06%
                 </span>},

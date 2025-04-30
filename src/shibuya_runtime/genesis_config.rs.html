@@ -203,6 +203,9 @@
 <a href="#201" id="201">201</a>
 <a href="#202" id="202">202</a>
 <a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -340,20 +343,23 @@
                 Permill::from_percent(<span class="number">30</span>),
                 Permill::from_percent(<span class="number">40</span>),
             ],
-            <span class="comment">// percentages below are calulated based on a total issuance at the time when dApp staking v3 was launched (147M)
+            <span class="comment">// percentages below are calculated based on a total issuance at the time when dApp staking v3 was launched (147M)
             </span>tier_thresholds: <span class="macro">vec!</span>[
                 TierThreshold::DynamicPercentage {
                     percentage: Perbill::from_parts(<span class="number">20_000</span>), <span class="comment">// 0.0020%
                     </span>minimum_required_percentage: Perbill::from_parts(<span class="number">17_000</span>), <span class="comment">// 0.0017%
-                </span>},
+                    </span>maximum_possible_percentage: Perbill::from_percent(<span class="number">100</span>),
+                },
                 TierThreshold::DynamicPercentage {
                     percentage: Perbill::from_parts(<span class="number">13_000</span>), <span class="comment">// 0.0013%
                     </span>minimum_required_percentage: Perbill::from_parts(<span class="number">10_000</span>), <span class="comment">// 0.0010%
-                </span>},
+                    </span>maximum_possible_percentage: Perbill::from_percent(<span class="number">100</span>),
+                },
                 TierThreshold::DynamicPercentage {
                     percentage: Perbill::from_parts(<span class="number">5_400</span>), <span class="comment">// 0.00054%
                     </span>minimum_required_percentage: Perbill::from_parts(<span class="number">3_400</span>), <span class="comment">// 0.00034%
-                </span>},
+                    </span>maximum_possible_percentage: Perbill::from_percent(<span class="number">100</span>),
+                },
                 TierThreshold::FixedPercentage {
                     required_percentage: Perbill::from_parts(<span class="number">1_400</span>), <span class="comment">// 0.00014%
                 </span>},
