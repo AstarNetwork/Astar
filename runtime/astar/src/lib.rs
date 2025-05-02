@@ -1498,7 +1498,7 @@ parameter_types! {
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations = ();
+    type Migrations = (pallet_identity::migration::v2::LazyMigrationV1ToV2<Runtime>,);
     // Benchmarks need mocked migrations to guarantee that they succeed.
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -1618,7 +1618,7 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (pallet_dapp_staking::migration::DappStakingCleanupMigration<Runtime>,);
+pub type Unreleased = (pallet_xc_asset_config::migrations::versioned::V3ToV4<Runtime>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
