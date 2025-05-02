@@ -398,17 +398,11 @@ where
         let sync = sync_service.clone();
         let pubsub_notification_sinks = pubsub_notification_sinks.clone();
 
-        let graph_pool = transaction_pool.0.as_any()
-                .downcast_ref::<sc_transaction_pool::BasicPool<
-                    sc_transaction_pool::FullChainApi<FullClient, Block>
-                    , Block
-                >>().expect("Frontier container chain template supports only single state transaction pool! Use --pool-type=single-state");
-
         Box::new(move |subscription| {
             let deps = crate::rpc::FullDeps {
                 client: client.clone(),
                 pool: transaction_pool.clone(),
-                graph: graph_pool.pool().clone(),
+                graph: transaction_pool.clone(),
                 network: network.clone(),
                 sync: sync.clone(),
                 is_authority,

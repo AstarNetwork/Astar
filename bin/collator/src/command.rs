@@ -35,7 +35,6 @@ use sc_service::{
     PartialComponents,
 };
 use sp_runtime::traits::AccountIdConversion;
-use std::net::SocketAddr;
 
 #[cfg(feature = "runtime-benchmarks")]
 use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory};

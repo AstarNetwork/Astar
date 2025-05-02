@@ -34,7 +34,6 @@ use sc_network::service::traits::NetworkService;
 use sc_network_sync::SyncingService;
 use sc_rpc::dev::DevApiServer;
 pub use sc_rpc::SubscriptionTaskExecutor;
-use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder;
@@ -42,7 +41,7 @@ use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
 };
 use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
-use sp_runtime::traits::BlakeTwo256;
+use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 use std::sync::Arc;
 use substrate_frame_rpc_system::{System, SystemApiServer};
 
@@ -52,6 +51,8 @@ use moonbeam_rpc_trace::{Trace, TraceServer};
 use astar_primitives::*;
 
 pub mod tracing;
+
+type HashFor<Block> = <Block as BlockT>::Hash;
 
 #[derive(Clone)]
 pub struct EvmTracingConfig {
@@ -99,13 +100,13 @@ where
 }
 
 /// Full client dependencies
-pub struct FullDeps<C, P, A: ChainApi> {
+pub struct FullDeps<C, P> {
     /// The client instance to use.
     pub client: Arc<C>,
     /// Transaction pool instance.
     pub pool: Arc<P>,
     /// Graph pool instance.
-    pub graph: Arc<Pool<A>>,
+    pub graph: Arc<P>,
     /// Network service
     pub network: Arc<dyn NetworkService>,
     /// Chain syncing service
@@ -133,8 +134,8 @@ pub struct FullDeps<C, P, A: ChainApi> {
 }
 
 /// Instantiate all RPC extensions and Tracing RPC.
-pub fn create_full<C, P, BE, A>(
-    deps: FullDeps<C, P, A>,
+pub fn create_full<C, P, BE>(
+    deps: FullDeps<C, P>,
     subscription_task_executor: SubscriptionTaskExecutor,
     pubsub_notification_sinks: Arc<
         fc_mapping_sync::EthereumBlockNotificationSinks<
@@ -164,11 +165,10 @@ where
         + AuraApi<Block, AuraId>
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
         + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
-    P: TransactionPool<Block = Block> + Sync + Send + 'static,
+    P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
     BE::Blockchain: BlockchainBackend<Block>,
-    A: ChainApi<Block = Block> + 'static,
 {
     let client = Arc::clone(&deps.client);
     let graph = Arc::clone(&deps.graph);
@@ -197,8 +197,8 @@ where
     Ok(io)
 }
 
-fn create_full_rpc<C, P, BE, A>(
-    deps: FullDeps<C, P, A>,
+fn create_full_rpc<C, P, BE>(
+    deps: FullDeps<C, P>,
     subscription_task_executor: SubscriptionTaskExecutor,
     pubsub_notification_sinks: Arc<
         fc_mapping_sync::EthereumBlockNotificationSinks<
@@ -225,11 +225,10 @@ where
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>
         + AuraApi<Block, AuraId>,
-    P: TransactionPool<Block = Block> + Sync + Send + 'static,
+    P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
     BE::Blockchain: BlockchainBackend<Block>,
-    A: ChainApi<Block = Block> + 'static,
 {
     let mut io = RpcModule::new(());
     let FullDeps {
@@ -267,7 +266,7 @@ where
     let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
 
     io.merge(
-        Eth::<_, _, _, _, _, _, _, ()>::new(
+        Eth::<_, _, _, _, _, _, ()>::new(
             client.clone(),
             pool.clone(),
             graph.clone(),
