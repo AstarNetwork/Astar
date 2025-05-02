@@ -321,7 +321,6 @@ where
                     client: client.clone(),
                     substrate_backend: backend.clone(),
                     frontier_backend: frontier_backend.clone(),
-                    filter_pool: Some(filter_pool.clone()),
                     storage_override: storage_override.clone(),
                 },
             )
