@@ -811,8 +811,15 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
     type Balance = Balance;
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        let p = WeightFeeFactor::get();
-        let q = Balance::from(ExtrinsicBaseWeight::get().ref_time());
+        #[cfg(feature = "runtime-benchmarks")]
+        let (p, q) = (Balance::from(1u128), Balance::from(1u128));
+
+        #[cfg(not(feature = "runtime-benchmarks"))]
+        let (p, q) = (
+            WeightFeeFactor::get(),
+            Balance::from(ExtrinsicBaseWeight::get().ref_time()),
+        );
+
         smallvec::smallvec![WeightToFeeCoefficient {
             degree: 1,
             negative: false,
@@ -869,9 +876,11 @@ impl pallet_transaction_payment::Config for Runtime {
         MinimumMultiplier,
         MaximumMultiplier,
     >;
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthFeeFactor>;
-    // TODO(ash): generate weights for this
-    type WeightInfo = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type LengthToFee = ConstantMultiplier<Balance, sp_core::ConstU128<1>>; // TODO(ash): generate weights for this
+    type WeightInfo = weights::pallet_transaction_payment::WeightInfo<Self>;
 }
 
 parameter_types! {
