@@ -18,6 +18,7 @@
 
 #![allow(missing_docs)]
 
+#[cfg(feature = "runtime-benchmarks")]
 extern crate alloc;
 
 use astar_primitives::{AccountId, Balance, Block, Nonce};
