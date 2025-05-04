@@ -81,7 +81,7 @@ pub mod pallet {
     use sp_std::boxed::Box;
     use xcm::{v5::Location, VersionedLocation};
 
-    const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(4);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
