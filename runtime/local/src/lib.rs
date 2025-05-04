@@ -407,7 +407,6 @@ impl pallet_transaction_payment::Config for Runtime {
         MaximumMultiplier,
     >;
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthFeeFactor>;
-    // TODO(ash): generate weights for this
     type WeightInfo = ();
 }
 

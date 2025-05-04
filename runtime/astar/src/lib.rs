@@ -879,7 +879,7 @@ impl pallet_transaction_payment::Config for Runtime {
     #[cfg(not(feature = "runtime-benchmarks"))]
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthFeeFactor>;
     #[cfg(feature = "runtime-benchmarks")]
-    type LengthToFee = ConstantMultiplier<Balance, sp_core::ConstU128<1>>; // TODO(ash): generate weights for this
+    type LengthToFee = ConstantMultiplier<Balance, sp_core::ConstU128<1>>;
     type WeightInfo = weights::pallet_transaction_payment::WeightInfo<Self>;
 }
 
