@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 ///! EVM tracing RPC support.
-use crate::evm_tracing_types::{EthApi as EthApiCmd, EvmTracingConfig};
+use crate::evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig};
 
 use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -46,13 +46,13 @@ pub struct SpawnTasksParams<'a, B: BlockT, C, BE> {
     pub task_manager: &'a TaskManager,
     pub client: Arc<C>,
     pub substrate_backend: Arc<BE>,
-    pub frontier_backend: Arc<dyn fc_api::Backend<B> + Send + Sync>,
+    pub frontier_backend: Arc<fc_db::Backend<B, C>>,
     pub storage_override: Arc<dyn StorageOverride<B>>,
 }
 
 /// Spawn the tasks that are required to run a EVM tracing.
 pub fn spawn_tracing_tasks<B, C, BE>(
-    rpc_config: &EvmTracingConfig,
+    rpc_config: &FrontierConfig,
     prometheus: Option<PrometheusRegistry>,
     params: SpawnTasksParams<B, C, BE>,
 ) -> RpcRequesters
@@ -90,7 +90,10 @@ where
         let (debug_task, debug_requester) = DebugHandler::task(
             Arc::clone(&params.client),
             Arc::clone(&params.substrate_backend),
-            Arc::clone(&params.frontier_backend),
+            match *params.frontier_backend {
+                fc_db::Backend::KeyValue(ref b) => b.clone(),
+                fc_db::Backend::Sql(ref b) => b.clone(),
+            },
             Arc::clone(&permit_pool),
             Arc::clone(&params.storage_override),
             rpc_config.tracing_raw_max_memory_usage,
