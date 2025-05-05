@@ -72,8 +72,8 @@ use sp_runtime::{
 };
 use xcm::{
     v5::{AssetId as XcmAssetId, Location as XcmLocation},
-    IntoVersion, Version as XcmVersion, VersionedAssetId, VersionedAssets, VersionedLocation,
-    VersionedXcm,
+    IntoVersion, Version as XcmVersion, VersionedAsset, VersionedAssetId, VersionedAssets,
+    VersionedLocation, VersionedXcm,
 };
 use xcm_runtime_apis::{
     dry_run::{CallDryRunEffects, Error as XcmDryRunApiError, XcmDryRunEffects},
@@ -2384,6 +2384,15 @@ impl_runtime_apis! {
 
         fn dry_run_xcm(origin_location: VersionedLocation, xcm: VersionedXcm<RuntimeCall>) -> Result<XcmDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
             PolkadotXcm::dry_run_xcm::<Runtime, xcm_config::XcmRouter, RuntimeCall, xcm_config::XcmConfig>(origin_location, xcm)
+        }
+    }
+
+    impl xcm_runtime_apis::trusted_query::TrustedQueryApi<Block> for Runtime {
+        fn is_trusted_reserve(asset: VersionedAsset, location: VersionedLocation) -> Result<bool, xcm_runtime_apis::trusted_query::Error> {
+            PolkadotXcm::is_trusted_reserve(asset, location)
+        }
+        fn is_trusted_teleporter(asset: VersionedAsset, location: VersionedLocation) -> Result<bool, xcm_runtime_apis::trusted_query::Error> {
+            PolkadotXcm::is_trusted_teleporter(asset, location)
         }
     }
 
