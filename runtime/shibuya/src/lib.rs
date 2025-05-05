@@ -385,7 +385,6 @@ impl pallet_identity::Config for Runtime {
     type MaxSuffixLength = ConstU32<7>;
     type MaxUsernameLength = ConstU32<32>;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
-    // TODO: check values for these again
     type UsernameDeposit = UsernameDeposit;
     type UsernameGracePeriod = ConstU32<{ 7 * DAYS }>;
 }
