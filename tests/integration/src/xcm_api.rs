@@ -22,13 +22,16 @@ use cumulus_primitives_core::Unlimited;
 use sp_runtime::traits::{BlakeTwo256, Hash, Zero};
 use xcm::{
     v5::{
-        Asset as XcmAsset, AssetId as XcmAssetId, Fungibility, Junction, Junctions::*, Location,
-        Xcm, VERSION as V_5,
+        Asset as XcmAsset, AssetId as XcmAssetId, Fungibility,
+        Junction::{self, *},
+        Junctions::*,
+        Location, Parent, Xcm, VERSION as V_5,
     },
-    VersionedLocation, VersionedXcm,
+    VersionedAsset, VersionedLocation, VersionedXcm,
 };
 use xcm_runtime_apis::dry_run::runtime_decl_for_dry_run_api::DryRunApiV2;
 use xcm_runtime_apis::fees::runtime_decl_for_xcm_payment_api::XcmPaymentApiV1;
+use xcm_runtime_apis::trusted_query::runtime_decl_for_trusted_query_api::TrustedQueryApiV1;
 
 /// Register an asset into `pallet-assets` instance, and register as as cross-chain asset.
 ///
@@ -285,6 +288,58 @@ fn xcm_recorder_configuration_is_ok() {
         assert!(
             result,
             "XCM recorder must be ready to record incoming XCMs."
+        );
+    })
+}
+
+#[test]
+fn trusted_api_is_reserve_is_ok() {
+    new_test_ext().execute_with(|| {
+        let para_a: Location = (Parent, Parachain(1)).into();
+        let para_a_asset: XcmAsset = (para_a.clone(), 10u128).into();
+        let relay_asset: XcmAsset = (Parent, 10u128).into();
+
+        // para_a origin should be trusted reserve for para_a asset
+        assert_eq!(
+            Runtime::is_trusted_reserve(
+                VersionedAsset::V5(para_a_asset),
+                VersionedLocation::V5(para_a.clone())
+            ),
+            Ok(true)
+        );
+
+        // relay origin should be NOT be a trusted reserve for para_a asset
+        assert_eq!(
+            Runtime::is_trusted_reserve(
+                VersionedAsset::V5(relay_asset),
+                VersionedLocation::V5(para_a)
+            ),
+            Ok(false)
+        );
+    })
+}
+
+#[test]
+fn trusted_api_is_teleport_is_ok() {
+    new_test_ext().execute_with(|| {
+        let para_a: Location = (Parent, Parachain(1)).into();
+        let para_a_asset: XcmAsset = (para_a.clone(), 10u128).into();
+        let relay_asset: XcmAsset = (Parent, 10u128).into();
+
+        // We have no trusted teleporters configured for any runtime
+        assert_eq!(
+            Runtime::is_trusted_teleporter(
+                VersionedAsset::V5(para_a_asset),
+                VersionedLocation::V5(para_a.clone())
+            ),
+            Ok(false)
+        );
+        assert_eq!(
+            Runtime::is_trusted_reserve(
+                VersionedAsset::V5(relay_asset),
+                VersionedLocation::V5(para_a)
+            ),
+            Ok(false)
         );
     })
 }
