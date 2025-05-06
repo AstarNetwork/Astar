@@ -18,12 +18,15 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::traits::GetStorageVersion;
+use frame_support::weights::Weight;
 use frame_support::{
     migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
     weights::WeightMeter,
 };
 use pallet_democracy::{ReferendumIndex, ReferendumInfo, ReferendumInfoOf};
-use sp_arithmetic::traits::{SaturatedConversion, Saturating};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use sp_arithmetic::traits::SaturatedConversion;
 
 pub use pallet::*;
 
@@ -39,10 +42,25 @@ pub mod weights;
 const LOG_TARGET: &str = "mbm::democracy";
 const PALLET_MIGRATIONS_ID: &[u8; 20] = b"pallet-democracy-mbm";
 
+/// Progressive migration state to keep track of progress
+#[derive(Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen)]
+pub enum MigrationState<T: pallet_democracy::Config> {
+    /// Migrating referendum info
+    ReferendumInfo(ReferendumIndex),
+    /// Finished Migrating referendum info, starting migration VotingOf
+    FinishedReferendumInfo,
+    /// Finished referendum info migration, start voting records
+    VotingOf(<T as frame_system::Config>::AccountId),
+    /// Finished all migrations
+    Finished,
+}
+
+type StepResultOf<T> = MigrationState<T>;
+
 pub struct LazyMigration<T, W: weights::WeightInfo>(core::marker::PhantomData<(T, W)>);
 
 impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration for LazyMigration<T, W> {
-    type Cursor = ReferendumIndex;
+    type Cursor = MigrationState<T>;
     // Without the explicit length here the construction of the ID would not be infallible.
     type Identifier = MigrationId<20>;
 
@@ -59,86 +77,135 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration for L
         mut cursor: Option<Self::Cursor>,
         meter: &mut WeightMeter,
     ) -> Result<Option<Self::Cursor>, SteppedMigrationError> {
-        let required = W::step();
-        // If there is not enough weight for a single step, return an error. This case can be
-        // problematic if it is the first migration that ran in this block. But there is nothing
-        // that we can do about it here.
+        if pallet_democracy::Pallet::<T>::on_chain_storage_version()
+            != Self::id().version_from as u16
+        {
+            return Ok(None);
+        }
+
+        // Check that we have enough weight for at least the next step. If we don't, then the
+        // migration cannot be complete.
+        let required = match &cursor {
+            Some(state) => Self::required_weight(&state),
+            // Worst case weight for `migration_referendum_info`.
+            None => W::migration_referendum_info(),
+        };
         if meter.remaining().any_lt(required) {
             return Err(SteppedMigrationError::InsufficientWeight { required });
         }
 
-        let mut count = 0u32;
+        //TODO: add count logs
         let current_block_number =
             frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
 
         // We loop here to do as much progress as possible per step.
         loop {
-            // stop when remaining weight is lower than step max weight
-            if meter.remaining().any_lt(required) {
+            // Check that we would have enough weight to perform this step in the worst case
+            // scenario.
+            let required_weight = match &cursor {
+                Some(state) => Self::required_weight(&state),
+                // Worst case weight for `migration_referendum_info`.
+                None => W::migration_referendum_info(),
+            };
+            if !meter.can_consume(required_weight) {
                 break;
             }
 
-            let mut iter = if let Some(last_key) = cursor {
-                // If a cursor is provided, start iterating from the stored value
-                // corresponding to the last key processed in the previous step.
-                // Note that this only works if the old and the new map use the same way to hash
-                // storage keys.
-
-                ReferendumInfoOf::<T>::iter_from(ReferendumInfoOf::<T>::hashed_key_for(last_key))
-            } else {
-                // If no cursor is provided, start iterating from the beginning.
-                ReferendumInfoOf::<T>::iter()
+            let next = match &cursor {
+                // At first, migrate referendums
+                None => Self::migrate_referendum_info(None, current_block_number),
+                // Migrate any remaining referendums
+                Some(MigrationState::ReferendumInfo(maybe_last_referendum)) => {
+                    Self::migrate_referendum_info(Some(maybe_last_referendum), current_block_number)
+                }
+                // After the last referendum was migrated, start migrating VotingOf
+                Some(MigrationState::FinishedReferendumInfo) => {
+                    Self::migrate_voting_of(None, current_block_number)
+                }
+                // Keep migrating VotingOf
+                Some(MigrationState::VotingOf(maybe_last_vote)) => {
+                    Self::migrate_voting_of(Some(maybe_last_vote), current_block_number)
+                }
+                Some(MigrationState::Finished) => {
+                    //TODO: post-upgrade ? + put new storage version
+                    return Ok(None);
+                }
             };
 
-            if let Some((ref last_key, mut ref_info)) = iter.next() {
-                match ref_info {
-                    ReferendumInfo::Ongoing(ref mut status) => {
-                        // Double the blocks of the delay period
-                        status.delay = status
-                            .delay
-                            .saturated_into::<u32>()
-                            .saturating_mul(2)
-                            .into();
-
-                        // For the end time:
-                        // 1. Calculate remaining blocks until the original end
-                        let remaining_blocks = status
-                            .end
-                            .saturated_into::<u32>()
-                            .saturating_sub(current_block_number);
-
-                        // 2. Double the remaining blocks
-                        let doubled_remaining = remaining_blocks.saturating_mul(2);
-
-                        // 3. Add it to the current block number to get the new end
-                        status.end = current_block_number
-                            .saturating_add(doubled_remaining)
-                            .into();
-                    }
-                    ReferendumInfo::Finished { .. } => {
-                        // Referendum is finished, skip it.
-                        cursor = Some(last_key.clone());
-                        continue;
-                    }
-                }
-
-                meter.consume(W::step());
-
-                ReferendumInfoOf::<T>::insert(last_key, ref_info.clone());
-
-                // inc counter
-                count.saturating_inc();
-
-                // Return the processed key as the new cursor.
-                cursor = Some(last_key.clone())
-            } else {
-                // Signal that the migration is complete (no more items to process).
-                cursor = None;
-                break;
-            }
+            cursor = Some(next);
+            meter.consume(required_weight);
         }
-        log::debug!(target: LOG_TARGET, "migrated {count:?} entries");
+
         Ok(cursor)
+    }
+}
+
+impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
+    LazyMigration<T, W>
+{
+    fn required_weight(step: &MigrationState<T>) -> Weight {
+        match step {
+            MigrationState::ReferendumInfo(_) => W::migration_referendum_info(),
+            MigrationState::FinishedReferendumInfo | MigrationState::VotingOf(_) => {
+                W::migration_voting_of()
+            }
+            MigrationState::Finished => Weight::zero(),
+        }
+    }
+
+    fn migrate_referendum_info(
+        maybe_last_key: Option<&ReferendumIndex>,
+        current_block_number: u32,
+    ) -> StepResultOf<T> {
+        let mut iter = if let Some(last_key) = maybe_last_key {
+            ReferendumInfoOf::<T>::iter_from(ReferendumInfoOf::<T>::hashed_key_for(last_key))
+        } else {
+            ReferendumInfoOf::<T>::iter()
+        };
+
+        if let Some((last_key, mut ref_info)) = iter.next() {
+            match ref_info {
+                ReferendumInfo::Ongoing(ref mut status) => {
+                    // Double the blocks of the delay period
+                    status.delay = status
+                        .delay
+                        .saturated_into::<u32>()
+                        .saturating_mul(2)
+                        .into();
+
+                    // For the end time:
+                    // 1. Calculate remaining blocks until the original end
+                    let remaining_blocks = status
+                        .end
+                        .saturated_into::<u32>()
+                        .saturating_sub(current_block_number);
+
+                    // 2. Double the remaining blocks
+                    let doubled_remaining = remaining_blocks.saturating_mul(2);
+
+                    // 3. Add it to the current block number to get the new end
+                    status.end = current_block_number
+                        .saturating_add(doubled_remaining)
+                        .into();
+                }
+                ReferendumInfo::Finished { .. } => {
+                    // continue;
+                }
+            }
+
+            ReferendumInfoOf::<T>::insert(&last_key, ref_info.clone());
+
+            MigrationState::ReferendumInfo(last_key)
+        } else {
+            MigrationState::FinishedReferendumInfo
+        }
+    }
+
+    fn migrate_voting_of(
+        _maybe_last_key: Option<&T::AccountId>,
+        _current_block_number: u32,
+    ) -> StepResultOf<T> {
+        MigrationState::FinishedReferendumInfo
     }
 }
 

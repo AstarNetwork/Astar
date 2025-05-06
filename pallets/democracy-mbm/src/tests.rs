@@ -46,70 +46,7 @@ fn propose_set_balance(who: u64, value: u64, delay: u64) -> DispatchResult {
 }
 
 #[test]
-fn migrate_ongoing_referendum() {
-    new_test_ext().execute_with(|| {
-        // create a referendum
-        assert_ok!(propose_set_balance(1, 2, 1));
-        run_to_block(2);
-        let ref_index = 0;
-        // sanity check: ensure the referendum is Ongoing with and end at 22
-        assert!(matches!(
-            ReferendumInfoOf::<Runtime>::get(ref_index).unwrap(),
-            ReferendumInfo::Ongoing(ReferendumStatus { end: 22, .. })
-        ));
-
-        // Doubles remaining referendum time:
-        // current_block = 2, end = 22
-        // remaining = end - current_block = 20
-        // new_end = current_block + (remaining * 2) = 2 + 40 = 42
-        AllPalletsWithSystem::on_runtime_upgrade();
-        run_to_block(3);
-        assert!(matches!(
-            ReferendumInfoOf::<Runtime>::get(ref_index).unwrap(),
-            ReferendumInfo::Ongoing(ReferendumStatus { end: 42, .. })
-        ));
-    });
-}
-
-#[test]
-fn finished_referendum_is_not_migrated() {
-    new_test_ext().execute_with(|| {
-        // create a referendum
-        assert_ok!(propose_set_balance(1, 2, 1));
-        run_to_block(2);
-        let ref_index = 0;
-        // sanity check: ensure the referendum is Ongoing with and end at 22
-        assert!(matches!(
-            ReferendumInfoOf::<Runtime>::get(ref_index).unwrap(),
-            ReferendumInfo::Ongoing(ReferendumStatus { end: 22, .. })
-        ));
-        // run to block 22 - which is the end value of the referendum
-        // and ensure it is Finished
-        run_to_block(22);
-        assert_eq!(
-            ReferendumInfoOf::<Runtime>::get(ref_index).unwrap(),
-            ReferendumInfo::Finished {
-                approved: false,
-                end: 22
-            }
-        );
-
-        // run multiblock migration
-        AllPalletsWithSystem::on_runtime_upgrade();
-        run_to_block(23);
-
-        assert_eq!(
-            ReferendumInfoOf::<Runtime>::get(ref_index).unwrap(),
-            ReferendumInfo::Finished {
-                approved: false,
-                end: 22
-            }
-        );
-    });
-}
-
-#[test]
-fn test_migrate_multiple_referendums() {
+fn migrate_multiple_referendums() {
     new_test_ext().execute_with(|| {
         // Create 2 finished referendums
         assert_ok!(propose_set_balance(1, 2, 1));
@@ -123,7 +60,8 @@ fn test_migrate_multiple_referendums() {
         assert_ok!(propose_set_balance(1, 5, 1));
         run_to_block(5);
 
-        //
+        // Run to block 24 so the first 2 referendums are finished,
+        // and the last 2 are still ongoing
         run_to_block(24);
 
         // Verify the state before migration
@@ -150,7 +88,7 @@ fn test_migrate_multiple_referendums() {
             ReferendumInfo::Ongoing(ReferendumStatus { end: 28, .. })
         ));
 
-        // Run migration
+        // Run migration - on block 24
         AllPalletsWithSystem::on_runtime_upgrade();
         run_to_block(25);
 
@@ -171,13 +109,13 @@ fn test_migrate_multiple_referendums() {
         ));
 
         // Verify ongoing referendums were migrated
-        // Current block = 24, referendum ends at 26, remaining = 2
+        // migration block = 24; referendum ends at 26, remaining = 2
         // New end = 24 + (2*2) = 28
         assert!(matches!(
             ReferendumInfoOf::<Runtime>::get(2).unwrap(),
             ReferendumInfo::Ongoing(ReferendumStatus { end: 28, .. })
         ));
-        // Current block = 24, referendum ends at 28, remaining = 4
+        // migration block = 24, referendum ends at 28, remaining = 4
         // New end = 24 + (4*2) = 32
         assert!(matches!(
             ReferendumInfoOf::<Runtime>::get(3).unwrap(),

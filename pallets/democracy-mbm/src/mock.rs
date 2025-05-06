@@ -18,7 +18,7 @@
 
 #![cfg(test)]
 
-use frame_support::traits::{ConstBool, ConstU64, EqualPrivilegeOnly};
+use frame_support::traits::{ConstBool, ConstU64, EqualPrivilegeOnly, StorageVersion};
 use frame_support::{
     construct_runtime, derive_impl,
     migrations::MultiStepMigrator,
@@ -150,7 +150,12 @@ impl ExtBuilder {
             .assimilate_storage(&mut t)
             .unwrap();
         let mut ext = sp_io::TestExternalities::new(t);
-        ext.execute_with(|| System::set_block_number(1));
+        ext.execute_with(|| {
+            System::set_block_number(1);
+            // Set storage version to 1 for Democracy pallet
+            let storage_version = StorageVersion::new(1);
+            storage_version.put::<pallet_democracy::Pallet<Runtime>>();
+        });
         ext
     }
 }
