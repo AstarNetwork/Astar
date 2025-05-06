@@ -99,14 +99,21 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration for L
                             .saturated_into::<u32>()
                             .saturating_mul(2)
                             .into();
-                        // To migrate end period:
-                        // 1. Get the remaining blocks
-                        // 2. Multiply it by 2
+
+                        // For the end time:
+                        // 1. Calculate remaining blocks until the original end
                         let remaining_blocks = status
                             .end
                             .saturated_into::<u32>()
                             .saturating_sub(current_block_number);
-                        status.end = remaining_blocks.saturating_mul(2).into();
+
+                        // 2. Double the remaining blocks
+                        let doubled_remaining = remaining_blocks.saturating_mul(2);
+
+                        // 3. Add it to the current block number to get the new end
+                        status.end = current_block_number
+                            .saturating_add(doubled_remaining)
+                            .into();
                     }
                     ReferendumInfo::Finished { .. } => {
                         // Referendum is finished, skip it.

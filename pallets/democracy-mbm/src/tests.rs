@@ -58,17 +58,15 @@ fn migrate_ongoing_referendum() {
             ReferendumInfo::Ongoing(ReferendumStatus { end: 22, .. })
         ));
 
-        // run multiblock migration
+        // Doubles remaining referendum time:
+        // current_block = 2, end = 22
+        // remaining = end - current_block = 20
+        // new_end = current_block + (remaining * 2) = 2 + 40 = 42
         AllPalletsWithSystem::on_runtime_upgrade();
         run_to_block(3);
-
-        // the end value should be updated from 22 to 40:
-        // current block number = 2
-        // remaining: end:22 - current_block_number:2 = 20
-        // multiply it by 2: 40
         assert!(matches!(
             ReferendumInfoOf::<Runtime>::get(ref_index).unwrap(),
-            ReferendumInfo::Ongoing(ReferendumStatus { end: 40, .. })
+            ReferendumInfo::Ongoing(ReferendumStatus { end: 42, .. })
         ));
     });
 }
@@ -107,5 +105,83 @@ fn finished_referendum_is_not_migrated() {
                 end: 22
             }
         );
+    });
+}
+
+#[test]
+fn test_migrate_multiple_referendums() {
+    new_test_ext().execute_with(|| {
+        // Create 2 finished referendums
+        assert_ok!(propose_set_balance(1, 2, 1));
+        run_to_block(2);
+        assert_ok!(propose_set_balance(1, 3, 1));
+        run_to_block(3);
+
+        // Create 2 Ongoing referendums
+        assert_ok!(propose_set_balance(1, 4, 1));
+        run_to_block(4);
+        assert_ok!(propose_set_balance(1, 5, 1));
+        run_to_block(5);
+
+        //
+        run_to_block(24);
+
+        // Verify the state before migration
+        assert!(matches!(
+            ReferendumInfoOf::<Runtime>::get(0).unwrap(),
+            ReferendumInfo::Finished {
+                approved: false,
+                end: 22
+            }
+        ));
+        assert!(matches!(
+            ReferendumInfoOf::<Runtime>::get(1).unwrap(),
+            ReferendumInfo::Finished {
+                approved: false,
+                end: 24
+            }
+        ));
+        assert!(matches!(
+            ReferendumInfoOf::<Runtime>::get(2).unwrap(),
+            ReferendumInfo::Ongoing(ReferendumStatus { end: 26, .. })
+        ));
+        assert!(matches!(
+            ReferendumInfoOf::<Runtime>::get(3).unwrap(),
+            ReferendumInfo::Ongoing(ReferendumStatus { end: 28, .. })
+        ));
+
+        // Run migration
+        AllPalletsWithSystem::on_runtime_upgrade();
+        run_to_block(25);
+
+        // Verify finished referendums were not migrated
+        assert!(matches!(
+            ReferendumInfoOf::<Runtime>::get(0).unwrap(),
+            ReferendumInfo::Finished {
+                approved: false,
+                end: 22
+            }
+        ));
+        assert!(matches!(
+            ReferendumInfoOf::<Runtime>::get(1).unwrap(),
+            ReferendumInfo::Finished {
+                approved: false,
+                end: 24
+            }
+        ));
+
+        // Verify ongoing referendums were migrated
+        // Current block = 24, referendum ends at 26, remaining = 2
+        // New end = 24 + (2*2) = 28
+        assert!(matches!(
+            ReferendumInfoOf::<Runtime>::get(2).unwrap(),
+            ReferendumInfo::Ongoing(ReferendumStatus { end: 28, .. })
+        ));
+        // Current block = 24, referendum ends at 28, remaining = 4
+        // New end = 24 + (4*2) = 32
+        assert!(matches!(
+            ReferendumInfoOf::<Runtime>::get(3).unwrap(),
+            ReferendumInfo::Ongoing(ReferendumStatus { end: 32, .. })
+        ));
     });
 }

@@ -27,7 +27,6 @@ use frame_support::{
     traits::{OnFinalize, OnInitialize},
 };
 use frame_system::{EnsureRoot, EnsureSigned};
-use pallet_democracy::ReferendumCount;
 use sp_runtime::BuildStorage;
 
 type Block = frame_system::mocking::MockBlock<Runtime>;
@@ -138,7 +137,12 @@ impl ExtBuilder {
             .build_storage()
             .unwrap();
         pallet_balances::GenesisConfig::<Runtime> {
-            balances: vec![(ALICE, 100), (BOB, 100), (CHARLIE, 1000), (DAVE, 800)],
+            balances: vec![
+                (ALICE, 10000),
+                (BOB, 10000),
+                (CHARLIE, 10000),
+                (DAVE, 10000),
+            ],
         }
         .assimilate_storage(&mut t)
         .unwrap();
