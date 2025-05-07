@@ -78,7 +78,7 @@ The pallet itself does not make assumptions who the privileged origin is, and it
 <p>dApp can be removed from the procotol by unregistering it.
 This is a privileged action that only <code>ManagerOrigin</code> can perform.</p>
 <p>After a dApp has been unregistered, it’s no longer eligible to receive rewards.
-It’s still possible however to claim past unclaimed rewards.</p>
+It’s still possible to claim past unclaimed staker rewards after unregistration, but dApp rewards are not claimable anymore.</p>
 <p>Important to note that even if dApp has been unregistered, it still occupies a <em>slot</em>
 in the dApp staking protocol and counts towards maximum number of registered dApps.
 This will be improved in the future when dApp data will be cleaned up after some time.</p>
