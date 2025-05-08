@@ -47,7 +47,6 @@ mod unchecked_migration {
     impl<const XCM_VERSION: u32, T: Config> UncheckedOnRuntimeUpgrade
         for UncheckedMigrationXcmVersion<XCM_VERSION, T>
     {
-        #[allow(deprecated)]
         fn on_runtime_upgrade() -> Weight {
             let mut consumed_weight = Weight::zero();
 
@@ -67,7 +66,7 @@ mod unchecked_migration {
                 },
             );
 
-            // 2rd map
+            // 2nd map
             let location_to_id_entries: Vec<_> = AssetLocationToId::<T>::drain().collect();
             for (multi_location, asset_id) in location_to_id_entries {
                 consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
