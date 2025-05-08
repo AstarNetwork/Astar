@@ -24,11 +24,11 @@ use frame_support::{
     migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
     weights::WeightMeter,
 };
-use pallet_democracy::{ReferendumIndex, ReferendumInfo, ReferendumInfoOf};
+pub use pallet::*;
+use pallet_democracy::{ReferendumIndex, ReferendumInfo, ReferendumInfoOf, Voting, VotingOf};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_arithmetic::traits::SaturatedConversion;
-
-pub use pallet::*;
+use sp_arithmetic::traits::Zero;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarks;
@@ -166,6 +166,7 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
         if let Some((last_key, mut ref_info)) = iter.next() {
             match ref_info {
                 ReferendumInfo::Ongoing(ref mut status) => {
+                    // TODO: add test for it
                     // Double the blocks of the delay period
                     status.delay = status
                         .delay
@@ -202,10 +203,72 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
     }
 
     fn migrate_voting_of(
-        _maybe_last_key: Option<&T::AccountId>,
-        _current_block_number: u32,
+        maybe_last_key: Option<&T::AccountId>,
+        current_block_number: u32,
     ) -> StepResultOf<T> {
-        MigrationState::FinishedReferendumInfo
+        let mut iter = if let Some(last_key) = maybe_last_key {
+            VotingOf::<T>::iter_from(VotingOf::<T>::hashed_key_for(last_key))
+        } else {
+            VotingOf::<T>::iter()
+        };
+
+        if let Some((last_key, mut voting)) = iter.next() {
+            match &mut voting {
+                Voting::Direct { prior, .. } => {
+                    let lock_amount = prior.locked();
+
+                    if !lock_amount.is_zero() {
+                        // 1. Calculate the remaining blocks
+                        // as the field block number is private in PriorLock enum
+                        // we encode the enum and decode the 4 bytes (as it's an u32)
+                        let encoded = prior.encode();
+                        let unlock_block_number =
+                            u32::from_le_bytes([encoded[0], encoded[1], encoded[2], encoded[3]]);
+                        let remaining_blocks = unlock_block_number
+                            .saturating_sub(current_block_number)
+                            .saturating_mul(2);
+                        let extended_time =
+                            current_block_number.saturating_add(remaining_blocks).into();
+
+                        // 2. Clean the lock by setting block number and balance to 0
+                        prior.rejig(u32::MAX.into());
+
+                        // 3. Save the lock with migrated values
+                        prior.accumulate(extended_time, lock_amount);
+                    }
+                }
+                Voting::Delegating { prior, .. } => {
+                    let lock_amount = prior.locked();
+
+                    if !lock_amount.is_zero() {
+                        // 1. Calculate the remaining blocks
+                        // as the field block number is private in PriorLock enum
+                        // we encode the enum and decode the 4 bytes (as it's an u32)
+                        let encoded = prior.encode();
+                        let unlock_block_number =
+                            u32::from_le_bytes([encoded[0], encoded[1], encoded[2], encoded[3]]);
+                        let remaining_blocks = unlock_block_number
+                            .saturating_sub(current_block_number)
+                            .saturating_mul(2);
+                        let extended_time =
+                            current_block_number.saturating_add(remaining_blocks).into();
+
+                        // 2. Clean the lock by setting block number and balance to 0
+                        prior.rejig(u32::MAX.into());
+
+                        // 3. Save the lock with migrated values
+                        prior.accumulate(extended_time, lock_amount);
+                    }
+                }
+            }
+
+            // Update the storage with the modified voting data
+            VotingOf::<T>::insert(&last_key, voting);
+
+            MigrationState::VotingOf(last_key)
+        } else {
+            MigrationState::Finished
+        }
     }
 }
 

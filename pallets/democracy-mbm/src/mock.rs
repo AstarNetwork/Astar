@@ -18,7 +18,9 @@
 
 #![cfg(test)]
 
-use frame_support::traits::{ConstBool, ConstU64, EqualPrivilegeOnly, StorageVersion};
+use frame_support::traits::{
+    ConstBool, ConstU64, EqualPrivilegeOnly, LockIdentifier, StorageVersion,
+};
 use frame_support::{
     construct_runtime, derive_impl,
     migrations::MultiStepMigrator,
@@ -30,6 +32,8 @@ use frame_system::{EnsureRoot, EnsureSigned};
 use sp_runtime::BuildStorage;
 
 type Block = frame_system::mocking::MockBlock<Runtime>;
+
+pub const DEMOCRACY_ID: LockIdentifier = *b"democrac";
 
 construct_runtime!(
     pub struct Runtime {
@@ -130,6 +134,7 @@ pub(crate) const ALICE: u64 = 1;
 pub(crate) const BOB: u64 = 2;
 pub(crate) const CHARLIE: u64 = 3;
 pub(crate) const DAVE: u64 = 4;
+pub(crate) const YUKI: u64 = 5;
 
 impl ExtBuilder {
     pub fn build(self) -> sp_io::TestExternalities {
@@ -142,6 +147,7 @@ impl ExtBuilder {
                 (BOB, 10000),
                 (CHARLIE, 10000),
                 (DAVE, 10000),
+                (YUKI, 10000),
             ],
         }
         .assimilate_storage(&mut t)

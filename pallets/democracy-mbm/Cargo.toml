@@ -22,7 +22,6 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
-
 [dev-dependencies]
 pallet-balances = { workspace = true }
 pallet-migrations = { workspace = true }
