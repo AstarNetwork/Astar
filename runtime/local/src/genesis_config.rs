@@ -25,8 +25,8 @@ use sp_core::crypto::Ss58Codec;
 
 /// Provides the JSON representation of predefined genesis config for given `id`.
 pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
-    let genesis = match id.try_into() {
-        Ok("development") => default_config(),
+    let genesis = match id.as_str() {
+        "development" => default_config(),
         _ => return None,
     };
     Some(

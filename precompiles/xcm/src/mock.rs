@@ -349,7 +349,8 @@ impl pallet_evm::Config for Runtime {
     type OnCreate = ();
     type WeightInfo = ();
     type GasLimitPovSizeRatio = ConstU64<4>;
-    type SuicideQuickClearLimit = ConstU32<0>;
+    type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
+    type GasLimitStorageGrowthRatio = ConstU64<0>;
     type Timestamp = Timestamp;
 }
 
@@ -395,7 +396,7 @@ impl xcm_executor::Config for XcmConfig {
     type XcmSender = StoringRouter;
     type AssetTransactor = LocalAssetTransactor;
     type OriginConverter = ();
-    type IsReserve = ();
+    type IsReserve = Everything;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = Barrier;

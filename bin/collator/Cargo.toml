@@ -154,7 +154,6 @@ moonbeam-rpc-primitives-txpool = { workspace = true }
 moonbeam-primitives-ext = { workspace = true }
 moonbeam-rpc-debug = { workspace = true }
 moonbeam-rpc-trace = { workspace = true }
-moonbeam-rpc-txpool = { workspace = true }
 
 [build-dependencies]
 polkadot-cli = { workspace = true, optional = true }
@@ -188,6 +187,7 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 	"cumulus-primitives-core/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
+	"pallet-transaction-payment/runtime-benchmarks",
 ]
 try-runtime = [
 	"local-runtime/try-runtime",

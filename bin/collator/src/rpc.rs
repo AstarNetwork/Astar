@@ -20,7 +20,7 @@
 
 use fc_rpc::{
     Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
-    EthPubSubApiServer, Net, NetApiServer, Web3, Web3ApiServer,
+    EthPubSubApiServer, Net, NetApiServer, TxPool, TxPoolApiServer, Web3, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_storage::{StorageOverride, StorageOverrideHandler};
@@ -34,8 +34,7 @@ use sc_client_api::{
 use sc_network::service::traits::NetworkService;
 use sc_network_sync::SyncingService;
 use sc_rpc::dev::DevApiServer;
-pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
-use sc_transaction_pool::{ChainApi, Pool};
+pub use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder;
@@ -43,19 +42,19 @@ use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
 };
 use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
-use sp_runtime::traits::BlakeTwo256;
+use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 use std::sync::Arc;
 use substrate_frame_rpc_system::{System, SystemApiServer};
 
 use moonbeam_rpc_debug::{Debug, DebugServer};
 use moonbeam_rpc_trace::{Trace, TraceServer};
-// TODO: get rid of this completely now that it's part of frontier?
-use moonbeam_rpc_txpool::{TxPool as MoonbeamTxPool, TxPoolServer};
 
 use crate::evm_tracing_types::{FrontierBackendConfig, FrontierConfig};
 use astar_primitives::*;
 
 pub mod tracing;
+
+type HashFor<Block> = <Block as BlockT>::Hash;
 
 #[derive(Clone)]
 pub struct EvmTracingConfig {
@@ -151,19 +150,17 @@ where
 }
 
 /// Full client dependencies
-pub struct FullDeps<C, P, A: ChainApi> {
+pub struct FullDeps<C, P> {
     /// The client instance to use.
     pub client: Arc<C>,
     /// Transaction pool instance.
     pub pool: Arc<P>,
     /// Graph pool instance.
-    pub graph: Arc<Pool<A>>,
+    pub graph: Arc<P>,
     /// Network service
     pub network: Arc<dyn NetworkService>,
     /// Chain syncing service
     pub sync: Arc<SyncingService<Block>>,
-    /// Whether to deny unsafe calls
-    pub deny_unsafe: DenyUnsafe,
     /// The Node authority flag
     pub is_authority: bool,
     /// Frontier Backend.
@@ -187,8 +184,8 @@ pub struct FullDeps<C, P, A: ChainApi> {
 }
 
 /// Instantiate all RPC extensions and Tracing RPC.
-pub fn create_full<C, P, BE, A>(
-    deps: FullDeps<C, P, A>,
+pub fn create_full<C, P, BE>(
+    deps: FullDeps<C, P>,
     subscription_task_executor: SubscriptionTaskExecutor,
     pubsub_notification_sinks: Arc<
         fc_mapping_sync::EthereumBlockNotificationSinks<
@@ -218,11 +215,10 @@ where
         + AuraApi<Block, AuraId>
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
         + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
-    P: TransactionPool<Block = Block> + Sync + Send + 'static,
+    P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
     BE::Blockchain: BlockchainBackend<Block>,
-    A: ChainApi<Block = Block> + 'static,
 {
     let client = Arc::clone(&deps.client);
     let graph = Arc::clone(&deps.graph);
@@ -230,7 +226,7 @@ where
     let mut io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)?;
 
     if tracing_config.enable_txpool {
-        io.merge(MoonbeamTxPool::new(Arc::clone(&client), graph).into_rpc())?;
+        io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
     }
 
     if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
@@ -251,8 +247,8 @@ where
     Ok(io)
 }
 
-fn create_full_rpc<C, P, BE, A>(
-    deps: FullDeps<C, P, A>,
+fn create_full_rpc<C, P, BE>(
+    deps: FullDeps<C, P>,
     subscription_task_executor: SubscriptionTaskExecutor,
     pubsub_notification_sinks: Arc<
         fc_mapping_sync::EthereumBlockNotificationSinks<
@@ -279,11 +275,10 @@ where
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>
         + AuraApi<Block, AuraId>,
-    P: TransactionPool<Block = Block> + Sync + Send + 'static,
+    P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
     BE::Blockchain: BlockchainBackend<Block>,
-    A: ChainApi<Block = Block> + 'static,
 {
     let mut io = RpcModule::new(());
     let FullDeps {
@@ -292,7 +287,6 @@ where
         graph,
         network,
         sync,
-        deny_unsafe,
         is_authority,
         frontier_backend,
         filter_pool,
@@ -305,9 +299,9 @@ where
         command_sink,
     } = deps;
 
-    io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+    io.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
     io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
-    io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
+    io.merge(sc_rpc::dev::Dev::new(client.clone()).into_rpc())?;
 
     #[cfg(feature = "manual-seal")]
     if let Some(command_sink) = command_sink {
@@ -322,7 +316,7 @@ where
     let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
 
     io.merge(
-        Eth::<_, _, _, _, _, _, _, ()>::new(
+        Eth::<_, _, _, _, _, _, ()>::new(
             client.clone(),
             pool.clone(),
             graph.clone(),

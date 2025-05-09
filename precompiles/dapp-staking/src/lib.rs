@@ -120,6 +120,7 @@ where
         + frame_system::Config<AccountId = AccountId>,
     BlockNumberFor<R>: IsType<BlockNumber>,
     <R::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<R::AccountId>>,
+    <R as pallet_evm::Config>::AddressMapping: AddressMapping<R::AccountId>,
     R::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
     R::RuntimeCall: From<pallet_dapp_staking::Call<R>>,
 {
@@ -374,7 +375,7 @@ where
             let delta = amount.saturating_sub(stakeable_amount);
 
             let lock_call = pallet_dapp_staking::Call::<R>::lock { amount: delta };
-            RuntimeHelper::<R>::try_dispatch(handle, Some(origin.clone()).into(), lock_call)?;
+            RuntimeHelper::<R>::try_dispatch(handle, Some(origin.clone()).into(), lock_call, 0)?;
         }
 
         // Now, with best effort, we can try & stake the given `value`.
@@ -382,7 +383,7 @@ where
             smart_contract,
             amount,
         };
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), stake_call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), stake_call, 0)?;
 
         Ok(true)
     }
@@ -420,12 +421,12 @@ where
                 smart_contract,
                 amount,
             };
-            RuntimeHelper::<R>::try_dispatch(handle, Some(origin.clone()).into(), unstake_call)?;
+            RuntimeHelper::<R>::try_dispatch(handle, Some(origin.clone()).into(), unstake_call, 0)?;
         }
 
         // Now we can try and `unlock` the given `amount`
         let unlock_call = pallet_dapp_staking::Call::<R>::unlock { amount };
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), unlock_call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), unlock_call, 0)?;
 
         Ok(true)
     }
@@ -436,7 +437,7 @@ where
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         let call = pallet_dapp_staking::Call::<R>::claim_unlocked {};
 
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call, 0)?;
 
         Ok(true)
     }
@@ -465,7 +466,7 @@ where
             era,
         };
 
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call, 0)?;
 
         Ok(true)
     }
@@ -481,7 +482,7 @@ where
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         let call = pallet_dapp_staking::Call::<R>::claim_staker_rewards {};
 
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call, 0)?;
 
         Ok(true)
     }
@@ -507,7 +508,7 @@ where
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         let call = pallet_dapp_staking::Call::<R>::unstake_from_unregistered { smart_contract };
 
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call, 0)?;
 
         Ok(true)
     }
@@ -564,14 +565,14 @@ where
             smart_contract: origin_smart_contract,
             amount,
         };
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin.clone()).into(), unstake_call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin.clone()).into(), unstake_call, 0)?;
 
         // Then call stake on the target smart contract
         let stake_call = pallet_dapp_staking::Call::<R>::stake {
             smart_contract: target_smart_contract,
             amount: stake_amount,
         };
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), stake_call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), stake_call, 0)?;
 
         Ok(true)
     }
@@ -610,7 +611,7 @@ where
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         let lock_call = pallet_dapp_staking::Call::<R>::lock { amount };
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), lock_call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), lock_call, 0)?;
 
         Ok(true)
     }
@@ -621,7 +622,7 @@ where
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         let unlock_call = pallet_dapp_staking::Call::<R>::unlock { amount };
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), unlock_call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), unlock_call, 0)?;
 
         Ok(true)
     }
@@ -632,7 +633,7 @@ where
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         let claim_unlocked_call = pallet_dapp_staking::Call::<R>::claim_unlocked {};
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_unlocked_call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_unlocked_call, 0)?;
 
         Ok(true)
     }
@@ -652,7 +653,7 @@ where
             smart_contract,
             amount,
         };
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), stake_call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), stake_call, 0)?;
 
         Ok(true)
     }
@@ -672,7 +673,7 @@ where
             smart_contract,
             amount,
         };
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), unstake_call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), unstake_call, 0)?;
 
         Ok(true)
     }
@@ -683,7 +684,12 @@ where
         // Prepare call & dispatch it
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         let claim_staker_rewards_call = pallet_dapp_staking::Call::<R>::claim_staker_rewards {};
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_staker_rewards_call)?;
+        RuntimeHelper::<R>::try_dispatch(
+            handle,
+            Some(origin).into(),
+            claim_staker_rewards_call,
+            0,
+        )?;
 
         Ok(true)
     }
@@ -700,7 +706,7 @@ where
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         let claim_bonus_reward_call =
             pallet_dapp_staking::Call::<R>::claim_bonus_reward { smart_contract };
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_bonus_reward_call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_bonus_reward_call, 0)?;
 
         Ok(true)
     }
@@ -724,7 +730,7 @@ where
             smart_contract,
             era,
         };
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_dapp_reward_call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_dapp_reward_call, 0)?;
 
         Ok(true)
     }
@@ -745,6 +751,7 @@ where
             handle,
             Some(origin).into(),
             unstake_from_unregistered_call,
+            0,
         )?;
 
         Ok(true)
@@ -761,6 +768,7 @@ where
             handle,
             Some(origin).into(),
             cleanup_expired_entries_call,
+            0,
         )?;
 
         Ok(true)
@@ -783,7 +791,7 @@ where
             destination_contract,
             amount,
         };
-        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), move_call)?;
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), move_call, 0)?;
 
         Ok(true)
     }

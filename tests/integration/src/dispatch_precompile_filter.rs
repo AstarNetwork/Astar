@@ -178,7 +178,8 @@ fn test_incorrect_dispatch_info_fails() {
         impl GetDispatchInfo for RuntimeCall {
             fn get_dispatch_info(&self) -> DispatchInfo {
                 DispatchInfo {
-                    weight: Weight::default(),
+                    call_weight: Weight::default(),
+                    extension_weight: Weight::default(),
                     class: DispatchClass::Normal,
                     // Should have been Pays::Yes for call to pass
                     pays_fee: Pays::No,

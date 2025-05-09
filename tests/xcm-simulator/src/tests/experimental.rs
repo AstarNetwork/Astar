@@ -26,7 +26,7 @@ use astar_test_utils::{call_wasm_contract_method, deploy_wasm_contract};
 use frame_support::{assert_ok, weights::Weight};
 use parity_scale_codec::Encode;
 use sp_runtime::traits::Bounded;
-use xcm::{prelude::*, v4::Response};
+use xcm::{prelude::*, v5::Response};
 use xcm_executor::traits::QueryHandler;
 use xcm_simulator::TestExt;
 
@@ -69,7 +69,7 @@ fn basic_xcmp_transact_outcome_query_response() {
             })])),
             Transact {
                 origin_kind: OriginKind::SovereignAccount,
-                require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
+                fallback_max_weight: Some(Weight::from_parts(1_000_000_000, 1024 * 1024)),
                 call: call.encode().into(),
             },
             ExpectTransactStatus(MaybeErrorCode::Success),
@@ -155,7 +155,7 @@ fn basic_xcmp_transact_outcome_query_response() {
             xcms[1].0.as_slice(),
             &[QueryResponse {
                 query_id,
-                response: Response::ExecutionResult(Some((4, xcm::v4::Error::ExpectationFalse))),
+                response: Response::ExecutionResult(Some((4, xcm::v5::Error::ExpectationFalse))),
                 ..
             }] if query_id == query_id_failure
         ));
@@ -214,7 +214,10 @@ fn xcm_remote_transact_contract() {
             },
             Transact {
                 origin_kind: OriginKind::SovereignAccount,
-                require_weight_at_most: Weight::from_parts(100_000_000_000_000, 1024 * 1024 * 1024),
+                fallback_max_weight: Some(Weight::from_parts(
+                    100_000_000_000_000,
+                    1024 * 1024 * 1024,
+                )),
                 call: call.encode().into(),
             },
             ExpectTransactStatus(MaybeErrorCode::Success),
@@ -224,7 +227,7 @@ fn xcm_remote_transact_contract() {
         assert_ok!(ParachainPalletXcm::send(
             parachain::RuntimeOrigin::signed(ALICE),
             Box::new((Parent, Parachain(1)).into()),
-            Box::new(VersionedXcm::V4(xcm)),
+            Box::new(VersionedXcm::V5(xcm)),
         ));
     });
 

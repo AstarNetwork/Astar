@@ -82,7 +82,7 @@ fn proper_gas_is_charged() {
         // Dispatch a call and ensure gas is charged properly
         // Expected gas is the constant weight of 1_000_000_000 and the weight of the call
         // In mock one unit of ref_time us charged 1
-        let expected_gas = 1_000_000_000u64 + call.get_dispatch_info().weight.ref_time();
+        let expected_gas = 1_000_000_000u64 + call.get_dispatch_info().total_weight().ref_time();
 
         // Get Alice EVM address based on the Public Key
         let alice_eth = crate::tests::eth_address(&alice_secret());

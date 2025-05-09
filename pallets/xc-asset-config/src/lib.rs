@@ -79,9 +79,9 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use parity_scale_codec::HasCompact;
     use sp_std::boxed::Box;
-    use xcm::{v4::Location, VersionedLocation};
+    use xcm::{v5::Location, VersionedLocation};
 
-    const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(4);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -223,9 +223,9 @@ pub mod pallet {
                 Error::<T>::AssetAlreadyRegistered
             );
 
-            let v4_asset_loc = Location::try_from(*asset_location)
+            let v5_asset_loc = Location::try_from(*asset_location)
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
-            let asset_location = VersionedLocation::V4(v4_asset_loc);
+            let asset_location = VersionedLocation::V5(v5_asset_loc);
 
             AssetIdToLocation::<T>::insert(&asset_id, asset_location.clone());
             AssetLocationToId::<T>::insert(&asset_location, asset_id);
@@ -248,9 +248,9 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let v4_asset_loc = Location::try_from(*asset_location)
+            let v5_asset_loc = Location::try_from(*asset_location)
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
-            let asset_location = VersionedLocation::V4(v4_asset_loc);
+            let asset_location = VersionedLocation::V5(v5_asset_loc);
 
             ensure!(
                 AssetLocationToId::<T>::contains_key(&asset_location),
@@ -277,9 +277,9 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let v4_asset_loc = Location::try_from(*new_asset_location)
+            let v5_asset_loc = Location::try_from(*new_asset_location)
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
-            let new_asset_location = VersionedLocation::V4(v4_asset_loc);
+            let new_asset_location = VersionedLocation::V5(v5_asset_loc);
 
             let previous_asset_location =
                 AssetIdToLocation::<T>::get(&asset_id).ok_or(Error::<T>::AssetDoesNotExist)?;
@@ -315,9 +315,9 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let v4_asset_loc = Location::try_from(*asset_location)
+            let v5_asset_loc = Location::try_from(*asset_location)
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
-            let asset_location = VersionedLocation::V4(v4_asset_loc);
+            let asset_location = VersionedLocation::V5(v5_asset_loc);
 
             AssetLocationUnitsPerSecond::<T>::remove(&asset_location);
 

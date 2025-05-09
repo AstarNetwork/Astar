@@ -19,7 +19,6 @@
 ///! EVM tracing RPC support.
 use crate::evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig};
 
-use fc_rpc_core::types::FilterPool;
 use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
 use moonbeam_rpc_debug::{DebugHandler, DebugRequester};
@@ -48,7 +47,6 @@ pub struct SpawnTasksParams<'a, B: BlockT, C, BE> {
     pub client: Arc<C>,
     pub substrate_backend: Arc<BE>,
     pub frontier_backend: Arc<fc_db::Backend<B, C>>,
-    pub filter_pool: Option<FilterPool>,
     pub storage_override: Arc<dyn StorageOverride<B>>,
 }
 

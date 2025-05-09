@@ -18,6 +18,7 @@
 
 use crate::{AccountId, AssetId};
 
+use fp_evm::AccountProvider;
 use frame_support::{
     ensure,
     traits::{
@@ -28,7 +29,7 @@ use frame_support::{
 use pallet_evm::{AddressMapping, HashedAddressMapping, OnChargeEVMTransaction};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_core::{Hasher, H160, H256, U256};
+pub use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::marker::PhantomData;
 
@@ -163,13 +164,15 @@ impl<T, F, FeeHandler, TipHandler> OnChargeEVMTransaction<T>
     for EVMFungibleAdapterWrapper<F, FeeHandler, TipHandler>
 where
     T: pallet_evm::Config,
-    F: Balanced<T::AccountId>,
-    FeeHandler: OnUnbalanced<Credit<T::AccountId, F>>,
-    TipHandler: OnUnbalanced<Credit<T::AccountId, F>>,
-    U256: UniqueSaturatedInto<<F as Inspect<<T as frame_system::Config>::AccountId>>::Balance>,
+    F: Balanced<<T::AccountProvider as AccountProvider>::AccountId>,
+    FeeHandler: OnUnbalanced<Credit<<T::AccountProvider as AccountProvider>::AccountId, F>>,
+    TipHandler: OnUnbalanced<Credit<<T::AccountProvider as AccountProvider>::AccountId, F>>,
+    U256: UniqueSaturatedInto<
+        <F as Inspect<<T::AccountProvider as AccountProvider>::AccountId>>::Balance,
+    >,
 {
     // Kept type as Option to satisfy bound of Default
-    type LiquidityInfo = Option<Credit<T::AccountId, F>>;
+    type LiquidityInfo = Option<Credit<<T::AccountProvider as AccountProvider>::AccountId, F>>;
 
     fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, pallet_evm::Error<T>> {
         pallet_evm::EVMFungibleAdapter::<F, FeeHandler>::withdraw_fee(who, fee)

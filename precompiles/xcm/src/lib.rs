@@ -86,6 +86,7 @@ where
     <Runtime as orml_xtokens::Config>::CurrencyId:
         From<<Runtime as pallet_assets::Config>::AssetId>,
     C: MaybeEquivalence<Location, <Runtime as pallet_assets::Config>::AssetId>,
+    <Runtime as pallet_evm::Config>::AddressMapping: AddressMapping<Runtime::AccountId>,
 {
     #[precompile::public("assets_withdraw(address[],uint256[],bytes32,bool,uint256,uint256)")]
     fn assets_withdraw_native_v1(
@@ -204,14 +205,14 @@ where
         .into();
 
         let call = orml_xtokens::Call::<Runtime>::transfer_multiassets {
-            assets: Box::new(VersionedAssets::V4(assets.into())),
+            assets: Box::new(VersionedAssets::V5(assets.into())),
             fee_item,
-            dest: Box::new(VersionedLocation::V4(destination)),
+            dest: Box::new(VersionedLocation::V5(destination)),
             dest_weight_limit: WeightLimit::Unlimited,
         };
 
         // Dispatch a call.
-        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call, 0)?;
         Ok(true)
     }
 
@@ -277,7 +278,7 @@ where
             },
             Transact {
                 origin_kind: OriginKind::SovereignAccount,
-                require_weight_at_most: Weight::from_parts(transact_weight, DEFAULT_PROOF_SIZE),
+                fallback_max_weight: Some(Weight::from_parts(transact_weight, DEFAULT_PROOF_SIZE)),
                 call: remote_call.into(),
             },
         ]);
@@ -291,11 +292,11 @@ where
         .into();
         let call = pallet_xcm::Call::<Runtime>::send {
             dest: Box::new(dest.into()),
-            message: Box::new(xcm::VersionedXcm::V4(xcm)),
+            message: Box::new(xcm::VersionedXcm::V5(xcm)),
         };
 
         // Dispatch a call.
-        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call, 0)?;
 
         Ok(true)
     }
@@ -371,14 +372,14 @@ where
         .into();
 
         let call = orml_xtokens::Call::<Runtime>::transfer_multiassets {
-            assets: Box::new(VersionedAssets::V4(assets.into())),
+            assets: Box::new(VersionedAssets::V5(assets.into())),
             fee_item,
-            dest: Box::new(VersionedLocation::V4(destination)),
+            dest: Box::new(VersionedLocation::V5(destination)),
             dest_weight_limit: WeightLimit::Unlimited,
         };
 
         // Dispatch a call.
-        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call, 0)?;
 
         Ok(true)
     }
@@ -468,7 +469,7 @@ where
         };
         log::trace!(target: "xcm-send_xcm", "Processed arguments:  XCM call: {:?}", call);
         // Dispatch a call.
-        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call, 0)?;
 
         Ok(true)
     }
@@ -499,10 +500,10 @@ where
                 currency_address, amount_of_tokens, destination, weight );
 
                 orml_xtokens::Call::<Runtime>::transfer_multiasset {
-                    asset: Box::new(VersionedAsset::V4(
+                    asset: Box::new(VersionedAsset::V5(
                         (Location::here(), amount_of_tokens).into(),
                     )),
-                    dest: Box::new(VersionedLocation::V4(destination)),
+                    dest: Box::new(VersionedLocation::V5(destination)),
                     dest_weight_limit,
                 }
             } else {
@@ -516,7 +517,7 @@ where
                 orml_xtokens::Call::<Runtime>::transfer {
                     currency_id: asset_id.into(),
                     amount: amount_of_tokens.into(),
-                    dest: Box::new(VersionedLocation::V4(destination)),
+                    dest: Box::new(VersionedLocation::V5(destination)),
                     dest_weight_limit,
                 }
             }
@@ -528,7 +529,7 @@ where
         .into();
 
         // Dispatch a call.
-        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call, 0)?;
 
         Ok(true)
     }
@@ -563,11 +564,11 @@ where
                 currency_address, amount_of_tokens, destination, weight, fee );
 
                 orml_xtokens::Call::<Runtime>::transfer_multiasset_with_fee {
-                    asset: Box::new(VersionedAsset::V4(
+                    asset: Box::new(VersionedAsset::V5(
                         (Location::here(), amount_of_tokens).into(),
                     )),
-                    fee: Box::new(VersionedAsset::V4((Location::here(), fee).into())),
-                    dest: Box::new(VersionedLocation::V4(destination)),
+                    fee: Box::new(VersionedAsset::V5((Location::here(), fee).into())),
+                    dest: Box::new(VersionedLocation::V5(destination)),
                     dest_weight_limit,
                 }
             } else {
@@ -582,7 +583,7 @@ where
                     currency_id: asset_id.into(),
                     amount: amount_of_tokens.into(),
                     fee: fee.into(),
-                    dest: Box::new(VersionedLocation::V4(destination)),
+                    dest: Box::new(VersionedLocation::V5(destination)),
                     dest_weight_limit,
                 }
             }
@@ -594,7 +595,7 @@ where
         .into();
 
         // Dispatch a call.
-        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call, 0)?;
 
         Ok(true)
     }
@@ -625,10 +626,10 @@ where
         asset_location, amount_of_tokens, destination, weight);
 
         let call = orml_xtokens::Call::<Runtime>::transfer_multiasset {
-            asset: Box::new(VersionedAsset::V4(
+            asset: Box::new(VersionedAsset::V5(
                 (asset_location, amount_of_tokens).into(),
             )),
-            dest: Box::new(VersionedLocation::V4(destination)),
+            dest: Box::new(VersionedLocation::V5(destination)),
             dest_weight_limit,
         };
 
@@ -638,7 +639,7 @@ where
         .into();
 
         // Dispatch a call.
-        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call, 0)?;
 
         Ok(true)
     }
@@ -671,11 +672,11 @@ where
         asset_location, amount_of_tokens, fee, destination, weight);
 
         let call = orml_xtokens::Call::<Runtime>::transfer_multiasset_with_fee {
-            asset: Box::new(VersionedAsset::V4(
+            asset: Box::new(VersionedAsset::V5(
                 (asset_location.clone(), amount_of_tokens).into(),
             )),
-            fee: Box::new(VersionedAsset::V4((asset_location, fee).into())),
-            dest: Box::new(VersionedLocation::V4(destination)),
+            fee: Box::new(VersionedAsset::V5((asset_location, fee).into())),
+            dest: Box::new(VersionedLocation::V5(destination)),
             dest_weight_limit,
         };
 
@@ -685,7 +686,7 @@ where
         .into();
 
         // Dispatch a call.
-        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call, 0)?;
 
         Ok(true)
     }
@@ -731,7 +732,7 @@ where
         let call = orml_xtokens::Call::<Runtime>::transfer_multicurrencies {
             currencies,
             fee_item,
-            dest: Box::new(VersionedLocation::V4(destination)),
+            dest: Box::new(VersionedLocation::V5(destination)),
             dest_weight_limit,
         };
 
@@ -741,7 +742,7 @@ where
         .into();
 
         // Dispatch a call.
-        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call, 0)?;
 
         Ok(true)
     }
@@ -786,9 +787,9 @@ where
         })?;
 
         let call = orml_xtokens::Call::<Runtime>::transfer_multiassets {
-            assets: Box::new(VersionedAssets::V4(multiassets)),
+            assets: Box::new(VersionedAssets::V5(multiassets)),
             fee_item,
-            dest: Box::new(VersionedLocation::V4(destination)),
+            dest: Box::new(VersionedLocation::V5(destination)),
             dest_weight_limit,
         };
 
@@ -798,7 +799,7 @@ where
         .into();
 
         // Dispatch a call.
-        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call, 0)?;
 
         Ok(true)
     }

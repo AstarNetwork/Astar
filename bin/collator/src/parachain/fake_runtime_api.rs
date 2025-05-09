@@ -18,6 +18,9 @@
 
 #![allow(missing_docs)]
 
+#[cfg(feature = "runtime-benchmarks")]
+extern crate alloc;
+
 use astar_primitives::{AccountId, Balance, Block, Nonce};
 use frame_support::weights::Weight;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
@@ -285,7 +288,7 @@ impl_runtime_apis! {
             unimplemented!()
         }
 
-        fn dispatch_benchmark(_config: frame_benchmarking::BenchmarkConfig) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
+        fn dispatch_benchmark(_config: frame_benchmarking::BenchmarkConfig) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, alloc::string::String> {
             unimplemented!()
         }
     }

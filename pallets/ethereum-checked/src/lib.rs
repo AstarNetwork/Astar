@@ -42,7 +42,7 @@
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
-use ethereum_types::{H160, U256};
+use ethereum_types::U256;
 use fp_ethereum::{TransactionData, ValidatedTransaction};
 use fp_evm::{
     CallInfo, CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, ExitReason,
@@ -60,7 +60,10 @@ use sp_runtime::traits::TrailingZeroInput;
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::{marker::PhantomData, result::Result};
 
-use astar_primitives::{ethereum_checked::CheckedEthereumTx, evm::UnifiedAddressMapper};
+use astar_primitives::{
+    ethereum_checked::CheckedEthereumTx,
+    evm::{UnifiedAddressMapper, H160},
+};
 
 pub use pallet::*;
 

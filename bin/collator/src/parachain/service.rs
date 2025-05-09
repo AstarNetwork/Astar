@@ -59,6 +59,7 @@ use super::shell_upgrade::*;
 use crate::{
     evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig},
     rpc::tracing,
+    IdentifyChainNetworkBackend,
 };
 
 /// Parachain host functions
@@ -86,7 +87,7 @@ pub fn new_partial(
         TFullBackend<Block>,
         (),
         sc_consensus::DefaultImportQueue<Block>,
-        sc_transaction_pool::FullPool<Block, FullClient>,
+        sc_transaction_pool::TransactionPoolHandle<Block, FullClient>,
         (
             ParachainBlockImport<
                 Block,
@@ -112,17 +113,18 @@ pub fn new_partial(
         .transpose()?;
 
     let heap_pages = config
+        .executor
         .default_heap_pages
         .map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |h| HeapAllocStrategy::Static {
             extra_pages: h as _,
         });
 
     let executor = ParachainExecutor::builder()
-        .with_execution_method(config.wasm_method)
+        .with_execution_method(config.executor.wasm_method)
         .with_onchain_heap_alloc_strategy(heap_pages)
         .with_offchain_heap_alloc_strategy(heap_pages)
-        .with_max_runtime_instances(config.max_runtime_instances)
-        .with_runtime_cache_size(config.runtime_cache_size)
+        .with_max_runtime_instances(config.executor.max_runtime_instances)
+        .with_runtime_cache_size(config.executor.runtime_cache_size)
         .build();
 
     let (client, backend, keystore_container, task_manager) =
@@ -143,13 +145,14 @@ pub fn new_partial(
         telemetry
     });
 
-    let transaction_pool = sc_transaction_pool::BasicPool::new_full(
-        config.transaction_pool.clone(),
-        config.role.is_authority().into(),
-        config.prometheus_registry(),
+    let transaction_pool = sc_transaction_pool::Builder::new(
         task_manager.spawn_essential_handle(),
         client.clone(),
-    );
+        config.role.is_authority().into(),
+    )
+    .with_options(config.transaction_pool.clone())
+    .with_prometheus(config.prometheus_registry())
+    .build();
 
     let frontier_backend = Arc::new(crate::rpc::open_frontier_backend(
         client.clone(),
@@ -175,7 +178,7 @@ pub fn new_partial(
         import_queue,
         keystore_container,
         task_manager,
-        transaction_pool,
+        transaction_pool: transaction_pool.into(),
         select_chain: (),
         other: (
             parachain_block_import,
@@ -202,8 +205,13 @@ async fn build_relay_chain_interface(
     if let cumulus_client_cli::RelayChainMode::ExternalRpc(rpc_target_urls) =
         collator_options.relay_chain_mode
     {
-        build_minimal_relay_chain_node_with_rpc(polkadot_config, task_manager, rpc_target_urls)
-            .await
+        build_minimal_relay_chain_node_with_rpc(
+            polkadot_config,
+            parachain_config.prometheus_registry(),
+            task_manager,
+            rpc_target_urls,
+        )
+        .await
     } else {
         build_inprocess_relay_chain(
             polkadot_config,
@@ -261,8 +269,11 @@ where
         other: (parachain_block_import, mut telemetry, telemetry_worker_handle, frontier_backend),
     } = new_partial(&parachain_config, &additional_config.evm_tracing_config)?;
 
-    let net_config =
-        sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&parachain_config.network);
+    let prometheus_registry = parachain_config.prometheus_registry().cloned();
+    let net_config = sc_network::config::FullNetworkConfiguration::<_, _, N>::new(
+        &parachain_config.network,
+        prometheus_registry.clone(),
+    );
 
     let (relay_chain_interface, collator_key) = build_relay_chain_interface(
         polkadot_config,
@@ -276,7 +287,6 @@ where
     .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
     let is_authority = parachain_config.role.is_authority();
-    let prometheus_registry = parachain_config.prometheus_registry().cloned();
     let import_queue_service = import_queue.service();
     let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
         cumulus_client_service::build_network(BuildNetworkParams {
@@ -316,7 +326,6 @@ where
                     client: client.clone(),
                     substrate_backend: backend.clone(),
                     frontier_backend: frontier_backend.clone(),
-                    filter_pool: Some(filter_pool.clone()),
                     storage_override: storage_override.clone(),
                 },
             )
@@ -416,15 +425,14 @@ where
         let sync = sync_service.clone();
         let pubsub_notification_sinks = pubsub_notification_sinks.clone();
 
-        Box::new(move |deny_unsafe, subscription| {
+        Box::new(move |subscription| {
             let deps = crate::rpc::FullDeps {
                 client: client.clone(),
                 pool: transaction_pool.clone(),
-                graph: transaction_pool.pool().clone(),
+                graph: transaction_pool.clone(),
                 network: network.clone(),
                 sync: sync.clone(),
                 is_authority,
-                deny_unsafe,
                 frontier_backend: match *frontier_backend {
                     fc_db::Backend::KeyValue(ref b) => b.clone(),
                     fc_db::Backend::Sql(ref b) => b.clone(),
@@ -600,7 +608,7 @@ fn start_aura_consensus(
     telemetry: Option<TelemetryHandle>,
     task_manager: &TaskManager,
     relay_chain_interface: Arc<dyn RelayChainInterface>,
-    transaction_pool: Arc<sc_transaction_pool::FullPool<Block, FullClient>>,
+    transaction_pool: Arc<sc_transaction_pool::TransactionPoolHandle<Block, FullClient>>,
     sync_oracle: Arc<SyncingService<Block>>,
     keystore: KeystorePtr,
     para_id: ParaId,
@@ -702,7 +710,9 @@ async fn wait_for_aura(client: Arc<FullClient>) {
 fn warn_if_slow_hardware(hwbench: &sc_sysinfo::HwBench) {
     // Polkadot para-chains should generally use these requirements to ensure that the relay-chain
     // will not take longer than expected to import its blocks.
-    if let Err(err) = frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.check_hardware(hwbench) {
+    if let Err(err) =
+        frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.check_hardware(hwbench, false)
+    {
         log::warn!(
             "⚠️  The hardware does not meet the minimal requirements {} for role 'Authority' find out more at:\n\
             https://wiki.polkadot.network/docs/maintain-guides-how-to-validate-polkadot#reference-hardware",
@@ -719,7 +729,13 @@ pub async fn start_node(
     para_id: ParaId,
     additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(TaskManager, Arc<FullClient>)> {
-    match parachain_config.network.network_backend {
+    let default_backend = parachain_config.chain_spec.default_network_backend();
+    // If the network backend is unspecified, use the default for the given chain.
+    let network_backend = parachain_config
+        .network
+        .network_backend
+        .unwrap_or(default_backend);
+    match network_backend {
         NetworkBackendType::Libp2p => {
             start_node_impl::<sc_network::NetworkWorker<_, _>>(
                 parachain_config,

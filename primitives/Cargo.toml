@@ -14,7 +14,7 @@ parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
 # Ethereum/Frontier dependencies
-ethereum = { workspace = true, features = ["with-codec"] }
+ethereum = { workspace = true, features = ["with-scale"] }
 ethereum-types = { workspace = true }
 fp-evm = { workspace = true }
 

@@ -68,7 +68,7 @@ pub fn new_partial(
         FullBackend,
         FullSelectChain,
         sc_consensus::DefaultImportQueue<Block>,
-        sc_transaction_pool::FullPool<Block, FullClient>,
+        sc_transaction_pool::TransactionPoolHandle<Block, FullClient>,
         (
             FrontierBlockImport<
                 Block,
@@ -99,17 +99,18 @@ pub fn new_partial(
         .transpose()?;
 
     let heap_pages = config
+        .executor
         .default_heap_pages
         .map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |h| HeapAllocStrategy::Static {
             extra_pages: h as _,
         });
 
     let executor = ParachainExecutor::builder()
-        .with_execution_method(config.wasm_method)
+        .with_execution_method(config.executor.wasm_method)
         .with_onchain_heap_alloc_strategy(heap_pages)
         .with_offchain_heap_alloc_strategy(heap_pages)
-        .with_max_runtime_instances(config.max_runtime_instances)
-        .with_runtime_cache_size(config.runtime_cache_size)
+        .with_max_runtime_instances(config.executor.max_runtime_instances)
+        .with_runtime_cache_size(config.executor.runtime_cache_size)
         .build();
 
     let (client, backend, keystore_container, task_manager) =
@@ -127,13 +128,14 @@ pub fn new_partial(
         telemetry
     });
     let select_chain = sc_consensus::LongestChain::new(backend.clone());
-    let transaction_pool = sc_transaction_pool::BasicPool::new_full(
-        config.transaction_pool.clone(),
-        config.role.is_authority().into(),
-        config.prometheus_registry(),
+    let transaction_pool = sc_transaction_pool::Builder::new(
         task_manager.spawn_essential_handle(),
         client.clone(),
-    );
+        config.role.is_authority().into(),
+    )
+    .with_options(config.transaction_pool.clone())
+    .with_prometheus(config.prometheus_registry())
+    .build();
     let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
         client.clone(),
         GRANDPA_JUSTIFICATION_PERIOD,
@@ -189,7 +191,7 @@ pub fn new_partial(
         import_queue,
         keystore_container,
         select_chain,
-        transaction_pool,
+        transaction_pool: transaction_pool.into(),
         other: (
             frontier_block_import,
             grandpa_link,
@@ -226,8 +228,10 @@ where
             .expect("Genesis block exists; qed"),
         &config.chain_spec,
     );
-    let mut net_config =
-        sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&config.network);
+    let mut net_config = sc_network::config::FullNetworkConfiguration::<_, _, N>::new(
+        &config.network,
+        config.prometheus_registry().cloned(),
+    );
 
     let metrics = N::register_notification_metrics(
         config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
@@ -251,7 +255,7 @@ where
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
             block_announce_validator_builder: None,
-            warp_sync_params: None,
+            warp_sync_config: None,
             block_relay: None,
             metrics,
         })?;
@@ -271,7 +275,7 @@ where
                 is_validator: config.role.is_authority(),
                 enable_http_requests: true,
                 custom_extensions: move |_| vec![],
-            })
+            })?
             .run(client.clone(), task_manager.spawn_handle())
             .boxed(),
         );
@@ -302,7 +306,6 @@ where
                     client: client.clone(),
                     substrate_backend: backend.clone(),
                     frontier_backend: frontier_backend.clone(),
-                    filter_pool: Some(filter_pool.clone()),
                     storage_override: storage_override.clone(),
                 },
             )
@@ -412,15 +415,14 @@ where
         let sync = sync_service.clone();
         let pubsub_notification_sinks = pubsub_notification_sinks.clone();
 
-        Box::new(move |deny_unsafe, subscription| {
+        Box::new(move |subscription| {
             let deps = crate::rpc::FullDeps {
                 client: client.clone(),
                 pool: transaction_pool.clone(),
-                graph: transaction_pool.pool().clone(),
+                graph: transaction_pool.clone(),
                 network: network.clone(),
                 sync: sync.clone(),
                 is_authority,
-                deny_unsafe,
                 frontier_backend: match *frontier_backend {
                     fc_db::Backend::KeyValue(ref b) => b.clone(),
                     fc_db::Backend::Sql(ref b) => b.clone(),

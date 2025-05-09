@@ -36,7 +36,7 @@ use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use frame_support::traits::TransformOrigin;
 use parachains_common::message_queue::ParaIdToSibling;
 use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
-use xcm::latest::prelude::*;
+use xcm::{latest::prelude::*, v5::ROCOCO_GENESIS_HASH};
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
     ConvertedConcreteId, DescribeAllTerminal, DescribeFamily, EnsureXcmOrigin,
@@ -58,7 +58,7 @@ use astar_primitives::xcm::{
 };
 
 parameter_types! {
-    pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Rococo);
+    pub RelayNetwork: Option<NetworkId> = Some(NetworkId::ByGenesis(ROCOCO_GENESIS_HASH));
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
     pub UniversalLocation: InteriorLocation =
     [GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into())].into();
@@ -248,7 +248,7 @@ impl pallet_xcm::Config for Runtime {
     type TrustedLockers = ();
     type SovereignAccountOf = LocationToAccountId;
     type MaxLockers = ConstU32<0>;
-    type WeightInfo = weights::pallet_xcm::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_xcm::WeightInfo<Runtime>;
     type MaxRemoteLockConsumers = ConstU32<0>;
     type RemoteLockConsumerIdentifier = ();
     type AdminOrigin = EnsureRoot<AccountId>;

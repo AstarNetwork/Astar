@@ -149,7 +149,8 @@ impl pallet_evm::Config for Test {
     type OnCreate = ();
     type WeightInfo = ();
     type GasLimitPovSizeRatio = ConstU64<4>;
-    type SuicideQuickClearLimit = ConstU32<0>;
+    type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
+    type GasLimitStorageGrowthRatio = ConstU64<0>;
 }
 
 #[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
