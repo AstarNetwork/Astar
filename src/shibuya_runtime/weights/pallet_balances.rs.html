@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/weights/pallet_balances.rs`."><title>pallet_balances.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../shibuya_runtime/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/weights/pallet_balances.rs`."><title>pallet_balances.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -177,7 +175,20 @@
 <a href="#175" id="175">175</a>
 <a href="#176" id="176">176</a>
 <a href="#177" id="177">177</a>
-</pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+</pre></div><pre class="rust"><code>
+<span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later
@@ -195,13 +206,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see &lt;http://www.gnu.org/licenses/&gt;.
 
-</span><span class="doccomment">//! Autogenerated weights for pallet_balances
+</span><span class="doccomment">//! Autogenerated weights for `pallet_balances`
 //!
-//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2024-07-11, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 46.1.0
+//! DATE: 2025-05-04, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
-//! EXECUTION: , WASM-EXECUTION: Compiled, CHAIN: Some("shibuya-dev"), DB CACHE: 1024
+//! WASM-EXECUTION: `Compiled`, CHAIN: `Some("shibuya-dev")`, DB CACHE: 1024
 
 </span><span class="comment">// Executed Command:
 // ./target/release/astar-collator
@@ -212,7 +223,6 @@
 // --repeat=20
 // --pallet=pallet_balances
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --output=./benchmark-results/shibuya-dev/balances_weights.rs
@@ -221,13 +231,15 @@
 </span><span class="attr">#![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
+#![allow(missing_docs)]
+#![allow(dead_code)]
 
-</span><span class="kw">use </span>frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+</span><span class="kw">use </span>frame_support::{traits::Get, weights::Weight};
 <span class="kw">use </span>core::marker::PhantomData;
 
-<span class="doccomment">/// Weights for pallet_balances using the Substrate node and recommended hardware.
-</span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
-<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_balances::WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
+<span class="doccomment">/// Weight functions for `pallet_balances`.
+</span><span class="kw">pub struct </span>WeightInfo&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_balances::WeightInfo <span class="kw">for </span>WeightInfo&lt;T&gt; {
 	<span class="doccomment">/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	/// Storage: `UnifiedAccounts::NativeToEvm` (r:1 w:0)
@@ -236,10 +248,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `94`
 		//  Estimated: `3593`
-		// Minimum execution time: 45_845_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">46_305_000</span>, <span class="number">3593</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 51_216_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">51_911_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3593</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
@@ -247,21 +260,23 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `52`
 		//  Estimated: `3593`
-		// Minimum execution time: 31_760_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">32_025_000</span>, <span class="number">3593</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 37_830_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">38_358_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3593</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>force_set_balance_creating() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `140`
+		//  Measured:  `207`
 		//  Estimated: `3593`
-		// Minimum execution time: 12_340_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">12_660_000</span>, <span class="number">3593</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 16_262_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">16_552_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3593</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
@@ -269,12 +284,13 @@
 	/// Proof: `UnifiedAccounts::NativeToEvm` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>force_set_balance_killing() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `182`
+		//  Measured:  `249`
 		//  Estimated: `3593`
-		// Minimum execution time: 23_320_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">23_776_000</span>, <span class="number">3593</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 27_545_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">27_922_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3593</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `System::Account` (r:2 w:2)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
@@ -284,10 +300,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `197`
 		//  Estimated: `6196`
-		// Minimum execution time: 48_296_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">48_812_000</span>, <span class="number">6196</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">3_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+		// Minimum execution time: 53_251_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">53_585_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">6196</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">3</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2</span>))
 	}
 	<span class="doccomment">/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
@@ -297,21 +314,23 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `94`
 		//  Estimated: `3593`
-		// Minimum execution time: 45_941_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">46_527_000</span>, <span class="number">3593</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 49_017_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">49_522_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3593</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>force_unreserve() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `140`
+		//  Measured:  `207`
 		//  Estimated: `3593`
-		// Minimum execution time: 14_745_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">15_204_000</span>, <span class="number">3593</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 18_556_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">19_074_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3593</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `System::Account` (r:999 w:999)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
@@ -320,10 +339,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0 + u * (136 ±0)`
 		//  Estimated: `990 + u * (2603 ±0)`
-		// Minimum execution time: 14_297_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">14_615_000</span>, <span class="number">990</span>)
-			<span class="comment">// Standard Error: 9_129
-			</span>.saturating_add(Weight::from_parts(<span class="number">10_977_662</span>, <span class="number">0</span>).saturating_mul(u.into()))
+		// Minimum execution time: 18_540_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">18_757_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">990</span>))
+			<span class="comment">// Standard Error: 8_259
+			</span>.saturating_add(Weight::from_parts(<span class="number">12_368_179</span>, <span class="number">0</span>).saturating_mul(u.into()))
 			.saturating_add(T::DbWeight::get().reads((<span class="number">1_u64</span>).saturating_mul(u.into())))
 			.saturating_add(T::DbWeight::get().writes((<span class="number">1_u64</span>).saturating_mul(u.into())))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2603</span>).saturating_mul(u.into()))
@@ -332,26 +352,28 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_666_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">5_975_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 7_442_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">7_620_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-
 	<span class="doccomment">/// Storage: `UnifiedAccounts::NativeToEvm` (r:1 w:0)
 	/// Proof: `UnifiedAccounts::NativeToEvm` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>burn_allow_death() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `0`
+		//  Measured:  `42`
 		//  Estimated: `3533`
-		// Minimum execution time: 35_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">37_000_000</span>, <span class="number">3533</span>)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">1_u64</span>))
+		// Minimum execution time: 32_520_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">32_985_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3533</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1</span>))
 	}
 	<span class="kw">fn </span>burn_keep_alive() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 22_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">22_000_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 19_496_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">19_977_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 }
 </code></pre></div></section></main></body></html>

@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shiden/src/weights/pallet_dapp_staking.rs`."><title>pallet_dapp_staking.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="shiden_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../shiden_runtime/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shiden/src/weights/pallet_dapp_staking.rs`."><title>pallet_dapp_staking.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="shiden_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -536,6 +534,35 @@
 <a href="#534" id="534">534</a>
 <a href="#535" id="535">535</a>
 <a href="#536" id="536">536</a>
+<a href="#537" id="537">537</a>
+<a href="#538" id="538">538</a>
+<a href="#539" id="539">539</a>
+<a href="#540" id="540">540</a>
+<a href="#541" id="541">541</a>
+<a href="#542" id="542">542</a>
+<a href="#543" id="543">543</a>
+<a href="#544" id="544">544</a>
+<a href="#545" id="545">545</a>
+<a href="#546" id="546">546</a>
+<a href="#547" id="547">547</a>
+<a href="#548" id="548">548</a>
+<a href="#549" id="549">549</a>
+<a href="#550" id="550">550</a>
+<a href="#551" id="551">551</a>
+<a href="#552" id="552">552</a>
+<a href="#553" id="553">553</a>
+<a href="#554" id="554">554</a>
+<a href="#555" id="555">555</a>
+<a href="#556" id="556">556</a>
+<a href="#557" id="557">557</a>
+<a href="#558" id="558">558</a>
+<a href="#559" id="559">559</a>
+<a href="#560" id="560">560</a>
+<a href="#561" id="561">561</a>
+<a href="#562" id="562">562</a>
+<a href="#563" id="563">563</a>
+<a href="#564" id="564">564</a>
+<a href="#565" id="565">565</a>
 </pre></div><pre class="rust"><code>
 <span class="comment">// This file is part of Astar.
 
@@ -555,13 +582,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see &lt;http://www.gnu.org/licenses/&gt;.
 
-</span><span class="doccomment">//! Autogenerated weights for pallet_dapp_staking
+</span><span class="doccomment">//! Autogenerated weights for `pallet_dapp_staking`
 //!
-//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 42.0.1
-//! DATE: 2025-02-19, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 46.1.0
+//! DATE: 2025-05-04, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
-//! EXECUTION: , WASM-EXECUTION: Compiled, CHAIN: Some("shiden-dev"), DB CACHE: 1024
+//! WASM-EXECUTION: `Compiled`, CHAIN: `Some("shiden-dev")`, DB CACHE: 1024
 
 </span><span class="comment">// Executed Command:
 // ./target/release/astar-collator
@@ -580,20 +607,22 @@
 </span><span class="attr">#![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
+#![allow(missing_docs)]
+#![allow(dead_code)]
 
-</span><span class="kw">use </span>frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+</span><span class="kw">use </span>frame_support::{traits::Get, weights::Weight};
 <span class="kw">use </span>core::marker::PhantomData;
-<span class="kw">use </span>pallet_dapp_staking::WeightInfo;
 
-<span class="doccomment">/// Weights for pallet_dapp_staking using the Substrate node and recommended hardware.
-</span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
-<span class="kw">impl</span>&lt;T: frame_system::Config&gt; WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
+<span class="doccomment">/// Weight functions for `pallet_dapp_staking`.
+</span><span class="kw">pub struct </span>WeightInfo&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_dapp_staking::WeightInfo <span class="kw">for </span>WeightInfo&lt;T&gt; {
 	<span class="kw">fn </span>maintenance_mode() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_302_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">6_551_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 7_427_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">7_564_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::IntegratedDApps` (r:1 w:1)
 	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
@@ -605,10 +634,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `3086`
-		// Minimum execution time: 12_583_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">12_925_000</span>, <span class="number">3086</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">3_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		// Minimum execution time: 14_584_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">14_931_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3086</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">3</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::IntegratedDApps` (r:1 w:1)
 	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
@@ -616,10 +646,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `97`
 		//  Estimated: `3086`
-		// Minimum execution time: 10_983_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">11_229_000</span>, <span class="number">3086</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 13_209_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">13_494_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3086</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::IntegratedDApps` (r:1 w:1)
 	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
@@ -627,10 +658,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `97`
 		//  Estimated: `3086`
-		// Minimum execution time: 10_834_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">11_105_000</span>, <span class="number">3086</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 12_893_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">13_351_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3086</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::IntegratedDApps` (r:1 w:1)
 	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
@@ -642,10 +674,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `97`
 		//  Estimated: `3086`
-		// Minimum execution time: 14_967_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">15_435_000</span>, <span class="number">3086</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		// Minimum execution time: 17_768_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">18_137_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3086</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::Ledger` (r:1 w:1)
 	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
@@ -661,10 +694,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `138`
 		//  Estimated: `4764`
-		// Minimum execution time: 29_798_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">30_315_000</span>, <span class="number">4764</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		// Minimum execution time: 32_686_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">33_375_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4764</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::Ledger` (r:1 w:1)
 	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
@@ -678,10 +712,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `158`
 		//  Estimated: `4764`
-		// Minimum execution time: 33_619_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">33_983_000</span>, <span class="number">4764</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		// Minimum execution time: 34_428_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">35_296_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4764</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::Ledger` (r:1 w:1)
 	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
@@ -695,10 +730,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `158`
 		//  Estimated: `4764`
-		// Minimum execution time: 30_595_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">31_048_000</span>, <span class="number">4764</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		// Minimum execution time: 31_970_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">32_497_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4764</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::Ledger` (r:1 w:1)
 	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
@@ -713,12 +749,13 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `191`
 		//  Estimated: `4764`
-		// Minimum execution time: 30_945_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">32_298_956</span>, <span class="number">4764</span>)
-			<span class="comment">// Standard Error: 2_418
-			</span>.saturating_add(Weight::from_parts(<span class="number">106_026</span>, <span class="number">0</span>).saturating_mul(x.into()))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		// Minimum execution time: 33_774_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">34_991_849</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4764</span>))
+			<span class="comment">// Standard Error: 2_998
+			</span>.saturating_add(Weight::from_parts(<span class="number">97_300</span>, <span class="number">0</span>).saturating_mul(x.into()))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::Ledger` (r:1 w:1)
 	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
@@ -732,10 +769,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `200`
 		//  Estimated: `4764`
-		// Minimum execution time: 28_074_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">28_410_000</span>, <span class="number">4764</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		// Minimum execution time: 31_170_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">31_822_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4764</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::IntegratedDApps` (r:1 w:0)
 	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
@@ -755,10 +793,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `274`
 		//  Estimated: `4764`
-		// Minimum execution time: 41_767_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">42_395_000</span>, <span class="number">4764</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">7_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">5_u64</span>))
+		// Minimum execution time: 46_334_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">47_255_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4764</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">7</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">5</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::IntegratedDApps` (r:1 w:0)
 	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
@@ -778,10 +817,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `459`
 		//  Estimated: `4764`
-		// Minimum execution time: 45_973_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">47_056_000</span>, <span class="number">4764</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">7_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">5_u64</span>))
+		// Minimum execution time: 52_417_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">53_251_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4764</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">7</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">5</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::Ledger` (r:1 w:1)
 	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
@@ -798,12 +838,13 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `542`
 		//  Estimated: `4764`
-		// Minimum execution time: 52_907_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">51_696_879</span>, <span class="number">4764</span>)
-			<span class="comment">// Standard Error: 3_925
-			</span>.saturating_add(Weight::from_parts(<span class="number">1_974_903</span>, <span class="number">0</span>).saturating_mul(x.into()))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+		// Minimum execution time: 51_862_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">51_325_687</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4764</span>))
+			<span class="comment">// Standard Error: 5_223
+			</span>.saturating_add(Weight::from_parts(<span class="number">1_827_447</span>, <span class="number">0</span>).saturating_mul(x.into()))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::Ledger` (r:1 w:1)
 	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
@@ -818,12 +859,13 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `519`
 		//  Estimated: `4764`
-		// Minimum execution time: 50_190_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">49_292_465</span>, <span class="number">4764</span>)
-			<span class="comment">// Standard Error: 4_217
-			</span>.saturating_add(Weight::from_parts(<span class="number">1_961_682</span>, <span class="number">0</span>).saturating_mul(x.into()))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+		// Minimum execution time: 48_996_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">48_616_861</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4764</span>))
+			<span class="comment">// Standard Error: 5_229
+			</span>.saturating_add(Weight::from_parts(<span class="number">1_791_103</span>, <span class="number">0</span>).saturating_mul(x.into()))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::StakerInfo` (r:1 w:1)
 	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(178), added: 2653, mode: `MaxEncodedLen`)
@@ -835,10 +877,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `276`
 		//  Estimated: `3775`
-		// Minimum execution time: 38_205_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">38_754_000</span>, <span class="number">3775</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">3_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+		// Minimum execution time: 39_745_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">40_327_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3775</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">3</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::IntegratedDApps` (r:1 w:0)
 	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
@@ -848,10 +891,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `2672`
 		//  Estimated: `5113`
-		// Minimum execution time: 54_241_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">55_270_000</span>, <span class="number">5113</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 59_330_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">60_311_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">5113</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::IntegratedDApps` (r:1 w:0)
 	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
@@ -869,10 +913,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `322`
 		//  Estimated: `4764`
-		// Minimum execution time: 38_812_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">39_373_000</span>, <span class="number">4764</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">6_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">4_u64</span>))
+		// Minimum execution time: 40_766_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">41_268_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4764</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">6</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">4</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::StakerInfo` (r:17 w:16)
 	/// Proof: `DappStaking::StakerInfo` (`max_values`: None, `max_size`: Some(178), added: 2653, mode: `MaxEncodedLen`)
@@ -887,13 +932,14 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `256 + x * (73 ±0)`
 		//  Estimated: `4764 + x * (2653 ±0)`
-		// Minimum execution time: 38_576_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">35_251_524</span>, <span class="number">4764</span>)
-			<span class="comment">// Standard Error: 6_010
-			</span>.saturating_add(Weight::from_parts(<span class="number">5_005_912</span>, <span class="number">0</span>).saturating_mul(x.into()))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
+		// Minimum execution time: 41_028_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">36_920_481</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4764</span>))
+			<span class="comment">// Standard Error: 13_746
+			</span>.saturating_add(Weight::from_parts(<span class="number">5_698_076</span>, <span class="number">0</span>).saturating_mul(x.into()))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
 			.saturating_add(T::DbWeight::get().reads((<span class="number">1_u64</span>).saturating_mul(x.into())))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2</span>))
 			.saturating_add(T::DbWeight::get().writes((<span class="number">1_u64</span>).saturating_mul(x.into())))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2653</span>).saturating_mul(x.into()))
 	}
@@ -903,9 +949,10 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `1486`
-		// Minimum execution time: 9_038_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">9_308_000</span>, <span class="number">1486</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
+		// Minimum execution time: 10_310_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">10_470_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">1486</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::IntegratedDApps` (r:2 w:0)
 	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
@@ -925,10 +972,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `553`
 		//  Estimated: `6296`
-		// Minimum execution time: 72_418_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">73_041_000</span>, <span class="number">6296</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">10_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">7_u64</span>))
+		// Minimum execution time: 78_939_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">79_772_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">6296</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">10</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">7</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::IntegratedDApps` (r:2 w:0)
 	/// Proof: `DappStaking::IntegratedDApps` (`max_values`: Some(65535), `max_size`: Some(116), added: 2096, mode: `MaxEncodedLen`)
@@ -948,29 +996,31 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `419`
 		//  Estimated: `6296`
-		// Minimum execution time: 65_226_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">65_723_000</span>, <span class="number">6296</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">9_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">6_u64</span>))
+		// Minimum execution time: 71_220_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">72_774_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">6296</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">9</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">6</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::CurrentEraInfo` (r:1 w:1)
 	/// Proof: `DappStaking::CurrentEraInfo` (`max_values`: Some(1), `max_size`: Some(112), added: 607, mode: `MaxEncodedLen`)
 	/// Storage: `DappStaking::EraRewards` (r:1 w:1)
 	/// Proof: `DappStaking::EraRewards` (`max_values`: None, `max_size`: Some(789), added: 3264, mode: `MaxEncodedLen`)
 	/// Storage: `DappStaking::StaticTierParams` (r:1 w:0)
-	/// Proof: `DappStaking::StaticTierParams` (`max_values`: Some(1), `max_size`: Some(87), added: 582, mode: `MaxEncodedLen`)
+	/// Proof: `DappStaking::StaticTierParams` (`max_values`: Some(1), `max_size`: Some(103), added: 598, mode: `MaxEncodedLen`)
 	/// Storage: `PriceAggregator::ValuesCircularBuffer` (r:1 w:0)
 	/// Proof: `PriceAggregator::ValuesCircularBuffer` (`max_values`: Some(1), `max_size`: Some(117), added: 612, mode: `MaxEncodedLen`)
 	/// Storage: `DappStaking::TierConfig` (r:1 w:1)
 	/// Proof: `DappStaking::TierConfig` (`max_values`: Some(1), `max_size`: Some(91), added: 586, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>on_initialize_voting_to_build_and_earn() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `212`
+		//  Measured:  `224`
 		//  Estimated: `4254`
-		// Minimum execution time: 26_554_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">27_397_000</span>, <span class="number">4254</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		// Minimum execution time: 26_596_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">27_443_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4254</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::CurrentEraInfo` (r:1 w:1)
 	/// Proof: `DappStaking::CurrentEraInfo` (`max_values`: Some(1), `max_size`: Some(112), added: 607, mode: `MaxEncodedLen`)
@@ -981,7 +1031,7 @@
 	/// Storage: `DappStaking::EraRewards` (r:1 w:1)
 	/// Proof: `DappStaking::EraRewards` (`max_values`: None, `max_size`: Some(789), added: 3264, mode: `MaxEncodedLen`)
 	/// Storage: `DappStaking::StaticTierParams` (r:1 w:0)
-	/// Proof: `DappStaking::StaticTierParams` (`max_values`: Some(1), `max_size`: Some(87), added: 582, mode: `MaxEncodedLen`)
+	/// Proof: `DappStaking::StaticTierParams` (`max_values`: Some(1), `max_size`: Some(103), added: 598, mode: `MaxEncodedLen`)
 	/// Storage: `PriceAggregator::ValuesCircularBuffer` (r:1 w:0)
 	/// Proof: `PriceAggregator::ValuesCircularBuffer` (`max_values`: Some(1), `max_size`: Some(117), added: 612, mode: `MaxEncodedLen`)
 	/// Storage: `DappStaking::TierConfig` (r:1 w:1)
@@ -990,19 +1040,20 @@
 	/// Proof: `DappStaking::DAppTiers` (`max_values`: None, `max_size`: Some(1648), added: 4123, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>on_initialize_build_and_earn_to_voting() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `752`
+		//  Measured:  `764`
 		//  Estimated: `4254`
-		// Minimum execution time: 43_837_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">44_768_000</span>, <span class="number">4254</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">7_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">7_u64</span>))
+		// Minimum execution time: 47_007_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">48_423_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4254</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">7</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">7</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::CurrentEraInfo` (r:1 w:1)
 	/// Proof: `DappStaking::CurrentEraInfo` (`max_values`: Some(1), `max_size`: Some(112), added: 607, mode: `MaxEncodedLen`)
 	/// Storage: `DappStaking::EraRewards` (r:1 w:1)
 	/// Proof: `DappStaking::EraRewards` (`max_values`: None, `max_size`: Some(789), added: 3264, mode: `MaxEncodedLen`)
 	/// Storage: `DappStaking::StaticTierParams` (r:1 w:0)
-	/// Proof: `DappStaking::StaticTierParams` (`max_values`: Some(1), `max_size`: Some(87), added: 582, mode: `MaxEncodedLen`)
+	/// Proof: `DappStaking::StaticTierParams` (`max_values`: Some(1), `max_size`: Some(103), added: 598, mode: `MaxEncodedLen`)
 	/// Storage: `PriceAggregator::ValuesCircularBuffer` (r:1 w:0)
 	/// Proof: `PriceAggregator::ValuesCircularBuffer` (`max_values`: Some(1), `max_size`: Some(117), added: 612, mode: `MaxEncodedLen`)
 	/// Storage: `DappStaking::TierConfig` (r:1 w:1)
@@ -1011,12 +1062,13 @@
 	/// Proof: `DappStaking::DAppTiers` (`max_values`: None, `max_size`: Some(1648), added: 4123, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>on_initialize_build_and_earn_to_build_and_earn() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `266`
+		//  Measured:  `278`
 		//  Estimated: `4254`
-		// Minimum execution time: 30_131_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">30_669_000</span>, <span class="number">4254</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">4_u64</span>))
+		// Minimum execution time: 30_851_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">31_613_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4254</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">4</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::ContractStake` (r:101 w:0)
 	/// Proof: `DappStaking::ContractStake` (`max_values`: Some(65535), `max_size`: Some(91), added: 2071, mode: `MaxEncodedLen`)
@@ -1025,13 +1077,14 @@
 	/// The range of component `x` is `[0, 100]`.
 	</span><span class="kw">fn </span>dapp_tier_assignment(x: u32, ) -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `98 + x * (32 ±0)`
+		//  Measured:  `97 + x * (32 ±0)`
 		//  Estimated: `3061 + x * (2071 ±0)`
-		// Minimum execution time: 6_527_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">10_441_884</span>, <span class="number">3061</span>)
-			<span class="comment">// Standard Error: 2_869
-			</span>.saturating_add(Weight::from_parts(<span class="number">2_469_904</span>, <span class="number">0</span>).saturating_mul(x.into()))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
+		// Minimum execution time: 7_622_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">8_152_071</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3061</span>))
+			<span class="comment">// Standard Error: 3_676
+			</span>.saturating_add(Weight::from_parts(<span class="number">2_863_646</span>, <span class="number">0</span>).saturating_mul(x.into()))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2</span>))
 			.saturating_add(T::DbWeight::get().reads((<span class="number">1_u64</span>).saturating_mul(x.into())))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2071</span>).saturating_mul(x.into()))
 	}
@@ -1045,10 +1098,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `293`
 		//  Estimated: `4254`
-		// Minimum execution time: 8_347_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">8_554_000</span>, <span class="number">4254</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		// Minimum execution time: 9_766_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">9_956_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4254</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::Ledger` (r:2 w:1)
 	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
@@ -1056,20 +1110,22 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `76`
 		//  Estimated: `6560`
-		// Minimum execution time: 13_128_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">13_373_000</span>, <span class="number">6560</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 14_625_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">15_172_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">6560</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `DappStaking::StaticTierParams` (r:0 w:1)
-	/// Proof: `DappStaking::StaticTierParams` (`max_values`: Some(1), `max_size`: Some(87), added: 582, mode: `MaxEncodedLen`)
+	/// Proof: `DappStaking::StaticTierParams` (`max_values`: Some(1), `max_size`: Some(103), added: 598, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>set_static_tier_params() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 7_366_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">7_478_000</span>, <span class="number">0</span>)
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 8_440_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">8_564_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 }
 </code></pre></div></section></main></body></html>

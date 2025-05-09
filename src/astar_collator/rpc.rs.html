@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/rpc.rs`."><title>rpc.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../astar_collator/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/rpc.rs`."><title>rpc.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -376,12 +374,6 @@
 <a href="#374" id="374">374</a>
 <a href="#375" id="375">375</a>
 <a href="#376" id="376">376</a>
-<a href="#377" id="377">377</a>
-<a href="#378" id="378">378</a>
-<a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a>
-<a href="#381" id="381">381</a>
-<a href="#382" id="382">382</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -404,7 +396,7 @@
 
 </span><span class="kw">use </span>fc_rpc::{
     Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
-    EthPubSubApiServer, Net, NetApiServer, Web3, Web3ApiServer,
+    EthPubSubApiServer, Net, NetApiServer, TxPool, TxPoolApiServer, Web3, Web3ApiServer,
 };
 <span class="kw">use </span>fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 <span class="kw">use </span>fc_storage::{StorageOverride, StorageOverrideHandler};
@@ -418,8 +410,7 @@
 <span class="kw">use </span>sc_network::service::traits::NetworkService;
 <span class="kw">use </span>sc_network_sync::SyncingService;
 <span class="kw">use </span>sc_rpc::dev::DevApiServer;
-<span class="kw">pub use </span>sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
-<span class="kw">use </span>sc_transaction_pool::{ChainApi, Pool};
+<span class="kw">pub use </span>sc_rpc::SubscriptionTaskExecutor;
 <span class="kw">use </span>sc_transaction_pool_api::TransactionPool;
 <span class="kw">use </span>sp_api::{CallApiAt, ProvideRuntimeApi};
 <span class="kw">use </span>sp_block_builder::BlockBuilder;
@@ -427,19 +418,19 @@
     Backend <span class="kw">as </span>BlockchainBackend, Error <span class="kw">as </span>BlockChainError, HeaderBackend, HeaderMetadata,
 };
 <span class="kw">use </span>sp_consensus_aura::{sr25519::AuthorityId <span class="kw">as </span>AuraId, AuraApi};
-<span class="kw">use </span>sp_runtime::traits::BlakeTwo256;
+<span class="kw">use </span>sp_runtime::traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT};
 <span class="kw">use </span>std::sync::Arc;
 <span class="kw">use </span>substrate_frame_rpc_system::{System, SystemApiServer};
 
 <span class="kw">use </span>moonbeam_rpc_debug::{Debug, DebugServer};
 <span class="kw">use </span>moonbeam_rpc_trace::{Trace, TraceServer};
-<span class="comment">// TODO: get rid of this completely now that it's part of frontier?
-</span><span class="kw">use </span>moonbeam_rpc_txpool::{TxPool <span class="kw">as </span>MoonbeamTxPool, TxPoolServer};
 
 <span class="kw">use </span><span class="kw">crate</span>::evm_tracing_types::{FrontierBackendConfig, FrontierConfig};
 <span class="kw">use </span>astar_primitives::<span class="kw-2">*</span>;
 
 <span class="kw">pub mod </span>tracing;
+
+<span class="kw">type </span>HashFor&lt;Block&gt; = &lt;Block <span class="kw">as </span>BlockT&gt;::Hash;
 
 <span class="attr">#[derive(Clone)]
 </span><span class="kw">pub struct </span>EvmTracingConfig {
@@ -535,19 +526,17 @@
 }
 
 <span class="doccomment">/// Full client dependencies
-</span><span class="kw">pub struct </span>FullDeps&lt;C, P, A: ChainApi&gt; {
+</span><span class="kw">pub struct </span>FullDeps&lt;C, P&gt; {
     <span class="doccomment">/// The client instance to use.
     </span><span class="kw">pub </span>client: Arc&lt;C&gt;,
     <span class="doccomment">/// Transaction pool instance.
     </span><span class="kw">pub </span>pool: Arc&lt;P&gt;,
     <span class="doccomment">/// Graph pool instance.
-    </span><span class="kw">pub </span>graph: Arc&lt;Pool&lt;A&gt;&gt;,
+    </span><span class="kw">pub </span>graph: Arc&lt;P&gt;,
     <span class="doccomment">/// Network service
     </span><span class="kw">pub </span>network: Arc&lt;<span class="kw">dyn </span>NetworkService&gt;,
     <span class="doccomment">/// Chain syncing service
     </span><span class="kw">pub </span>sync: Arc&lt;SyncingService&lt;Block&gt;&gt;,
-    <span class="doccomment">/// Whether to deny unsafe calls
-    </span><span class="kw">pub </span>deny_unsafe: DenyUnsafe,
     <span class="doccomment">/// The Node authority flag
     </span><span class="kw">pub </span>is_authority: bool,
     <span class="doccomment">/// Frontier Backend.
@@ -571,8 +560,8 @@
 }
 
 <span class="doccomment">/// Instantiate all RPC extensions and Tracing RPC.
-</span><span class="kw">pub fn </span>create_full&lt;C, P, BE, A&gt;(
-    deps: FullDeps&lt;C, P, A&gt;,
+</span><span class="kw">pub fn </span>create_full&lt;C, P, BE&gt;(
+    deps: FullDeps&lt;C, P&gt;,
     subscription_task_executor: SubscriptionTaskExecutor,
     pubsub_notification_sinks: Arc&lt;
         fc_mapping_sync::EthereumBlockNotificationSinks&lt;
@@ -602,11 +591,10 @@
         + AuraApi&lt;Block, AuraId&gt;
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi&lt;Block&gt;
         + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi&lt;Block&gt;,
-    P: TransactionPool&lt;Block = Block&gt; + Sync + Send + <span class="lifetime">'static</span>,
+    P: TransactionPool&lt;Block = Block, Hash = HashFor&lt;Block&gt;&gt; + Sync + Send + <span class="lifetime">'static</span>,
     BE: Backend&lt;Block&gt; + <span class="lifetime">'static</span>,
     BE::State: StateBackend&lt;BlakeTwo256&gt;,
     BE::Blockchain: BlockchainBackend&lt;Block&gt;,
-    A: ChainApi&lt;Block = Block&gt; + <span class="lifetime">'static</span>,
 {
     <span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span>deps.client);
     <span class="kw">let </span>graph = Arc::clone(<span class="kw-2">&amp;</span>deps.graph);
@@ -614,7 +602,7 @@
     <span class="kw">let </span><span class="kw-2">mut </span>io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)<span class="question-mark">?</span>;
 
     <span class="kw">if </span>tracing_config.enable_txpool {
-        io.merge(MoonbeamTxPool::new(Arc::clone(<span class="kw-2">&amp;</span>client), graph).into_rpc())<span class="question-mark">?</span>;
+        io.merge(TxPool::new(Arc::clone(<span class="kw-2">&amp;</span>client), graph).into_rpc())<span class="question-mark">?</span>;
     }
 
     <span class="kw">if let </span><span class="prelude-val">Some</span>(trace_filter_requester) = tracing_config.tracing_requesters.trace {
@@ -635,8 +623,8 @@
     <span class="prelude-val">Ok</span>(io)
 }
 
-<span class="kw">fn </span>create_full_rpc&lt;C, P, BE, A&gt;(
-    deps: FullDeps&lt;C, P, A&gt;,
+<span class="kw">fn </span>create_full_rpc&lt;C, P, BE&gt;(
+    deps: FullDeps&lt;C, P&gt;,
     subscription_task_executor: SubscriptionTaskExecutor,
     pubsub_notification_sinks: Arc&lt;
         fc_mapping_sync::EthereumBlockNotificationSinks&lt;
@@ -663,11 +651,10 @@
         + fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
         + BlockBuilder&lt;Block&gt;
         + AuraApi&lt;Block, AuraId&gt;,
-    P: TransactionPool&lt;Block = Block&gt; + Sync + Send + <span class="lifetime">'static</span>,
+    P: TransactionPool&lt;Block = Block, Hash = HashFor&lt;Block&gt;&gt; + Sync + Send + <span class="lifetime">'static</span>,
     BE: Backend&lt;Block&gt; + <span class="lifetime">'static</span>,
     BE::State: StateBackend&lt;BlakeTwo256&gt;,
     BE::Blockchain: BlockchainBackend&lt;Block&gt;,
-    A: ChainApi&lt;Block = Block&gt; + <span class="lifetime">'static</span>,
 {
     <span class="kw">let </span><span class="kw-2">mut </span>io = RpcModule::new(());
     <span class="kw">let </span>FullDeps {
@@ -676,7 +663,6 @@
         graph,
         network,
         sync,
-        deny_unsafe,
         is_authority,
         frontier_backend,
         filter_pool,
@@ -689,9 +675,9 @@
         </span>command_sink,
     } = deps;
 
-    io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())<span class="question-mark">?</span>;
+    io.merge(System::new(client.clone(), pool.clone()).into_rpc())<span class="question-mark">?</span>;
     io.merge(TransactionPayment::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
-    io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())<span class="question-mark">?</span>;
+    io.merge(sc_rpc::dev::Dev::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
 
     <span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
     </span><span class="kw">if let </span><span class="prelude-val">Some</span>(command_sink) = command_sink {
@@ -706,7 +692,7 @@
     <span class="kw">let </span>no_tx_converter: <span class="prelude-ty">Option</span>&lt;fp_rpc::NoTransactionConverter&gt; = <span class="prelude-val">None</span>;
 
     io.merge(
-        Eth::&lt;<span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, ()&gt;::new(
+        Eth::&lt;<span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, ()&gt;::new(
             client.clone(),
             pool.clone(),
             graph.clone(),

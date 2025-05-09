@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/local/service.rs`."><title>service.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../astar_collator/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/local/service.rs`."><title>service.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -593,6 +591,8 @@
 <a href="#591" id="591">591</a>
 <a href="#592" id="592">592</a>
 <a href="#593" id="593">593</a>
+<a href="#594" id="594">594</a>
+<a href="#595" id="595">595</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -663,7 +663,7 @@
         FullBackend,
         FullSelectChain,
         sc_consensus::DefaultImportQueue&lt;Block&gt;,
-        sc_transaction_pool::FullPool&lt;Block, FullClient&gt;,
+        sc_transaction_pool::TransactionPoolHandle&lt;Block, FullClient&gt;,
         (
             FrontierBlockImport&lt;
                 Block,
@@ -694,17 +694,18 @@
         .transpose()<span class="question-mark">?</span>;
 
     <span class="kw">let </span>heap_pages = config
+        .executor
         .default_heap_pages
         .map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |h| HeapAllocStrategy::Static {
             extra_pages: h <span class="kw">as _</span>,
         });
 
     <span class="kw">let </span>executor = ParachainExecutor::builder()
-        .with_execution_method(config.wasm_method)
+        .with_execution_method(config.executor.wasm_method)
         .with_onchain_heap_alloc_strategy(heap_pages)
         .with_offchain_heap_alloc_strategy(heap_pages)
-        .with_max_runtime_instances(config.max_runtime_instances)
-        .with_runtime_cache_size(config.runtime_cache_size)
+        .with_max_runtime_instances(config.executor.max_runtime_instances)
+        .with_runtime_cache_size(config.executor.runtime_cache_size)
         .build();
 
     <span class="kw">let </span>(client, backend, keystore_container, task_manager) =
@@ -722,13 +723,14 @@
         telemetry
     });
     <span class="kw">let </span>select_chain = sc_consensus::LongestChain::new(backend.clone());
-    <span class="kw">let </span>transaction_pool = sc_transaction_pool::BasicPool::new_full(
-        config.transaction_pool.clone(),
-        config.role.is_authority().into(),
-        config.prometheus_registry(),
+    <span class="kw">let </span>transaction_pool = sc_transaction_pool::Builder::new(
         task_manager.spawn_essential_handle(),
         client.clone(),
-    );
+        config.role.is_authority().into(),
+    )
+    .with_options(config.transaction_pool.clone())
+    .with_prometheus(config.prometheus_registry())
+    .build();
     <span class="kw">let </span>(grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
         client.clone(),
         GRANDPA_JUSTIFICATION_PERIOD,
@@ -784,7 +786,7 @@
         import_queue,
         keystore_container,
         select_chain,
-        transaction_pool,
+        transaction_pool: transaction_pool.into(),
         other: (
             frontier_block_import,
             grandpa_link,
@@ -821,8 +823,10 @@
             .expect(<span class="string">"Genesis block exists; qed"</span>),
         <span class="kw-2">&amp;</span>config.chain_spec,
     );
-    <span class="kw">let </span><span class="kw-2">mut </span>net_config =
-        sc_network::config::FullNetworkConfiguration::&lt;<span class="kw">_</span>, <span class="kw">_</span>, N&gt;::new(<span class="kw-2">&amp;</span>config.network);
+    <span class="kw">let </span><span class="kw-2">mut </span>net_config = sc_network::config::FullNetworkConfiguration::&lt;<span class="kw">_</span>, <span class="kw">_</span>, N&gt;::new(
+        <span class="kw-2">&amp;</span>config.network,
+        config.prometheus_registry().cloned(),
+    );
 
     <span class="kw">let </span>metrics = N::register_notification_metrics(
         config.prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry),
@@ -846,7 +850,7 @@
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
             block_announce_validator_builder: <span class="prelude-val">None</span>,
-            warp_sync_params: <span class="prelude-val">None</span>,
+            warp_sync_config: <span class="prelude-val">None</span>,
             block_relay: <span class="prelude-val">None</span>,
             metrics,
         })<span class="question-mark">?</span>;
@@ -866,8 +870,8 @@
                 is_validator: config.role.is_authority(),
                 enable_http_requests: <span class="bool-val">true</span>,
                 custom_extensions: <span class="kw">move </span>|<span class="kw">_</span>| <span class="macro">vec!</span>[],
-            })
-            .run(client.clone(), task_manager.spawn_handle())
+            })<span class="question-mark">?
+            </span>.run(client.clone(), task_manager.spawn_handle())
             .boxed(),
         );
     }
@@ -897,7 +901,6 @@
                     client: client.clone(),
                     substrate_backend: backend.clone(),
                     frontier_backend: frontier_backend.clone(),
-                    filter_pool: <span class="prelude-val">Some</span>(filter_pool.clone()),
                     storage_override: storage_override.clone(),
                 },
             )
@@ -1007,15 +1010,14 @@
         <span class="kw">let </span>sync = sync_service.clone();
         <span class="kw">let </span>pubsub_notification_sinks = pubsub_notification_sinks.clone();
 
-        Box::new(<span class="kw">move </span>|deny_unsafe, subscription| {
+        Box::new(<span class="kw">move </span>|subscription| {
             <span class="kw">let </span>deps = <span class="kw">crate</span>::rpc::FullDeps {
                 client: client.clone(),
                 pool: transaction_pool.clone(),
-                graph: transaction_pool.pool().clone(),
+                graph: transaction_pool.clone(),
                 network: network.clone(),
                 sync: sync.clone(),
                 is_authority,
-                deny_unsafe,
                 frontier_backend: <span class="kw">match </span><span class="kw-2">*</span>frontier_backend {
                     fc_db::Backend::KeyValue(<span class="kw-2">ref </span>b) =&gt; b.clone(),
                     fc_db::Backend::Sql(<span class="kw-2">ref </span>b) =&gt; b.clone(),

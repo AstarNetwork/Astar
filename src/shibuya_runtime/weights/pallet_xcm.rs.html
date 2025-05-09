@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/weights/pallet_xcm.rs`."><title>pallet_xcm.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../shibuya_runtime/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/weights/pallet_xcm.rs`."><title>pallet_xcm.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -305,6 +303,31 @@
 <a href="#303" id="303">303</a>
 <a href="#304" id="304">304</a>
 <a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
 </pre></div><pre class="rust"><code>
 <span class="comment">// This file is part of Astar.
 
@@ -324,13 +347,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see &lt;http://www.gnu.org/licenses/&gt;.
 
-</span><span class="doccomment">//! Autogenerated weights for pallet_xcm
+</span><span class="doccomment">//! Autogenerated weights for `pallet_xcm`
 //!
-//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2024-07-09, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 46.1.0
+//! DATE: 2025-05-04, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
-//! EXECUTION: , WASM-EXECUTION: Compiled, CHAIN: Some("shibuya-dev"), DB CACHE: 1024
+//! WASM-EXECUTION: `Compiled`, CHAIN: `Some("shibuya-dev")`, DB CACHE: 1024
 
 </span><span class="comment">// Executed Command:
 // ./target/release/astar-collator
@@ -341,7 +364,6 @@
 // --repeat=20
 // --pallet=pallet_xcm
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --output=./benchmark-results/shibuya-dev/xcm_weights.rs
@@ -350,13 +372,15 @@
 </span><span class="attr">#![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
+#![allow(missing_docs)]
+#![allow(dead_code)]
 
-</span><span class="kw">use </span>frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+</span><span class="kw">use </span>frame_support::{traits::Get, weights::Weight};
 <span class="kw">use </span>core::marker::PhantomData;
 
-<span class="doccomment">/// Weights for pallet_xcm using the Substrate node and recommended hardware.
-</span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
-<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_xcm::WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
+<span class="doccomment">/// Weight functions for `pallet_xcm`.
+</span><span class="kw">pub struct </span>WeightInfo&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_xcm::WeightInfo <span class="kw">for </span>WeightInfo&lt;T&gt; {
 	<span class="doccomment">/// Storage: `PolkadotXcm::SupportedVersion` (r:1 w:0)
 	/// Proof: `PolkadotXcm::SupportedVersion` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `ParachainSystem::HostConfiguration` (r:1 w:0)
@@ -367,10 +391,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `109`
 		//  Estimated: `3574`
-		// Minimum execution time: 16_751_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">17_207_000</span>, <span class="number">3574</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">3_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 20_719_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">21_274_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3574</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">3</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
 	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
@@ -380,9 +405,12 @@
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
 	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `PolkadotXcm::ShouldRecordXcm` (r:1 w:0)
+	/// Proof: `PolkadotXcm::ShouldRecordXcm` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	/// Storage: `PolkadotXcm::SupportedVersion` (r:1 w:0)
@@ -390,17 +418,18 @@
 	/// Storage: `ParachainSystem::RelevantMessagingState` (r:1 w:0)
 	/// Proof: `ParachainSystem::RelevantMessagingState` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: `XcmpQueue::OutboundXcmpStatus` (r:1 w:1)
-	/// Proof: `XcmpQueue::OutboundXcmpStatus` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Proof: `XcmpQueue::OutboundXcmpStatus` (`max_values`: Some(1), `max_size`: Some(1282), added: 1777, mode: `MaxEncodedLen`)
 	/// Storage: `XcmpQueue::OutboundXcmpMessages` (r:0 w:1)
-	/// Proof: `XcmpQueue::OutboundXcmpMessages` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Proof: `XcmpQueue::OutboundXcmpMessages` (`max_values`: None, `max_size`: Some(131106), added: 133581, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>reserve_transfer_assets() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `348`
-		//  Estimated: `3813`
-		// Minimum execution time: 78_254_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">79_116_000</span>, <span class="number">3813</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		//  Measured:  `382`
+		//  Estimated: `3847`
+		// Minimum execution time: 85_991_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">87_158_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3847</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">6</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
 	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
@@ -410,6 +439,7 @@
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
 	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
@@ -419,6 +449,7 @@
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `PolkadotXcm::SupportedVersion` (r:0 w:1)
 	/// Proof: `PolkadotXcm::SupportedVersion` (`max_values`: None, `max_size`: None, mode: `Measured`)
@@ -426,16 +457,18 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 7_023_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">7_174_000</span>, <span class="number">0</span>)
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 9_026_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">9_335_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="kw">fn </span>force_default_xcm_version() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 2_128_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">2_279_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 3_167_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">3_318_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifiers` (r:1 w:1)
 	/// Proof: `PolkadotXcm::VersionNotifiers` (`max_values`: None, `max_size`: None, mode: `Measured`)
@@ -453,10 +486,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `109`
 		//  Estimated: `3574`
-		// Minimum execution time: 21_762_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">22_188_000</span>, <span class="number">3574</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">4_u64</span>))
+		// Minimum execution time: 26_208_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">26_762_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3574</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">4</span>))
 	}
 	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifiers` (r:1 w:1)
 	/// Proof: `PolkadotXcm::VersionNotifiers` (`max_values`: None, `max_size`: None, mode: `Measured`)
@@ -472,10 +506,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `168`
 		//  Estimated: `3633`
-		// Minimum execution time: 21_563_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">21_965_000</span>, <span class="number">3633</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		// Minimum execution time: 27_830_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">28_237_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3633</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `PolkadotXcm::XcmExecutionSuspended` (r:0 w:1)
 	/// Proof: `PolkadotXcm::XcmExecutionSuspended` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
@@ -483,41 +518,45 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 2_229_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">2_353_000</span>, <span class="number">0</span>)
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 3_258_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">3_337_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
-	<span class="doccomment">/// Storage: `PolkadotXcm::SupportedVersion` (r:5 w:2)
+	<span class="doccomment">/// Storage: `PolkadotXcm::SupportedVersion` (r:6 w:2)
 	/// Proof: `PolkadotXcm::SupportedVersion` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>migrate_supported_version() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `22`
-		//  Estimated: `13387`
-		// Minimum execution time: 14_779_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">15_096_000</span>, <span class="number">13387</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+		//  Estimated: `15862`
+		// Minimum execution time: 20_490_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">20_813_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">15862</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">6</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2</span>))
 	}
-	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifiers` (r:5 w:2)
+	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifiers` (r:6 w:2)
 	/// Proof: `PolkadotXcm::VersionNotifiers` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>migrate_version_notifiers() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `26`
-		//  Estimated: `13391`
-		// Minimum execution time: 14_980_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">15_271_000</span>, <span class="number">13391</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+		//  Estimated: `15866`
+		// Minimum execution time: 20_422_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">20_785_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">15866</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">6</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2</span>))
 	}
-	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:6 w:0)
+	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:7 w:0)
 	/// Proof: `PolkadotXcm::VersionNotifyTargets` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>already_notified_target() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `75`
-		//  Estimated: `15915`
-		// Minimum execution time: 16_655_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">17_231_000</span>, <span class="number">15915</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">6_u64</span>))
+		//  Estimated: `18390`
+		// Minimum execution time: 23_948_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">24_270_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">18390</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">7</span>))
 	}
 	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:2 w:1)
 	/// Proof: `PolkadotXcm::VersionNotifyTargets` (`max_values`: None, `max_size`: None, mode: `Measured`)
@@ -531,33 +570,36 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `142`
 		//  Estimated: `6082`
-		// Minimum execution time: 20_914_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">21_162_000</span>, <span class="number">6082</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+		// Minimum execution time: 25_748_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">26_008_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">6082</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2</span>))
 	}
-	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:4 w:0)
+	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:5 w:0)
 	/// Proof: `PolkadotXcm::VersionNotifyTargets` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>notify_target_migration_fail() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `69`
-		//  Estimated: `10959`
-		// Minimum execution time: 10_722_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">10_999_000</span>, <span class="number">10959</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
+		//  Measured:  `78`
+		//  Estimated: `13443`
+		// Minimum execution time: 17_034_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">17_344_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">13443</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5</span>))
 	}
-	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:5 w:2)
+	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:6 w:2)
 	/// Proof: `PolkadotXcm::VersionNotifyTargets` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>migrate_version_notify_targets() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `33`
-		//  Estimated: `13398`
-		// Minimum execution time: 15_096_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">15_500_000</span>, <span class="number">13398</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+		//  Estimated: `15873`
+		// Minimum execution time: 20_649_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">21_064_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">15873</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">6</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2</span>))
 	}
-	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:5 w:2)
+	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:6 w:2)
 	/// Proof: `PolkadotXcm::VersionNotifyTargets` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `PolkadotXcm::SupportedVersion` (r:1 w:0)
 	/// Proof: `PolkadotXcm::SupportedVersion` (`max_values`: None, `max_size`: None, mode: `Measured`)
@@ -568,11 +610,12 @@
 	</span><span class="kw">fn </span>migrate_and_notify_old_targets() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `142`
-		//  Estimated: `13507`
-		// Minimum execution time: 28_084_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">28_712_000</span>, <span class="number">13507</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">8_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		//  Estimated: `15982`
+		// Minimum execution time: 36_176_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">36_832_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">15982</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">9</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `PolkadotXcm::QueryCounter` (r:1 w:1)
 	/// Proof: `PolkadotXcm::QueryCounter` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
@@ -582,10 +625,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `1485`
-		// Minimum execution time: 2_163_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">2_264_000</span>, <span class="number">1485</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+		// Minimum execution time: 3_286_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">3_372_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">1485</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2</span>))
 	}
 	<span class="doccomment">/// Storage: `PolkadotXcm::Queries` (r:1 w:1)
 	/// Proof: `PolkadotXcm::Queries` (`max_values`: None, `max_size`: None, mode: `Measured`)
@@ -593,21 +637,25 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `7576`
 		//  Estimated: `11041`
-		// Minimum execution time: 21_322_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">21_524_000</span>, <span class="number">11041</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 24_833_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">25_143_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">11041</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
-	<span class="doccomment">/// Storage: `PolkadotXcm::AssetTraps` (r:1 w:1)
+	<span class="doccomment">/// Storage: `PolkadotXcm::ShouldRecordXcm` (r:1 w:0)
+	/// Proof: `PolkadotXcm::ShouldRecordXcm` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `PolkadotXcm::AssetTraps` (r:1 w:1)
 	/// Proof: `PolkadotXcm::AssetTraps` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>claim_assets() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `23`
 		//  Estimated: `3488`
-		// Minimum execution time: 35_039_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">35_575_000</span>, <span class="number">3488</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 39_883_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">40_799_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3488</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 }
 </code></pre></div></section></main></body></html>

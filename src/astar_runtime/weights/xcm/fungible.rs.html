@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/astar/src/weights/xcm/fungible.rs`."><title>fungible.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="astar_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../astar_runtime/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/astar/src/weights/xcm/fungible.rs`."><title>fungible.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="astar_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -208,7 +206,32 @@
 <a href="#206" id="206">206</a>
 <a href="#207" id="207">207</a>
 <a href="#208" id="208">208</a>
-</pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+</pre></div><pre class="rust"><code>
+<span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later
@@ -226,13 +249,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see &lt;http://www.gnu.org/licenses/&gt;.
 
-</span><span class="doccomment">//! Autogenerated weights for xcm_benchmarks_fungible
+</span><span class="doccomment">//! Autogenerated weights for `xcm_benchmarks_fungible`
 //!
-//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2024-03-27, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 46.1.0
+//! DATE: 2025-05-04, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
-//! EXECUTION: , WASM-EXECUTION: Compiled, CHAIN: Some("astar-dev"), DB CACHE: 1024
+//! WASM-EXECUTION: `Compiled`, CHAIN: `Some("astar-dev")`, DB CACHE: 1024
 
 </span><span class="comment">// Executed Command:
 // ./target/release/astar-collator
@@ -243,7 +266,6 @@
 // --repeat=20
 // --pallet=xcm_benchmarks_fungible
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --output=./benchmark-results/astar-dev/benchmarks_fungible_weights.rs
@@ -252,26 +274,15 @@
 </span><span class="attr">#![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
+#![allow(missing_docs)]
+#![allow(dead_code)]
 
-</span><span class="kw">use </span>frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+</span><span class="kw">use </span>frame_support::{traits::Get, weights::Weight};
 <span class="kw">use </span>core::marker::PhantomData;
 
-<span class="doccomment">/// Weight functions needed for xcm_benchmarks_fungible.
-</span><span class="kw">pub trait </span>WeightInfo {
-	<span class="kw">fn </span>transfer_asset() -&gt; Weight;
-	<span class="kw">fn </span>transfer_reserve_asset() -&gt; Weight;
-	<span class="kw">fn </span>receive_teleported_asset() -&gt; Weight;
-	<span class="kw">fn </span>initiate_teleport() -&gt; Weight;
-	<span class="kw">fn </span>withdraw_asset() -&gt; Weight;
-	<span class="kw">fn </span>reserve_asset_deposited() -&gt; Weight;
-	<span class="kw">fn </span>initiate_reserve_withdraw() -&gt; Weight;
-	<span class="kw">fn </span>deposit_asset() -&gt; Weight;
-	<span class="kw">fn </span>deposit_reserve_asset() -&gt; Weight;
-}
-
-<span class="doccomment">/// Weights for xcm_benchmarks_fungible using the Substrate node and recommended hardware.
-</span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
-<span class="kw">impl</span>&lt;T: frame_system::Config&gt; WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
+<span class="doccomment">/// Weight functions for `xcm_benchmarks_fungible`.
+</span><span class="kw">pub struct </span>WeightInfo&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: frame_system::Config&gt; WeightInfo&lt;T&gt; {
 	<span class="doccomment">/// Storage: `XcAssetConfig::AssetLocationToId` (r:1 w:0)
 	/// Proof: `XcAssetConfig::AssetLocationToId` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `Assets::Asset` (r:1 w:1)
@@ -280,14 +291,15 @@
 	/// Proof: `Assets::Account` (`max_values`: None, `max_size`: Some(146), added: 2621, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
-	</span><span class="kw">fn </span>transfer_asset() -&gt; Weight {
+	</span><span class="kw">pub fn </span>transfer_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `542`
+		//  Measured:  `575`
 		//  Estimated: `6232`
-		// Minimum execution time: 43_120_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">43_722_000</span>, <span class="number">6232</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">4_u64</span>))
+		// Minimum execution time: 46_565_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">47_191_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">6232</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">4</span>))
 	}
 	<span class="doccomment">/// Storage: `XcAssetConfig::AssetLocationToId` (r:1 w:0)
 	/// Proof: `XcAssetConfig::AssetLocationToId` (`max_values`: None, `max_size`: None, mode: `Measured`)
@@ -305,32 +317,35 @@
 	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>transfer_reserve_asset() -&gt; Weight {
+	</span><span class="kw">pub fn </span>transfer_reserve_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `650`
+		//  Measured:  `775`
 		//  Estimated: `6232`
-		// Minimum execution time: 60_287_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">61_082_000</span>, <span class="number">6232</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">9_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">5_u64</span>))
+		// Minimum execution time: 67_601_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">68_197_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">6232</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">9</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">5</span>))
 	}
 	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
 	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>receive_teleported_asset() -&gt; Weight {
+	</span><span class="kw">pub fn </span>receive_teleported_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
 	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>initiate_teleport() -&gt; Weight {
+	</span><span class="kw">pub fn </span>initiate_teleport() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `XcAssetConfig::AssetLocationToId` (r:1 w:0)
 	/// Proof: `XcAssetConfig::AssetLocationToId` (`max_values`: None, `max_size`: None, mode: `Measured`)
@@ -340,21 +355,23 @@
 	/// Proof: `Assets::Account` (`max_values`: None, `max_size`: Some(146), added: 2621, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
-	</span><span class="kw">fn </span>withdraw_asset() -&gt; Weight {
+	</span><span class="kw">pub fn </span>withdraw_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `1952`
-		//  Estimated: `5417`
-		// Minimum execution time: 53_528_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">54_132_000</span>, <span class="number">5417</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		//  Measured:  `2021`
+		//  Estimated: `5486`
+		// Minimum execution time: 58_152_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">59_504_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">5486</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
-	<span class="kw">fn </span>reserve_asset_deposited() -&gt; Weight {
+	<span class="kw">pub fn </span>reserve_asset_deposited() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 1_055_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">1_089_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 1_093_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">1_169_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
 	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
@@ -364,14 +381,15 @@
 	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>initiate_reserve_withdraw() -&gt; Weight {
+	</span><span class="kw">pub fn </span>initiate_reserve_withdraw() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `108`
-		//  Estimated: `3573`
-		// Minimum execution time: 50_334_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">50_707_000</span>, <span class="number">3573</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		//  Measured:  `200`
+		//  Estimated: `3665`
+		// Minimum execution time: 81_960_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">83_889_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3665</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `XcAssetConfig::AssetLocationToId` (r:1 w:0)
 	/// Proof: `XcAssetConfig::AssetLocationToId` (`max_values`: None, `max_size`: None, mode: `Measured`)
@@ -381,14 +399,15 @@
 	/// Proof: `Assets::Account` (`max_values`: None, `max_size`: Some(146), added: 2621, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
-	</span><span class="kw">fn </span>deposit_asset() -&gt; Weight {
+	</span><span class="kw">pub fn </span>deposit_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `1692`
-		//  Estimated: `5157`
-		// Minimum execution time: 40_497_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">41_233_000</span>, <span class="number">5157</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		//  Measured:  `1761`
+		//  Estimated: `5226`
+		// Minimum execution time: 45_489_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">47_181_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">5226</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
 	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
@@ -406,14 +425,41 @@
 	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>deposit_reserve_asset() -&gt; Weight {
+	</span><span class="kw">pub fn </span>deposit_reserve_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `1800`
-		//  Estimated: `5265`
-		// Minimum execution time: 75_285_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">76_026_000</span>, <span class="number">5265</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">8_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">4_u64</span>))
+		//  Measured:  `1961`
+		//  Estimated: `5426`
+		// Minimum execution time: 73_773_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">74_971_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">5426</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">8</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">4</span>))
+	}
+	<span class="doccomment">/// Storage: `XcAssetConfig::AssetLocationToId` (r:1 w:0)
+	/// Proof: `XcAssetConfig::AssetLocationToId` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Assets::Asset` (r:1 w:1)
+	/// Proof: `Assets::Asset` (`max_values`: None, `max_size`: Some(222), added: 2697, mode: `MaxEncodedLen`)
+	/// Storage: `Assets::Account` (r:1 w:1)
+	/// Proof: `Assets::Account` (`max_values`: None, `max_size`: Some(146), added: 2621, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
+	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `PolkadotXcm::SupportedVersion` (r:1 w:0)
+	/// Proof: `PolkadotXcm::SupportedVersion` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `ParachainSystem::HostConfiguration` (r:1 w:0)
+	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
+	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	</span><span class="kw">pub fn </span>initiate_transfer() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `1961`
+		//  Estimated: `5426`
+		// Minimum execution time: 71_900_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">73_165_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">5426</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">8</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">4</span>))
 	}
 }
 </code></pre></div></section></main></body></html>

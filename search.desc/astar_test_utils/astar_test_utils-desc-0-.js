@@ -1,0 +1,1 @@
+searchState.loadedDescShard("astar_test_utils", 0, "Call the wasm contract method and returns the decoded …\nand check for successful deploy\nLoad a given wasm module from wasm binary contents along …")

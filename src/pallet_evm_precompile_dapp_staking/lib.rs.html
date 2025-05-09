@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `precompiles/dapp-staking/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_evm_precompile_dapp_staking" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../pallet_evm_precompile_dapp_staking/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `precompiles/dapp-staking/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_evm_precompile_dapp_staking" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -854,6 +852,14 @@
 <a href="#852" id="852">852</a>
 <a href="#853" id="853">853</a>
 <a href="#854" id="854">854</a>
+<a href="#855" id="855">855</a>
+<a href="#856" id="856">856</a>
+<a href="#857" id="857">857</a>
+<a href="#858" id="858">858</a>
+<a href="#859" id="859">859</a>
+<a href="#860" id="860">860</a>
+<a href="#861" id="861">861</a>
+<a href="#862" id="862">862</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -976,6 +982,7 @@
         + frame_system::Config&lt;AccountId = AccountId&gt;,
     BlockNumberFor&lt;R&gt;: IsType&lt;BlockNumber&gt;,
     &lt;R::RuntimeCall <span class="kw">as </span>Dispatchable&gt;::RuntimeOrigin: From&lt;<span class="prelude-ty">Option</span>&lt;R::AccountId&gt;&gt;,
+    &lt;R <span class="kw">as </span>pallet_evm::Config&gt;::AddressMapping: AddressMapping&lt;R::AccountId&gt;,
     R::RuntimeCall: Dispatchable&lt;PostInfo = PostDispatchInfo&gt; + GetDispatchInfo,
     R::RuntimeCall: From&lt;pallet_dapp_staking::Call&lt;R&gt;&gt;,
 {
@@ -1230,7 +1237,7 @@
             <span class="kw">let </span>delta = amount.saturating_sub(stakeable_amount);
 
             <span class="kw">let </span>lock_call = pallet_dapp_staking::Call::&lt;R&gt;::lock { amount: delta };
-            RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin.clone()).into(), lock_call)<span class="question-mark">?</span>;
+            RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin.clone()).into(), lock_call, <span class="number">0</span>)<span class="question-mark">?</span>;
         }
 
         <span class="comment">// Now, with best effort, we can try &amp; stake the given `value`.
@@ -1238,7 +1245,7 @@
             smart_contract,
             amount,
         };
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), stake_call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), stake_call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1276,12 +1283,12 @@
                 smart_contract,
                 amount,
             };
-            RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin.clone()).into(), unstake_call)<span class="question-mark">?</span>;
+            RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin.clone()).into(), unstake_call, <span class="number">0</span>)<span class="question-mark">?</span>;
         }
 
         <span class="comment">// Now we can try and `unlock` the given `amount`
         </span><span class="kw">let </span>unlock_call = pallet_dapp_staking::Call::&lt;R&gt;::unlock { amount };
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), unlock_call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), unlock_call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1292,7 +1299,7 @@
         <span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
         <span class="kw">let </span>call = pallet_dapp_staking::Call::&lt;R&gt;::claim_unlocked {};
 
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1321,7 +1328,7 @@
             era,
         };
 
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1337,7 +1344,7 @@
         <span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
         <span class="kw">let </span>call = pallet_dapp_staking::Call::&lt;R&gt;::claim_staker_rewards {};
 
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1363,7 +1370,7 @@
         <span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
         <span class="kw">let </span>call = pallet_dapp_staking::Call::&lt;R&gt;::unstake_from_unregistered { smart_contract };
 
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1420,14 +1427,14 @@
             smart_contract: origin_smart_contract,
             amount,
         };
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin.clone()).into(), unstake_call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin.clone()).into(), unstake_call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// Then call stake on the target smart contract
         </span><span class="kw">let </span>stake_call = pallet_dapp_staking::Call::&lt;R&gt;::stake {
             smart_contract: target_smart_contract,
             amount: stake_amount,
         };
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), stake_call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), stake_call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1466,7 +1473,7 @@
         <span class="comment">// Prepare call &amp; dispatch it
         </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
         <span class="kw">let </span>lock_call = pallet_dapp_staking::Call::&lt;R&gt;::lock { amount };
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), lock_call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), lock_call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1477,7 +1484,7 @@
         <span class="comment">// Prepare call &amp; dispatch it
         </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
         <span class="kw">let </span>unlock_call = pallet_dapp_staking::Call::&lt;R&gt;::unlock { amount };
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), unlock_call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), unlock_call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1488,7 +1495,7 @@
         <span class="comment">// Prepare call &amp; dispatch it
         </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
         <span class="kw">let </span>claim_unlocked_call = pallet_dapp_staking::Call::&lt;R&gt;::claim_unlocked {};
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), claim_unlocked_call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), claim_unlocked_call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1508,7 +1515,7 @@
             smart_contract,
             amount,
         };
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), stake_call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), stake_call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1528,7 +1535,7 @@
             smart_contract,
             amount,
         };
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), unstake_call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), unstake_call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1539,7 +1546,12 @@
         <span class="comment">// Prepare call &amp; dispatch it
         </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
         <span class="kw">let </span>claim_staker_rewards_call = pallet_dapp_staking::Call::&lt;R&gt;::claim_staker_rewards {};
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), claim_staker_rewards_call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(
+            handle,
+            <span class="prelude-val">Some</span>(origin).into(),
+            claim_staker_rewards_call,
+            <span class="number">0</span>,
+        )<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1556,7 +1568,7 @@
         </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
         <span class="kw">let </span>claim_bonus_reward_call =
             pallet_dapp_staking::Call::&lt;R&gt;::claim_bonus_reward { smart_contract };
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), claim_bonus_reward_call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), claim_bonus_reward_call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1580,7 +1592,7 @@
             smart_contract,
             era,
         };
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), claim_dapp_reward_call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), claim_dapp_reward_call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
@@ -1601,6 +1613,7 @@
             handle,
             <span class="prelude-val">Some</span>(origin).into(),
             unstake_from_unregistered_call,
+            <span class="number">0</span>,
         )<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
@@ -1617,6 +1630,7 @@
             handle,
             <span class="prelude-val">Some</span>(origin).into(),
             cleanup_expired_entries_call,
+            <span class="number">0</span>,
         )<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
@@ -1639,7 +1653,7 @@
             destination_contract,
             amount,
         };
-        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), move_call)<span class="question-mark">?</span>;
+        RuntimeHelper::&lt;R&gt;::try_dispatch(handle, <span class="prelude-val">Some</span>(origin).into(), move_call, <span class="number">0</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }

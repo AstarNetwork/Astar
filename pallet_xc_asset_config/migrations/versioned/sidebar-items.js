@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"type":["V2ToV3"]};
+window.SIDEBAR_ITEMS = {"type":["V3ToV4"]};

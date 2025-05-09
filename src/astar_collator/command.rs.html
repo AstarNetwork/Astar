@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/command.rs`."><title>command.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../astar_collator/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/command.rs`."><title>command.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -669,6 +667,18 @@
 <a href="#667" id="667">667</a>
 <a href="#668" id="668">668</a>
 <a href="#669" id="669">669</a>
+<a href="#670" id="670">670</a>
+<a href="#671" id="671">671</a>
+<a href="#672" id="672">672</a>
+<a href="#673" id="673">673</a>
+<a href="#674" id="674">674</a>
+<a href="#675" id="675">675</a>
+<a href="#676" id="676">676</a>
+<a href="#677" id="677">677</a>
+<a href="#678" id="678">678</a>
+<a href="#679" id="679">679</a>
+<a href="#680" id="680">680</a>
+<a href="#681" id="681">681</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -694,19 +704,19 @@
     parachain::{<span class="self">self</span>, chain_spec, service::AdditionalConfig},
 };
 <span class="kw">use </span>cumulus_primitives_core::ParaId;
+<span class="kw">use </span>frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
 <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-</span><span class="kw">use </span>frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
+</span><span class="kw">use </span>frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory};
 <span class="kw">use </span>log::info;
 <span class="kw">use </span>sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
-    NetworkParams, <span class="prelude-ty">Result</span>, SharedParams, SubstrateCli,
+    NetworkParams, <span class="prelude-ty">Result</span>, RpcEndpoint, SharedParams, SubstrateCli,
 };
 <span class="kw">use </span>sc_service::{
     config::{BasePath, PrometheusConfig},
     PartialComponents,
 };
 <span class="kw">use </span>sp_runtime::traits::AccountIdConversion;
-<span class="kw">use </span>std::net::SocketAddr;
 
 <span class="kw">trait </span>IdentifyChain {
     <span class="kw">fn </span>is_astar(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool;
@@ -742,6 +752,18 @@
     }
     <span class="kw">fn </span>is_shibuya(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         &lt;<span class="kw">dyn </span>sc_service::ChainSpec&gt;::is_shibuya(<span class="self">self</span>)
+    }
+}
+
+<span class="doccomment">/// A trait to identify the network backend based on the chain spec.
+</span><span class="kw">pub trait </span>IdentifyChainNetworkBackend {
+    <span class="doccomment">/// Returns the default network backend.
+    </span><span class="kw">fn </span>default_network_backend(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sc_network::config::NetworkBackendType;
+}
+
+<span class="kw">impl </span>IdentifyChainNetworkBackend <span class="kw">for </span>Box&lt;<span class="kw">dyn </span>ChainSpec&gt; {
+    <span class="kw">fn </span>default_network_backend(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sc_network::config::NetworkBackendType {
+        sc_network::config::NetworkBackendType::Libp2p
     }
 }
 
@@ -1054,6 +1076,7 @@
                     }
                 }
                 BenchmarkCmd::Overhead(cmd) =&gt; {
+                    <span class="kw">let </span>chain_name = chain_spec.name().to_string();
                     <span class="kw">if </span>chain_spec.is_dev() {
                         runner.sync_run(|config| {
                             <span class="kw">let </span>params = local::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>rpc_config)<span class="question-mark">?</span>;
@@ -1062,11 +1085,12 @@
                                 .map_err(|e| <span class="macro">format!</span>(<span class="string">"generating inherent data: {:?}"</span>, e))<span class="question-mark">?</span>;
 
                             cmd.run(
-                                config,
+                                chain_name,
                                 params.client,
                                 inherent_data,
                                 Vec::new(),
                                 <span class="kw-2">&amp;</span>ext_builder,
+                                <span class="bool-val">true</span>,
                             )
                         })
                     } <span class="kw">else </span>{
@@ -1078,11 +1102,12 @@
                                 .map_err(|e| <span class="macro">format!</span>(<span class="string">"generating inherent data: {:?}"</span>, e))<span class="question-mark">?</span>;
 
                             cmd.run(
-                                config,
+                                chain_name,
                                 params.client,
                                 inherent_data,
                                 Vec::new(),
                                 <span class="kw-2">&amp;</span>ext_builder,
+                                <span class="bool-val">true</span>,
                             )
                         })
                     }
@@ -1185,7 +1210,10 @@
                 <span class="kw">let </span>hwbench = (!cli.no_hardware_benchmarks)
                     .then_some(config.database.path().map(|database_path| {
                         <span class="kw">let _ </span>= std::fs::create_dir_all(database_path);
-                        sc_sysinfo::gather_hwbench(<span class="prelude-val">Some</span>(database_path))
+                        sc_sysinfo::gather_hwbench(
+                            <span class="prelude-val">Some</span>(database_path),
+                            <span class="kw-2">&amp;</span>SUBSTRATE_REFERENCE_HARDWARE,
+                        )
                     }))
                     .flatten();
 
@@ -1250,7 +1278,7 @@
             </span>.or_else(|| <span class="self">self</span>.base_path.clone().map(Into::into)))
     }
 
-    <span class="kw">fn </span>rpc_addr(<span class="kw-2">&amp;</span><span class="self">self</span>, default_listen_port: u16) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;SocketAddr&gt;&gt; {
+    <span class="kw">fn </span>rpc_addr(<span class="kw-2">&amp;</span><span class="self">self</span>, default_listen_port: u16) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;RpcEndpoint&gt;&gt;&gt; {
         <span class="self">self</span>.base.base.rpc_addr(default_listen_port)
     }
 
@@ -1264,15 +1292,9 @@
             .prometheus_config(default_listen_port, chain_spec)
     }
 
-    <span class="kw">fn </span>init&lt;F&gt;(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        _support_url: <span class="kw-2">&amp;</span>String,
-        _impl_version: <span class="kw-2">&amp;</span>String,
-        _logger_hook: F,
-        _config: <span class="kw-2">&amp;</span>sc_service::Configuration,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;
+    <span class="kw">fn </span>init&lt;F&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, _support_url: <span class="kw-2">&amp;</span>String, _impl_version: <span class="kw-2">&amp;</span>String, _logger_hook: F) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;
     <span class="kw">where
-        </span>F: FnOnce(<span class="kw-2">&amp;mut </span>sc_cli::LoggerBuilder, <span class="kw-2">&amp;</span>sc_service::Configuration),
+        </span>F: FnOnce(<span class="kw-2">&amp;mut </span>sc_cli::LoggerBuilder),
     {
         <span class="macro">unreachable!</span>(<span class="string">"PolkadotCli is never initialized; qed"</span>);
     }

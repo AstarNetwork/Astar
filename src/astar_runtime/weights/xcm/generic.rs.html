@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/astar/src/weights/xcm/generic.rs`."><title>generic.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="astar_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../astar_runtime/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/astar/src/weights/xcm/generic.rs`."><title>generic.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="astar_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -432,7 +430,36 @@
 <a href="#430" id="430">430</a>
 <a href="#431" id="431">431</a>
 <a href="#432" id="432">432</a>
-</pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
+<a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+<a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
+<a href="#454" id="454">454</a>
+<a href="#455" id="455">455</a>
+<a href="#456" id="456">456</a>
+<a href="#457" id="457">457</a>
+<a href="#458" id="458">458</a>
+<a href="#459" id="459">459</a>
+<a href="#460" id="460">460</a>
+</pre></div><pre class="rust"><code>
+<span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later
@@ -450,13 +477,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see &lt;http://www.gnu.org/licenses/&gt;.
 
-</span><span class="doccomment">//! Autogenerated weights for xcm_benchmarks_generic
+</span><span class="doccomment">//! Autogenerated weights for `xcm_benchmarks_generic`
 //!
-//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2024-03-27, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 46.1.0
+//! DATE: 2025-05-04, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
-//! EXECUTION: , WASM-EXECUTION: Compiled, CHAIN: Some("astar-dev"), DB CACHE: 1024
+//! WASM-EXECUTION: `Compiled`, CHAIN: `Some("astar-dev")`, DB CACHE: 1024
 
 </span><span class="comment">// Executed Command:
 // ./target/release/astar-collator
@@ -467,7 +494,6 @@
 // --repeat=20
 // --pallet=xcm_benchmarks_generic
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --output=./benchmark-results/astar-dev/benchmarks_generic_weights.rs
@@ -476,53 +502,15 @@
 </span><span class="attr">#![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
+#![allow(missing_docs)]
+#![allow(dead_code)]
 
-</span><span class="kw">use </span>frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+</span><span class="kw">use </span>frame_support::{traits::Get, weights::Weight};
 <span class="kw">use </span>core::marker::PhantomData;
 
-<span class="doccomment">/// Weight functions needed for xcm_benchmarks_generic.
-</span><span class="kw">pub trait </span>WeightInfo {
-	<span class="kw">fn </span>buy_execution() -&gt; Weight;
-	<span class="kw">fn </span>expect_pallet() -&gt; Weight;
-	<span class="kw">fn </span>exchange_asset() -&gt; Weight;
-	<span class="kw">fn </span>export_message() -&gt; Weight;
-	<span class="kw">fn </span>lock_asset() -&gt; Weight;
-	<span class="kw">fn </span>unlock_asset() -&gt; Weight;
-	<span class="kw">fn </span>note_unlockable() -&gt; Weight;
-	<span class="kw">fn </span>request_unlock() -&gt; Weight;
-	<span class="kw">fn </span>universal_origin() -&gt; Weight;
-	<span class="kw">fn </span>alias_origin() -&gt; Weight;
-	<span class="kw">fn </span>report_holding() -&gt; Weight;
-	<span class="kw">fn </span>query_response() -&gt; Weight;
-	<span class="kw">fn </span>transact() -&gt; Weight;
-	<span class="kw">fn </span>refund_surplus() -&gt; Weight;
-	<span class="kw">fn </span>set_error_handler() -&gt; Weight;
-	<span class="kw">fn </span>set_appendix() -&gt; Weight;
-	<span class="kw">fn </span>clear_error() -&gt; Weight;
-	<span class="kw">fn </span>descend_origin() -&gt; Weight;
-	<span class="kw">fn </span>clear_origin() -&gt; Weight;
-	<span class="kw">fn </span>report_error() -&gt; Weight;
-	<span class="kw">fn </span>claim_asset() -&gt; Weight;
-	<span class="kw">fn </span>trap() -&gt; Weight;
-	<span class="kw">fn </span>subscribe_version() -&gt; Weight;
-	<span class="kw">fn </span>unsubscribe_version() -&gt; Weight;
-	<span class="kw">fn </span>burn_asset() -&gt; Weight;
-	<span class="kw">fn </span>expect_asset() -&gt; Weight;
-	<span class="kw">fn </span>expect_origin() -&gt; Weight;
-	<span class="kw">fn </span>expect_error() -&gt; Weight;
-	<span class="kw">fn </span>expect_transact_status() -&gt; Weight;
-	<span class="kw">fn </span>query_pallet() -&gt; Weight;
-	<span class="kw">fn </span>report_transact_status() -&gt; Weight;
-	<span class="kw">fn </span>clear_transact_status() -&gt; Weight;
-	<span class="kw">fn </span>set_topic() -&gt; Weight;
-	<span class="kw">fn </span>clear_topic() -&gt; Weight;
-	<span class="kw">fn </span>set_fees_mode() -&gt; Weight;
-	<span class="kw">fn </span>unpaid_execution() -&gt; Weight;
-}
-
-<span class="doccomment">/// Weights for xcm_benchmarks_generic using the Substrate node and recommended hardware.
-</span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
-<span class="kw">impl</span>&lt;T: frame_system::Config&gt; WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
+<span class="doccomment">/// Weight functions for `xcm_benchmarks_generic`.
+</span><span class="kw">pub struct </span>WeightInfo&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: frame_system::Config&gt; WeightInfo&lt;T&gt; {
 	<span class="doccomment">/// Storage: `XcAssetConfig::AssetLocationUnitsPerSecond` (r:1 w:0)
 	/// Proof: `XcAssetConfig::AssetLocationUnitsPerSecond` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `XcAssetConfig::AssetLocationToId` (r:1 w:0)
@@ -533,86 +521,95 @@
 	/// Proof: `Assets::Account` (`max_values`: None, `max_size`: Some(146), added: 2621, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
-	</span><span class="kw">fn </span>buy_execution() -&gt; Weight {
+	</span><span class="kw">pub fn </span>buy_execution() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `717`
-		//  Estimated: `4182`
-		// Minimum execution time: 16_217_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">16_433_000</span>, <span class="number">4182</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+		//  Measured:  `686`
+		//  Estimated: `4151`
+		// Minimum execution time: 20_500_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">20_888_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4151</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 	}
 	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
 	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>exchange_asset() -&gt; Weight {
+	</span><span class="kw">pub fn </span>exchange_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
 	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>export_message() -&gt; Weight {
+	</span><span class="kw">pub fn </span>export_message() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
 	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>lock_asset() -&gt; Weight {
+	</span><span class="kw">pub fn </span>lock_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
 	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>unlock_asset() -&gt; Weight {
+	</span><span class="kw">pub fn </span>unlock_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
 	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>note_unlockable() -&gt; Weight {
+	</span><span class="kw">pub fn </span>note_unlockable() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
 	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>request_unlock() -&gt; Weight {
+	</span><span class="kw">pub fn </span>request_unlock() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
 	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>universal_origin() -&gt; Weight {
+	</span><span class="kw">pub fn </span>universal_origin() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
 	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>alias_origin() -&gt; Weight {
+	</span><span class="kw">pub fn </span>alias_origin() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
 	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
@@ -622,73 +619,112 @@
 	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>report_holding() -&gt; Weight {
+	</span><span class="kw">pub fn </span>report_holding() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `131`
-		//  Estimated: `3596`
-		// Minimum execution time: 46_828_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">47_506_000</span>, <span class="number">3596</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		//  Measured:  `200`
+		//  Estimated: `3665`
+		// Minimum execution time: 51_166_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">51_784_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3665</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
+	}
+	<span class="doccomment">/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	</span><span class="kw">pub fn </span>pay_fees() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `3593`
+		// Minimum execution time: 7_050_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">7_255_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3593</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
+	}
+	<span class="kw">pub fn </span>asset_claimer() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 813_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">865_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `PolkadotXcm::Queries` (r:1 w:0)
 	/// Proof: `PolkadotXcm::Queries` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>query_response() -&gt; Weight {
+	</span><span class="kw">pub fn </span>query_response() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `3465`
-		// Minimum execution time: 4_837_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">5_048_000</span>, <span class="number">3465</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
+		// Minimum execution time: 6_263_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">6_345_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3465</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1</span>))
 	}
-	<span class="kw">fn </span>transact() -&gt; Weight {
+	<span class="kw">pub fn </span>transact() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 7_561_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">7_745_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 8_815_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">8_989_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>refund_surplus() -&gt; Weight {
+	<span class="kw">pub fn </span>refund_surplus() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 3_983_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">4_077_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 3_924_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">4_097_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>set_error_handler() -&gt; Weight {
+	<span class="kw">pub fn </span>set_error_handler() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 708_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">738_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 746_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">789_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>set_appendix() -&gt; Weight {
+	<span class="kw">pub fn </span>set_appendix() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 702_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">720_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 755_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">769_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>clear_error() -&gt; Weight {
+	<span class="kw">pub fn </span>clear_error() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 640_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">661_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 743_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">787_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>descend_origin() -&gt; Weight {
+	<span class="kw">pub fn </span>descend_origin() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 688_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">719_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 787_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">818_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>clear_origin() -&gt; Weight {
+	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
+	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	</span><span class="kw">pub fn </span>execute_with_origin() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 646_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">689_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
+	}
+	<span class="kw">pub fn </span>clear_origin() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 732_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">789_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
 	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
@@ -698,32 +734,35 @@
 	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>report_error() -&gt; Weight {
+	</span><span class="kw">pub fn </span>report_error() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `131`
-		//  Estimated: `3596`
-		// Minimum execution time: 15_315_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">15_654_000</span>, <span class="number">3596</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		//  Measured:  `200`
+		//  Estimated: `3665`
+		// Minimum execution time: 19_576_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">19_922_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3665</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
 	<span class="doccomment">/// Storage: `PolkadotXcm::AssetTraps` (r:1 w:1)
 	/// Proof: `PolkadotXcm::AssetTraps` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>claim_asset() -&gt; Weight {
+	</span><span class="kw">pub fn </span>claim_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `24`
-		//  Estimated: `3489`
-		// Minimum execution time: 7_889_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">8_038_000</span>, <span class="number">3489</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		//  Measured:  `23`
+		//  Estimated: `3488`
+		// Minimum execution time: 9_967_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">10_208_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3488</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
-	<span class="kw">fn </span>trap() -&gt; Weight {
+	<span class="kw">pub fn </span>trap() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 605_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">636_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 740_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">787_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:1 w:1)
 	/// Proof: `PolkadotXcm::VersionNotifyTargets` (`max_values`: None, `max_size`: None, mode: `Measured`)
@@ -733,59 +772,66 @@
 	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>subscribe_version() -&gt; Weight {
+	</span><span class="kw">pub fn </span>subscribe_version() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `99`
-		//  Estimated: `3564`
-		// Minimum execution time: 16_393_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">16_762_000</span>, <span class="number">3564</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+		//  Measured:  `131`
+		//  Estimated: `3596`
+		// Minimum execution time: 20_775_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">21_068_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3596</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2</span>))
 	}
 	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:0 w:1)
 	/// Proof: `PolkadotXcm::VersionNotifyTargets` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>unsubscribe_version() -&gt; Weight {
+	</span><span class="kw">pub fn </span>unsubscribe_version() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 2_326_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">2_480_000</span>, <span class="number">0</span>)
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 2_963_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">3_022_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
-	<span class="kw">fn </span>burn_asset() -&gt; Weight {
+	<span class="kw">pub fn </span>burn_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 21_864_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">22_349_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 24_254_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">24_548_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>expect_asset() -&gt; Weight {
+	<span class="kw">pub fn </span>expect_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 7_399_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">7_599_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 8_435_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">8_610_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>expect_origin() -&gt; Weight {
+	<span class="kw">pub fn </span>expect_origin() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 642_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">671_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 757_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">783_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>expect_error() -&gt; Weight {
+	<span class="kw">pub fn </span>expect_error() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 607_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">641_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 732_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">764_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>expect_transact_status() -&gt; Weight {
+	<span class="kw">pub fn </span>expect_transact_status() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 812_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">847_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 879_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">942_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
 	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
@@ -795,21 +841,23 @@
 	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>query_pallet() -&gt; Weight {
+	</span><span class="kw">pub fn </span>query_pallet() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `131`
-		//  Estimated: `3596`
-		// Minimum execution time: 20_485_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">20_677_000</span>, <span class="number">3596</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		//  Measured:  `200`
+		//  Estimated: `3665`
+		// Minimum execution time: 26_349_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">26_794_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3665</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
-	<span class="kw">fn </span>expect_pallet() -&gt; Weight {
+	<span class="kw">pub fn </span>expect_pallet() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_484_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">4_591_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 6_011_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">6_116_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 	<span class="doccomment">/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
 	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
@@ -819,49 +867,55 @@
 	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	</span><span class="kw">fn </span>report_transact_status() -&gt; Weight {
+	</span><span class="kw">pub fn </span>report_transact_status() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `131`
-		//  Estimated: `3596`
-		// Minimum execution time: 15_208_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">15_626_000</span>, <span class="number">3596</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		//  Measured:  `200`
+		//  Estimated: `3665`
+		// Minimum execution time: 19_807_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">20_162_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3665</span>))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
-	<span class="kw">fn </span>clear_transact_status() -&gt; Weight {
+	<span class="kw">pub fn </span>clear_transact_status() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 649_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">684_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 765_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">817_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>set_topic() -&gt; Weight {
+	<span class="kw">pub fn </span>set_topic() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 596_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">649_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 757_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">789_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>clear_topic() -&gt; Weight {
+	<span class="kw">pub fn </span>clear_topic() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 602_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">648_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 731_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">763_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>set_fees_mode() -&gt; Weight {
+	<span class="kw">pub fn </span>set_fees_mode() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 605_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">647_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 734_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">763_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
-	<span class="kw">fn </span>unpaid_execution() -&gt; Weight {
+	<span class="kw">pub fn </span>unpaid_execution() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 654_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">695_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 804_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">855_000</span>, <span class="number">0</span>)
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 	}
 }
 </code></pre></div></section></main></body></html>
