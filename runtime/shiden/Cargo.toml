@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "14.0.1"
+version = "15.0.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
