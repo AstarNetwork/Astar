@@ -297,6 +297,7 @@ pallet-static-price-provider = { path = "./pallets/static-price-provider", defau
 pallet-price-aggregator = { path = "./pallets/price-aggregator", default-features = false }
 pallet-collective-proxy = { path = "./pallets/collective-proxy", default-features = false }
 vesting-mbm = { path = "./pallets/vesting-mbm", default-features = false }
+democracy-mbm = { path = "./pallets/democracy-mbm", default-features = false }
 pallet-treasury = { path = "./vendor/treasury", default-features = false }
 
 dapp-staking-runtime-api = { path = "./pallets/dapp-staking/rpc/runtime-api", default-features = false }

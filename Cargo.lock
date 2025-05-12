@@ -622,6 +622,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-utility",
  "dapp-staking-runtime-api",
+ "democracy-mbm",
  "fp-evm",
  "fp-rpc",
  "fp-self-contained",

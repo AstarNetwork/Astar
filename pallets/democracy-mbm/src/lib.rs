@@ -42,6 +42,21 @@ pub mod weights;
 const LOG_TARGET: &str = "mbm::democracy";
 const PALLET_MIGRATIONS_ID: &[u8; 20] = b"pallet-democracy-mbm";
 
+/// Exports for versioned migration `type`s for this pallet.
+pub mod versioned_migrations {
+    use super::*;
+
+    /// Migration V1 to V2 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
+    /// the migration is only performed when on-chain version is 1.
+    pub type V1ToV2<T, InitArgs> = frame_support::migrations::VersionedMigration<
+        1,
+        2,
+        DemocracyMigrationV1ToV2<T, InitArgs>,
+        Pallet<T>,
+        <T as frame_system::Config>::DbWeight,
+    >;
+}
+
 /// Progressive migration state to keep track of progress
 #[derive(Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen)]
 pub enum MigrationState<T: pallet_democracy::Config> {
@@ -57,9 +72,11 @@ pub enum MigrationState<T: pallet_democracy::Config> {
 
 type StepResultOf<T> = MigrationState<T>;
 
-pub struct LazyMigration<T, W: weights::WeightInfo>(core::marker::PhantomData<(T, W)>);
+pub struct DemocracyMigrationV1ToV2<T, W: weights::WeightInfo>(core::marker::PhantomData<(T, W)>);
 
-impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration for LazyMigration<T, W> {
+impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
+    for DemocracyMigrationV1ToV2<T, W>
+{
     type Cursor = MigrationState<T>;
     // Without the explicit length here the construction of the ID would not be infallible.
     type Identifier = MigrationId<20>;
@@ -141,7 +158,7 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration for L
 }
 
 impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
-    LazyMigration<T, W>
+    DemocracyMigrationV1ToV2<T, W>
 {
     fn required_weight(step: &MigrationState<T>) -> Weight {
         match step {

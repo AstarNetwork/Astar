@@ -1483,6 +1483,9 @@ impl pallet_migrations::Config for Runtime {
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+impl democracy_mbm::Config for Runtime {}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1547,6 +1550,9 @@ construct_runtime!(
         CollectiveProxy: pallet_collective_proxy = 109,
 
         MultiBlockMigrations: pallet_migrations = 120,
+
+        #[cfg(feature = "runtime-benchmarks")]
+        DemocracyMBM: democracy_mbm = 251,
     }
 );
 
@@ -1681,6 +1687,7 @@ mod benches {
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
         [orml_oracle, Oracle]
+        [democracy_mbm, DemocracyMBM]
     );
 }
 
