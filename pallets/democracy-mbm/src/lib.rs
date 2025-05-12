@@ -183,7 +183,6 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
         if let Some((last_key, mut ref_info)) = iter.next() {
             match ref_info {
                 ReferendumInfo::Ongoing(ref mut status) => {
-                    // TODO: add test for it
                     // Double the blocks of the delay period
                     status.delay = status
                         .delay
