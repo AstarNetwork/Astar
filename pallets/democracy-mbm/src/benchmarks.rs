@@ -122,6 +122,8 @@ fn unlock_block_number<T: Config>(voting: VotingType<T>) -> Option<u32> {
         _ => return None,
     };
     let encoded = prior.encode();
+    // As the field block_number is private in PriorLock enum
+    // it encodes the enum and decodes the 4 bytes (as it's an u32)
     Some(u32::from_le_bytes([
         encoded[0], encoded[1], encoded[2], encoded[3],
     ]))

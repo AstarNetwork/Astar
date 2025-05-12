@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::GetStorageVersion;
+use frame_support::traits::StorageVersion;
 use frame_support::weights::Weight;
 use frame_support::{
     migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
@@ -63,8 +63,8 @@ pub enum MigrationState<T: pallet_democracy::Config> {
     /// Migrating referendum info
     ReferendumInfo(ReferendumIndex),
     /// Finished Migrating referendum info, starting migration VotingOf
-    FinishedReferendumInfo,
-    /// Finished referendum info migration, start voting records
+    StartingVotingOf,
+    /// Migrating VotingOf
     VotingOf(<T as frame_system::Config>::AccountId),
     /// Finished all migrations
     Finished,
@@ -94,18 +94,12 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
         mut cursor: Option<Self::Cursor>,
         meter: &mut WeightMeter,
     ) -> Result<Option<Self::Cursor>, SteppedMigrationError> {
-        if pallet_democracy::Pallet::<T>::on_chain_storage_version()
-            != Self::id().version_from as u16
-        {
-            return Ok(None);
-        }
-
         // Check that we have enough weight for at least the next step. If we don't, then the
         // migration cannot be complete.
         let required = match &cursor {
             Some(state) => Self::required_weight(&state),
-            // Worst case weight for `migration_referendum_info`.
-            None => W::migration_referendum_info(),
+            // Worst case weight for `migration_voting_of`.
+            None => W::migration_voting_of(),
         };
         if meter.remaining().any_lt(required) {
             return Err(SteppedMigrationError::InsufficientWeight { required });
@@ -121,8 +115,8 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
             // scenario.
             let required_weight = match &cursor {
                 Some(state) => Self::required_weight(&state),
-                // Worst case weight for `migration_referendum_info`.
-                None => W::migration_referendum_info(),
+                // Worst case weight for `migration_voting_of`.
+                None => W::migration_voting_of(),
             };
             if !meter.can_consume(required_weight) {
                 break;
@@ -136,7 +130,7 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
                     Self::migrate_referendum_info(Some(maybe_last_referendum), current_block_number)
                 }
                 // After the last referendum was migrated, start migrating VotingOf
-                Some(MigrationState::FinishedReferendumInfo) => {
+                Some(MigrationState::StartingVotingOf) => {
                     Self::migrate_voting_of(None, current_block_number)
                 }
                 // Keep migrating VotingOf
@@ -144,7 +138,7 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
                     Self::migrate_voting_of(Some(maybe_last_vote), current_block_number)
                 }
                 Some(MigrationState::Finished) => {
-                    //TODO: post-upgrade ? + put new storage version
+                    StorageVersion::new(Self::id().version_to as u16).put::<pallet_democracy::Pallet<T>>();
                     return Ok(None);
                 }
             };
@@ -163,7 +157,7 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
     fn required_weight(step: &MigrationState<T>) -> Weight {
         match step {
             MigrationState::ReferendumInfo(_) => W::migration_referendum_info(),
-            MigrationState::FinishedReferendumInfo | MigrationState::VotingOf(_) => {
+            MigrationState::StartingVotingOf | MigrationState::VotingOf(_) => {
                 W::migration_voting_of()
             }
             MigrationState::Finished => Weight::zero(),
@@ -214,7 +208,7 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
 
             MigrationState::ReferendumInfo(last_key)
         } else {
-            MigrationState::FinishedReferendumInfo
+            MigrationState::StartingVotingOf
         }
     }
 
@@ -235,8 +229,8 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
 
                     if !lock_amount.is_zero() {
                         // 1. Calculate the remaining blocks
-                        // as the field block number is private in PriorLock enum
-                        // we encode the enum and decode the 4 bytes (as it's an u32)
+                        // as the field block_number is private in PriorLock enum
+                        // it encodes the enum and decodes the 4 bytes (as it's an u32)
                         let encoded = prior.encode();
                         let unlock_block_number =
                             u32::from_le_bytes([encoded[0], encoded[1], encoded[2], encoded[3]]);
