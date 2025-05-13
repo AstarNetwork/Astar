@@ -38,8 +38,6 @@ mod mock;
 mod tests;
 
 pub mod weights;
-
-const LOG_TARGET: &str = "mbm::democracy";
 const PALLET_MIGRATIONS_ID: &[u8; 20] = b"pallet-democracy-mbm";
 
 /// Exports for versioned migration `type`s for this pallet.
@@ -138,7 +136,8 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
                     Self::migrate_voting_of(Some(maybe_last_vote), current_block_number)
                 }
                 Some(MigrationState::Finished) => {
-                    StorageVersion::new(Self::id().version_to as u16).put::<pallet_democracy::Pallet<T>>();
+                    StorageVersion::new(Self::id().version_to as u16)
+                        .put::<pallet_democracy::Pallet<T>>();
                     return Ok(None);
                 }
             };

@@ -357,6 +357,7 @@ try-runtime = [
 	"pallet-treasury/try-runtime",
 	"pallet-utility/try-runtime",
 	"pallet-vesting/try-runtime",
+	"democracy-mbm/try-runtime",
 	"pallet-xc-asset-config/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",

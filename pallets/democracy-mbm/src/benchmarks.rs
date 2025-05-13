@@ -22,21 +22,14 @@ extern crate alloc;
 
 use crate::{Config, Pallet};
 use frame_benchmarking::v2::*;
-use frame_support::{
-    assert_ok,
-    traits::{Currency, Get, StorePreimage},
-};
+use frame_support::traits::{Currency, Get, StorePreimage};
 use frame_system::RawOrigin;
 use pallet_democracy::{
     AccountVote, BoundedCallOf, CallOf, Conviction, Pallet as Democracy, ReferendumCount,
-    ReferendumIndex, ReferendumInfo, ReferendumInfoOf, ReferendumStatus, Vote, VoteThreshold,
-    Voting, VotingOf,
+    ReferendumIndex, ReferendumInfo, ReferendumInfoOf, Vote, VoteThreshold, Voting, VotingOf,
 };
 use parity_scale_codec::Encode;
-use sp_runtime::{
-    traits::{Bounded, Zero},
-    SaturatedConversion,
-};
+use sp_runtime::{traits::Bounded, SaturatedConversion};
 
 const SEED: u32 = 0;
 type BalanceOf<T> = <<T as pallet_democracy::Config>::Currency as Currency<
@@ -147,8 +140,6 @@ mod benches {
             ReferendumInfoOf::<T>::get(ref_index).unwrap(),
             ReferendumInfo::Ongoing(ref status) if status.end == 4u32.into()
         ));
-
-        let current_block = frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
 
         #[block]
         {
