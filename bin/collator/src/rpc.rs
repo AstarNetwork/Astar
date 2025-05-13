@@ -20,12 +20,13 @@
 
 use fc_rpc::{
     Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
-    EthPubSubApiServer, Net, NetApiServer, Web3, Web3ApiServer,
+    EthPubSubApiServer, Net, NetApiServer, TxPool, TxPoolApiServer, Web3, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
-use fc_storage::StorageOverride;
+use fc_storage::{StorageOverride, StorageOverrideHandler};
 use jsonrpsee::RpcModule;
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+use std::path::Path;
 
 use sc_client_api::{
     AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider, UsageProvider,
@@ -33,8 +34,7 @@ use sc_client_api::{
 use sc_network::service::traits::NetworkService;
 use sc_network_sync::SyncingService;
 use sc_rpc::dev::DevApiServer;
-pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
-use sc_transaction_pool::{ChainApi, Pool};
+pub use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder;
@@ -42,18 +42,19 @@ use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
 };
 use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
-use sp_runtime::traits::BlakeTwo256;
+use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 use std::sync::Arc;
 use substrate_frame_rpc_system::{System, SystemApiServer};
 
 use moonbeam_rpc_debug::{Debug, DebugServer};
 use moonbeam_rpc_trace::{Trace, TraceServer};
-// TODO: get rid of this completely now that it's part of frontier?
-use moonbeam_rpc_txpool::{TxPool as MoonbeamTxPool, TxPoolServer};
 
+use crate::evm_tracing_types::{FrontierBackendConfig, FrontierConfig};
 use astar_primitives::*;
 
 pub mod tracing;
+
+type HashFor<Block> = <Block as BlockT>::Hash;
 
 #[derive(Clone)]
 pub struct EvmTracingConfig {
@@ -62,27 +63,75 @@ pub struct EvmTracingConfig {
     pub enable_txpool: bool,
 }
 
+/// Available frontier backend types.
+#[derive(Debug, Copy, Clone, Default, clap::ValueEnum)]
+pub enum FrontierBackendType {
+    /// RocksDb KV database.
+    #[default]
+    KeyValue,
+    /// SQL database with custom log indexing.
+    Sql,
+}
+
 // TODO This is copied from frontier. It should be imported instead after
 // https://github.com/paritytech/frontier/issues/333 is solved
-pub fn open_frontier_backend<C>(
+pub fn open_frontier_backend<C, BE>(
     client: Arc<C>,
     config: &sc_service::Configuration,
-) -> Result<Arc<fc_db::kv::Backend<Block, C>>, String>
+    rpc_config: &FrontierConfig,
+) -> Result<fc_db::Backend<Block, C>, String>
 where
-    C: sp_blockchain::HeaderBackend<Block>,
+    C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,
+    C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError>,
+    C: Send + Sync + 'static,
+    C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
+    BE: Backend<Block> + 'static,
+    BE::State: StateBackend<BlakeTwo256>,
 {
     let config_dir = config.base_path.config_dir(config.chain_spec.id());
     let path = config_dir.join("frontier").join("db");
 
-    Ok(Arc::new(fc_db::kv::Backend::<Block, C>::new(
-        client,
-        &fc_db::kv::DatabaseSettings {
-            source: fc_db::DatabaseSource::RocksDb {
-                path,
-                cache_size: 0,
-            },
-        },
-    )?))
+    let frontier_backend = match rpc_config.frontier_backend_config {
+        FrontierBackendConfig::KeyValue => {
+            fc_db::Backend::KeyValue(Arc::new(fc_db::kv::Backend::<Block, C>::new(
+                client,
+                &fc_db::kv::DatabaseSettings {
+                    source: fc_db::DatabaseSource::RocksDb {
+                        path,
+                        cache_size: 0,
+                    },
+                },
+            )?))
+        }
+        FrontierBackendConfig::Sql {
+            pool_size,
+            num_ops_timeout,
+            thread_count,
+            cache_size,
+        } => {
+            let overrides = Arc::new(StorageOverrideHandler::new(client.clone()));
+            std::fs::create_dir_all(&path).expect("failed creating sql db directory");
+            let backend = futures::executor::block_on(fc_db::sql::Backend::new(
+                fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
+                    path: Path::new("sqlite:///")
+                        .join(path)
+                        .join("frontier.db3")
+                        .to_str()
+                        .expect("frontier sql path error"),
+                    create_if_missing: true,
+                    thread_count: thread_count,
+                    cache_size: cache_size,
+                }),
+                pool_size,
+                std::num::NonZeroU32::new(num_ops_timeout),
+                overrides.clone(),
+            ))
+            .unwrap_or_else(|err| panic!("failed creating sql backend: {:?}", err));
+            fc_db::Backend::Sql(Arc::new(backend))
+        }
+    };
+
+    Ok(frontier_backend)
 }
 
 pub struct AstarEthConfig<C, BE>(std::marker::PhantomData<(C, BE)>);
@@ -101,19 +150,17 @@ where
 }
 
 /// Full client dependencies
-pub struct FullDeps<C, P, A: ChainApi> {
+pub struct FullDeps<C, P> {
     /// The client instance to use.
     pub client: Arc<C>,
     /// Transaction pool instance.
     pub pool: Arc<P>,
     /// Graph pool instance.
-    pub graph: Arc<Pool<A>>,
+    pub graph: Arc<P>,
     /// Network service
     pub network: Arc<dyn NetworkService>,
     /// Chain syncing service
     pub sync: Arc<SyncingService<Block>>,
-    /// Whether to deny unsafe calls
-    pub deny_unsafe: DenyUnsafe,
     /// The Node authority flag
     pub is_authority: bool,
     /// Frontier Backend.
@@ -137,8 +184,8 @@ pub struct FullDeps<C, P, A: ChainApi> {
 }
 
 /// Instantiate all RPC extensions and Tracing RPC.
-pub fn create_full<C, P, BE, A>(
-    deps: FullDeps<C, P, A>,
+pub fn create_full<C, P, BE>(
+    deps: FullDeps<C, P>,
     subscription_task_executor: SubscriptionTaskExecutor,
     pubsub_notification_sinks: Arc<
         fc_mapping_sync::EthereumBlockNotificationSinks<
@@ -168,11 +215,10 @@ where
         + AuraApi<Block, AuraId>
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
         + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
-    P: TransactionPool<Block = Block> + Sync + Send + 'static,
+    P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
     BE::Blockchain: BlockchainBackend<Block>,
-    A: ChainApi<Block = Block> + 'static,
 {
     let client = Arc::clone(&deps.client);
     let graph = Arc::clone(&deps.graph);
@@ -180,7 +226,7 @@ where
     let mut io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)?;
 
     if tracing_config.enable_txpool {
-        io.merge(MoonbeamTxPool::new(Arc::clone(&client), graph).into_rpc())?;
+        io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
     }
 
     if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
@@ -201,8 +247,8 @@ where
     Ok(io)
 }
 
-fn create_full_rpc<C, P, BE, A>(
-    deps: FullDeps<C, P, A>,
+fn create_full_rpc<C, P, BE>(
+    deps: FullDeps<C, P>,
     subscription_task_executor: SubscriptionTaskExecutor,
     pubsub_notification_sinks: Arc<
         fc_mapping_sync::EthereumBlockNotificationSinks<
@@ -229,11 +275,10 @@ where
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>
         + AuraApi<Block, AuraId>,
-    P: TransactionPool<Block = Block> + Sync + Send + 'static,
+    P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
     BE::Blockchain: BlockchainBackend<Block>,
-    A: ChainApi<Block = Block> + 'static,
 {
     let mut io = RpcModule::new(());
     let FullDeps {
@@ -242,7 +287,6 @@ where
         graph,
         network,
         sync,
-        deny_unsafe,
         is_authority,
         frontier_backend,
         filter_pool,
@@ -255,9 +299,9 @@ where
         command_sink,
     } = deps;
 
-    io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+    io.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
     io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
-    io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
+    io.merge(sc_rpc::dev::Dev::new(client.clone()).into_rpc())?;
 
     #[cfg(feature = "manual-seal")]
     if let Some(command_sink) = command_sink {
@@ -272,7 +316,7 @@ where
     let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
 
     io.merge(
-        Eth::<_, _, _, _, _, _, _, ()>::new(
+        Eth::<_, _, _, _, _, _, ()>::new(
             client.clone(),
             pool.clone(),
             graph.clone(),

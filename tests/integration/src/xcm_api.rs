@@ -21,14 +21,17 @@ use crate::setup::*;
 use cumulus_primitives_core::Unlimited;
 use sp_runtime::traits::{BlakeTwo256, Hash, Zero};
 use xcm::{
-    v4::{
-        Asset as XcmAsset, AssetId as XcmAssetId, Fungibility, Junction, Junctions::*, Location,
-        Xcm, VERSION as V_4,
+    v5::{
+        Asset as XcmAsset, AssetId as XcmAssetId, Fungibility,
+        Junction::{self, *},
+        Junctions::*,
+        Location, Parent, Xcm, VERSION as V_5,
     },
-    VersionedLocation, VersionedXcm,
+    VersionedAsset, VersionedLocation, VersionedXcm,
 };
-use xcm_runtime_apis::dry_run::runtime_decl_for_dry_run_api::DryRunApiV1;
+use xcm_runtime_apis::dry_run::runtime_decl_for_dry_run_api::DryRunApiV2;
 use xcm_runtime_apis::fees::runtime_decl_for_xcm_payment_api::XcmPaymentApiV1;
+use xcm_runtime_apis::trusted_query::runtime_decl_for_trusted_query_api::TrustedQueryApiV1;
 
 /// Register an asset into `pallet-assets` instance, and register as as cross-chain asset.
 ///
@@ -70,7 +73,7 @@ fn query_acceptable_payment_assets_is_ok() {
 
         // 1. First check the return values without any foreign asset registered.
         {
-            let assets = Runtime::query_acceptable_payment_assets(V_4)
+            let assets = Runtime::query_acceptable_payment_assets(V_5)
                 .expect("Must return at least native currency.");
             assert_eq!(assets, vec![XcmAssetId(Location::here()).into()]);
         }
@@ -84,7 +87,7 @@ fn query_acceptable_payment_assets_is_ok() {
             prepare_asset(1, payable_location.clone().into_versioned(), Some(1000));
             prepare_asset(2, non_payable_location.clone().into_versioned(), None);
 
-            let assets = Runtime::query_acceptable_payment_assets(V_4)
+            let assets = Runtime::query_acceptable_payment_assets(V_5)
                 .expect("Must return at least native currency.");
 
             assert_eq!(assets.len(), 2);
@@ -172,7 +175,7 @@ fn query_xcm_weight_is_ok() {
             .build();
 
         let weight =
-            Runtime::query_xcm_weight(VersionedXcm::V4(xcm_sequence)).expect("Must return weight.");
+            Runtime::query_xcm_weight(VersionedXcm::V5(xcm_sequence)).expect("Must return weight.");
         assert!(
             !weight.is_zero(),
             "Weight must be non-zero since we're performing asset withdraw & deposit."
@@ -193,7 +196,7 @@ fn query_delivery_fees_is_ok() {
 
         // TODO: this is something we should revisit
         assert!(
-            Runtime::query_delivery_fees(location, VersionedXcm::V4(xcm_sequence)).is_err(),
+            Runtime::query_delivery_fees(location, VersionedXcm::V5(xcm_sequence)).is_err(),
             "At the moment, `PriceForMessageDelivery` is not implemented."
         );
     })
@@ -208,7 +211,8 @@ fn dry_run_call_is_ok() {
             remark: vec![0u8; 32],
         });
 
-        let result = Runtime::dry_run_call(origin, call).expect("Must return some effects.");
+        let result = Runtime::dry_run_call(origin, call, xcm::prelude::XCM_VERSION)
+            .expect("Must return some effects.");
         assert_eq!(result.forwarded_xcms, vec![]);
         assert_eq!(
             result.emitted_events[0],
@@ -242,7 +246,7 @@ fn dry_run_xcm_is_ok() {
             .build();
 
         // ALICE location origin
-        let origin_location = VersionedLocation::V4(
+        let origin_location = VersionedLocation::V5(
             Junction::AccountId32 {
                 id: ALICE.into(),
                 network: None,
@@ -250,8 +254,8 @@ fn dry_run_xcm_is_ok() {
             .into(),
         );
         let dummy_message =
-            Xcm::<RuntimeCall>::from(VersionedXcm::V4(xcm_sequence).try_into().unwrap());
-        let versioned_xcm = VersionedXcm::V4(dummy_message);
+            Xcm::<RuntimeCall>::from(VersionedXcm::V5(xcm_sequence).try_into().unwrap());
+        let versioned_xcm = VersionedXcm::V5(dummy_message);
 
         let result = Runtime::dry_run_xcm(origin_location, versioned_xcm)
             .expect("Must return some effects.");
@@ -284,6 +288,58 @@ fn xcm_recorder_configuration_is_ok() {
         assert!(
             result,
             "XCM recorder must be ready to record incoming XCMs."
+        );
+    })
+}
+
+#[test]
+fn trusted_api_is_reserve_is_ok() {
+    new_test_ext().execute_with(|| {
+        let para_a: Location = (Parent, Parachain(1)).into();
+        let para_a_asset: XcmAsset = (para_a.clone(), 10u128).into();
+        let relay_asset: XcmAsset = (Parent, 10u128).into();
+
+        // para_a origin should be trusted reserve for para_a asset
+        assert_eq!(
+            Runtime::is_trusted_reserve(
+                VersionedAsset::V5(para_a_asset),
+                VersionedLocation::V5(para_a.clone())
+            ),
+            Ok(true)
+        );
+
+        // relay origin should be NOT be a trusted reserve for para_a asset
+        assert_eq!(
+            Runtime::is_trusted_reserve(
+                VersionedAsset::V5(relay_asset),
+                VersionedLocation::V5(para_a)
+            ),
+            Ok(false)
+        );
+    })
+}
+
+#[test]
+fn trusted_api_is_teleport_is_ok() {
+    new_test_ext().execute_with(|| {
+        let para_a: Location = (Parent, Parachain(1)).into();
+        let para_a_asset: XcmAsset = (para_a.clone(), 10u128).into();
+        let relay_asset: XcmAsset = (Parent, 10u128).into();
+
+        // We have no trusted teleporters configured for any runtime
+        assert_eq!(
+            Runtime::is_trusted_teleporter(
+                VersionedAsset::V5(para_a_asset),
+                VersionedLocation::V5(para_a.clone())
+            ),
+            Ok(false)
+        );
+        assert_eq!(
+            Runtime::is_trusted_reserve(
+                VersionedAsset::V5(relay_asset),
+                VersionedLocation::V5(para_a)
+            ),
+            Ok(false)
         );
     })
 }

@@ -62,7 +62,7 @@ fn external_proposals_work() {
             RuntimeOrigin::signed(ALICE.clone()),
             external_propose_call_hash,
             0,
-            external_propose_call.get_dispatch_info().weight,
+            external_propose_call.get_dispatch_info().total_weight(),
             external_propose_call.encode().len() as u32,
         ));
 
@@ -102,7 +102,7 @@ fn external_proposals_work() {
             RuntimeOrigin::signed(ALICE.clone()),
             fast_track_call_hash,
             0,
-            fast_track_call.get_dispatch_info().weight,
+            fast_track_call.get_dispatch_info().total_weight(),
             fast_track_call.encode().len() as u32,
         ));
 
@@ -156,7 +156,7 @@ fn community_council_can_execute_dapp_staking_calls() {
             RuntimeOrigin::signed(ALICE.clone()),
             collective_proxy_call_hash,
             0,
-            collective_proxy_call.get_dispatch_info().weight,
+            collective_proxy_call.get_dispatch_info().total_weight(),
             collective_proxy_call.encode().len() as u32,
         ));
 

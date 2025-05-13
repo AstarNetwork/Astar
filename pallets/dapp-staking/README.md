@@ -93,7 +93,7 @@ dApp can be removed from the procotol by unregistering it.
 This is a privileged action that only `ManagerOrigin` can perform.
 
 After a dApp has been unregistered, it's no longer eligible to receive rewards.
-It's still possible however to claim past unclaimed rewards.
+It's still possible to claim past unclaimed staker rewards after unregistration, but dApp rewards are not claimable anymore.
 
 Important to note that even if dApp has been unregistered, it still occupies a _slot_
 in the dApp staking protocol and counts towards maximum number of registered dApps.

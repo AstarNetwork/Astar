@@ -94,7 +94,7 @@ pub mod pallet {
         #[pallet::call_index(0)]
         #[pallet::weight({
 			let di = call.get_dispatch_info();
-			(T::WeightInfo::execute_call().saturating_add(di.weight), di.class)
+			(T::WeightInfo::execute_call().saturating_add(di.total_weight()), di.class)
 		})]
         pub fn execute_call(
             origin: OriginFor<T>,

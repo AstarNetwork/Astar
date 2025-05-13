@@ -19,7 +19,7 @@
 //! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use crate::{
-    evm_tracing_types::{EthApi as EthApiCmd, EvmTracingConfig},
+    evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig},
     rpc::tracing,
 };
 use fc_consensus::FrontierBlockImport;
@@ -61,13 +61,14 @@ type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 /// Build a partial chain component config
 pub fn new_partial(
     config: &Configuration,
+    evm_tracing_config: &FrontierConfig,
 ) -> Result<
     sc_service::PartialComponents<
         FullClient,
         FullBackend,
         FullSelectChain,
         sc_consensus::DefaultImportQueue<Block>,
-        sc_transaction_pool::FullPool<Block, FullClient>,
+        sc_transaction_pool::TransactionPoolHandle<Block, FullClient>,
         (
             FrontierBlockImport<
                 Block,
@@ -81,7 +82,7 @@ pub fn new_partial(
             >,
             sc_consensus_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
             Option<Telemetry>,
-            Arc<fc_db::kv::Backend<Block, FullClient>>,
+            Arc<fc_db::Backend<Block, FullClient>>,
         ),
     >,
     ServiceError,
@@ -98,17 +99,18 @@ pub fn new_partial(
         .transpose()?;
 
     let heap_pages = config
+        .executor
         .default_heap_pages
         .map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |h| HeapAllocStrategy::Static {
             extra_pages: h as _,
         });
 
     let executor = ParachainExecutor::builder()
-        .with_execution_method(config.wasm_method)
+        .with_execution_method(config.executor.wasm_method)
         .with_onchain_heap_alloc_strategy(heap_pages)
         .with_offchain_heap_alloc_strategy(heap_pages)
-        .with_max_runtime_instances(config.max_runtime_instances)
-        .with_runtime_cache_size(config.runtime_cache_size)
+        .with_max_runtime_instances(config.executor.max_runtime_instances)
+        .with_runtime_cache_size(config.executor.runtime_cache_size)
         .build();
 
     let (client, backend, keystore_container, task_manager) =
@@ -126,13 +128,14 @@ pub fn new_partial(
         telemetry
     });
     let select_chain = sc_consensus::LongestChain::new(backend.clone());
-    let transaction_pool = sc_transaction_pool::BasicPool::new_full(
-        config.transaction_pool.clone(),
-        config.role.is_authority().into(),
-        config.prometheus_registry(),
+    let transaction_pool = sc_transaction_pool::Builder::new(
         task_manager.spawn_essential_handle(),
         client.clone(),
-    );
+        config.role.is_authority().into(),
+    )
+    .with_options(config.transaction_pool.clone())
+    .with_prometheus(config.prometheus_registry())
+    .build();
     let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
         client.clone(),
         GRANDPA_JUSTIFICATION_PERIOD,
@@ -140,7 +143,11 @@ pub fn new_partial(
         select_chain.clone(),
         telemetry.as_ref().map(|x| x.handle()),
     )?;
-    let frontier_backend = crate::rpc::open_frontier_backend(client.clone(), config)?;
+    let frontier_backend = Arc::new(crate::rpc::open_frontier_backend(
+        client.clone(),
+        config,
+        evm_tracing_config,
+    )?);
     let frontier_block_import =
         FrontierBlockImport::new(grandpa_block_import.clone(), client.clone());
 
@@ -184,7 +191,7 @@ pub fn new_partial(
         import_queue,
         keystore_container,
         select_chain,
-        transaction_pool,
+        transaction_pool: transaction_pool.into(),
         other: (
             frontier_block_import,
             grandpa_link,
@@ -197,7 +204,7 @@ pub fn new_partial(
 /// Builds a new service.
 pub fn start_node<N>(
     config: Configuration,
-    evm_tracing_config: EvmTracingConfig,
+    evm_tracing_config: FrontierConfig,
 ) -> Result<TaskManager, ServiceError>
 where
     N: NetworkBackend<Block, <Block as BlockT>::Hash>,
@@ -211,7 +218,7 @@ where
         select_chain,
         transaction_pool,
         other: (block_import, grandpa_link, mut telemetry, frontier_backend),
-    } = new_partial(&config)?;
+    } = new_partial(&config, &evm_tracing_config)?;
 
     let protocol_name = sc_consensus_grandpa::protocol_standard_name(
         &client
@@ -221,8 +228,10 @@ where
             .expect("Genesis block exists; qed"),
         &config.chain_spec,
     );
-    let mut net_config =
-        sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&config.network);
+    let mut net_config = sc_network::config::FullNetworkConfiguration::<_, _, N>::new(
+        &config.network,
+        config.prometheus_registry().cloned(),
+    );
 
     let metrics = N::register_notification_metrics(
         config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
@@ -246,7 +255,7 @@ where
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
             block_announce_validator_builder: None,
-            warp_sync_params: None,
+            warp_sync_config: None,
             block_relay: None,
             metrics,
         })?;
@@ -266,7 +275,7 @@ where
                 is_validator: config.role.is_authority(),
                 enable_http_requests: true,
                 custom_extensions: move |_| vec![],
-            })
+            })?
             .run(client.clone(), task_manager.spawn_handle())
             .boxed(),
         );
@@ -297,7 +306,6 @@ where
                     client: client.clone(),
                     substrate_backend: backend.clone(),
                     frontier_backend: frontier_backend.clone(),
-                    filter_pool: Some(filter_pool.clone()),
                     storage_override: storage_override.clone(),
                 },
             )
@@ -310,24 +318,47 @@ where
 
     // Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
-    task_manager.spawn_essential_handle().spawn(
-        "frontier-mapping-sync-worker",
-        Some("frontier"),
-        fc_mapping_sync::kv::MappingSyncWorker::new(
-            client.import_notification_stream(),
-            Duration::new(6, 0),
-            client.clone(),
-            backend.clone(),
-            storage_override.clone(),
-            frontier_backend.clone(),
-            3,
-            0,
-            fc_mapping_sync::SyncStrategy::Parachain,
-            sync_service.clone(),
-            pubsub_notification_sinks.clone(),
-        )
-        .for_each(|()| futures::future::ready(())),
-    );
+    match frontier_backend.as_ref() {
+        fc_db::Backend::KeyValue(ref b) => {
+            task_manager.spawn_essential_handle().spawn(
+                "frontier-mapping-sync-worker",
+                Some("frontier"),
+                fc_mapping_sync::kv::MappingSyncWorker::new(
+                    client.import_notification_stream(),
+                    Duration::new(6, 0),
+                    client.clone(),
+                    backend.clone(),
+                    storage_override.clone(),
+                    b.clone(),
+                    3,
+                    0,
+                    fc_mapping_sync::SyncStrategy::Parachain,
+                    sync_service.clone(),
+                    pubsub_notification_sinks.clone(),
+                )
+                .for_each(|()| futures::future::ready(())),
+            );
+        }
+        fc_db::Backend::Sql(ref b) => {
+            task_manager.spawn_essential_handle().spawn_blocking(
+                "frontier-mapping-sync-worker",
+                Some("frontier"),
+                fc_mapping_sync::sql::SyncWorker::run(
+                    client.clone(),
+                    backend.clone(),
+                    b.clone(),
+                    client.import_notification_stream(),
+                    fc_mapping_sync::sql::SyncWorkerConfig {
+                        read_notification_timeout: Duration::from_secs(10),
+                        check_indexed_blocks_interval: Duration::from_secs(60),
+                    },
+                    fc_mapping_sync::SyncStrategy::Parachain,
+                    sync_service.clone(),
+                    pubsub_notification_sinks.clone(),
+                ),
+            );
+        }
+    }
 
     // Frontier `EthFilterApi` maintenance. Manages the pool of user-created Filters.
     // Each filter is allowed to stay in the pool for 100 blocks.
@@ -384,16 +415,18 @@ where
         let sync = sync_service.clone();
         let pubsub_notification_sinks = pubsub_notification_sinks.clone();
 
-        Box::new(move |deny_unsafe, subscription| {
+        Box::new(move |subscription| {
             let deps = crate::rpc::FullDeps {
                 client: client.clone(),
                 pool: transaction_pool.clone(),
-                graph: transaction_pool.pool().clone(),
+                graph: transaction_pool.clone(),
                 network: network.clone(),
                 sync: sync.clone(),
                 is_authority,
-                deny_unsafe,
-                frontier_backend: frontier_backend.clone(),
+                frontier_backend: match *frontier_backend {
+                    fc_db::Backend::KeyValue(ref b) => b.clone(),
+                    fc_db::Backend::Sql(ref b) => b.clone(),
+                },
                 filter_pool: filter_pool.clone(),
                 fee_history_limit: FEE_HISTORY_LIMIT,
                 fee_history_cache: fee_history_cache.clone(),

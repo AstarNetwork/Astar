@@ -52,19 +52,20 @@ fn transact_works() {
             RawOrigin::XcmEthereumTx(ALICE).into(),
             store_tx
         ));
-        let pending = pallet_ethereum::Pending::<TestRuntime>::get();
-        assert_eq!(pending.len(), 2);
+        let pending0 = pallet_ethereum::Pending::<TestRuntime>::get(0);
+        let pending1 = pallet_ethereum::Pending::<TestRuntime>::get(1);
+        assert_eq!(pallet_ethereum::Pending::<TestRuntime>::count(), 2);
 
-        match pending[0] {
-            (Transaction::EIP1559(ref t), _, Receipt::EIP1559(ref r)) => {
+        match pending0 {
+            Some((Transaction::EIP1559(ref t), _, Receipt::EIP1559(ref r))) => {
                 // nonce 0, status code 1 (success)
                 assert_eq!(t.nonce, U256::zero());
                 assert_eq!(r.status_code, 1);
             }
             _ => panic!("unexpected transaction type"),
         }
-        match pending[1] {
-            (Transaction::EIP1559(ref t), _, Receipt::EIP1559(ref r)) => {
+        match pending1 {
+            Some((Transaction::EIP1559(ref t), _, Receipt::EIP1559(ref r))) => {
                 // nonce 1, status code 1 (success)
                 assert_eq!(t.nonce, U256::one());
                 assert_eq!(r.status_code, 1);
@@ -123,9 +124,8 @@ fn no_hash_collision() {
             ));
         }
 
-        let mut tx_hashes = pallet_ethereum::Pending::<TestRuntime>::get()
-            .iter()
-            .map(|(tx, _, _)| tx.hash())
+        let mut tx_hashes = pallet_ethereum::Pending::<TestRuntime>::iter()
+            .map(|(_, (tx, _, _))| tx.hash())
             .collect::<Vec<_>>();
         tx_hashes.dedup();
         assert_eq!(tx_hashes.len(), 5);

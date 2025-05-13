@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "14.0.1"
+version = "15.0.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -314,6 +314,7 @@ runtime-benchmarks = [
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
+	"pallet-transaction-payment/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
 	"pallet-tx-pause/runtime-benchmarks",
 	"pallet-unified-accounts/runtime-benchmarks",

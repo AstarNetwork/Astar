@@ -22,6 +22,10 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 512.
 #![recursion_limit = "512"]
 
+extern crate alloc;
+use alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec, vec::Vec};
+use core::marker::PhantomData;
+
 use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
     construct_runtime,
@@ -59,7 +63,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{sr25519, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
+    generic, impl_opaque_keys,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
         DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto, Zero,
@@ -67,10 +71,10 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
     ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
 };
-use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use xcm::{
-    v4::{AssetId as XcmAssetId, Location as XcmLocation},
-    IntoVersion, VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm,
+    v5::{AssetId as XcmAssetId, Location as XcmLocation},
+    IntoVersion, Version as XcmVersion, VersionedAsset, VersionedAssetId, VersionedAssets,
+    VersionedLocation, VersionedXcm,
 };
 use xcm_runtime_apis::{
     dry_run::{CallDryRunEffects, Error as XcmDryRunApiError, XcmDryRunEffects},
@@ -181,14 +185,14 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 /// Runtime version.
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("astar"),
-    impl_name: create_runtime_str!("astar"),
+    spec_name: Cow::Borrowed("astar"),
+    impl_name: Cow::Borrowed("astar"),
     authoring_version: 1,
-    spec_version: 1401,
+    spec_version: 1500,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
-    state_version: 1,
+    system_version: 1,
 };
 
 /// Native version.
@@ -305,6 +309,7 @@ impl frame_system::Config for Runtime {
     type PreInherents = ();
     type PostInherents = ();
     type PostTransactions = ();
+    type ExtensionsWeightInfo = weights::frame_system_extensions::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -323,6 +328,7 @@ parameter_types! {
     pub const BasicDeposit: Balance = deposit(1, 258);  // 258 bytes on-chain
     pub const ByteDeposit: Balance = deposit(0, 1);
     pub const SubAccountDeposit: Balance = deposit(1, 53);  // 53 bytes on-chain
+    pub const UsernameDeposit: Balance = deposit(0, 32);
     pub const MaxSubAccounts: u32 = 100;
     pub const MaxAdditionalFields: u32 = 100;
     pub const MaxRegistrars: u32 = 20;
@@ -347,6 +353,8 @@ impl pallet_identity::Config for Runtime {
     type MaxSuffixLength = ConstU32<7>;
     type MaxUsernameLength = ConstU32<32>;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
+    type UsernameDeposit = UsernameDeposit;
+    type UsernameGracePeriod = ConstU32<{ 7 * DAYS }>;
 }
 
 parameter_types! {
@@ -408,7 +416,7 @@ parameter_types! {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-pub struct DAppStakingBenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
+pub struct DAppStakingBenchmarkHelper<SC, ACC>(PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_dapp_staking::BenchmarkHelper<SmartContract<AccountId>, AccountId>
     for DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>
@@ -461,7 +469,7 @@ impl pallet_dapp_staking::Config for Runtime {
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
     type MaxBonusSafeMovesPerPeriod = ConstU8<2>;
-    type WeightInfo = weights::pallet_dapp_staking::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_dapp_staking::WeightInfo<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>;
 }
@@ -501,7 +509,7 @@ impl pallet_inflation::Config for Runtime {
     type PayoutPerBlock = InflationPayoutPerBlock;
     type CycleConfiguration = InflationCycleConfig;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = weights::pallet_inflation::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_inflation::WeightInfo<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -528,6 +536,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
     type ConsensusHook = ConsensusHook;
+    type SelectCore = cumulus_pallet_parachain_system::DefaultCoreSelector<Runtime>;
     type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
 }
 
@@ -641,6 +650,7 @@ impl pallet_balances::Config for Runtime {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = RuntimeFreezeReason;
     type MaxFreezes = ConstU32<1>;
+    type DoneSlashHandler = ();
 }
 
 impl AddressToAssetId<AssetId> for Runtime {
@@ -688,7 +698,7 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
-    type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
     type CallbackHandle = EvmRevertCodeHandler<Self, Self>;
@@ -800,8 +810,15 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
     type Balance = Balance;
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        let p = WeightFeeFactor::get();
-        let q = Balance::from(ExtrinsicBaseWeight::get().ref_time());
+        #[cfg(feature = "runtime-benchmarks")]
+        let (p, q) = (Balance::from(1u128), Balance::from(1u128));
+
+        #[cfg(not(feature = "runtime-benchmarks"))]
+        let (p, q) = (
+            WeightFeeFactor::get(),
+            Balance::from(ExtrinsicBaseWeight::get().ref_time()),
+        );
+
         smallvec::smallvec![WeightToFeeCoefficient {
             degree: 1,
             negative: false,
@@ -825,7 +842,7 @@ impl WeightToFeeT for XcmWeightToFee {
 
 pub struct DealWithFees;
 impl OnUnbalanced<Credit<AccountId, Balances>> for DealWithFees {
-    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = Credit<AccountId, Balances>>) {
+    fn on_unbalanceds(mut fees_then_tips: impl Iterator<Item = Credit<AccountId, Balances>>) {
         if let Some(fees) = fees_then_tips.next() {
             // Burn 80% of fees, rest goes to collator, including 100% of the tips.
             let (to_burn, mut collator) = fees.ration(80, 20);
@@ -858,7 +875,11 @@ impl pallet_transaction_payment::Config for Runtime {
         MinimumMultiplier,
         MaximumMultiplier,
     >;
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthFeeFactor>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type LengthToFee = ConstantMultiplier<Balance, sp_core::ConstU128<1>>;
+    type WeightInfo = weights::pallet_transaction_payment::WeightInfo<Self>;
 }
 
 parameter_types! {
@@ -897,7 +918,7 @@ pub const GAS_PER_SECOND: u64 = 40_000_000;
 /// u64 works for approximations because Weight is a very small unit compared to gas.
 pub const WEIGHT_PER_GAS: u64 = WEIGHT_REF_TIME_PER_SECOND.saturating_div(GAS_PER_SECOND);
 
-pub struct FindAuthorTruncated<F>(sp_std::marker::PhantomData<F>);
+pub struct FindAuthorTruncated<F>(PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
     fn find_author<'a, I>(digests: I) -> Option<H160>
     where
@@ -955,7 +976,9 @@ impl pallet_evm::Config for Runtime {
     type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
     type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
-    type SuicideQuickClearLimit = ConstU32<0>;
+    type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
+    // gas based storage limit not enabled
+    type GasLimitStorageGrowthRatio = ConstU64<0>;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
@@ -965,7 +988,8 @@ parameter_types! {
 
 impl pallet_ethereum::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
+    type StateRoot =
+        pallet_ethereum::IntermediateStateRoot<<Self as frame_system::Config>::Version>;
     type PostLogContent = PostBlockAndTxnHashes;
     // Maximum length (in bytes) of revert message to include in Executed event
     type ExtraDataLength = ConstU32<30>;
@@ -1203,7 +1227,7 @@ impl orml_oracle::Config for Runtime {
     #[cfg(not(feature = "runtime-benchmarks"))]
     type Members = OracleMembership;
     type MaxHasDispatchedSize = ConstU32<8>;
-    type WeightInfo = weights::orml_oracle::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::orml_oracle::WeightInfo<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type MaxFeedValues = ConstU32<2>;
     #[cfg(not(feature = "runtime-benchmarks"))]
@@ -1237,6 +1261,7 @@ impl frame_support::traits::SortedMembers<AccountId> for OracleMembershipWrapper
     }
 
     fn add(account: &AccountId) {
+        use alloc::borrow::ToOwned;
         frame_support::assert_ok!(OracleMembership::add_member(
             frame_system::RawOrigin::Root.into(),
             account.to_owned().into()
@@ -1303,6 +1328,9 @@ impl pallet_collective::Config<MainCouncilCollectiveInst> for Runtime {
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type SetMembersOrigin = EnsureRoot<AccountId>;
     type MaxProposalWeight = MaxProposalWeight;
+    type KillOrigin = EnsureRoot<AccountId>;
+    type DisapproveOrigin = EnsureRoot<AccountId>;
+    type Consideration = ();
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -1316,6 +1344,9 @@ impl pallet_collective::Config<TechnicalCommitteeCollectiveInst> for Runtime {
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type SetMembersOrigin = EnsureRoot<AccountId>;
     type MaxProposalWeight = MaxProposalWeight;
+    type KillOrigin = EnsureRoot<AccountId>;
+    type DisapproveOrigin = EnsureRoot<AccountId>;
+    type Consideration = ();
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -1329,6 +1360,9 @@ impl pallet_collective::Config<CommunityCouncilCollectiveInst> for Runtime {
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type SetMembersOrigin = EnsureRoot<AccountId>;
     type MaxProposalWeight = MaxProposalWeight;
+    type KillOrigin = EnsureRoot<AccountId>;
+    type DisapproveOrigin = EnsureRoot<AccountId>;
+    type Consideration = ();
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
@@ -1471,7 +1505,7 @@ parameter_types! {
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations = ();
+    type Migrations = (pallet_identity::migration::v2::LazyMigrationV1ToV2<Runtime>,);
     // Benchmarks need mocked migrations to guarantee that they succeed.
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -1596,8 +1630,20 @@ pub type Executive = frame_executive::Executive<
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
+parameter_types! {
+    pub const MaxPercentages: [Option<Perbill>; 4] = [
+        Some(Perbill::from_parts(35_700_000)), // 3.57%
+        Some(Perbill::from_parts(8_900_000)), // 0.89%
+        Some(Perbill::from_parts(2_380_000)), // 0.238%
+        None
+    ];
+}
+
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (pallet_dapp_staking::migration::DappStakingCleanupMigration<Runtime>,);
+pub type Unreleased = (
+    pallet_dapp_staking::migration::versioned_migrations::V9ToV10<Runtime, MaxPercentages>,
+    pallet_xc_asset_config::migrations::versioned::V3ToV4<Runtime>,
+);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
@@ -1674,9 +1720,11 @@ mod benches {
     define_benchmarks!(
         [frame_benchmarking, BaselineBench::<Runtime>]
         [frame_system, SystemBench::<Runtime>]
+        [frame_system_extensions, SystemExtensionsBench::<Runtime>]
         [pallet_assets, pallet_assets::Pallet::<Runtime>]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
+        [pallet_transaction_payment, TransactionPayment]
         [pallet_dapp_staking, DappStaking]
         [pallet_inflation, Inflation]
         [pallet_migrations, MultiBlockMigrations]
@@ -1715,7 +1763,7 @@ impl_runtime_apis! {
             Runtime::metadata_at_version(version)
         }
 
-        fn metadata_versions() -> sp_std::vec::Vec<u32> {
+        fn metadata_versions() -> Vec<u32> {
             Runtime::metadata_versions()
         }
     }
@@ -1863,8 +1911,7 @@ impl_runtime_apis! {
         }
 
         fn storage_at(address: H160, index: U256) -> H256 {
-            let mut tmp = [0u8; 32];
-            index.to_big_endian(&mut tmp);
+            let tmp: [u8; 32] = index.to_big_endian();
             pallet_evm::AccountStorages::<Runtime>::get(address, H256::from_slice(&tmp[..]))
         }
 
@@ -2088,7 +2135,7 @@ impl_runtime_apis! {
         fn convert_transaction(
             transaction: pallet_ethereum::Transaction
         ) -> <Block as BlockT>::Extrinsic {
-            UncheckedExtrinsic::new_unsigned(
+            UncheckedExtrinsic::new_bare(
                 pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
             )
         }
@@ -2182,7 +2229,7 @@ impl_runtime_apis! {
 
     impl xcm_runtime_apis::fees::XcmPaymentApi<Block> for Runtime {
         fn query_acceptable_payment_assets(xcm_version: xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
-            if !matches!(xcm_version, xcm::v3::VERSION | xcm::v4::VERSION) {
+            if !matches!(xcm_version, xcm::v3::VERSION | xcm::v4::VERSION | xcm::v5::VERSION) {
                 return Err(XcmPaymentApiError::UnhandledXcmVersion);
             }
 
@@ -2203,7 +2250,7 @@ impl_runtime_apis! {
         }
 
         fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
-            let asset = asset.into_version(xcm::v4::VERSION).map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+            let asset = asset.into_version(xcm::v5::VERSION).map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
             let asset_id: XcmAssetId = asset.try_into().map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
 
             // for native token
@@ -2212,7 +2259,7 @@ impl_runtime_apis! {
             }
             // for foreign assets with “units per second” configurations
             else {
-                let versioned_location = VersionedLocation::V4(asset_id.0);
+                let versioned_location = VersionedLocation::V5(asset_id.0);
 
                 match pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::get(versioned_location) {
                     Some(units_per_sec) => {
@@ -2233,12 +2280,21 @@ impl_runtime_apis! {
     }
 
     impl xcm_runtime_apis::dry_run::DryRunApi<Block, RuntimeCall, RuntimeEvent, OriginCaller> for Runtime {
-        fn dry_run_call(origin: OriginCaller, call: RuntimeCall) -> Result<CallDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
-            PolkadotXcm::dry_run_call::<Runtime, xcm_config::XcmRouter, OriginCaller, RuntimeCall>(origin, call)
+        fn dry_run_call(origin: OriginCaller, call: RuntimeCall, result_xcms_version: XcmVersion) -> Result<CallDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
+            PolkadotXcm::dry_run_call::<Runtime, xcm_config::XcmRouter, OriginCaller, RuntimeCall>(origin, call, result_xcms_version)
         }
 
         fn dry_run_xcm(origin_location: VersionedLocation, xcm: VersionedXcm<RuntimeCall>) -> Result<XcmDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
             PolkadotXcm::dry_run_xcm::<Runtime, xcm_config::XcmRouter, RuntimeCall, xcm_config::XcmConfig>(origin_location, xcm)
+        }
+    }
+
+    impl xcm_runtime_apis::trusted_query::TrustedQueryApi<Block> for Runtime {
+        fn is_trusted_reserve(asset: VersionedAsset, location: VersionedLocation) -> Result<bool, xcm_runtime_apis::trusted_query::Error> {
+            PolkadotXcm::is_trusted_reserve(asset, location)
+        }
+        fn is_trusted_teleporter(asset: VersionedAsset, location: VersionedLocation) -> Result<bool, xcm_runtime_apis::trusted_query::Error> {
+            PolkadotXcm::is_trusted_teleporter(asset, location)
         }
     }
 
@@ -2268,7 +2324,9 @@ impl_runtime_apis! {
             use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
             use pallet_xcm::benchmarking::Pallet as PalletXcmExtrinsicsBenchmark;
-            use frame_system_benchmarking::Pallet as SystemBench;
+            pub use frame_system_benchmarking::{
+                extensions::Pallet as SystemExtensionsBench, Pallet as SystemBench
+            };
             use baseline::Pallet as BaselineBench;
 
             // This is defined once again in dispatch_benchmark, because list_benchmarks!
@@ -2287,9 +2345,12 @@ impl_runtime_apis! {
 
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
-        ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
+        ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, alloc::string::String> {
+            use alloc::boxed::Box;
             use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, BenchmarkError};
-            use frame_system_benchmarking::Pallet as SystemBench;
+            pub use frame_system_benchmarking::{
+                extensions::Pallet as SystemExtensionsBench, Pallet as SystemBench
+            };
             use frame_support::{traits::{WhitelistedStorageKeys, TrackedStorageKey, tokens::fungible::{ItemOf}}, assert_ok};
             use baseline::Pallet as BaselineBench;
             use xcm::latest::prelude::*;
@@ -2364,7 +2425,7 @@ impl_runtime_apis! {
 
                 // destination location to be used in benchmarks
                 fn valid_destination() -> Result<Location, BenchmarkError> {
-                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v4::VERSION));
+                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v5::VERSION));
                     Ok(Location::parent())
                 }
                 fn worst_case_holding(_depositable_count: u32) -> Assets {
@@ -2389,13 +2450,13 @@ impl_runtime_apis! {
                 }
                 fn transact_origin_and_runtime_call()
                     -> Result<(Location, RuntimeCall), BenchmarkError> {
-                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v4::VERSION));
+                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v5::VERSION));
                     Ok((Location::parent(), frame_system::Call::remark_with_event {
                         remark: vec![]
                     }.into()))
                 }
                 fn subscribe_origin() -> Result<Location, BenchmarkError> {
-                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v4::VERSION));
+                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v5::VERSION));
                     Ok(Location::parent())
                 }
                 fn claimable_asset()

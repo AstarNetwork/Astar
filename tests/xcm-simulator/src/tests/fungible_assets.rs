@@ -962,7 +962,7 @@ fn para_asset_trap_and_claim() {
 
         assert_ok!(ParachainPalletXcm::execute(
             parachain::RuntimeOrigin::signed(ALICE.into()),
-            Box::new(VersionedXcm::V4(xcm)),
+            Box::new(VersionedXcm::V5(xcm)),
             Weight::from_parts(100_000_000_000, 1024 * 1024)
         ));
 
@@ -994,7 +994,7 @@ fn para_asset_trap_and_claim() {
 
         assert_ok!(ParachainPalletXcm::execute(
             parachain::RuntimeOrigin::signed(ALICE.into()),
-            Box::new(VersionedXcm::V4(xcm)),
+            Box::new(VersionedXcm::V5(xcm)),
             Weight::from_parts(100_000_000_000, 1024 * 1024)
         ));
 

@@ -252,7 +252,7 @@ mod xcm_old_interface_test {
 
                 let non_native_asset = Asset {
                     fun: Fungible(42000),
-                    id: xcm::v4::AssetId::from(Location {
+                    id: xcm::v5::AssetId::from(Location {
                         parents: 0,
                         interior: Here,
                     }),
@@ -327,7 +327,7 @@ mod xcm_old_interface_test {
 
                 let native_asset = Asset {
                     fun: Fungible(42000),
-                    id: xcm::v4::AssetId::from(Location {
+                    id: xcm::v5::AssetId::from(Location {
                         parents: 0,
                         interior: Parachain(123).into(),
                     }),
@@ -367,7 +367,7 @@ mod xcm_old_interface_test {
                 }
                 .into(),
             };
-            let xcm_to_send = VersionedXcm::<()>::V4(Xcm(vec![ClearOrigin])).encode();
+            let xcm_to_send = VersionedXcm::<()>::V5(Xcm(vec![ClearOrigin])).encode();
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,

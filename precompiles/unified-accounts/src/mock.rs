@@ -28,7 +28,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{keccak_256, H160};
 use sp_runtime::{
-    traits::{BlakeTwo256, ConstU32, IdentityLookup},
+    traits::{BlakeTwo256, IdentityLookup},
     AccountId32, BuildStorage,
 };
 
@@ -196,7 +196,8 @@ impl pallet_evm::Config for TestRuntime {
     type OnCreate = ();
     type WeightInfo = ();
     type GasLimitPovSizeRatio = ConstU64<4>;
-    type SuicideQuickClearLimit = ConstU32<0>;
+    type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
+    type GasLimitStorageGrowthRatio = ConstU64<0>;
 }
 
 parameter_types! {

@@ -21,8 +21,8 @@ use astar_primitives::{evm::EVM_REVERT_CODE, genesis::GenesisAccount, parachain:
 
 /// Provides the JSON representation of predefined genesis config for given `id`.
 pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
-    let genesis = match id.try_into() {
-        Ok("development") => default_config(SHIDEN_ID),
+    let genesis = match id.as_str() {
+        "development" => default_config(SHIDEN_ID),
         _ => return None,
     };
     Some(
@@ -72,6 +72,7 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
                     )
                 })
                 .collect::<Vec<_>>(),
+            ..Default::default()
         },
         aura: AuraConfig {
             authorities: vec![],
@@ -126,14 +127,17 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
                 TierThreshold::DynamicPercentage {
                     percentage: Perbill::from_parts(35_700_000), // 3.57%
                     minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
+                    maximum_possible_percentage: Perbill::from_percent(100),
                 },
                 TierThreshold::DynamicPercentage {
                     percentage: Perbill::from_parts(8_900_000), // 0.89%
                     minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+                    maximum_possible_percentage: Perbill::from_percent(100),
                 },
                 TierThreshold::DynamicPercentage {
                     percentage: Perbill::from_parts(2_380_000), // 0.238%
                     minimum_required_percentage: Perbill::from_parts(1_790_000), // 0.179%
+                    maximum_possible_percentage: Perbill::from_percent(100),
                 },
                 TierThreshold::FixedPercentage {
                     required_percentage: Perbill::from_parts(600_000), // 0.06%

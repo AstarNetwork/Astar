@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "14.0.1"
+version = "15.0.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -256,6 +256,7 @@ runtime-benchmarks = [
 	"pallet-balances/runtime-benchmarks",
 	"pallet-dapp-staking/runtime-benchmarks",
 	"pallet-inflation/runtime-benchmarks",
+	"pallet-transaction-payment/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",

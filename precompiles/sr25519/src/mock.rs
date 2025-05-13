@@ -22,9 +22,7 @@ use super::*;
 
 use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{
-    construct_runtime, derive_impl, parameter_types,
-    traits::{ConstU32, ConstU64},
-    weights::Weight,
+    construct_runtime, derive_impl, parameter_types, traits::ConstU64, weights::Weight,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -186,7 +184,8 @@ impl pallet_evm::Config for Runtime {
     type FindAuthor = ();
     type WeightInfo = ();
     type GasLimitPovSizeRatio = ConstU64<4>;
-    type SuicideQuickClearLimit = ConstU32<0>;
+    type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
+    type GasLimitStorageGrowthRatio = ConstU64<0>;
 }
 
 // Configure a mock runtime to test the pallet.

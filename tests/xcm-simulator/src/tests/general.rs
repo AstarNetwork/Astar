@@ -43,7 +43,7 @@ fn basic_dmp() {
             Parachain(1),
             Xcm(vec![Transact {
                 origin_kind: OriginKind::SovereignAccount,
-                require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
+                fallback_max_weight: Some(Weight::from_parts(1_000_000_000, 1024 * 1024)),
                 call: remark.encode().into(),
             }]),
         ));
@@ -77,7 +77,7 @@ fn basic_ump() {
             Parent,
             Xcm(vec![Transact {
                 origin_kind: OriginKind::SovereignAccount,
-                require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
+                fallback_max_weight: Some(Weight::from_parts(1_000_000_000, 1024 * 1024)),
                 call: remark.encode().into(),
             }]),
         ));
@@ -113,7 +113,7 @@ fn basic_xcmp() {
                 },
                 Transact {
                     origin_kind: OriginKind::SovereignAccount,
-                    require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
+                    fallback_max_weight: Some(Weight::from_parts(1_000_000_000, 1024 * 1024)),
                     call: remark.encode().into(),
                 }
             ]),
@@ -162,7 +162,7 @@ fn error_when_not_paying_enough() {
         assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
             relay_chain::RuntimeOrigin::signed(ALICE),
             Box::new(Parachain(1).into()),
-            Box::new(VersionedLocation::V4(dest).clone().into()),
+            Box::new(VersionedLocation::V5(dest).clone().into()),
             Box::new((Here, 99).into()),
             0,
             WeightLimit::Unlimited,
@@ -261,7 +261,7 @@ fn remote_dapps_staking_staker_claim() {
                 },
                 Transact {
                     origin_kind: OriginKind::SovereignAccount,
-                    require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
+                    fallback_max_weight: Some(Weight::from_parts(1_000_000_000, 1024 * 1024)),
                     call: proxy_call.encode().into(),
                 },
             ]),
@@ -320,7 +320,7 @@ fn remote_dapps_staking_staker_claim() {
                 },
                 Transact {
                     origin_kind: OriginKind::SovereignAccount,
-                    require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
+                    fallback_max_weight: Some(Weight::from_parts(1_000_000_000, 1024 * 1024)),
                     call: proxy_call.encode().into(),
                 }
             ]),
