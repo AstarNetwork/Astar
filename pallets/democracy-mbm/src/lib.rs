@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::StorageVersion;
+use frame_support::traits::{Currency, StorageVersion};
 use frame_support::weights::Weight;
 use frame_support::{
     migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
@@ -30,8 +30,15 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_arithmetic::traits::Zero;
 
+#[cfg(feature = "try-runtime")]
+use sp_std::vec::Vec;
+
+#[cfg(feature = "try-runtime")]
+mod try_runtime;
+
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarks;
+
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -39,6 +46,8 @@ mod tests;
 
 pub mod weights;
 const PALLET_MIGRATIONS_ID: &[u8; 20] = b"pallet-democracy-mbm";
+
+const LOG_TARGET: &str = "mbm::democracy";
 
 /// Exports for versioned migration `type`s for this pallet.
 pub mod versioned_migrations {
@@ -147,6 +156,16 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
         }
 
         Ok(cursor)
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
+        try_runtime::pre_upgrade_body::<T>()
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
+        try_runtime::post_upgrade_body::<T>(state)
     }
 }
 
