@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::{Currency, StorageVersion};
+use frame_support::traits::StorageVersion;
 use frame_support::weights::Weight;
 use frame_support::{
     migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
@@ -46,8 +46,6 @@ mod tests;
 
 pub mod weights;
 const PALLET_MIGRATIONS_ID: &[u8; 20] = b"pallet-democracy-mbm";
-
-const LOG_TARGET: &str = "mbm::democracy";
 
 /// Exports for versioned migration `type`s for this pallet.
 pub mod versioned_migrations {

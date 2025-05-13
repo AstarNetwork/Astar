@@ -20,15 +20,16 @@
 
 extern crate alloc;
 
-use crate::{
-    Currency, ReferendumIndex, ReferendumInfo, ReferendumInfoOf, Voting, VotingOf, LOG_TARGET,
-};
+use crate::{ReferendumIndex, ReferendumInfo, ReferendumInfoOf, Voting, VotingOf};
 use alloc::collections::BTreeMap;
+use frame_support::traits::Currency;
 use frame_system::pallet_prelude::BlockNumberFor;
 use pallet_democracy::BoundedCallOf;
 use parity_scale_codec::{Decode, Encode};
 use sp_runtime::{traits::Zero, SaturatedConversion, TryRuntimeError};
 use sp_std::vec::Vec;
+
+const LOG_TARGET: &str = "mbm::democracy";
 
 type BalanceOf<T> = <<T as pallet_democracy::Config>::Currency as Currency<
     <T as frame_system::Config>::AccountId,
@@ -56,9 +57,7 @@ pub(crate) fn pre_upgrade_body<T: pallet_democracy::Config + frame_system::Confi
     );
 
     // Collect referendum data
-    let referendum_infos = ReferendumInfoOf::<T>::iter()
-        .map(|(index, info)| (index, info))
-        .collect::<BTreeMap<_, _>>();
+    let referendum_infos = ReferendumInfoOf::<T>::iter().collect::<BTreeMap<_, _>>();
 
     log::info!(
     target: LOG_TARGET,
@@ -67,9 +66,7 @@ pub(crate) fn pre_upgrade_body<T: pallet_democracy::Config + frame_system::Confi
     );
 
     // Collect voting data
-    let voting_of = VotingOf::<T>::iter()
-        .map(|(account, voting)| (account, voting))
-        .collect::<BTreeMap<_, _>>();
+    let voting_of = VotingOf::<T>::iter().collect::<BTreeMap<_, _>>();
 
     // Get current block number for validation later
     let current_block_number = frame_system::Pallet::<T>::block_number();
@@ -101,8 +98,6 @@ pub(crate) fn post_upgrade_body<T: pallet_democracy::Config + frame_system::Conf
     let prev_state: DemocracyTryRuntimeState<T> =
         DemocracyTryRuntimeState::<T>::decode(&mut &state[..])
             .expect("Failed to decode the previous storage state");
-
-    let current_block_number = frame_system::Pallet::<T>::block_number();
 
     // Verify referendum info migration
     log::info!(
