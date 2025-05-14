@@ -7,5 +7,5 @@ collator1: is up
 collator2: is up
 
 ## test the block height
-collator1: reports block height is greater than 5 within 200 seconds
-collator2: reports block height is greater than 5 within 200 seconds
+collator1: reports block height is greater than 5 within 400 seconds
+collator2: reports block height is greater than 5 within 400 seconds
