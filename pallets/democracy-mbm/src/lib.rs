@@ -27,8 +27,8 @@ use frame_support::{
 pub use pallet::*;
 use pallet_democracy::{ReferendumIndex, ReferendumInfo, ReferendumInfoOf, Voting, VotingOf};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
-use sp_arithmetic::traits::SaturatedConversion;
 use sp_arithmetic::traits::Zero;
+use sp_arithmetic::traits::{SaturatedConversion, Saturating};
 
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
@@ -46,6 +46,8 @@ mod tests;
 
 pub mod weights;
 const PALLET_MIGRATIONS_ID: &[u8; 20] = b"pallet-democracy-mbm";
+
+const LOG_TARGET: &str = "mbm::democracy";
 
 /// Exports for versioned migration `type`s for this pallet.
 pub mod versioned_migrations {
@@ -75,7 +77,7 @@ pub enum MigrationState<T: pallet_democracy::Config> {
     Finished,
 }
 
-type StepResultOf<T> = MigrationState<T>;
+type StepResultOf<T> = (MigrationState<T>, bool);
 
 pub struct DemocracyMigrationV1ToV2<T, W: weights::WeightInfo>(core::marker::PhantomData<(T, W)>);
 
@@ -110,9 +112,10 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
             return Err(SteppedMigrationError::InsufficientWeight { required });
         }
 
-        //TODO: add count logs
-        let current_block_number =
-            frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
+        let mut referendum_entries = 0u32;
+        let mut referendum_migrated = 0u32;
+        let mut voting_entries = 0u32;
+        let mut voting_migrated = 0u32;
 
         // We loop here to do as much progress as possible per step.
         loop {
@@ -127,24 +130,43 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
                 break;
             }
 
+            let current_block_number =
+                frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
+
             let next = match &cursor {
                 // At first, migrate referendums
-                None => Self::migrate_referendum_info(None, current_block_number),
+                None => Self::process_migration_result(
+                    Self::migrate_referendum_info(None, current_block_number),
+                    &mut referendum_migrated,
+                    &mut referendum_entries,
+                ),
                 // Migrate any remaining referendums
                 Some(MigrationState::ReferendumInfo(maybe_last_referendum)) => {
-                    Self::migrate_referendum_info(Some(maybe_last_referendum), current_block_number)
+                    Self::process_migration_result(
+                        Self::migrate_referendum_info(
+                            Some(maybe_last_referendum),
+                            current_block_number,
+                        ),
+                        &mut referendum_migrated,
+                        &mut referendum_entries,
+                    )
                 }
                 // After the last referendum was migrated, start migrating VotingOf
-                Some(MigrationState::StartingVotingOf) => {
-                    Self::migrate_voting_of(None, current_block_number)
-                }
+                Some(MigrationState::StartingVotingOf) => Self::process_migration_result(
+                    Self::migrate_voting_of(None, current_block_number),
+                    &mut voting_migrated,
+                    &mut voting_entries,
+                ),
                 // Keep migrating VotingOf
-                Some(MigrationState::VotingOf(maybe_last_vote)) => {
-                    Self::migrate_voting_of(Some(maybe_last_vote), current_block_number)
-                }
+                Some(MigrationState::VotingOf(maybe_last_vote)) => Self::process_migration_result(
+                    Self::migrate_voting_of(Some(maybe_last_vote), current_block_number),
+                    &mut voting_migrated,
+                    &mut voting_entries,
+                ),
                 Some(MigrationState::Finished) => {
                     StorageVersion::new(Self::id().version_to as u16)
                         .put::<pallet_democracy::Pallet<T>>();
+                    log::info!(target: LOG_TARGET, "Democracy MBM migration finished");
                     return Ok(None);
                 }
             };
@@ -153,6 +175,7 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
             meter.consume(required_weight);
         }
 
+        log::info!(target: LOG_TARGET, "Iterated over {referendum_entries} referendum entries, migrated {referendum_migrated} referendums. Iterated over {voting_entries} votes entries, migrated {voting_migrated} votes");
         Ok(cursor)
     }
 
@@ -170,8 +193,8 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
 impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
     DemocracyMigrationV1ToV2<T, W>
 {
-    fn required_weight(step: &MigrationState<T>) -> Weight {
-        match step {
+    fn required_weight(state: &MigrationState<T>) -> Weight {
+        match state {
             MigrationState::ReferendumInfo(_) => W::migration_referendum_info(),
             MigrationState::StartingVotingOf | MigrationState::VotingOf(_) => {
                 W::migration_voting_of()
@@ -185,7 +208,7 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
         current_block_number: u32,
     ) -> StepResultOf<T> {
         let mut iter = if let Some(last_key) = maybe_last_key {
-            ReferendumInfoOf::<T>::iter_from(ReferendumInfoOf::<T>::hashed_key_for(last_key))
+            ReferendumInfoOf::<T>::iter_from_key(last_key)
         } else {
             ReferendumInfoOf::<T>::iter()
         };
@@ -214,17 +237,20 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
                     status.end = current_block_number
                         .saturating_add(doubled_remaining)
                         .into();
+
+                    ReferendumInfoOf::<T>::insert(&last_key, ref_info);
+
+                    // entry has been migrated
+                    return (MigrationState::ReferendumInfo(last_key), true);
                 }
                 ReferendumInfo::Finished { .. } => {
                     // continue;
                 }
             }
 
-            ReferendumInfoOf::<T>::insert(&last_key, ref_info.clone());
-
-            MigrationState::ReferendumInfo(last_key)
+            (MigrationState::ReferendumInfo(last_key), false)
         } else {
-            MigrationState::StartingVotingOf
+            (MigrationState::StartingVotingOf, false)
         }
     }
 
@@ -233,14 +259,14 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
         current_block_number: u32,
     ) -> StepResultOf<T> {
         let mut iter = if let Some(last_key) = maybe_last_key {
-            VotingOf::<T>::iter_from(VotingOf::<T>::hashed_key_for(last_key))
+            VotingOf::<T>::iter_from_key(last_key)
         } else {
             VotingOf::<T>::iter()
         };
 
         if let Some((last_key, mut voting)) = iter.next() {
             match &mut voting {
-                Voting::Direct { prior, .. } => {
+                Voting::Direct { prior, .. } | Voting::Delegating { prior, .. } => {
                     let lock_amount = prior.locked();
 
                     if !lock_amount.is_zero() {
@@ -250,51 +276,48 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
                         let encoded = prior.encode();
                         let unlock_block_number =
                             u32::from_le_bytes([encoded[0], encoded[1], encoded[2], encoded[3]]);
-                        let remaining_blocks = unlock_block_number
-                            .saturating_sub(current_block_number)
-                            .saturating_mul(2);
-                        let extended_time =
-                            current_block_number.saturating_add(remaining_blocks).into();
 
-                        // 2. Clean the lock by setting block number and balance to 0
-                        prior.rejig(u32::MAX.into());
+                        // Some past lock still remains if they haven't been unlocked
+                        // only migrate when they are in the future
+                        if unlock_block_number > current_block_number {
+                            let remaining_blocks = unlock_block_number
+                                .saturating_sub(current_block_number)
+                                .saturating_mul(2);
+                            let extended_time =
+                                current_block_number.saturating_add(remaining_blocks).into();
 
-                        // 3. Save the lock with migrated values
-                        prior.accumulate(extended_time, lock_amount);
-                    }
-                }
-                Voting::Delegating { prior, .. } => {
-                    let lock_amount = prior.locked();
+                            // 2. Clean the lock by setting block number and balance to 0
+                            prior.rejig(u32::MAX.into());
 
-                    if !lock_amount.is_zero() {
-                        // 1. Calculate the remaining blocks
-                        // as the field block number is private in PriorLock enum
-                        // we encode the enum and decode the 4 bytes (as it's an u32)
-                        let encoded = prior.encode();
-                        let unlock_block_number =
-                            u32::from_le_bytes([encoded[0], encoded[1], encoded[2], encoded[3]]);
-                        let remaining_blocks = unlock_block_number
-                            .saturating_sub(current_block_number)
-                            .saturating_mul(2);
-                        let extended_time =
-                            current_block_number.saturating_add(remaining_blocks).into();
+                            // 3. Save the lock with migrated values
+                            prior.accumulate(extended_time, lock_amount);
 
-                        // 2. Clean the lock by setting block number and balance to 0
-                        prior.rejig(u32::MAX.into());
+                            VotingOf::<T>::insert(&last_key, voting);
 
-                        // 3. Save the lock with migrated values
-                        prior.accumulate(extended_time, lock_amount);
+                            // entry has been migrated
+                            return (MigrationState::VotingOf(last_key), true);
+                        }
                     }
                 }
             }
 
-            // Update the storage with the modified voting data
-            VotingOf::<T>::insert(&last_key, voting);
-
-            MigrationState::VotingOf(last_key)
+            (MigrationState::VotingOf(last_key), false)
         } else {
-            MigrationState::Finished
+            (MigrationState::Finished, false)
         }
+    }
+
+    fn process_migration_result(
+        result: StepResultOf<T>,
+        migrate_counter: &mut u32,
+        entries_counter: &mut u32,
+    ) -> MigrationState<T> {
+        let (cursor, was_updated) = result;
+        if was_updated {
+            migrate_counter.saturating_inc();
+        }
+        entries_counter.saturating_inc();
+        cursor
     }
 }
 

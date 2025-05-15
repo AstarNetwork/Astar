@@ -20,7 +20,7 @@
 
 extern crate alloc;
 
-use crate::{ReferendumIndex, ReferendumInfo, ReferendumInfoOf, Voting, VotingOf};
+use crate::{ReferendumIndex, ReferendumInfo, ReferendumInfoOf, Voting, VotingOf, LOG_TARGET};
 use alloc::collections::BTreeMap;
 use frame_support::traits::Currency;
 use frame_system::pallet_prelude::BlockNumberFor;
@@ -28,8 +28,6 @@ use pallet_democracy::BoundedCallOf;
 use parity_scale_codec::{Decode, Encode};
 use sp_runtime::{traits::Zero, SaturatedConversion, TryRuntimeError};
 use sp_std::vec::Vec;
-
-const LOG_TARGET: &str = "mbm::democracy";
 
 type BalanceOf<T> = <<T as pallet_democracy::Config>::Currency as Currency<
     <T as frame_system::Config>::AccountId,
@@ -192,41 +190,43 @@ pub(crate) fn post_upgrade_body<T: pallet_democracy::Config + frame_system::Conf
                     let prev_unlock_block =
                         u32::from_le_bytes([encoded[0], encoded[1], encoded[2], encoded[3]]);
 
-                    let new_encoded = prior.encode();
-                    let new_unlock_block = u32::from_le_bytes([
-                        new_encoded[0],
-                        new_encoded[1],
-                        new_encoded[2],
-                        new_encoded[3],
-                    ]);
+                    if prev_unlock_block > prev_state.current_block_number.saturated_into::<u32>() {
+                        let new_encoded = prior.encode();
+                        let new_unlock_block = u32::from_le_bytes([
+                            new_encoded[0],
+                            new_encoded[1],
+                            new_encoded[2],
+                            new_encoded[3],
+                        ]);
 
-                    log::info!(
-                            target: LOG_TARGET,
-                            "Direct: prev_block:{:?}, new_block:{:?}",
-                            account, prev_state.current_block_number.saturated_into::<u32>()
-                    );
+                        log::info!(
+                                target: LOG_TARGET,
+                                "Direct: prev_block:{:?}, new_block:{:?}",
+                                account, prev_state.current_block_number.saturated_into::<u32>()
+                        );
 
-                    log::info!(
-                            target: LOG_TARGET,
-                            "Direct: vote.account:{:?}, new_unlock_block:{:?}, prev_unlock_block:{:?}",
-                            account, new_unlock_block, prev_unlock_block
-                    );
+                        log::info!(
+                                target: LOG_TARGET,
+                                "Direct: vote.account:{:?}, new_unlock_block:{:?}, prev_unlock_block:{:?}",
+                                account, new_unlock_block, prev_unlock_block
+                        );
 
-                    log::info!(
-                            target: LOG_TARGET,
-                            "Direct: vote.account:{:?}, new_locked:{:?}, previous_locked:{:?}",
-                            account, prior.locked(), prev_prior.locked()
-                    );
+                        log::info!(
+                                target: LOG_TARGET,
+                                "Direct: vote.account:{:?}, new_locked:{:?}, previous_locked:{:?}",
+                                account, prior.locked(), prev_prior.locked()
+                        );
 
-                    assert!(
-                        new_unlock_block > prev_unlock_block,
-                        "Lock expiry time should updated"
-                    );
-                    assert_eq!(
-                        prior.locked(),
-                        prev_prior.locked(),
-                        "Lock amount should remain unchanged"
-                    );
+                        assert!(
+                            new_unlock_block > prev_unlock_block,
+                            "Lock expiry time should updated"
+                        );
+                        assert_eq!(
+                            prior.locked(),
+                            prev_prior.locked(),
+                            "Lock amount should remain unchanged"
+                        );
+                    }
                 }
             }
             (
@@ -241,36 +241,38 @@ pub(crate) fn post_upgrade_body<T: pallet_democracy::Config + frame_system::Conf
                     let prev_unlock_block =
                         u32::from_le_bytes([encoded[0], encoded[1], encoded[2], encoded[3]]);
 
-                    let new_encoded = prior.encode();
-                    let new_unlock_block = u32::from_le_bytes([
-                        new_encoded[0],
-                        new_encoded[1],
-                        new_encoded[2],
-                        new_encoded[3],
-                    ]);
+                    if prev_unlock_block > prev_state.current_block_number.saturated_into::<u32>() {
+                        let new_encoded = prior.encode();
+                        let new_unlock_block = u32::from_le_bytes([
+                            new_encoded[0],
+                            new_encoded[1],
+                            new_encoded[2],
+                            new_encoded[3],
+                        ]);
 
-                    log::info!(
-                            target: LOG_TARGET,
-                            "Delegate: vote.account:{:?}, prev_block:{:?}",
-                            account, prev_state.current_block_number.saturated_into::<u32>()
-                    );
+                        log::info!(
+                                target: LOG_TARGET,
+                                "Delegate: vote.account:{:?}, prev_block:{:?}",
+                                account, prev_state.current_block_number.saturated_into::<u32>()
+                        );
 
-                    log::info!(
-                            target: LOG_TARGET,
-                            "Delegate: vote.account:{:?}, new_locked:{:?}, previous_locked:{:?}",
-                            account, prior.locked(), prev_prior.locked()
-                    );
+                        log::info!(
+                                target: LOG_TARGET,
+                                "Delegate: vote.account:{:?}, new_locked:{:?}, previous_locked:{:?}",
+                                account, prior.locked(), prev_prior.locked()
+                        );
 
-                    assert!(
-                        new_unlock_block > prev_unlock_block,
-                        "Lock expiry time should be updated"
-                    );
+                        assert!(
+                            new_unlock_block > prev_unlock_block,
+                            "Lock expiry time should be updated"
+                        );
 
-                    assert_eq!(
-                        prior.locked(),
-                        prev_prior.locked(),
-                        "Lock amount should remain unchanged"
-                    );
+                        assert_eq!(
+                            prior.locked(),
+                            prev_prior.locked(),
+                            "Lock amount should remain unchanged"
+                        );
+                    }
                 }
             }
             _ => {
