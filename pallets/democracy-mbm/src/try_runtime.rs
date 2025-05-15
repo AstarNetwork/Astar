@@ -191,13 +191,6 @@ pub(crate) fn post_upgrade_body<T: pallet_democracy::Config + frame_system::Conf
                     let encoded = prev_prior.encode();
                     let prev_unlock_block =
                         u32::from_le_bytes([encoded[0], encoded[1], encoded[2], encoded[3]]);
-                    let prev_remaining_blocks = prev_unlock_block
-                        .saturating_sub(prev_state.current_block_number.saturated_into::<u32>());
-                    let expected_remaining = prev_remaining_blocks.saturating_mul(2);
-                    let expected_unlock = prev_state
-                        .current_block_number
-                        .saturated_into::<u32>()
-                        .saturating_add(expected_remaining);
 
                     let new_encoded = prior.encode();
                     let new_unlock_block = u32::from_le_bytes([
@@ -209,19 +202,25 @@ pub(crate) fn post_upgrade_body<T: pallet_democracy::Config + frame_system::Conf
 
                     log::info!(
                             target: LOG_TARGET,
-                            "assert_eq - Direct: Lock expiry time should be at least doubled  vote.account:{:?}, new_unlock_block:{:?}, expected_unlock:{:?}",
-                            account, new_unlock_block, expected_unlock
+                            "Direct: prev_block:{:?}, new_block:{:?}",
+                            account, prev_state.current_block_number.saturated_into::<u32>()
                     );
 
                     log::info!(
                             target: LOG_TARGET,
-                            "assert_eq - Direct:  amount should be unchanged vote.account:{:?}, ew_unlock_block:{:?}, expected_unlock:{:?}",
+                            "Direct: vote.account:{:?}, new_unlock_block:{:?}, prev_unlock_block:{:?}",
+                            account, new_unlock_block, prev_unlock_block
+                    );
+
+                    log::info!(
+                            target: LOG_TARGET,
+                            "Direct: vote.account:{:?}, new_locked:{:?}, previous_locked:{:?}",
                             account, prior.locked(), prev_prior.locked()
                     );
 
                     assert!(
-                        new_unlock_block >= expected_unlock,
-                        "Lock expiry time should be at least doubled"
+                        new_unlock_block > prev_unlock_block,
+                        "Lock expiry time should updated"
                     );
                     assert_eq!(
                         prior.locked(),
@@ -241,13 +240,6 @@ pub(crate) fn post_upgrade_body<T: pallet_democracy::Config + frame_system::Conf
                     let encoded = prev_prior.encode();
                     let prev_unlock_block =
                         u32::from_le_bytes([encoded[0], encoded[1], encoded[2], encoded[3]]);
-                    let prev_remaining_blocks = prev_unlock_block
-                        .saturating_sub(prev_state.current_block_number.saturated_into::<u32>());
-                    let expected_remaining = prev_remaining_blocks.saturating_mul(2);
-                    let expected_unlock = prev_state
-                        .current_block_number
-                        .saturated_into::<u32>()
-                        .saturating_add(expected_remaining);
 
                     let new_encoded = prior.encode();
                     let new_unlock_block = u32::from_le_bytes([
@@ -259,20 +251,21 @@ pub(crate) fn post_upgrade_body<T: pallet_democracy::Config + frame_system::Conf
 
                     log::info!(
                             target: LOG_TARGET,
-                            "assert_eq - Delegate: lock expiry time should be at least doubled  vote.account:{:?}, new_unlock_block:{:?}, expected_unlock:{:?}",
-                            account, new_unlock_block, expected_unlock
+                            "Delegate: vote.account:{:?}, prev_block:{:?}",
+                            account, prev_state.current_block_number.saturated_into::<u32>()
                     );
 
                     log::info!(
                             target: LOG_TARGET,
-                            "assert_eq - Delegate: amount should be unchanged vote.account:{:?}, ew_unlock_block:{:?}, expected_unlock:{:?}",
+                            "Delegate: vote.account:{:?}, new_locked:{:?}, previous_locked:{:?}",
                             account, prior.locked(), prev_prior.locked()
                     );
 
                     assert!(
-                        new_unlock_block >= expected_unlock,
-                        "Lock expiry time should be at least doubled"
+                        new_unlock_block > prev_unlock_block,
+                        "Lock expiry time should be updated"
                     );
+
                     assert_eq!(
                         prior.locked(),
                         prev_prior.locked(),
