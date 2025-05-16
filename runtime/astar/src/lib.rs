@@ -1517,7 +1517,6 @@ impl pallet_migrations::Config for Runtime {
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
 }
 
-#[cfg(feature = "runtime-benchmarks")]
 impl democracy_mbm::Config for Runtime {}
 
 construct_runtime!(
@@ -1585,7 +1584,6 @@ construct_runtime!(
 
         MultiBlockMigrations: pallet_migrations = 120,
 
-        #[cfg(feature = "runtime-benchmarks")]
         DemocracyMBM: democracy_mbm = 251,
     }
 );

@@ -20,6 +20,7 @@
 
 extern crate alloc;
 
+use crate::MigrationBlockNumber;
 use crate::{Config, Pallet};
 use frame_benchmarking::v2::*;
 use frame_support::traits::{Currency, Get, StorePreimage};
@@ -131,6 +132,7 @@ mod benches {
         // Set block_number to 2 so it's not 0 by default
         frame_system::Pallet::<T>::set_block_number(2u32.into());
         let current_block = frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
+        MigrationBlockNumber::<T>::put(current_block);
 
         // Create a referendum
         let ref_index = add_referendum::<T>(1)?;
@@ -160,6 +162,7 @@ mod benches {
         // Set block number to 2 so it's not 0 by default
         frame_system::Pallet::<T>::set_block_number(2u32.into());
         let current_block = frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
+        MigrationBlockNumber::<T>::put(current_block);
 
         // Create a referendum and vote on it to create a VotingOf for the account
         // only one vote for one referendum is needed

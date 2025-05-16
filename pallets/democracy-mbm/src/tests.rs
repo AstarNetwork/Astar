@@ -118,6 +118,7 @@ fn migrate_multiple_referendums() {
         ));
 
         // Run migration - on block 24
+        crate::DemocracyMigrationSaveMigrationBlock::<Runtime>::on_runtime_upgrade();
         AllPalletsWithSystem::on_runtime_upgrade();
         run_to_block(25);
 
@@ -195,6 +196,7 @@ fn migrate_vote_lock_durations() {
         assert_ok!(Democracy::remove_vote(RuntimeOrigin::signed(2), ref_index));
 
         // Run migration - on block 22
+        crate::DemocracyMigrationSaveMigrationBlock::<Runtime>::on_runtime_upgrade();
         AllPalletsWithSystem::on_runtime_upgrade();
         run_to_block(23);
 
@@ -288,6 +290,7 @@ fn migrate_vote_lock_durations_of_delegating() {
         assert_ok!(Democracy::remove_vote(RuntimeOrigin::signed(2), ref_index));
 
         // Run migration - on block 22
+        crate::DemocracyMigrationSaveMigrationBlock::<Runtime>::on_runtime_upgrade();
         AllPalletsWithSystem::on_runtime_upgrade();
         run_to_block(23);
 

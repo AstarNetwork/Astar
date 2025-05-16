@@ -18,7 +18,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::StorageVersion;
+use frame_support::pallet_prelude::Get;
+use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
 use frame_support::weights::Weight;
 use frame_support::{
     migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
@@ -29,6 +30,7 @@ use pallet_democracy::{ReferendumIndex, ReferendumInfo, ReferendumInfoOf, Voting
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_arithmetic::traits::Zero;
 use sp_arithmetic::traits::{SaturatedConversion, Saturating};
+use sp_std::marker::PhantomData;
 
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
@@ -86,10 +88,12 @@ pub struct MigrationState<T: pallet_democracy::Config> {
 
 type StepResultOf<T> = (MigrationStep<T>, bool);
 
-pub struct DemocracyMigrationV1ToV2<T, W: weights::WeightInfo>(core::marker::PhantomData<(T, W)>);
+pub struct DemocracyMigrationV1ToV2<T, W: weights::WeightInfo>(PhantomData<(T, W)>);
 
-impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
-    for DemocracyMigrationV1ToV2<T, W>
+impl<
+        T: pallet_democracy::Config + frame_system::Config + pallet::Config,
+        W: weights::WeightInfo,
+    > SteppedMigration for DemocracyMigrationV1ToV2<T, W>
 {
     type Cursor = MigrationState<T>;
     // Without the explicit length here the construction of the ID would not be infallible.
@@ -140,8 +144,7 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
             let next = match &cursor {
                 // At first, migrate referendums and get the current block number to set at start_block
                 None => {
-                    let block_number =
-                        frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
+                    let block_number = MigrationBlockNumber::<T>::get();
                     Self::process_migration_result(
                         Self::migrate_referendum_info(None, block_number),
                         &mut referendum_migrated,
@@ -209,8 +212,10 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
     }
 }
 
-impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
-    DemocracyMigrationV1ToV2<T, W>
+impl<
+        T: pallet_democracy::Config + frame_system::Config + pallet::Config,
+        W: weights::WeightInfo,
+    > DemocracyMigrationV1ToV2<T, W>
 {
     fn required_weight(state: &MigrationStep<T>) -> Weight {
         match state {
@@ -339,9 +344,20 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
     }
 }
 
+pub struct DemocracyMigrationSaveMigrationBlock<T>(PhantomData<T>);
+
+impl<T: Config> OnRuntimeUpgrade for DemocracyMigrationSaveMigrationBlock<T> {
+    fn on_runtime_upgrade() -> Weight {
+        let block_number = frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
+        MigrationBlockNumber::<T>::set(block_number);
+        T::DbWeight::get().reads_writes(1, 1)
+    }
+}
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use frame_support::pallet_prelude::{StorageValue, ValueQuery};
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -349,4 +365,8 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_democracy::Config {}
+
+    #[pallet::storage]
+    #[pallet::whitelist_storage]
+    pub type MigrationBlockNumber<T: Config> = StorageValue<_, u32, ValueQuery>;
 }
