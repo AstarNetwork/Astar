@@ -66,7 +66,7 @@ pub mod versioned_migrations {
 
 /// Progressive migration state to keep track of progress
 #[derive(Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen)]
-pub enum MigrationState<T: pallet_democracy::Config> {
+pub enum MigrationStep<T: pallet_democracy::Config> {
     /// Migrating referendum info
     ReferendumInfo(ReferendumIndex),
     /// Finished Migrating referendum info, starting migration VotingOf
@@ -77,7 +77,14 @@ pub enum MigrationState<T: pallet_democracy::Config> {
     Finished,
 }
 
-type StepResultOf<T> = (MigrationState<T>, bool);
+/// Stores the migration step and the block number at which the migration started
+#[derive(Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen)]
+pub struct MigrationState<T: pallet_democracy::Config> {
+    pub step: MigrationStep<T>,
+    pub start_block: u32,
+}
+
+type StepResultOf<T> = (MigrationStep<T>, bool);
 
 pub struct DemocracyMigrationV1ToV2<T, W: weights::WeightInfo>(core::marker::PhantomData<(T, W)>);
 
@@ -104,7 +111,7 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
         // Check that we have enough weight for at least the next step. If we don't, then the
         // migration cannot be complete.
         let required = match &cursor {
-            Some(state) => Self::required_weight(&state),
+            Some(state) => Self::required_weight(&state.step),
             // Worst case weight for `migration_voting_of`.
             None => W::migration_voting_of(),
         };
@@ -122,7 +129,7 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
             // Check that we would have enough weight to perform this step in the worst case
             // scenario.
             let required_weight = match &cursor {
-                Some(state) => Self::required_weight(&state),
+                Some(state) => Self::required_weight(&state.step),
                 // Worst case weight for `migration_voting_of`.
                 None => W::migration_voting_of(),
             };
@@ -130,40 +137,52 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
                 break;
             }
 
-            let current_block_number =
-                frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
-
             let next = match &cursor {
-                // At first, migrate referendums
-                None => Self::process_migration_result(
-                    Self::migrate_referendum_info(None, current_block_number),
-                    &mut referendum_migrated,
-                    &mut referendum_entries,
-                ),
-                // Migrate any remaining referendums
-                Some(MigrationState::ReferendumInfo(maybe_last_referendum)) => {
+                // At first, migrate referendums and get the current block number to set at start_block
+                None => {
+                    let block_number =
+                        frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
                     Self::process_migration_result(
-                        Self::migrate_referendum_info(
-                            Some(maybe_last_referendum),
-                            current_block_number,
-                        ),
+                        Self::migrate_referendum_info(None, block_number),
                         &mut referendum_migrated,
                         &mut referendum_entries,
+                        block_number,
                     )
                 }
+                // Migrate any remaining referendums
+                Some(MigrationState {
+                    step: MigrationStep::ReferendumInfo(maybe_last_referendum),
+                    start_block,
+                }) => Self::process_migration_result(
+                    Self::migrate_referendum_info(Some(maybe_last_referendum), *start_block),
+                    &mut referendum_migrated,
+                    &mut referendum_entries,
+                    *start_block,
+                ),
                 // After the last referendum was migrated, start migrating VotingOf
-                Some(MigrationState::StartingVotingOf) => Self::process_migration_result(
-                    Self::migrate_voting_of(None, current_block_number),
+                Some(MigrationState {
+                    step: MigrationStep::StartingVotingOf,
+                    start_block,
+                }) => Self::process_migration_result(
+                    Self::migrate_voting_of(None, *start_block),
                     &mut voting_migrated,
                     &mut voting_entries,
+                    *start_block,
                 ),
                 // Keep migrating VotingOf
-                Some(MigrationState::VotingOf(maybe_last_vote)) => Self::process_migration_result(
-                    Self::migrate_voting_of(Some(maybe_last_vote), current_block_number),
+                Some(MigrationState {
+                    step: MigrationStep::VotingOf(maybe_last_vote),
+                    start_block,
+                }) => Self::process_migration_result(
+                    Self::migrate_voting_of(Some(maybe_last_vote), *start_block),
                     &mut voting_migrated,
                     &mut voting_entries,
+                    *start_block,
                 ),
-                Some(MigrationState::Finished) => {
+                Some(MigrationState {
+                    step: MigrationStep::Finished,
+                    ..
+                }) => {
                     StorageVersion::new(Self::id().version_to as u16)
                         .put::<pallet_democracy::Pallet<T>>();
                     log::info!(target: LOG_TARGET, "Democracy MBM migration finished");
@@ -193,19 +212,19 @@ impl<T: pallet_democracy::Config, W: weights::WeightInfo> SteppedMigration
 impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
     DemocracyMigrationV1ToV2<T, W>
 {
-    fn required_weight(state: &MigrationState<T>) -> Weight {
+    fn required_weight(state: &MigrationStep<T>) -> Weight {
         match state {
-            MigrationState::ReferendumInfo(_) => W::migration_referendum_info(),
-            MigrationState::StartingVotingOf | MigrationState::VotingOf(_) => {
+            MigrationStep::ReferendumInfo(_) => W::migration_referendum_info(),
+            MigrationStep::StartingVotingOf | MigrationStep::VotingOf(_) => {
                 W::migration_voting_of()
             }
-            MigrationState::Finished => Weight::zero(),
+            MigrationStep::Finished => Weight::zero(),
         }
     }
 
     fn migrate_referendum_info(
         maybe_last_key: Option<&ReferendumIndex>,
-        current_block_number: u32,
+        block_number: u32,
     ) -> StepResultOf<T> {
         let mut iter = if let Some(last_key) = maybe_last_key {
             ReferendumInfoOf::<T>::iter_from_key(last_key)
@@ -228,35 +247,33 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
                     let remaining_blocks = status
                         .end
                         .saturated_into::<u32>()
-                        .saturating_sub(current_block_number);
+                        .saturating_sub(block_number);
 
                     // 2. Double the remaining blocks
                     let doubled_remaining = remaining_blocks.saturating_mul(2);
 
                     // 3. Add it to the current block number to get the new end
-                    status.end = current_block_number
-                        .saturating_add(doubled_remaining)
-                        .into();
+                    status.end = block_number.saturating_add(doubled_remaining).into();
 
                     ReferendumInfoOf::<T>::insert(&last_key, ref_info);
 
                     // entry has been migrated
-                    return (MigrationState::ReferendumInfo(last_key), true);
+                    return (MigrationStep::ReferendumInfo(last_key), true);
                 }
                 ReferendumInfo::Finished { .. } => {
                     // continue;
                 }
             }
 
-            (MigrationState::ReferendumInfo(last_key), false)
+            (MigrationStep::ReferendumInfo(last_key), false)
         } else {
-            (MigrationState::StartingVotingOf, false)
+            (MigrationStep::StartingVotingOf, false)
         }
     }
 
     fn migrate_voting_of(
         maybe_last_key: Option<&T::AccountId>,
-        current_block_number: u32,
+        block_number: u32,
     ) -> StepResultOf<T> {
         let mut iter = if let Some(last_key) = maybe_last_key {
             VotingOf::<T>::iter_from_key(last_key)
@@ -279,12 +296,12 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
 
                         // Some past lock still remains if they haven't been unlocked
                         // only migrate when they are in the future
-                        if unlock_block_number > current_block_number {
+                        if unlock_block_number > block_number {
                             let remaining_blocks = unlock_block_number
-                                .saturating_sub(current_block_number)
+                                .saturating_sub(block_number)
                                 .saturating_mul(2);
                             let extended_time =
-                                current_block_number.saturating_add(remaining_blocks).into();
+                                block_number.saturating_add(remaining_blocks).into();
 
                             // 2. Clean the lock by setting block number and balance to 0
                             prior.rejig(u32::MAX.into());
@@ -295,15 +312,15 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
                             VotingOf::<T>::insert(&last_key, voting);
 
                             // entry has been migrated
-                            return (MigrationState::VotingOf(last_key), true);
+                            return (MigrationStep::VotingOf(last_key), true);
                         }
                     }
                 }
             }
 
-            (MigrationState::VotingOf(last_key), false)
+            (MigrationStep::VotingOf(last_key), false)
         } else {
-            (MigrationState::Finished, false)
+            (MigrationStep::Finished, false)
         }
     }
 
@@ -311,13 +328,14 @@ impl<T: pallet_democracy::Config + frame_system::Config, W: weights::WeightInfo>
         result: StepResultOf<T>,
         migrate_counter: &mut u32,
         entries_counter: &mut u32,
+        start_block: u32,
     ) -> MigrationState<T> {
-        let (cursor, was_updated) = result;
+        let (step, was_updated) = result;
         if was_updated {
             migrate_counter.saturating_inc();
         }
         entries_counter.saturating_inc();
-        cursor
+        MigrationState { step, start_block }
     }
 }
 
