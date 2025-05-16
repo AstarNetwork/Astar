@@ -2017,6 +2017,7 @@ fn era_info_unstake_works() {
         period: period_number,
     };
     era_info.unstake_amount(vec![unstake_amount_1_current, unstake_amount_1_next]);
+    let era_info_snapshot_1 = era_info;
 
     // Current era
     assert_eq!(
@@ -2040,7 +2041,7 @@ fn era_info_unstake_works() {
         bep_stake_amount_2 - unstake_amount_1_next.build_and_earn
     );
 
-    // === Scenario 2: Unstake with overflow ===
+    // === Scenario 2: Overflow as no effect on era stake ===
     let overflow = 2;
     let unstake_amount_2_current = StakeAmount {
         voting: 0,
@@ -2050,30 +2051,53 @@ fn era_info_unstake_works() {
     };
     era_info.unstake_amount(vec![unstake_amount_2_current]);
 
-    // Current era
-    assert_eq!(
-        era_info.total_staked_amount(),
-        total_staked - unstake_amount_1_current.total() - unstake_amount_2_current.total()
-    );
-    assert_eq!(
-        era_info.staked_amount(Subperiod::Voting),
-        vp_stake_amount - overflow
-    );
-    assert!(era_info.staked_amount(Subperiod::BuildAndEarn).is_zero());
+    // Era info remains unchanged, overflow tentative as no effect
+    assert_eq!(era_info, era_info_snapshot_1);
 
-    // Next era remains unchanged
-    assert_eq!(
-        era_info.total_staked_amount_next_era(),
-        total_staked_next_era - unstake_amount_1_next.total()
-    );
-    assert_eq!(
-        era_info.staked_amount_next_era(Subperiod::Voting),
-        vp_stake_amount
-    );
-    assert_eq!(
-        era_info.staked_amount_next_era(Subperiod::BuildAndEarn),
-        bep_stake_amount_2 - unstake_amount_1_next.build_and_earn
-    );
+    // === Scenario 3: Unstake per subperiod types works ===
+
+    // Make a new dummy era info with stake amounts
+    let mut era_info_2 = EraInfo::default();
+    era_info_2.current_stake_amount = StakeAmount {
+        voting: 10,
+        build_and_earn: 10,
+        era,
+        period: period_number,
+    };
+    era_info_2.next_stake_amount = StakeAmount {
+        voting: 10,
+        build_and_earn: 20,
+        era: era + 1,
+        period: period_number,
+    };
+    let unstake_amount_current = StakeAmount {
+        voting: 5,
+        build_and_earn: 5,
+        era,
+        period: period_number,
+    };
+    let unstake_amount_next = StakeAmount {
+        voting: 5,
+        build_and_earn: 5,
+        era: era + 1,
+        period: period_number,
+    };
+    era_info_2.unstake_amount(vec![unstake_amount_current, unstake_amount_next]);
+
+    let mut expected_era_info = EraInfo::default();
+    expected_era_info.current_stake_amount = StakeAmount {
+        voting: 5,
+        build_and_earn: 5,
+        era,
+        period: period_number,
+    };
+    expected_era_info.next_stake_amount = StakeAmount {
+        voting: 5,
+        build_and_earn: 15,
+        era: era + 1,
+        period: period_number,
+    };
+    assert_eq!(era_info_2, expected_era_info);
 }
 
 #[test]
@@ -2598,19 +2622,19 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
 
     // 4th scenario - Bonus forfeited
     // Fully exhaust the bonus by performing another unstake during the B&E subperiod
-    // Voting stake amount should migrate to B&E stake
+    // Voting stake exists (not merged into b&e) but got chipped
     let era_3 = era_2 + 2;
     let unstake_3 = 5;
 
     let expected_stake_amount_1 = StakeAmount {
-        voting: 0,
-        build_and_earn: unstake_3,
+        voting: unstake_3,
+        build_and_earn: 0,
         era: era_3,
         period: period_number,
     };
     let expected_stake_amount_2 = StakeAmount {
-        voting: 0,
-        build_and_earn: unstake_3,
+        voting: unstake_3,
+        build_and_earn: 0,
         era: era_3 + 1,
         period: period_number,
     };
@@ -3224,6 +3248,52 @@ fn contract_stake_amount_basic_unstake_is_ok() {
     contract_stake.unstake(&vec![unstake_amount_5], period_info, era_3);
     assert!(contract_stake.staked.is_empty());
     assert!(contract_stake.staked_future.is_none());
+}
+
+#[test]
+fn contract_stake_amount_unstake_from_subsperiod_type_is_ok() {
+    let mut contract_stake = ContractStakeAmount::default();
+
+    // Prep action - create a stake entry
+    let era_1 = 2;
+    let period = 3;
+    let period_info = PeriodInfo {
+        number: period,
+        subperiod: Subperiod::Voting,
+        next_subperiod_start_era: 20,
+    };
+    let vp_stake_amount = 47;
+    let bep_stake_amount = 53;
+    let stake_amount = StakeAmount {
+        voting: vp_stake_amount,
+        build_and_earn: bep_stake_amount,
+        era: era_1,
+        period,
+    };
+    contract_stake.stake(stake_amount, era_1, period);
+    let total_stake_amount = stake_amount.total();
+
+    // 1st scenario - unstake some amount from Voting stake don't affect B&E stake
+    let amount = 1;
+    let unstake_amount = StakeAmount {
+        voting: amount,
+        build_and_earn: 0,
+        era: era_1 + 1,
+        period,
+    };
+    contract_stake.unstake(&vec![unstake_amount], period_info, era_1);
+    assert_eq!(
+        contract_stake.total_staked_amount(period),
+        total_stake_amount - amount
+    );
+    assert_eq!(
+        contract_stake.staked_amount(period, Subperiod::Voting),
+        vp_stake_amount - amount
+    );
+    assert_eq!(
+        contract_stake.staked_amount(period, Subperiod::BuildAndEarn),
+        bep_stake_amount
+    );
 }
 
 #[test]
