@@ -908,7 +908,7 @@ impl StakeAmount {
         }
     }
 
-    /// Stake the specified `amount` for the specified `subperiod`.
+    /// Subtract the specified [`StakeAmount`], updating both `subperiods`.
     pub fn subtract_stake(&mut self, amount: &StakeAmount) {
         self.voting.saturating_reduce(amount.voting);
         self.build_and_earn.saturating_reduce(amount.build_and_earn);
