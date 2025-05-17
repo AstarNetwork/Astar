@@ -908,6 +908,12 @@ impl StakeAmount {
         }
     }
 
+    /// Subtract the specified [`StakeAmount`], updating both `subperiods`.
+    pub fn subtract_stake(&mut self, amount: &StakeAmount) {
+        self.voting.saturating_reduce(amount.voting);
+        self.build_and_earn.saturating_reduce(amount.build_and_earn);
+    }
+
     /// Unstake the specified `amount`.
     ///
     /// Attempt to subtract from `Build&Earn` subperiod amount is done first. Any rollover is subtracted from
@@ -1007,12 +1013,10 @@ impl EraInfo {
     /// - If the entry is from a past era or invalid, it is ignored.
     pub fn unstake_amount(&mut self, stake_amount_entries: impl IntoIterator<Item = StakeAmount>) {
         for entry in stake_amount_entries {
-            let (era, amount) = (entry.era, entry.total());
-
-            if era == self.current_stake_amount.era {
-                self.current_stake_amount.subtract(amount);
-            } else if era == self.next_stake_amount.era {
-                self.next_stake_amount.subtract(amount);
+            if entry.era == self.current_stake_amount.era {
+                self.current_stake_amount.subtract_stake(&entry);
+            } else if entry.era == self.next_stake_amount.era {
+                self.next_stake_amount.subtract_stake(&entry);
             }
         }
     }
@@ -1167,7 +1171,6 @@ impl SingularStakingInfo {
     ) -> (Vec<StakeAmount>, BonusStatus) {
         let mut result = Vec::new();
         let staked_snapshot = self.staked;
-        let was_bonus_eligible_snapshot = self.is_bonus_eligible();
 
         // 1. Modify 'current' staked amount.
         self.staked.subtract(amount);
@@ -1180,13 +1183,6 @@ impl SingularStakingInfo {
         // In case voting subperiod has passed, and the 'voting' stake amount was reduced, we need to reduce the bonus eligibility counter.
         if subperiod != Subperiod::Voting && self.staked.voting < staked_snapshot.voting {
             self.bonus_status = self.bonus_status.saturating_sub(1);
-        }
-        let is_bonus_lost = was_bonus_eligible_snapshot && !self.is_bonus_eligible();
-
-        // If bonus is just forfeited, previously existing Voting stake amount is moved to BuildAndEarn stake amount
-        if is_bonus_lost && unstaked_amount.voting > 0 {
-            self.staked.convert_bonus_into_regular_stake();
-            unstaked_amount.convert_bonus_into_regular_stake();
         }
 
         // Store the unstaked amount result
@@ -1238,11 +1234,6 @@ impl SingularStakingInfo {
                     let mut temp_unstaked_amount =
                         previous_staked_snapshot.saturating_difference(&self.previous_staked);
                     temp_unstaked_amount.era = self.previous_staked.era;
-
-                    if is_bonus_lost && temp_unstaked_amount.voting > 0 {
-                        temp_unstaked_amount.convert_bonus_into_regular_stake();
-                    }
-
                     result.insert(0, temp_unstaked_amount);
                 }
                 _ => {}
@@ -1459,15 +1450,14 @@ impl ContractStakeAmount {
 
         // 2. Value updates - only after alignment
         for entry in stake_amount_entries {
-            let (era, amount) = (entry.era, entry.total());
-            if self.staked.era == era {
-                self.staked.subtract(amount);
+            if self.staked.era == entry.era {
+                self.staked.subtract_stake(&entry);
                 continue;
             }
 
             match self.staked_future.as_mut() {
-                Some(future_stake_amount) if future_stake_amount.era == era => {
-                    future_stake_amount.subtract(amount);
+                Some(future_stake_amount) if future_stake_amount.era == entry.era => {
+                    future_stake_amount.subtract_stake(&entry);
                 }
                 // Otherwise do nothing
                 _ => (),

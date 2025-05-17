@@ -1372,11 +1372,16 @@ pub mod pallet {
             let maybe_source_dapp_info = IntegratedDApps::<T>::get(&source_contract);
             let is_source_unregistered = maybe_source_dapp_info.is_none();
 
-            let (move_amount, bonus_status) = if is_source_unregistered {
+            let (mut move_amount, bonus_status) = if is_source_unregistered {
                 Self::inner_unstake_from_unregistered(&account, &source_contract)?
             } else {
                 Self::inner_unstake(&account, &source_contract, amount)?
             };
+
+            // When bonus is forfeited, voting stake must be merged into b&e stake
+            if bonus_status == 0 && move_amount.voting > 0 {
+                move_amount.convert_bonus_into_regular_stake();
+            }
 
             Self::inner_stake(&account, &destination_contract, move_amount, bonus_status)?;
 
@@ -1577,9 +1582,6 @@ pub mod pallet {
                             protocol_state.subperiod(),
                         );
 
-                        // 'unstake_amount_iter' may include voting stake merged into B&E stake.
-                        // This is safe to use now since it's only needed for the 'era_info' update,
-                        // which considers the total stake across both subperiods.
                         (unstake_amount, unstake_amount_iter, preserved_bonus_status)
                     }
                     None => {

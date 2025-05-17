@@ -2396,8 +2396,8 @@ fn unstake_forfeited_bonus_to_regular_stake_conversion() {
         let expected_staking_info = SingularStakingInfo {
             previous_staked: StakeAmount::default(),
             staked: StakeAmount {
-                voting: 0,
-                build_and_earn: amount - unstake_ammount,
+                voting: amount - unstake_ammount,
+                build_and_earn: 0,
                 era: 2,
                 period: 1,
             },
@@ -4026,8 +4026,8 @@ fn move_stake_multiple_conversions_are_ok() {
                 period: 1,
             },
             staked: StakeAmount {
-                voting: 0,
-                build_and_earn: 50,
+                voting: 50,
+                build_and_earn: 0,
                 era: 3,
                 period: 1,
             },
@@ -4218,6 +4218,46 @@ fn move_to_invalid_dapp_fails() {
 }
 
 #[test]
+fn move_voting_stake_merge_into_bep_for_bonus_forfeited_works() {
+    ExtBuilder::default().build_and_execute(|| {
+        let source_contract = MockSmartContract::wasm(1 as AccountId);
+        let dest_contract = MockSmartContract::wasm(2 as AccountId);
+        assert_register(1, &source_contract);
+        assert_register(1, &dest_contract);
+
+        let account = 2;
+        assert_lock(account, 300);
+        let stake = 100;
+        assert_stake(account, &source_contract, stake);
+
+        advance_to_next_subperiod();
+
+        // Unstake to forfeit bonus but preserve voting stake
+        let unstake = 20;
+        assert_unstake(account, &source_contract, unstake);
+
+        let staking_info = StakerInfo::<Test>::get(account, &source_contract)
+            .expect("Should exist since stake/unstake operations were successful.");
+        assert_eq!(
+            staking_info.staked_amount(Subperiod::Voting),
+            stake - unstake
+        );
+        assert_eq!(staking_info.staked_amount(Subperiod::BuildAndEarn), 0);
+        assert!(!staking_info.is_bonus_eligible(), "Sanity check");
+
+        // Move to merge voting stake into bep stake
+        assert_move_stake(account, &source_contract, &dest_contract, stake - unstake); // full move
+        let staking_info = StakerInfo::<Test>::get(account, &dest_contract)
+            .expect("Should exist since move operations is successful.");
+        assert_eq!(staking_info.staked_amount(Subperiod::Voting), 0);
+        assert_eq!(
+            staking_info.staked_amount(Subperiod::BuildAndEarn),
+            stake - unstake
+        );
+    })
+}
+
+#[test]
 fn set_static_tier_params_invalid_params_fails() {
     ExtBuilder::default().build_and_execute(|| {
         // Base value is assumed to be correct
@@ -4388,4 +4428,63 @@ fn unstake_from_unregistered_matching_next_era_total_stake() {
             "Total stake amount across all ledger has to be equal to the next era total stake"
         )
     })
+}
+
+// Tests a previous bug where voting stake move/unstake was subtracted from next BuildAndEarn stake in era info
+#[test]
+fn era_info_stakes_remain_synced() {
+    ExtBuilder::default()
+        .with_max_bonus_safe_moves(1)
+        .build_and_execute(|| {
+            let smart_contract_1 = MockSmartContract::wasm(1 as AccountId);
+            assert_register(1, &smart_contract_1);
+            let smart_contract_2 = MockSmartContract::wasm(2 as AccountId);
+            assert_register(1, &smart_contract_2);
+
+            let (staker_1, amount_1) = (1, 50);
+            assert_lock(staker_1, amount_1);
+            assert_stake(staker_1, &smart_contract_1, amount_1 - 10);
+
+            advance_to_next_subperiod(); // b&e
+
+            assert_stake(staker_1, &smart_contract_1, 10);
+
+            advance_to_next_era();
+            assert_claim_staker_rewards(staker_1);
+
+            let (staker_2, amount_2) = (2, 60);
+            assert_lock(staker_2, amount_2);
+            assert_stake(staker_2, &smart_contract_1, amount_2);
+
+            let unstake_amount = 15;
+            assert_unstake(staker_1, &smart_contract_1, unstake_amount);
+
+            let current_era_info = CurrentEraInfo::<Test>::get();
+            assert_eq!(current_era_info.staked_amount(Subperiod::Voting), 35);
+            assert_eq!(current_era_info.staked_amount(Subperiod::BuildAndEarn), 0);
+            assert_eq!(
+                current_era_info.staked_amount_next_era(Subperiod::Voting),
+                35
+            );
+            assert_eq!(
+                current_era_info.staked_amount_next_era(Subperiod::BuildAndEarn),
+                60,
+            );
+
+            // Move to forfeit bonus
+            let move_amount = 35;
+            assert_move_stake(staker_1, &smart_contract_1, &smart_contract_2, move_amount);
+
+            let current_era_info = CurrentEraInfo::<Test>::get();
+            assert_eq!(current_era_info.staked_amount(Subperiod::Voting), 0);
+            assert_eq!(current_era_info.staked_amount(Subperiod::BuildAndEarn), 0);
+            assert_eq!(
+                current_era_info.staked_amount_next_era(Subperiod::Voting),
+                0
+            );
+            assert_eq!(
+                current_era_info.staked_amount_next_era(Subperiod::BuildAndEarn),
+                95,
+            );
+        })
 }
