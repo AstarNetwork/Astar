@@ -350,7 +350,7 @@ impl<T: Config> OnRuntimeUpgrade for DemocracyMigrationSaveMigrationBlock<T> {
     fn on_runtime_upgrade() -> Weight {
         let block_number = frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
         MigrationBlockNumber::<T>::set(block_number);
-        T::DbWeight::get().reads_writes(1, 1)
+        T::DbWeight::get().reads_writes(0, 1)
     }
 }
 
