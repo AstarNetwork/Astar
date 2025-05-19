@@ -367,6 +367,5 @@ pub mod pallet {
     pub trait Config: frame_system::Config + pallet_democracy::Config {}
 
     #[pallet::storage]
-    #[pallet::whitelist_storage]
     pub type MigrationBlockNumber<T: Config> = StorageValue<_, u32, ValueQuery>;
 }
