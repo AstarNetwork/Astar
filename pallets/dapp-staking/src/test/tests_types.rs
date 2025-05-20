@@ -2041,7 +2041,7 @@ fn era_info_unstake_works() {
         bep_stake_amount_2 - unstake_amount_1_next.build_and_earn
     );
 
-    // === Scenario 2: Overflow as no effect on era stake ===
+    // === Scenario 2: Overflow has no effect on era stake ===
     let overflow = 2;
     let unstake_amount_2_current = StakeAmount {
         voting: 0,
@@ -2051,7 +2051,7 @@ fn era_info_unstake_works() {
     };
     era_info.unstake_amount(vec![unstake_amount_2_current]);
 
-    // Era info remains unchanged, overflow tentative as no effect
+    // Era info remains unchanged, overflow tentative has no effect
     assert_eq!(era_info, era_info_snapshot_1);
 
     // === Scenario 3: Unstake per subperiod types works ===
