@@ -718,11 +718,13 @@ pub(crate) fn assert_unstake(
         pre_era_info.total_staked_amount_next_era() - unstake_amount,
         "Total staked amount for the next era must decrease by 'amount'. No overflow is allowed."
     );
+
     // expected to be non-zero in case we're past the voting sub-period
     if !post_era_info.total_staked_amount().is_zero() {
-        // not fully correct, but good enough for unstake tests
-        assert!(
-            post_era_info.current_stake_amount.voting >= post_era_info.next_stake_amount.voting
+        // Ensure no invariance occurs in the voting stake amount for unstake operations
+        assert_eq!(
+            post_era_info.current_stake_amount.voting,
+            post_era_info.next_stake_amount.voting
         );
     }
 
@@ -956,6 +958,14 @@ pub(crate) fn assert_move_stake(
         &post_era_info,
         unstake_amount_entries.clone(),
     );
+
+    // expected to be non-zero in case we're past the voting sub-period
+    if !post_era_info.total_staked_amount().is_zero() {
+        // A move operation delay staking rewards to the next era, the next voting stake amount cannot be lower than the current era one
+        assert!(
+            post_era_info.current_stake_amount.voting <= post_era_info.next_stake_amount.voting
+        );
+    }
 
     assert_eq!(
         post_era_info.total_staked_amount_next_era(),
@@ -1287,11 +1297,13 @@ pub(crate) fn assert_unstake_from_unregistered(
         pre_staker_info
             .clone()
             .unstake(amount, unstake_era, unstake_subperiod);
+
     // expected to be non-zero in case we're past the voting sub-period
     if !post_era_info.total_staked_amount().is_zero() {
-        // not fully correct, but good enough for unstake tests
-        assert!(
-            post_era_info.current_stake_amount.voting >= post_era_info.next_stake_amount.voting
+        // Ensure no invariance occurs in the voting stake amount for unstake operations
+        assert_eq!(
+            post_era_info.current_stake_amount.voting,
+            post_era_info.next_stake_amount.voting
         );
     }
 
@@ -1300,12 +1312,6 @@ pub(crate) fn assert_unstake_from_unregistered(
         pre_era_info.total_staked_amount_next_era() - amount,
         "Total staked amount for the next era must decrease by 'amount'. No overflow is allowed."
     );
-    if !post_era_info.total_staked_amount().is_zero() {
-        // not fully correct, but good enough for unstake tests
-        assert!(
-            post_era_info.current_stake_amount.voting >= post_era_info.next_stake_amount.voting
-        );
-    }
 
     let unstake_amount = stake_amount_entries
         .iter()
@@ -2061,17 +2067,17 @@ fn assert_era_info_current(
             } else {
                 assert_eq!(
                     post_era_info.total_staked_amount(),
-                    pre_era_info.total_staked_amount().saturating_sub(amount),
+                    pre_era_info.total_staked_amount() - amount,
                     "Total staked amount for the current era must decrease by 'amount'."
                 );
                 assert_eq!(
                     post_era_info.staked_amount(Subperiod::Voting),
-                    pre_era_info.staked_amount(Subperiod::Voting).saturating_sub(entry.voting),
+                    pre_era_info.staked_amount(Subperiod::Voting) - entry.voting,
                     "Total Voting staked amount for the current era must decrease by 'entry.voting'."
                 );
                 assert_eq!(
                     post_era_info.staked_amount(Subperiod::BuildAndEarn),
-                    pre_era_info.staked_amount(Subperiod::BuildAndEarn).saturating_sub(entry.build_and_earn),
+                    pre_era_info.staked_amount(Subperiod::BuildAndEarn) - entry.build_and_earn,
                     "Total BuildAndEarn staked amount for the current era must decrease by 'entry.voting'."
                 );
             }

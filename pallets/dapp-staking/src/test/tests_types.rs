@@ -3273,7 +3273,7 @@ fn contract_stake_amount_unstake_from_subsperiod_type_is_ok() {
     contract_stake.stake(stake_amount, era_1, period);
     let total_stake_amount = stake_amount.total();
 
-    // 1st scenario - unstake some amount from Voting stake don't affect B&E stake
+    // unstake some amount from Voting stake don't affect B&E stake
     let amount = 1;
     let unstake_amount = StakeAmount {
         voting: amount,
