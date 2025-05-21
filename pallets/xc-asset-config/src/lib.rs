@@ -122,7 +122,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Convert weight to fee based on units per second and weight.
         pub fn weight_to_fee(weight: Weight, units_per_second: u128) -> u128 {
-            units_per_second.saturating_mul(weight.ref_time() as u128)
+            units_per_second.saturating_mul(weight.ref_time() as u64)
                 / (WEIGHT_REF_TIME_PER_SECOND as u128)
         }
     }
