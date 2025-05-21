@@ -1985,16 +1985,6 @@
 <a href="#1985" id="1985">1985</a>
 <a href="#1986" id="1986">1986</a>
 <a href="#1987" id="1987">1987</a>
-<a href="#1988" id="1988">1988</a>
-<a href="#1989" id="1989">1989</a>
-<a href="#1990" id="1990">1990</a>
-<a href="#1991" id="1991">1991</a>
-<a href="#1992" id="1992">1992</a>
-<a href="#1993" id="1993">1993</a>
-<a href="#1994" id="1994">1994</a>
-<a href="#1995" id="1995">1995</a>
-<a href="#1996" id="1996">1996</a>
-<a href="#1997" id="1997">1997</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2905,6 +2895,12 @@
         }
     }
 
+    <span class="doccomment">/// Subtract the specified [`StakeAmount`], updating both `subperiods`.
+    </span><span class="kw">pub fn </span>subtract_stake(<span class="kw-2">&amp;mut </span><span class="self">self</span>, amount: <span class="kw-2">&amp;</span>StakeAmount) {
+        <span class="self">self</span>.voting.saturating_reduce(amount.voting);
+        <span class="self">self</span>.build_and_earn.saturating_reduce(amount.build_and_earn);
+    }
+
     <span class="doccomment">/// Unstake the specified `amount`.
     ///
     /// Attempt to subtract from `Build&amp;Earn` subperiod amount is done first. Any rollover is subtracted from
@@ -3004,12 +3000,10 @@
     /// - If the entry is from a past era or invalid, it is ignored.
     </span><span class="kw">pub fn </span>unstake_amount(<span class="kw-2">&amp;mut </span><span class="self">self</span>, stake_amount_entries: <span class="kw">impl </span>IntoIterator&lt;Item = StakeAmount&gt;) {
         <span class="kw">for </span>entry <span class="kw">in </span>stake_amount_entries {
-            <span class="kw">let </span>(era, amount) = (entry.era, entry.total());
-
-            <span class="kw">if </span>era == <span class="self">self</span>.current_stake_amount.era {
-                <span class="self">self</span>.current_stake_amount.subtract(amount);
-            } <span class="kw">else if </span>era == <span class="self">self</span>.next_stake_amount.era {
-                <span class="self">self</span>.next_stake_amount.subtract(amount);
+            <span class="kw">if </span>entry.era == <span class="self">self</span>.current_stake_amount.era {
+                <span class="self">self</span>.current_stake_amount.subtract_stake(<span class="kw-2">&amp;</span>entry);
+            } <span class="kw">else if </span>entry.era == <span class="self">self</span>.next_stake_amount.era {
+                <span class="self">self</span>.next_stake_amount.subtract_stake(<span class="kw-2">&amp;</span>entry);
             }
         }
     }
@@ -3164,7 +3158,6 @@
     ) -&gt; (Vec&lt;StakeAmount&gt;, BonusStatus) {
         <span class="kw">let </span><span class="kw-2">mut </span>result = Vec::new();
         <span class="kw">let </span>staked_snapshot = <span class="self">self</span>.staked;
-        <span class="kw">let </span>was_bonus_eligible_snapshot = <span class="self">self</span>.is_bonus_eligible();
 
         <span class="comment">// 1. Modify 'current' staked amount.
         </span><span class="self">self</span>.staked.subtract(amount);
@@ -3177,13 +3170,6 @@
         // In case voting subperiod has passed, and the 'voting' stake amount was reduced, we need to reduce the bonus eligibility counter.
         </span><span class="kw">if </span>subperiod != Subperiod::Voting &amp;&amp; <span class="self">self</span>.staked.voting &lt; staked_snapshot.voting {
             <span class="self">self</span>.bonus_status = <span class="self">self</span>.bonus_status.saturating_sub(<span class="number">1</span>);
-        }
-        <span class="kw">let </span>is_bonus_lost = was_bonus_eligible_snapshot &amp;&amp; !<span class="self">self</span>.is_bonus_eligible();
-
-        <span class="comment">// If bonus is just forfeited, previously existing Voting stake amount is moved to BuildAndEarn stake amount
-        </span><span class="kw">if </span>is_bonus_lost &amp;&amp; unstaked_amount.voting &gt; <span class="number">0 </span>{
-            <span class="self">self</span>.staked.convert_bonus_into_regular_stake();
-            unstaked_amount.convert_bonus_into_regular_stake();
         }
 
         <span class="comment">// Store the unstaked amount result
@@ -3235,11 +3221,6 @@
                     <span class="kw">let </span><span class="kw-2">mut </span>temp_unstaked_amount =
                         previous_staked_snapshot.saturating_difference(<span class="kw-2">&amp;</span><span class="self">self</span>.previous_staked);
                     temp_unstaked_amount.era = <span class="self">self</span>.previous_staked.era;
-
-                    <span class="kw">if </span>is_bonus_lost &amp;&amp; temp_unstaked_amount.voting &gt; <span class="number">0 </span>{
-                        temp_unstaked_amount.convert_bonus_into_regular_stake();
-                    }
-
                     result.insert(<span class="number">0</span>, temp_unstaked_amount);
                 }
                 <span class="kw">_ </span>=&gt; {}
@@ -3456,15 +3437,14 @@
 
         <span class="comment">// 2. Value updates - only after alignment
         </span><span class="kw">for </span>entry <span class="kw">in </span>stake_amount_entries {
-            <span class="kw">let </span>(era, amount) = (entry.era, entry.total());
-            <span class="kw">if </span><span class="self">self</span>.staked.era == era {
-                <span class="self">self</span>.staked.subtract(amount);
+            <span class="kw">if </span><span class="self">self</span>.staked.era == entry.era {
+                <span class="self">self</span>.staked.subtract_stake(<span class="kw-2">&amp;</span>entry);
                 <span class="kw">continue</span>;
             }
 
             <span class="kw">match </span><span class="self">self</span>.staked_future.as_mut() {
-                <span class="prelude-val">Some</span>(future_stake_amount) <span class="kw">if </span>future_stake_amount.era == era =&gt; {
-                    future_stake_amount.subtract(amount);
+                <span class="prelude-val">Some</span>(future_stake_amount) <span class="kw">if </span>future_stake_amount.era == entry.era =&gt; {
+                    future_stake_amount.subtract_stake(<span class="kw-2">&amp;</span>entry);
                 }
                 <span class="comment">// Otherwise do nothing
                 </span><span class="kw">_ </span>=&gt; (),

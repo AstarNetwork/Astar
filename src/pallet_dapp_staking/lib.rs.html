@@ -2704,6 +2704,8 @@
 <a href="#2704" id="2704">2704</a>
 <a href="#2705" id="2705">2705</a>
 <a href="#2706" id="2706">2706</a>
+<a href="#2707" id="2707">2707</a>
+<a href="#2708" id="2708">2708</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -4078,11 +4080,16 @@
             <span class="kw">let </span>maybe_source_dapp_info = IntegratedDApps::&lt;T&gt;::get(<span class="kw-2">&amp;</span>source_contract);
             <span class="kw">let </span>is_source_unregistered = maybe_source_dapp_info.is_none();
 
-            <span class="kw">let </span>(move_amount, bonus_status) = <span class="kw">if </span>is_source_unregistered {
+            <span class="kw">let </span>(<span class="kw-2">mut </span>move_amount, bonus_status) = <span class="kw">if </span>is_source_unregistered {
                 <span class="self">Self</span>::inner_unstake_from_unregistered(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>source_contract)<span class="question-mark">?
             </span>} <span class="kw">else </span>{
                 <span class="self">Self</span>::inner_unstake(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>source_contract, amount)<span class="question-mark">?
             </span>};
+
+            <span class="comment">// When bonus is forfeited, voting stake must be merged into b&amp;e stake
+            </span><span class="kw">if </span>bonus_status == <span class="number">0 </span>&amp;&amp; move_amount.voting &gt; <span class="number">0 </span>{
+                move_amount.convert_bonus_into_regular_stake();
+            }
 
             <span class="self">Self</span>::inner_stake(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>destination_contract, move_amount, bonus_status)<span class="question-mark">?</span>;
 
@@ -4283,10 +4290,7 @@
                             protocol_state.subperiod(),
                         );
 
-                        <span class="comment">// 'unstake_amount_iter' may include voting stake merged into B&amp;E stake.
-                        // This is safe to use now since it's only needed for the 'era_info' update,
-                        // which considers the total stake across both subperiods.
-                        </span>(unstake_amount, unstake_amount_iter, preserved_bonus_status)
+                        (unstake_amount, unstake_amount_iter, preserved_bonus_status)
                     }
                     <span class="prelude-val">None </span>=&gt; {
                         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::NoStakingInfo.into());
