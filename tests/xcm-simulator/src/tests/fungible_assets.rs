@@ -291,7 +291,7 @@ fn para_to_para_reserve_transfer_and_back_with_extra_native() {
         );
     });
 
-    // Registring Para B native asset on Para A
+    // Registering Para B native asset on Para A
     ParaA::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
