@@ -6,6 +6,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["astar_test_utils",["",[],["lib.rs"]]],\
 ["astar_xcm_benchmarks",["",[["fungible",[],["mod.rs"]],["generic",[],["mod.rs"]]],["lib.rs"]]],\
 ["dapp_staking_runtime_api",["",[],["lib.rs"]]],\
+["democracy_mbm",["",[],["lib.rs","weights.rs"]]],\
 ["evm_tracing_events",["",[],["evm.rs","gasometer.rs","lib.rs","runtime.rs"]]],\
 ["integration_tests",["",[],["lib.rs"]]],\
 ["local_runtime",["",[["weights",[],["mod.rs","pallet_assets.rs","pallet_balances.rs"]]],["chain_extensions.rs","genesis_config.rs","lib.rs","precompiles.rs"]]],\
