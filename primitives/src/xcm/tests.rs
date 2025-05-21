@@ -72,7 +72,7 @@ impl ExecutionPaymentRate for ExecutionPayment {
 
 /// Execution fee for the specified weight, using provided `units_per_second`
 fn execution_fee(weight: Weight, units_per_second: u128) -> u128 {
-    units_per_second * (weight.ref_time() as u128) / (WEIGHT_REF_TIME_PER_SECOND as u128)
+    units_per_second * (weight.ref_time() as u64) / (WEIGHT_REF_TIME_PER_SECOND as u128)
 }
 
 #[test]
