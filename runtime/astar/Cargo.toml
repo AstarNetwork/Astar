@@ -38,6 +38,7 @@ sp-transaction-pool = { workspace = true }
 sp-version = { workspace = true }
 
 # frame dependencies
+democracy-mbm = { workspace = true }
 frame-executive = { workspace = true }
 frame-metadata-hash-extension = { workspace = true }
 frame-support = { workspace = true }
@@ -219,6 +220,7 @@ std = [
 	"pallet-treasury/std",
 	"pallet-utility/std",
 	"pallet-vesting/std",
+	"democracy-mbm/std",
 	"pallet-xc-asset-config/std",
 	"pallet-xcm-benchmarks?/std",
 	"pallet-xcm/std",
@@ -297,6 +299,7 @@ runtime-benchmarks = [
 	"pallet-transaction-payment/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
+	"democracy-mbm/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
@@ -355,6 +358,7 @@ try-runtime = [
 	"pallet-treasury/try-runtime",
 	"pallet-utility/try-runtime",
 	"pallet-vesting/try-runtime",
+	"democracy-mbm/try-runtime",
 	"pallet-xc-asset-config/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",

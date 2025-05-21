@@ -613,6 +613,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-utility",
  "dapp-staking-runtime-api",
+ "democracy-mbm",
  "fp-evm",
  "fp-rpc",
  "fp-self-contained",
@@ -2960,6 +2961,28 @@ checksum = "8d162beedaa69905488a8da94f5ac3edb4dd4788b732fadb7bd120b2625c1976"
 dependencies = [
  "data-encoding",
  "syn 2.0.101",
+]
+
+[[package]]
+name = "democracy-mbm"
+version = "1.0.0"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-democracy",
+ "pallet-migrations",
+ "pallet-preimage",
+ "pallet-scheduler",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
