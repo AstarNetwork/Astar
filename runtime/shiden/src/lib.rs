@@ -181,7 +181,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("shiden"),
     impl_name: Cow::Borrowed("shiden"),
     authoring_version: 1,
-    spec_version: 1500,
+    spec_version: 1501,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -1203,7 +1203,7 @@ parameter_types! {
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations = (pallet_identity::migration::v2::LazyMigrationV1ToV2<Runtime>,);
+    type Migrations = ();
     // Benchmarks need mocked migrations to guarantee that they succeed.
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -1314,10 +1314,7 @@ parameter_types! {
 }
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (
-    pallet_dapp_staking::migration::versioned_migrations::V9ToV10<Runtime, MaxPercentages>,
-    pallet_xc_asset_config::migrations::versioned::V3ToV4<Runtime>,
-);
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
