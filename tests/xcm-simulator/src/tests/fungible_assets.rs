@@ -76,9 +76,9 @@ fn para_to_para_reserve_transfer_and_back_via_xtokens() {
 
     // Parachain B should receive parachain A native assets and should mint their local derivate.
     // Portion of those assets should be taken as the XCM execution fee.
-    let four_instructions_execution_cost =
-        (parachain::UnitWeightCost::get() * 4).ref_time() as u128;
-    let remaining = withdraw_amount - four_instructions_execution_cost;
+    let five_instructions_execution_cost =
+        (parachain::UnitWeightCost::get() * 5).ref_time() as u128;
+    let remaining = withdraw_amount - five_instructions_execution_cost;
     ParaB::execute_with(|| {
         // Ensure Alice received assets on ParaB (sent amount minus expenses)
         assert_eq!(
@@ -113,15 +113,15 @@ fn para_to_para_reserve_transfer_and_back_via_xtokens() {
         // ParaB soveregin account account should have only the execution cost
         assert_eq!(
             parachain::Balances::free_balance(&sibling_para_account_id(2)),
-            INITIAL_BALANCE + four_instructions_execution_cost
+            INITIAL_BALANCE + five_instructions_execution_cost
         );
         // ParaA alice should have initial amount backed subtracted with execution costs
-        // which is 2xfour_instructions_execution_cost
-        // or withdraw_amount + remaining - four_instructions_execution_cost
+        // which is 2xfive_instructions_execution_cost
+        // or withdraw_amount + remaining - five_instructions_execution_cost
         // both are same
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),
-            INITIAL_BALANCE - withdraw_amount + remaining - four_instructions_execution_cost
+            INITIAL_BALANCE - withdraw_amount + remaining - five_instructions_execution_cost
         );
     });
 }
@@ -174,9 +174,9 @@ fn para_to_para_reserve_transfer_and_back() {
 
     // Parachain B should receive parachain A native assets and should mint their local derivate.
     // Portion of those assets should be taken as the XCM execution fee.
-    let four_instructions_execution_cost =
-        (parachain::UnitWeightCost::get() * 4).ref_time() as u128;
-    let remaining = withdraw_amount - four_instructions_execution_cost;
+    let five_instructions_execution_cost =
+        (parachain::UnitWeightCost::get() * 5).ref_time() as u128;
+    let remaining = withdraw_amount - five_instructions_execution_cost;
     ParaB::execute_with(|| {
         // Ensure Alice received assets on ParaB (sent amount minus expenses)
         assert_eq!(
@@ -200,15 +200,15 @@ fn para_to_para_reserve_transfer_and_back() {
         // ParaB soveregin account account should have only the execution cost
         assert_eq!(
             parachain::Balances::free_balance(&sibling_para_account_id(2)),
-            INITIAL_BALANCE + four_instructions_execution_cost
+            INITIAL_BALANCE + five_instructions_execution_cost
         );
         // ParaA alice should have initial amount backed subtracted with execution costs
-        // which is 2xfour_instructions_execution_cost
-        // or withdraw_amount + remaining - four_instructions_execution_cost
+        // which is 2xfive_instructions_execution_cost
+        // or withdraw_amount + remaining - five_instructions_execution_cost
         // both are same
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),
-            INITIAL_BALANCE - withdraw_amount + remaining - four_instructions_execution_cost
+            INITIAL_BALANCE - withdraw_amount + remaining - five_instructions_execution_cost
         );
     });
 }
@@ -685,9 +685,11 @@ fn para_a_send_relay_asset_to_para_b() {
 
     // Para B balances should have been credited
     ParaB::execute_with(|| {
+        let five_instructions_execution_cost =
+            (parachain::UnitWeightCost::get() * 5).ref_time() as u128;
         assert_eq!(
             parachain::Assets::balance(relay_asset_id, ALICE),
-            withdraw_amount - 40
+            withdraw_amount - five_instructions_execution_cost
         );
     });
 }
