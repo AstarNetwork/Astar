@@ -22,6 +22,7 @@ pub mod pallet_assets;
 pub mod pallet_balances;
 pub mod pallet_dapp_staking;
 pub mod pallet_inflation;
+pub mod pallet_scheduler;
 pub mod pallet_transaction_payment;
 pub mod pallet_xcm;
 pub mod xcm;

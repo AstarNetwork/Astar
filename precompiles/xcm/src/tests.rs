@@ -272,7 +272,8 @@ mod xcm_old_interface_test {
                                 interior: Junctions::X1(_),
                             },
                             ..
-                        }
+                        },
+                        SetTopic(..)
                     ]
 
                     if fees.contains(&non_native_asset) && assets.contains(&non_native_asset)
@@ -348,7 +349,8 @@ mod xcm_old_interface_test {
                                 interior: Junctions::X1(_),
                             },
                             ..
-                        }
+                        },
+                        SetTopic(..)
                     ]
                     if fees.contains(&native_asset) && assets.contains(&native_asset)
                 ));
