@@ -124,7 +124,7 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
                 fun: Fungibility::Fungible(_),
             } => {
                 if let Some(units_per_second) = T::get_units_per_second(asset_location.clone()) {
-                    let amount = units_per_second.saturating_mul(weight.ref_time() as u128) // TODO: change this to u64?
+                    let amount = units_per_second.saturating_mul(weight.ref_time() as u64)
                         / (WEIGHT_REF_TIME_PER_SECOND as u128);
                     if amount == 0 {
                         return Ok(payment);
@@ -167,7 +167,7 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
             self.asset_location_and_units_per_second.clone()
         {
             let weight = weight.min(self.weight);
-            let amount = units_per_second.saturating_mul(weight.ref_time() as u128)
+            let amount = units_per_second.saturating_mul(weight.ref_time() as u64)
                 / (WEIGHT_REF_TIME_PER_SECOND as u128);
 
             self.weight = self.weight.saturating_sub(weight);
