@@ -692,6 +692,8 @@
 <a href="#692" id="692">692</a>
 <a href="#693" id="693">693</a>
 <a href="#694" id="694">694</a>
+<a href="#695" id="695">695</a>
+<a href="#696" id="696">696</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1066,12 +1068,11 @@
             <span class="comment">// 1. First calculate the params needed to derive the `max_emission` value used to calculate the current inflation config.
             </span><span class="kw">let </span>config = ActiveInflationConfig::&lt;T&gt;::get();
 
-            <span class="comment">// This is reuse from `new_config` function.
-            </span><span class="kw">let </span>blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle().max(<span class="number">1</span>));
+            <span class="comment">// Simple type conversion.
+            </span><span class="kw">let </span>blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle());
             <span class="kw">let </span>build_and_earn_eras_per_cycle =
-                Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle().max(<span class="number">1</span>));
-            <span class="kw">let </span>periods_per_cycle =
-                Balance::from(T::CycleConfiguration::periods_per_cycle().max(<span class="number">1</span>));
+                Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle());
+            <span class="kw">let </span>periods_per_cycle = Balance::from(T::CycleConfiguration::periods_per_cycle());
 
             <span class="comment">// 2. Calculate reward pool amounts per cycle from the existing inflation configuration.
             </span><span class="kw">let </span>collator_reward_pool = config
@@ -1136,6 +1137,9 @@
             // 2.0 Convert all 'per cycle' values to the correct type (Balance).
             // Also include a safety check that none of the values is zero since this would cause a division by zero.
             // The configuration &amp; integration tests must ensure this never happens, so the following code is just an additional safety measure.
+            //
+            // NOTE: Using `max(1)` to eliminate possibility of division by zero.
+            // These values should never be 0 anyways, but this is just a safety measure.
             </span><span class="kw">let </span>blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle().max(<span class="number">1</span>));
             <span class="kw">let </span>build_and_earn_eras_per_cycle =
                 Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle().max(<span class="number">1</span>));
