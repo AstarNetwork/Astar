@@ -28,8 +28,8 @@ use frame_support::{
     parameter_types,
     traits::{OnFinalize, OnInitialize},
 };
-use frame_system::{EnsureRoot, EnsureSigned};
-use sp_runtime::BuildStorage;
+use frame_system::{limits::BlockWeights, EnsureRoot, EnsureSigned};
+use sp_runtime::{BuildStorage, Perbill};
 
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
@@ -83,12 +83,16 @@ impl pallet_preimage::Config for Runtime {
     type Consideration = ();
 }
 
+parameter_types! {
+    pub MaximumWeight: Weight = Perbill::from_percent(80) * <<Runtime as frame_system::Config>::BlockWeights as Get<BlockWeights>>::get().max_block;
+}
+
 impl pallet_scheduler::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type PalletsOrigin = OriginCaller;
     type RuntimeCall = RuntimeCall;
-    type MaximumWeight = ();
+    type MaximumWeight = MaximumWeight;
     type ScheduleOrigin = EnsureRoot<u64>;
     type MaxScheduledPerBlock = ConstU32<100>;
     type WeightInfo = ();
