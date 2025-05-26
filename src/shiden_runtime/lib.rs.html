@@ -2425,9 +2425,6 @@
 <a href="#2425" id="2425">2425</a>
 <a href="#2426" id="2426">2426</a>
 <a href="#2427" id="2427">2427</a>
-<a href="#2428" id="2428">2428</a>
-<a href="#2429" id="2429">2429</a>
-<a href="#2430" id="2430">2430</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2611,7 +2608,7 @@
     spec_name: Cow::Borrowed(<span class="string">"shiden"</span>),
     impl_name: Cow::Borrowed(<span class="string">"shiden"</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">1500</span>,
+    spec_version: <span class="number">1501</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">3</span>,
@@ -3633,7 +3630,7 @@
 <span class="kw">impl </span>pallet_migrations::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
-    </span><span class="kw">type </span>Migrations = (pallet_identity::migration::v2::LazyMigrationV1ToV2&lt;Runtime&gt;,);
+    </span><span class="kw">type </span>Migrations = ();
     <span class="comment">// Benchmarks need mocked migrations to guarantee that they succeed.
     </span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
     </span><span class="kw">type </span>Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -3744,10 +3741,7 @@
 }
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = (
-    pallet_dapp_staking::migration::versioned_migrations::V9ToV10&lt;Runtime, MaxPercentages&gt;,
-    pallet_xc_asset_config::migrations::versioned::V3ToV4&lt;Runtime&gt;,
-);
+</span><span class="kw">pub type </span>Unreleased = ();
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);

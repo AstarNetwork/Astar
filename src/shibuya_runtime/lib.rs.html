@@ -2842,8 +2842,6 @@
 <a href="#2842" id="2842">2842</a>
 <a href="#2843" id="2843">2843</a>
 <a href="#2844" id="2844">2844</a>
-<a href="#2845" id="2845">2845</a>
-<a href="#2846" id="2846">2846</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3056,7 +3054,7 @@
     spec_name: Cow::Borrowed(<span class="string">"shibuya"</span>),
     impl_name: Cow::Borrowed(<span class="string">"shibuya"</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">1500</span>,
+    spec_version: <span class="number">1501</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">3</span>,
@@ -3264,7 +3262,8 @@
     <span class="kw">type </span>MaximumWeight = MaximumSchedulerWeight;
     <span class="kw">type </span>ScheduleOrigin = EnsureRoot&lt;AccountId&gt;;
     <span class="kw">type </span>MaxScheduledPerBlock = ConstU32&lt;<span class="number">50</span>&gt;;
-    <span class="kw">type </span>WeightInfo = pallet_scheduler::weights::SubstrateWeight&lt;Runtime&gt;;
+    <span class="comment">// TODO: re-bench pallet_scheduler weights or use default weights.
+    </span><span class="kw">type </span>WeightInfo = weights::pallet_scheduler::WeightInfo&lt;Runtime&gt;;
     <span class="kw">type </span>OriginPrivilegeCmp = EqualPrivilegeOnly;
     <span class="kw">type </span>Preimages = Preimage;
 }
@@ -4391,7 +4390,7 @@
 <span class="kw">impl </span>pallet_migrations::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
-    </span><span class="kw">type </span>Migrations = (pallet_identity::migration::v2::LazyMigrationV1ToV2&lt;Runtime&gt;,);
+    </span><span class="kw">type </span>Migrations = ();
     <span class="comment">// Benchmarks need mocked migrations to guarantee that they succeed.
     </span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
     </span><span class="kw">type </span>Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -4577,10 +4576,7 @@
 }
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = (
-    pallet_dapp_staking::migration::versioned_migrations::V9ToV10&lt;Runtime, MaxPercentages&gt;,
-    pallet_xc_asset_config::migrations::versioned::V3ToV4&lt;Runtime&gt;,
-);
+</span><span class="kw">pub type </span>Unreleased = ();
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);
