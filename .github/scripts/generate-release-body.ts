@@ -315,6 +315,9 @@ ${remainingPRs.length > 0 ? `
 ${remainingPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : "None"}
 
+## Recommended sidecar version:
+- [TODO: add sidecar version]
+
 ## Dependency Changes
 Astar: https://github.com/${argv.owner}/${argv.repo}/compare/${previousTag}...${newTag}
 ${moduleLinks.map((modules) => `${capitalize(modules.name)}: ${modules.link}`).join("\n")}
@@ -365,6 +368,9 @@ ${runtimePRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ${remainingPRs.length > 0 ? `
 ${remainingPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : "None"}
+
+## Recommended sidecar version:
+- [TODO: add sidecar version]
 
 ## Dependency Changes
 Astar: https://github.com/${argv.owner}/${argv.repo}/compare/${previousTag}...${newTag}
