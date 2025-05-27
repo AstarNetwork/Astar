@@ -23,6 +23,9 @@
 #![recursion_limit = "512"]
 
 extern crate alloc;
+#[cfg(feature = "runtime-benchmarks")]
+#[macro_use]
+extern crate frame_benchmarking;
 use alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec, vec::Vec};
 use core::marker::PhantomData;
 
@@ -151,7 +154,7 @@ pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
 }
 
 /// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = 12000;
+pub const MILLISECS_PER_BLOCK: u64 = 6000;
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
 // Time is measured by number of blocks.
@@ -161,7 +164,7 @@ pub const DAYS: BlockNumber = HOURS * 24;
 
 /// Maximum number of blocks simultaneously accepted by the Runtime, not yet included into the
 /// relay chain.
-pub const UNINCLUDED_SEGMENT_CAPACITY: u32 = 1;
+pub const UNINCLUDED_SEGMENT_CAPACITY: u32 = 3;
 /// How many parachain blocks are processed by the relay chain per parent. Limits the number of
 /// blocks authored per slot.
 pub const BLOCK_PROCESSING_VELOCITY: u32 = 1;
@@ -188,7 +191,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("astar"),
     impl_name: Cow::Borrowed("astar"),
     authoring_version: 1,
-    spec_version: 1500,
+    spec_version: 1600,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -216,9 +219,9 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-/// We allow for 0.5 seconds of compute with a 6 second average block time.
+/// We allow for 2 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
-    WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
+    WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2),
     polkadot_primitives::MAX_POV_SIZE as u64,
 );
 
@@ -312,15 +315,11 @@ impl frame_system::Config for Runtime {
     type ExtensionsWeightInfo = weights::frame_system_extensions::WeightInfo<Runtime>;
 }
 
-parameter_types! {
-    pub const MinimumPeriod: u64 = MILLISECS_PER_BLOCK / 2;
-}
-
 impl pallet_timestamp::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
-    type OnTimestampSet = ();
-    type MinimumPeriod = MinimumPeriod;
+    type OnTimestampSet = Aura;
+    type MinimumPeriod = ConstU64<0>;
     type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
 
@@ -553,7 +552,7 @@ impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<250>;
-    type AllowMultipleBlocksPerSlot = ConstBool<false>;
+    type AllowMultipleBlocksPerSlot = ConstBool<true>;
     type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
@@ -952,8 +951,8 @@ parameter_types! {
     /// max_gas_limit = max_tx_ref_time / WEIGHT_PER_GAS = max_pov_size * gas_limit_pov_size_ratio
     /// gas_limit_pov_size_ratio = ceil((max_tx_ref_time / WEIGHT_PER_GAS) / max_pov_size)
     ///
-    /// Equals 4 for values used by Astar runtime.
-    pub const GasLimitPovSizeRatio: u64 = 4;
+    /// Equals 16 for values used by Astar runtime.
+    pub const GasLimitPovSizeRatio: u64 = 16;
 }
 
 impl pallet_evm::Config for Runtime {
@@ -1182,7 +1181,7 @@ impl pallet_proxy::Config for Runtime {
 parameter_types! {
     pub const NativeCurrencyId: CurrencyId = CurrencyId::ASTR;
     // Aggregate values for one day.
-    pub const AggregationDuration: BlockNumber = 7200;
+    pub const AggregationDuration: BlockNumber = DAYS;
 }
 
 impl pallet_price_aggregator::Config for Runtime {
@@ -1505,7 +1504,17 @@ parameter_types! {
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations = (pallet_identity::migration::v2::LazyMigrationV1ToV2<Runtime>,);
+    type Migrations = (
+        vesting_mbm::LazyMigration<Runtime, vesting_mbm::weights::SubstrateWeight<Runtime>>,
+        pallet_dapp_staking::migration::LazyMigration<
+            Runtime,
+            pallet_dapp_staking::weights::SubstrateWeight<Runtime>,
+        >,
+        democracy_mbm::DemocracyMigrationV1ToV2<
+            Runtime,
+            democracy_mbm::weights::SubstrateWeight<Runtime>,
+        >,
+    );
     // Benchmarks need mocked migrations to guarantee that they succeed.
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -1639,8 +1648,9 @@ parameter_types! {
 
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased = (
-    pallet_dapp_staking::migration::versioned_migrations::V9ToV10<Runtime, MaxPercentages>,
-    pallet_xc_asset_config::migrations::versioned::V3ToV4<Runtime>,
+    pallet_dapp_staking::migration::AdjustEraMigration<Runtime>,
+    pallet_inflation::migration::AdjustBlockRewardMigration<Runtime>,
+    democracy_mbm::DemocracyMigrationSaveMigrationBlock<Runtime>,
 );
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
@@ -1708,10 +1718,6 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
         }
     }
 }
-
-#[cfg(feature = "runtime-benchmarks")]
-#[macro_use]
-extern crate frame_benchmarking;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
