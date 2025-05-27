@@ -109,7 +109,7 @@ fn basic_xcmp_transact_outcome_query_response() {
             xcms.len()
         );
         assert!(
-            xcms[0].len() == 1,
+            xcms[0].len() == 2,
             "Response XCM should only have one instruction, i.e QueryResponse, found {}",
             xcms[0].len()
         );
@@ -119,7 +119,7 @@ fn basic_xcmp_transact_outcome_query_response() {
                 query_id,
                 response: Response::ExecutionResult(None),
                 ..
-            }] if query_id == query_id_success
+            }, SetTopic(..)] if query_id == query_id_success
         ));
 
         // clear the events
@@ -150,14 +150,14 @@ fn basic_xcmp_transact_outcome_query_response() {
     ParaA::execute_with(|| {
         let xcms = parachain::MsgQueue::received_xcmp();
         // sanity check
-        assert!(xcms.len() == 2 && xcms[1].len() == 1);
+        assert!(xcms.len() == 2 && xcms[1].len() == 2);
         assert!(matches!(
             xcms[1].0.as_slice(),
             &[QueryResponse {
                 query_id,
                 response: Response::ExecutionResult(Some((4, xcm::v5::Error::ExpectationFalse))),
                 ..
-            }] if query_id == query_id_failure
+            },SetTopic(..)] if query_id == query_id_failure
         ));
     });
 }

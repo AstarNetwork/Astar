@@ -157,10 +157,11 @@ macro_rules! lenient_balance_assert_eq {
             Permill::from_rational($x, $y)
         };
 
+        let threshold = Permill::from_rational(999_u32, 1000);
         assert!(
-            ratio >= Permill::from_rational(999_u32, 1000),
-            "Ratio between old and new balance is too small: {:?}",
-            ratio,
+            ratio >= threshold,
+            "Ratio of {:?} indicates a significant difference between old and new balances (expected >= {:?})",
+            ratio, threshold,
         );
     }};
 }
