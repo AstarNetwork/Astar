@@ -2746,6 +2746,13 @@
 <a href="#2746" id="2746">2746</a>
 <a href="#2747" id="2747">2747</a>
 <a href="#2748" id="2748">2748</a>
+<a href="#2749" id="2749">2749</a>
+<a href="#2750" id="2750">2750</a>
+<a href="#2751" id="2751">2751</a>
+<a href="#2752" id="2752">2752</a>
+<a href="#2753" id="2753">2753</a>
+<a href="#2754" id="2754">2754</a>
+<a href="#2755" id="2755">2755</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2771,6 +2778,9 @@
 </span><span class="attr">#![recursion_limit = <span class="string">"512"</span>]
 
 </span><span class="kw">extern crate </span>alloc;
+<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+#[macro_use]
+</span><span class="kw">extern crate </span>frame_benchmarking;
 <span class="kw">use </span>alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec, vec::Vec};
 <span class="kw">use </span>core::marker::PhantomData;
 
@@ -2899,7 +2909,7 @@
 }
 
 <span class="doccomment">/// Change this to adjust the block time.
-</span><span class="kw">pub const </span>MILLISECS_PER_BLOCK: u64 = <span class="number">12000</span>;
+</span><span class="kw">pub const </span>MILLISECS_PER_BLOCK: u64 = <span class="number">6000</span>;
 <span class="kw">pub const </span>SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
 <span class="comment">// Time is measured by number of blocks.
@@ -2909,7 +2919,7 @@
 
 <span class="doccomment">/// Maximum number of blocks simultaneously accepted by the Runtime, not yet included into the
 /// relay chain.
-</span><span class="kw">pub const </span>UNINCLUDED_SEGMENT_CAPACITY: u32 = <span class="number">1</span>;
+</span><span class="kw">pub const </span>UNINCLUDED_SEGMENT_CAPACITY: u32 = <span class="number">3</span>;
 <span class="doccomment">/// How many parachain blocks are processed by the relay chain per parent. Limits the number of
 /// blocks authored per slot.
 </span><span class="kw">pub const </span>BLOCK_PROCESSING_VELOCITY: u32 = <span class="number">1</span>;
@@ -2936,7 +2946,7 @@
     spec_name: Cow::Borrowed(<span class="string">"astar"</span>),
     impl_name: Cow::Borrowed(<span class="string">"astar"</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">1501</span>,
+    spec_version: <span class="number">1600</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">3</span>,
@@ -2964,9 +2974,9 @@
 <span class="doccomment">/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
 /// by  Operational  extrinsics.
 </span><span class="kw">const </span>NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(<span class="number">75</span>);
-<span class="doccomment">/// We allow for 0.5 seconds of compute with a 6 second average block time.
+<span class="doccomment">/// We allow for 2 seconds of compute with a 6 second average block time.
 </span><span class="kw">const </span>MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
-    WEIGHT_REF_TIME_PER_SECOND.saturating_div(<span class="number">2</span>),
+    WEIGHT_REF_TIME_PER_SECOND.saturating_mul(<span class="number">2</span>),
     polkadot_primitives::MAX_POV_SIZE <span class="kw">as </span>u64,
 );
 
@@ -3060,15 +3070,11 @@
     <span class="kw">type </span>ExtensionsWeightInfo = weights::frame_system_extensions::WeightInfo&lt;Runtime&gt;;
 }
 
-<span class="macro">parameter_types!</span> {
-    <span class="kw">pub const </span>MinimumPeriod: u64 = MILLISECS_PER_BLOCK / <span class="number">2</span>;
-}
-
 <span class="kw">impl </span>pallet_timestamp::Config <span class="kw">for </span>Runtime {
     <span class="doccomment">/// A timestamp: milliseconds since the unix epoch.
     </span><span class="kw">type </span>Moment = u64;
-    <span class="kw">type </span>OnTimestampSet = ();
-    <span class="kw">type </span>MinimumPeriod = MinimumPeriod;
+    <span class="kw">type </span>OnTimestampSet = Aura;
+    <span class="kw">type </span>MinimumPeriod = ConstU64&lt;<span class="number">0</span>&gt;;
     <span class="kw">type </span>WeightInfo = pallet_timestamp::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
@@ -3283,7 +3289,8 @@
     <span class="kw">type </span>ReservedDmpWeight = ReservedDmpWeight;
     <span class="kw">type </span>XcmpMessageHandler = XcmpQueue;
     <span class="kw">type </span>ReservedXcmpWeight = ReservedXcmpWeight;
-    <span class="kw">type </span>CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+    <span class="kw">type </span>CheckAssociatedRelayNumber =
+        cumulus_pallet_parachain_system::RelayNumberMonotonicallyIncreases;
     <span class="kw">type </span>ConsensusHook = ConsensusHook;
     <span class="kw">type </span>SelectCore = cumulus_pallet_parachain_system::DefaultCoreSelector&lt;Runtime&gt;;
     <span class="kw">type </span>WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight&lt;Runtime&gt;;
@@ -3302,7 +3309,7 @@
     <span class="kw">type </span>AuthorityId = AuraId;
     <span class="kw">type </span>DisabledValidators = ();
     <span class="kw">type </span>MaxAuthorities = ConstU32&lt;<span class="number">250</span>&gt;;
-    <span class="kw">type </span>AllowMultipleBlocksPerSlot = ConstBool&lt;<span class="bool-val">false</span>&gt;;
+    <span class="kw">type </span>AllowMultipleBlocksPerSlot = ConstBool&lt;<span class="bool-val">true</span>&gt;;
     <span class="kw">type </span>SlotDuration = ConstU64&lt;SLOT_DURATION&gt;;
 }
 
@@ -3701,8 +3708,8 @@
     /// max_gas_limit = max_tx_ref_time / WEIGHT_PER_GAS = max_pov_size * gas_limit_pov_size_ratio
     /// gas_limit_pov_size_ratio = ceil((max_tx_ref_time / WEIGHT_PER_GAS) / max_pov_size)
     ///
-    /// Equals 4 for values used by Astar runtime.
-    </span><span class="kw">pub const </span>GasLimitPovSizeRatio: u64 = <span class="number">4</span>;
+    /// Equals 16 for values used by Astar runtime.
+    </span><span class="kw">pub const </span>GasLimitPovSizeRatio: u64 = <span class="number">16</span>;
 }
 
 <span class="kw">impl </span>pallet_evm::Config <span class="kw">for </span>Runtime {
@@ -3931,7 +3938,7 @@
 <span class="macro">parameter_types!</span> {
     <span class="kw">pub const </span>NativeCurrencyId: CurrencyId = CurrencyId::ASTR;
     <span class="comment">// Aggregate values for one day.
-    </span><span class="kw">pub const </span>AggregationDuration: BlockNumber = <span class="number">7200</span>;
+    </span><span class="kw">pub const </span>AggregationDuration: BlockNumber = DAYS;
 }
 
 <span class="kw">impl </span>pallet_price_aggregator::Config <span class="kw">for </span>Runtime {
@@ -4254,7 +4261,17 @@
 <span class="kw">impl </span>pallet_migrations::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
-    </span><span class="kw">type </span>Migrations = (pallet_identity::migration::v2::LazyMigrationV1ToV2&lt;Runtime&gt;,);
+    </span><span class="kw">type </span>Migrations = (
+        vesting_mbm::LazyMigration&lt;Runtime, vesting_mbm::weights::SubstrateWeight&lt;Runtime&gt;&gt;,
+        pallet_dapp_staking::migration::LazyMigration&lt;
+            Runtime,
+            pallet_dapp_staking::weights::SubstrateWeight&lt;Runtime&gt;,
+        &gt;,
+        democracy_mbm::DemocracyMigrationV1ToV2&lt;
+            Runtime,
+            democracy_mbm::weights::SubstrateWeight&lt;Runtime&gt;,
+        &gt;,
+    );
     <span class="comment">// Benchmarks need mocked migrations to guarantee that they succeed.
     </span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
     </span><span class="kw">type </span>Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -4388,8 +4405,9 @@
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
 </span><span class="kw">pub type </span>Unreleased = (
-    pallet_dapp_staking::migration::versioned_migrations::V9ToV10&lt;Runtime, MaxPercentages&gt;,
-    pallet_xc_asset_config::migrations::versioned::V3ToV4&lt;Runtime&gt;,
+    pallet_dapp_staking::migration::AdjustEraMigration&lt;Runtime&gt;,
+    pallet_inflation::migration::AdjustBlockRewardMigration&lt;Runtime&gt;,
+    democracy_mbm::DemocracyMigrationSaveMigrationBlock&lt;Runtime&gt;,
 );
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
@@ -4457,10 +4475,6 @@
         }
     }
 }
-
-<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-#[macro_use]
-</span><span class="kw">extern crate </span>frame_benchmarking;
 
 <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
 </span><span class="kw">mod </span>benches {
