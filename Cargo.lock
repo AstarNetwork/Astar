@@ -600,7 +600,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "15.0.1"
+version = "16.0.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -711,6 +711,7 @@ dependencies = [
  "staging-xcm-builder",
  "staging-xcm-executor",
  "substrate-wasm-builder",
+ "vesting-mbm",
  "xcm-runtime-apis",
 ]
 
@@ -15246,7 +15247,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "15.0.1"
+version = "16.0.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -15370,7 +15371,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "15.0.1"
+version = "16.0.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",

@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "15.0.1"
+version = "16.0.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -38,7 +38,6 @@ sp-transaction-pool = { workspace = true }
 sp-version = { workspace = true }
 
 # frame dependencies
-democracy-mbm = { workspace = true }
 frame-executive = { workspace = true }
 frame-metadata-hash-extension = { workspace = true }
 frame-support = { workspace = true }
@@ -115,6 +114,7 @@ frame-try-runtime = { workspace = true, optional = true }
 # Astar pallets
 astar-primitives = { workspace = true }
 astar-xcm-benchmarks = { workspace = true, optional = true }
+democracy-mbm = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-collective-proxy = { workspace = true }
 pallet-dapp-staking = { workspace = true }
@@ -128,6 +128,7 @@ pallet-inflation = { workspace = true }
 pallet-price-aggregator = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
+vesting-mbm = { workspace = true }
 
 dapp-staking-runtime-api = { workspace = true }
 
@@ -221,6 +222,7 @@ std = [
 	"pallet-utility/std",
 	"pallet-vesting/std",
 	"democracy-mbm/std",
+	"vesting-mbm/std",
 	"pallet-xc-asset-config/std",
 	"pallet-xcm-benchmarks?/std",
 	"pallet-xcm/std",
@@ -300,6 +302,7 @@ runtime-benchmarks = [
 	"pallet-utility/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
 	"democracy-mbm/runtime-benchmarks",
+	"vesting-mbm/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
@@ -359,6 +362,7 @@ try-runtime = [
 	"pallet-utility/try-runtime",
 	"pallet-vesting/try-runtime",
 	"democracy-mbm/try-runtime",
+	"vesting-mbm/try-runtime",
 	"pallet-xc-asset-config/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",

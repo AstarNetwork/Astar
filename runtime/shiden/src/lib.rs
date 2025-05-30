@@ -23,6 +23,9 @@
 #![recursion_limit = "256"]
 
 extern crate alloc;
+#[cfg(feature = "runtime-benchmarks")]
+#[macro_use]
+extern crate frame_benchmarking;
 use alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec, vec::Vec};
 use core::marker::PhantomData;
 
@@ -181,7 +184,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("shiden"),
     impl_name: Cow::Borrowed("shiden"),
     authoring_version: 1,
-    spec_version: 1501,
+    spec_version: 1600,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -515,7 +518,8 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ReservedDmpWeight = ReservedDmpWeight;
     type XcmpMessageHandler = XcmpQueue;
     type ReservedXcmpWeight = ReservedXcmpWeight;
-    type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+    type CheckAssociatedRelayNumber =
+        cumulus_pallet_parachain_system::RelayNumberMonotonicallyIncreases;
     type ConsensusHook = ConsensusHook;
     type SelectCore = cumulus_pallet_parachain_system::DefaultCoreSelector<Runtime>;
     type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
@@ -1385,10 +1389,6 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
         }
     }
 }
-
-#[cfg(feature = "runtime-benchmarks")]
-#[macro_use]
-extern crate frame_benchmarking;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
