@@ -38,8 +38,10 @@ jobs:
       uses: actions/github-script@v6
       with:
         result-encoding: string
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
         script: |
-          const command = `${{ github.event.comment.body }}`.split(" ");
+          const command = process.env.COMMENT_BODY.split(" ");
           console.log(command);
 
           // command should be '/bench chain_name pallets'
