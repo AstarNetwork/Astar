@@ -99,6 +99,15 @@
 <a href="#99" id="99">99</a>
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -200,4 +209,13 @@
         FailedMigrationHandling::ForceUnstuck
     }
 }
+
+<span class="doccomment">/// Currently used MAX_POV_SIZE on Polkadot &amp; Kusama is 10 MiB.
+/// At the moment of adding this constant, we're using `stable2412` which still has 5MiB limit.
+///
+/// To prevent excessive increase in gas used by ethereum transactions, we'll define this temporary
+/// constant for the correct PoV limit. After the next uplift, this should be removed &amp; replaced with value from polkadot-sdk.
+///
+</span><span class="comment">// For reference: https://github.com/paritytech/polkadot-sdk/blob/f6cd17e550caeaa1b8184b5f3135ca21f2cb16eb/polkadot/primitives/src/v8/mod.rs#L455
+</span><span class="kw">pub const </span>MAX_POV_SIZE: u32 = <span class="number">10 </span>* <span class="number">1024 </span>* <span class="number">1024</span>;
 </code></pre></div></section></main></body></html>

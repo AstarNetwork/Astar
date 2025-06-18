@@ -2751,8 +2751,6 @@
 <a href="#2751" id="2751">2751</a>
 <a href="#2752" id="2752">2752</a>
 <a href="#2753" id="2753">2753</a>
-<a href="#2754" id="2754">2754</a>
-<a href="#2755" id="2755">2755</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2977,7 +2975,7 @@
 <span class="doccomment">/// We allow for 2 seconds of compute with a 6 second average block time.
 </span><span class="kw">const </span>MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     WEIGHT_REF_TIME_PER_SECOND.saturating_mul(<span class="number">2</span>),
-    polkadot_primitives::MAX_POV_SIZE <span class="kw">as </span>u64,
+    astar_primitives::MAX_POV_SIZE <span class="kw">as </span>u64,
 );
 
 <span class="macro">parameter_types!</span> {
@@ -3707,9 +3705,7 @@
     ///
     /// max_gas_limit = max_tx_ref_time / WEIGHT_PER_GAS = max_pov_size * gas_limit_pov_size_ratio
     /// gas_limit_pov_size_ratio = ceil((max_tx_ref_time / WEIGHT_PER_GAS) / max_pov_size)
-    ///
-    /// Equals 16 for values used by Astar runtime.
-    </span><span class="kw">pub const </span>GasLimitPovSizeRatio: u64 = <span class="number">16</span>;
+    </span><span class="kw">pub const </span>GasLimitPovSizeRatio: u64 = <span class="number">8</span>;
 }
 
 <span class="kw">impl </span>pallet_evm::Config <span class="kw">for </span>Runtime {
