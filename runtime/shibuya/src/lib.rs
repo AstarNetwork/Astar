@@ -967,7 +967,7 @@ parameter_types! {
     /// gas_limit_pov_size_ratio = ceil((max_tx_ref_time / WEIGHT_PER_GAS) / max_pov_size)
     ///
     /// Equals 16 for values used by Shibuya runtime.
-    pub const GasLimitPovSizeRatio: u64 = 16;
+    pub const GasLimitPovSizeRatio: u64 = 8;
 }
 
 impl pallet_evm::Config for Runtime {

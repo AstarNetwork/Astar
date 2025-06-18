@@ -500,7 +500,7 @@ impl CycleConfiguration for InflationCycleConfig {
     }
 
     fn blocks_per_era() -> BlockNumber {
-        24 * HOURS
+        24 * HOURS 
     }
 }
 
@@ -954,7 +954,7 @@ parameter_types! {
     /// gas_limit_pov_size_ratio = ceil((max_tx_ref_time / WEIGHT_PER_GAS) / max_pov_size)
     ///
     /// Equals 16 for values used by Astar runtime.
-    pub const GasLimitPovSizeRatio: u64 = 16;
+    pub const GasLimitPovSizeRatio: u64 = 8;
 }
 
 impl pallet_evm::Config for Runtime {
@@ -967,7 +967,7 @@ impl pallet_evm::Config for Runtime {
     type AddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
-    type Runner = pallet_evm::runner::stack::Runner<Self>;
+    type Runner = pallet_evm::runner::stack::Runner<Self>;   
     type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
     type ChainId = ChainId;
