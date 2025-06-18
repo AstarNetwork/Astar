@@ -500,7 +500,7 @@ impl CycleConfiguration for InflationCycleConfig {
     }
 
     fn blocks_per_era() -> BlockNumber {
-        24 * HOURS 
+        24 * HOURS
     }
 }
 
@@ -967,7 +967,7 @@ impl pallet_evm::Config for Runtime {
     type AddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
-    type Runner = pallet_evm::runner::stack::Runner<Self>;   
+    type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
     type ChainId = ChainId;
