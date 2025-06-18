@@ -215,7 +215,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 2 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2),
-    polkadot_primitives::MAX_POV_SIZE as u64,
+    astar_primitives::MAX_POV_SIZE as u64,
 );
 
 parameter_types! {
@@ -921,9 +921,7 @@ parameter_types! {
     ///
     /// max_gas_limit = max_tx_ref_time / WEIGHT_PER_GAS = max_pov_size * gas_limit_pov_size_ratio
     /// gas_limit_pov_size_ratio = ceil((max_tx_ref_time / WEIGHT_PER_GAS) / max_pov_size)
-    ///
-    /// Equals 16 for values used by Shiden runtime.
-    pub const GasLimitPovSizeRatio: u64 = 16;
+    pub const GasLimitPovSizeRatio: u64 = 8;
 }
 
 impl pallet_evm::Config for Runtime {
