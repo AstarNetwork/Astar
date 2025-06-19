@@ -1145,56 +1145,54 @@ fn stake_fails_if_unclaimed_staker_rewards_from_past_remain() {
 
 #[test]
 fn move_fails_if_unclaimed_destination_staker_rewards_from_past_remain() {
-    ExtBuilder::default()
-        .with_check_try_state(false)
-        .build_and_execute(|| {
-            let source_contract = MockSmartContract::Wasm(1);
-            let source_2_contract = MockSmartContract::Wasm(2);
-            let destination_contract = MockSmartContract::Wasm(3);
-            assert_register(1, &source_contract);
-            assert_register(1, &source_2_contract);
-            assert_register(1, &destination_contract);
+    ExtBuilder::default().build_and_execute(|| {
+        let source_contract = MockSmartContract::Wasm(1);
+        let source_2_contract = MockSmartContract::Wasm(2);
+        let destination_contract = MockSmartContract::Wasm(3);
+        assert_register(1, &source_contract);
+        assert_register(1, &source_2_contract);
+        assert_register(1, &destination_contract);
 
-            let account = 2;
-            assert_lock(account, 300);
-            assert_stake(account, &source_contract, 100);
+        let account = 2;
+        assert_lock(account, 300);
+        assert_stake(account, &source_contract, 100);
 
-            // To transfer bonus reward eligibility to destination_contract
-            assert_move_stake(account, &source_contract, &destination_contract, 10);
+        // To transfer bonus reward eligibility to destination_contract
+        assert_move_stake(account, &source_contract, &destination_contract, 10);
 
-            advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
-            // Move must fail due to unclaimed rewards
-            assert_noop!(
-                DappStaking::move_stake(
-                    RuntimeOrigin::signed(account),
-                    source_contract,
-                    destination_contract,
-                    10
-                ),
-                Error::<Test>::UnclaimedRewards
-            );
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+        // Move must fail due to unclaimed rewards
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_contract,
+                destination_contract,
+                10
+            ),
+            Error::<Test>::UnclaimedRewards
+        );
 
-            // Advance to next period, claim all staker rewards
-            advance_to_next_period();
+        // Advance to next period, claim all staker rewards
+        advance_to_next_period();
 
-            // Claim all staker rewards
-            for _ in 0..required_number_of_reward_claims(account) {
-                assert_claim_staker_rewards(account);
-            }
+        // Claim all staker rewards
+        for _ in 0..required_number_of_reward_claims(account) {
+            assert_claim_staker_rewards(account);
+        }
 
-            // Try to move again on the same destination contract, expect an error due to unclaimed bonus rewards
-            advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
-            assert_stake(account, &source_2_contract, 100);
-            assert_noop!(
-                DappStaking::move_stake(
-                    RuntimeOrigin::signed(account),
-                    source_2_contract,
-                    destination_contract,
-                    10
-                ),
-                Error::<Test>::UnclaimedRewards
-            );
-        })
+        // Try to move again on the same destination contract, expect an error due to unclaimed bonus rewards
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+        assert_stake(account, &source_2_contract, 100);
+        assert_noop!(
+            DappStaking::move_stake(
+                RuntimeOrigin::signed(account),
+                source_2_contract,
+                destination_contract,
+                10
+            ),
+            Error::<Test>::UnclaimedRewards
+        );
+    })
 }
 
 #[test]

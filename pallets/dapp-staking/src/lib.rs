@@ -2693,49 +2693,42 @@ pub mod pallet {
             Ok(())
         }
 
-        /// ### Invariants of `EraInfo` (checked during `BuildAndEarn`)
+        /// ### Invariants of `EraInfo`
         ///
         /// 1. StakerInfo total voting stake == CurrentEraInfo.next_stake_amount (if same period)
-        /// 2. Current voting stake ≤ Next voting stake (if same period)
+        /// 2. Current voting stake ≤ Next voting stake (if same period) (not equal due to possible moves)
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_era_info() -> Result<(), sp_runtime::TryRuntimeError> {
             let protocol_state = ActiveProtocolState::<T>::get();
+            let current_period = protocol_state.period_number();
+            let era_info = CurrentEraInfo::<T>::get();
 
-            // During b&e only
-            if protocol_state.subperiod() == Subperiod::BuildAndEarn {
-                let current_period = protocol_state.period_number();
-                let era_info = CurrentEraInfo::<T>::get();
+            let current_voting = era_info.staked_amount(Subperiod::Voting);
+            let next_voting = era_info.staked_amount_next_era(Subperiod::Voting);
 
-                let current_voting = era_info.staked_amount(Subperiod::Voting);
-                let next_voting = era_info.staked_amount_next_era(Subperiod::Voting);
+            // Yield voting stake amounts in [`StakerInfo`] for the current period
+            let voting_total_staked: Balance = StakerInfo::<T>::iter()
+                .filter(|(_, _, info)| info.period_number() == current_period)
+                .map(|(_, _, info)| info.staked_amount(Subperiod::Voting))
+                .sum();
 
-                // Yield voting stake amounts in [`StakerInfo`]
-                let mut voting_total_staked = Balance::zero();
-                let mut stakers_period = 0;
+            let era_info_next_period = era_info.next_stake_amount.period;
+            let era_info_current_period = era_info.current_stake_amount.period;
 
-                for (_, _, staking_info) in StakerInfo::<T>::iter() {
-                    voting_total_staked += staking_info.staked_amount(Subperiod::Voting);
-                    stakers_period = stakers_period.max(staking_info.period_number());
-                }
+            // Invariant 1
+            if current_period == era_info_next_period {
+                ensure!(
+                    voting_total_staked == next_voting,
+                    "StakerInfo voting total != CurrentEraInfo.next voting stake"
+                );
+            }
 
-                let era_info_next_period = era_info.next_stake_amount.period;
-                let era_info_current_period = era_info.current_stake_amount.period;
-
-                // Invariant 1
-                if current_period == stakers_period && current_period == era_info_next_period {
-                    ensure!(
-                        voting_total_staked == next_voting,
-                        "StakerInfo voting total != CurrentEraInfo.next voting stake"
-                    );
-                }
-
-                // Invariant 2
-                if era_info_current_period == era_info_next_period {
-                    ensure!(
-                        current_voting <= next_voting,
-                        "Current voting stake > Next voting stake for same period"
-                    );
-                }
+            // Invariant 2
+            if era_info_current_period == era_info_next_period {
+                ensure!(
+                    current_voting <= next_voting,
+                    "Current voting stake > Next voting stake for same period"
+                );
             }
 
             Ok(())
