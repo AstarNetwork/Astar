@@ -4494,7 +4494,6 @@ fn era_info_stakes_remain_synced() {
 #[test]
 fn unstake_from_unregistered_use_correct_stake_amount() {
     ExtBuilder::default()
-        .with_max_bonus_safe_moves(2)
         .build_and_execute(|| {
             let smart_contract_1 = MockSmartContract::wasm(1 as AccountId);
             assert_register(1, &smart_contract_1);
