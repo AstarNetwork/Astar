@@ -1372,8 +1372,6 @@ pub mod pallet {
             let maybe_source_dapp_info = IntegratedDApps::<T>::get(&source_contract);
             let is_source_unregistered = maybe_source_dapp_info.is_none();
 
-            // Note: The era of move_amount is likely to be the _next_ era.
-            // Currently, only subperiods' stake amounts and total are used in inner_stake.
             let (mut move_amount, bonus_status) = if is_source_unregistered {
                 Self::inner_unstake_from_unregistered(&account, &source_contract)?
             } else {
@@ -1529,14 +1527,17 @@ pub mod pallet {
             Self::update_ledger(&account, ledger)?;
 
             // Return the `StakeAmount` that has max total value.
-            // Note: The era of unstake_amount is likely to be the _next_ era.
-            let unstake_amount = stake_amount_iter
+            let mut unstake_amount = stake_amount_iter
                 .iter()
                 .max_by(|a, b| a.total().cmp(&b.total()))
                 // At least one value exists, otherwise we wouldn't be here.
-                .ok_or(Error::<T>::InternalUnstakeError)?;
+                .ok_or(Error::<T>::InternalUnstakeError)?
+                .clone();
 
-            Ok((*unstake_amount, updated_bonus_status))
+            // Ensure we use the current era instead of potentially next era
+            unstake_amount.era = current_era;
+
+            Ok((unstake_amount, updated_bonus_status))
         }
 
         /// Handles unstaking from an **unregistered** smart contract.
@@ -1603,15 +1604,19 @@ pub mod pallet {
             StakerInfo::<T>::remove(&account, &smart_contract);
 
             // Return the `StakeAmount` that has max total value.
-            // Note: The era of unstake_amount is likely to be the _next_ era.
-            let unstake_amount = unstake_amount_iter
+            let mut unstake_amount = unstake_amount_iter
                 .iter()
                 .max_by(|a, b| a.total().cmp(&b.total()))
                 // At least one value exists, otherwise we wouldn't be here.
-                .ok_or(Error::<T>::InternalUnstakeError)?;
+                .ok_or(Error::<T>::InternalUnstakeError)?
+                .clone();
+
+            // Ensure we use the current era instead of potentially next era
+            unstake_amount.era = current_era;
+
             assert_eq!(unstake_amount.total(), amount);
 
-            Ok((*unstake_amount, preserved_bonus_status))
+            Ok((unstake_amount, preserved_bonus_status))
         }
 
         /// Inner `stake` functionality.
