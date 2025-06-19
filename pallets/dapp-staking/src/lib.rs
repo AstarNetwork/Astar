@@ -2442,6 +2442,7 @@ pub mod pallet {
             Self::try_state_ledger()?;
             Self::try_state_contract_stake()?;
             Self::try_state_era_rewards()?;
+            Self::try_state_era_info()?;
 
             Ok(())
         }
@@ -2658,7 +2659,7 @@ pub mod pallet {
         /// ### Invariants of EraRewards
         ///
         /// 1. Era number in [`DAppTiers`] must also be stored in one of the span of [`EraRewards`].
-        /// 2. Each span lenght entry in [`EraRewards`] should be lower than or equal to the [`T::EraRewardSpanLength`] constant.
+        /// 2. Each span length entry in [`EraRewards`] should be lower than or equal to the [`T::EraRewardSpanLength`] constant.
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_era_rewards() -> Result<(), sp_runtime::TryRuntimeError> {
             let era_rewards = EraRewards::<T>::iter().collect::<Vec<_>>();
@@ -2685,6 +2686,54 @@ pub mod pallet {
                 if span.len() > T::EraRewardSpanLength::get() as usize {
                     return Err(
                         "Span length for a era exceeds the maximum allowed span length.".into(),
+                    );
+                }
+            }
+
+            Ok(())
+        }
+
+        /// ### Invariants of `EraInfo` (checked during `BuildAndEarn`)
+        ///
+        /// 1. StakerInfo total voting stake == CurrentEraInfo.next_stake_amount (if same period)
+        /// 2. Current voting stake ≤ Next voting stake (if same period)
+        #[cfg(any(feature = "try-runtime", test))]
+        pub fn try_state_era_info() -> Result<(), sp_runtime::TryRuntimeError> {
+            let protocol_state = ActiveProtocolState::<T>::get();
+
+            // During b&e only
+            if protocol_state.subperiod() == Subperiod::BuildAndEarn {
+                let current_period = protocol_state.period_number();
+                let era_info = CurrentEraInfo::<T>::get();
+
+                let current_voting = era_info.staked_amount(Subperiod::Voting);
+                let next_voting = era_info.staked_amount_next_era(Subperiod::Voting);
+
+                // Yield voting stake amounts in [`StakerInfo`]
+                let mut voting_total_staked = Balance::zero();
+                let mut stakers_period = 0;
+
+                for (_, _, staking_info) in StakerInfo::<T>::iter() {
+                    voting_total_staked += staking_info.staked_amount(Subperiod::Voting);
+                    stakers_period = stakers_period.max(staking_info.period_number());
+                }
+
+                let era_info_next_period = era_info.next_stake_amount.period;
+                let era_info_current_period = era_info.current_stake_amount.period;
+
+                // Invariant 1
+                if current_period == stakers_period && current_period == era_info_next_period {
+                    ensure!(
+                        voting_total_staked == next_voting,
+                        "StakerInfo voting total != CurrentEraInfo.next voting stake"
+                    );
+                }
+
+                // Invariant 2
+                if era_info_current_period == era_info_next_period {
+                    ensure!(
+                        current_voting <= next_voting,
+                        "Current voting stake > Next voting stake for same period"
                     );
                 }
             }

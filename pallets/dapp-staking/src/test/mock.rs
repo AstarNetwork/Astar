@@ -238,11 +238,15 @@ impl pallet_dapp_staking::Config for Test {
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
 }
 
-pub struct ExtBuilder {}
+pub struct ExtBuilder {
+    check_try_state: bool,
+}
 
 impl Default for ExtBuilder {
     fn default() -> Self {
-        Self {}
+        Self {
+            check_try_state: true,
+        }
     }
 }
 
@@ -378,14 +382,22 @@ impl ExtBuilder {
     }
 
     pub fn build_and_execute(self, test: impl FnOnce() -> ()) {
+        let check_try_state = self.check_try_state;
         self.build().execute_with(|| {
             test();
-            DappStaking::do_try_state().unwrap();
+            if check_try_state {
+                DappStaking::do_try_state().unwrap()
+            };
         })
     }
 
     pub fn with_max_bonus_safe_moves(self, value: u8) -> Self {
         MAX_BONUS_SAFE_MOVES.with(|v| *v.borrow_mut() = value);
+        self
+    }
+
+    pub fn with_check_try_state(mut self, value: bool) -> Self {
+        self.check_try_state = value;
         self
     }
 }
