@@ -4493,26 +4493,25 @@ fn era_info_stakes_remain_synced() {
 // resulting in a `InternalUnstakeError` error masking a `AccountLedgerError::UnstakeAmountLargerThanStake` error.
 #[test]
 fn unstake_from_unregistered_use_correct_stake_amount() {
-    ExtBuilder::default()
-        .build_and_execute(|| {
-            let smart_contract_1 = MockSmartContract::wasm(1 as AccountId);
-            assert_register(1, &smart_contract_1);
+    ExtBuilder::default().build_and_execute(|| {
+        let smart_contract_1 = MockSmartContract::wasm(1 as AccountId);
+        assert_register(1, &smart_contract_1);
 
-            let (staker_1, amount_1) = (1, 280);
-            assert_lock(staker_1, amount_1);
-            assert_stake(staker_1, &smart_contract_1, 280);
+        let (staker_1, amount_1) = (1, 280);
+        assert_lock(staker_1, amount_1);
+        assert_stake(staker_1, &smart_contract_1, 280);
 
-            advance_to_next_subperiod(); // b&e
-            advance_to_next_era();
+        advance_to_next_subperiod(); // b&e
+        advance_to_next_era();
 
-            assert_claim_staker_rewards(staker_1);
-            assert_unstake(staker_1, &smart_contract_1, 30);
+        assert_claim_staker_rewards(staker_1);
+        assert_unstake(staker_1, &smart_contract_1, 30);
 
-            advance_to_next_era();
-            assert_unregister(&smart_contract_1);
+        advance_to_next_era();
+        assert_unregister(&smart_contract_1);
 
-            advance_to_next_era();
-            assert_claim_staker_rewards(staker_1);
-            assert_unstake_from_unregistered(staker_1, &smart_contract_1);
-        })
+        advance_to_next_era();
+        assert_claim_staker_rewards(staker_1);
+        assert_unstake_from_unregistered(staker_1, &smart_contract_1);
+    })
 }
