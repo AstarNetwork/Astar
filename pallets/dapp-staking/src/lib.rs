@@ -2696,7 +2696,7 @@ pub mod pallet {
         /// ### Invariants of `EraInfo`
         ///
         /// 1. StakerInfo total voting stake == CurrentEraInfo.next_stake_amount (if same period)
-        /// 2. Current voting stake ≤ Next voting stake (if same period) (not equal due to possible moves)
+        /// 2. Current voting stake ≤ Next voting stake (not equal due to possible moves)
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_era_info() -> Result<(), sp_runtime::TryRuntimeError> {
             let protocol_state = ActiveProtocolState::<T>::get();
@@ -2713,7 +2713,6 @@ pub mod pallet {
                 .sum();
 
             let era_info_next_period = era_info.next_stake_amount.period;
-            let era_info_current_period = era_info.current_stake_amount.period;
 
             // Invariant 1
             if current_period == era_info_next_period {
@@ -2724,12 +2723,10 @@ pub mod pallet {
             }
 
             // Invariant 2
-            if era_info_current_period == era_info_next_period {
-                ensure!(
-                    current_voting <= next_voting,
-                    "Current voting stake > Next voting stake for same period"
-                );
-            }
+            ensure!(
+                current_voting <= next_voting,
+                "Current voting stake > Next voting stake for same period"
+            );
 
             Ok(())
         }
