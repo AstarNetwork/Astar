@@ -1614,8 +1614,6 @@ pub mod pallet {
             // Ensure we use the current era instead of potentially next era
             unstake_amount.era = current_era;
 
-            assert_eq!(unstake_amount.total(), amount);
-
             Ok((unstake_amount, preserved_bonus_status))
         }
 
