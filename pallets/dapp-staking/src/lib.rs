@@ -2712,15 +2712,11 @@ pub mod pallet {
                 .map(|(_, _, info)| info.staked_amount(Subperiod::Voting))
                 .sum();
 
-            let era_info_next_period = era_info.next_stake_amount.period;
-
             // Invariant 1
-            if current_period == era_info_next_period {
-                ensure!(
-                    voting_total_staked == next_voting,
-                    "StakerInfo voting total != CurrentEraInfo.next voting stake"
-                );
-            }
+            ensure!(
+                voting_total_staked == next_voting,
+                "StakerInfo voting total != CurrentEraInfo.next voting stake"
+            );
 
             // Invariant 2
             ensure!(
