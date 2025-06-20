@@ -2695,7 +2695,7 @@ pub mod pallet {
 
         /// ### Invariants of `EraInfo`
         ///
-        /// 1. StakerInfo total voting stake == CurrentEraInfo.next_stake_amount (if same period)
+        /// 1. StakerInfo total voting stake == CurrentEraInfo.next_stake_amount
         /// 2. Current voting stake ≤ Next voting stake (not equal due to possible moves)
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_era_info() -> Result<(), sp_runtime::TryRuntimeError> {
