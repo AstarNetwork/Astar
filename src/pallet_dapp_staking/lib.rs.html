@@ -2703,9 +2703,6 @@
 <a href="#2703" id="2703">2703</a>
 <a href="#2704" id="2704">2704</a>
 <a href="#2705" id="2705">2705</a>
-<a href="#2706" id="2706">2706</a>
-<a href="#2707" id="2707">2707</a>
-<a href="#2708" id="2708">2708</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -4234,14 +4231,18 @@
 
             <span class="self">Self</span>::update_ledger(<span class="kw-2">&amp;</span>account, ledger)<span class="question-mark">?</span>;
 
-            <span class="comment">// Return the `StakeAmount` that has max total value
-            </span><span class="kw">let </span>unstake_amount = stake_amount_iter
+            <span class="comment">// Return the `StakeAmount` that has max total value.
+            </span><span class="kw">let </span><span class="kw-2">mut </span>unstake_amount = stake_amount_iter
                 .iter()
                 .max_by(|a, b| a.total().cmp(<span class="kw-2">&amp;</span>b.total()))
                 <span class="comment">// At least one value exists, otherwise we wouldn't be here.
-                </span>.ok_or(Error::&lt;T&gt;::InternalUnstakeError)<span class="question-mark">?</span>;
+                </span>.ok_or(Error::&lt;T&gt;::InternalUnstakeError)<span class="question-mark">?
+                </span>.clone();
 
-            <span class="prelude-val">Ok</span>((<span class="kw-2">*</span>unstake_amount, updated_bonus_status))
+            <span class="comment">// Ensure we use the current era instead of potentially next era
+            </span>unstake_amount.era = current_era;
+
+            <span class="prelude-val">Ok</span>((unstake_amount, updated_bonus_status))
         }
 
         <span class="doccomment">/// Handles unstaking from an **unregistered** smart contract.
@@ -4262,7 +4263,7 @@
             <span class="kw">let </span>current_era = protocol_state.era;
 
             <span class="comment">// Extract total staked amount on the specified unregistered contract
-            </span><span class="kw">let </span>(unstake_amount, unstake_amount_iter, preserved_bonus_status) =
+            </span><span class="kw">let </span>(amount, unstake_amount_iter, preserved_bonus_status) =
                 <span class="kw">match </span>StakerInfo::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>smart_contract) {
                     <span class="prelude-val">Some</span>(<span class="kw-2">mut </span>staking_info) =&gt; {
                         <span class="macro">ensure!</span>(
@@ -4271,26 +4272,12 @@
                         );
 
                         <span class="kw">let </span>preserved_bonus_status = staking_info.bonus_status;
-                        <span class="comment">// This need to be built before 'unstake', otherwise voting amount is converted into B&amp;E amount
-                        </span><span class="kw">let </span>unstake_amount =
-                            Vec::from([staking_info.previous_staked, staking_info.staked])
-                                .into_iter()
-                                .filter(|stake_amount| !stake_amount.is_empty())
-                                .map(|<span class="kw-2">mut </span>stake_amount| {
-                                    stake_amount.era = stake_amount.era.max(current_era);
-                                    stake_amount
-                                })
-                                .max_by(|a, b| a.total().cmp(<span class="kw-2">&amp;</span>b.total()))
-                                <span class="comment">// At least one value exists, otherwise we wouldn't be here.
-                                </span>.ok_or(Error::&lt;T&gt;::InternalUnstakeError)<span class="question-mark">?</span>;
+                        <span class="kw">let </span>amount = staking_info.staked.total();
 
-                        <span class="kw">let </span>(unstake_amount_iter, <span class="kw">_</span>) = staking_info.unstake(
-                            unstake_amount.total(),
-                            current_era,
-                            protocol_state.subperiod(),
-                        );
+                        <span class="kw">let </span>(unstake_amount_iter, <span class="kw">_</span>) =
+                            staking_info.unstake(amount, current_era, protocol_state.subperiod());
 
-                        (unstake_amount, unstake_amount_iter, preserved_bonus_status)
+                        (amount, unstake_amount_iter, preserved_bonus_status)
                     }
                     <span class="prelude-val">None </span>=&gt; {
                         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::NoStakingInfo.into());
@@ -4300,11 +4287,7 @@
             <span class="comment">// Reduce stake amount in ledger
             </span><span class="kw">let </span><span class="kw-2">mut </span>ledger = Ledger::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account);
             ledger
-                .unstake_amount(
-                    unstake_amount.total(),
-                    current_era,
-                    protocol_state.period_info,
-                )
+                .unstake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| <span class="kw">match </span>err {
                     <span class="comment">// These are all defensive checks, which should never fail since we already checked them above.
                     </span>AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra =&gt; {
@@ -4324,6 +4307,17 @@
             <span class="comment">// Update remaining storage entries
             </span><span class="self">Self</span>::update_ledger(<span class="kw-2">&amp;</span>account, ledger)<span class="question-mark">?</span>;
             StakerInfo::&lt;T&gt;::remove(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>smart_contract);
+
+            <span class="comment">// Return the `StakeAmount` that has max total value.
+            </span><span class="kw">let </span><span class="kw-2">mut </span>unstake_amount = unstake_amount_iter
+                .iter()
+                .max_by(|a, b| a.total().cmp(<span class="kw-2">&amp;</span>b.total()))
+                <span class="comment">// At least one value exists, otherwise we wouldn't be here.
+                </span>.ok_or(Error::&lt;T&gt;::InternalUnstakeError)<span class="question-mark">?
+                </span>.clone();
+
+            <span class="comment">// Ensure we use the current era instead of potentially next era
+            </span>unstake_amount.era = current_era;
 
             <span class="prelude-val">Ok</span>((unstake_amount, preserved_bonus_status))
         }
