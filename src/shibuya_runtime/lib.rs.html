@@ -2831,15 +2831,6 @@
 <a href="#2831" id="2831">2831</a>
 <a href="#2832" id="2832">2832</a>
 <a href="#2833" id="2833">2833</a>
-<a href="#2834" id="2834">2834</a>
-<a href="#2835" id="2835">2835</a>
-<a href="#2836" id="2836">2836</a>
-<a href="#2837" id="2837">2837</a>
-<a href="#2838" id="2838">2838</a>
-<a href="#2839" id="2839">2839</a>
-<a href="#2840" id="2840">2840</a>
-<a href="#2841" id="2841">2841</a>
-<a href="#2842" id="2842">2842</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3052,7 +3043,7 @@
     spec_name: Cow::Borrowed(<span class="string">"shibuya"</span>),
     impl_name: Cow::Borrowed(<span class="string">"shibuya"</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">1600</span>,
+    spec_version: <span class="number">1601</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">3</span>,
@@ -4561,15 +4552,6 @@
 ///
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
-
-<span class="macro">parameter_types!</span> {
-    <span class="kw">pub const </span>MaxPercentages: [<span class="prelude-ty">Option</span>&lt;Perbill&gt;; <span class="number">4</span>] = [
-        <span class="prelude-val">Some</span>(Perbill::from_parts(<span class="number">30_000</span>)), <span class="comment">// 0.0030%
-        </span><span class="prelude-val">Some</span>(Perbill::from_parts(<span class="number">20_000</span>)), <span class="comment">// 0.0020%
-        </span><span class="prelude-val">Some</span>(Perbill::from_parts(<span class="number">10_000</span>)), <span class="comment">// 0.0010%
-        </span><span class="prelude-val">None
-    </span>];
-}
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
 </span><span class="kw">pub type </span>Unreleased = ();

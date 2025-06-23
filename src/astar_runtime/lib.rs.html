@@ -2728,29 +2728,6 @@
 <a href="#2728" id="2728">2728</a>
 <a href="#2729" id="2729">2729</a>
 <a href="#2730" id="2730">2730</a>
-<a href="#2731" id="2731">2731</a>
-<a href="#2732" id="2732">2732</a>
-<a href="#2733" id="2733">2733</a>
-<a href="#2734" id="2734">2734</a>
-<a href="#2735" id="2735">2735</a>
-<a href="#2736" id="2736">2736</a>
-<a href="#2737" id="2737">2737</a>
-<a href="#2738" id="2738">2738</a>
-<a href="#2739" id="2739">2739</a>
-<a href="#2740" id="2740">2740</a>
-<a href="#2741" id="2741">2741</a>
-<a href="#2742" id="2742">2742</a>
-<a href="#2743" id="2743">2743</a>
-<a href="#2744" id="2744">2744</a>
-<a href="#2745" id="2745">2745</a>
-<a href="#2746" id="2746">2746</a>
-<a href="#2747" id="2747">2747</a>
-<a href="#2748" id="2748">2748</a>
-<a href="#2749" id="2749">2749</a>
-<a href="#2750" id="2750">2750</a>
-<a href="#2751" id="2751">2751</a>
-<a href="#2752" id="2752">2752</a>
-<a href="#2753" id="2753">2753</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2944,7 +2921,7 @@
     spec_name: Cow::Borrowed(<span class="string">"astar"</span>),
     impl_name: Cow::Borrowed(<span class="string">"astar"</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">1600</span>,
+    spec_version: <span class="number">1601</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">3</span>,
@@ -4257,17 +4234,7 @@
 <span class="kw">impl </span>pallet_migrations::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
-    </span><span class="kw">type </span>Migrations = (
-        vesting_mbm::LazyMigration&lt;Runtime, vesting_mbm::weights::SubstrateWeight&lt;Runtime&gt;&gt;,
-        pallet_dapp_staking::migration::LazyMigration&lt;
-            Runtime,
-            pallet_dapp_staking::weights::SubstrateWeight&lt;Runtime&gt;,
-        &gt;,
-        democracy_mbm::DemocracyMigrationV1ToV2&lt;
-            Runtime,
-            democracy_mbm::weights::SubstrateWeight&lt;Runtime&gt;,
-        &gt;,
-    );
+    </span><span class="kw">type </span>Migrations = ();
     <span class="comment">// Benchmarks need mocked migrations to guarantee that they succeed.
     </span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
     </span><span class="kw">type </span>Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -4390,21 +4357,8 @@
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
-<span class="macro">parameter_types!</span> {
-    <span class="kw">pub const </span>MaxPercentages: [<span class="prelude-ty">Option</span>&lt;Perbill&gt;; <span class="number">4</span>] = [
-        <span class="prelude-val">Some</span>(Perbill::from_parts(<span class="number">35_700_000</span>)), <span class="comment">// 3.57%
-        </span><span class="prelude-val">Some</span>(Perbill::from_parts(<span class="number">8_900_000</span>)), <span class="comment">// 0.89%
-        </span><span class="prelude-val">Some</span>(Perbill::from_parts(<span class="number">2_380_000</span>)), <span class="comment">// 0.238%
-        </span><span class="prelude-val">None
-    </span>];
-}
-
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = (
-    pallet_dapp_staking::migration::AdjustEraMigration&lt;Runtime&gt;,
-    pallet_inflation::migration::AdjustBlockRewardMigration&lt;Runtime&gt;,
-    democracy_mbm::DemocracyMigrationSaveMigrationBlock&lt;Runtime&gt;,
-);
+</span><span class="kw">pub type </span>Unreleased = ();
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);

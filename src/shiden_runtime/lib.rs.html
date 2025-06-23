@@ -2419,10 +2419,6 @@
 <a href="#2419" id="2419">2419</a>
 <a href="#2420" id="2420">2420</a>
 <a href="#2421" id="2421">2421</a>
-<a href="#2422" id="2422">2422</a>
-<a href="#2423" id="2423">2423</a>
-<a href="#2424" id="2424">2424</a>
-<a href="#2425" id="2425">2425</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3735,10 +3731,6 @@
 ///
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
-
-<span class="macro">parameter_types!</span> {
-    <span class="kw">pub const </span>MaxPercentages: [<span class="prelude-ty">Option</span>&lt;Perbill&gt;; <span class="number">4</span>] = [<span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>];
-}
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
 </span><span class="kw">pub type </span>Unreleased = ();
