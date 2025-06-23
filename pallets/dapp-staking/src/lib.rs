@@ -1526,14 +1526,18 @@ pub mod pallet {
 
             Self::update_ledger(&account, ledger)?;
 
-            // Return the `StakeAmount` that has max total value
-            let unstake_amount = stake_amount_iter
+            // Return the `StakeAmount` that has max total value.
+            let mut unstake_amount = stake_amount_iter
                 .iter()
                 .max_by(|a, b| a.total().cmp(&b.total()))
                 // At least one value exists, otherwise we wouldn't be here.
-                .ok_or(Error::<T>::InternalUnstakeError)?;
+                .ok_or(Error::<T>::InternalUnstakeError)?
+                .clone();
 
-            Ok((*unstake_amount, updated_bonus_status))
+            // Ensure we use the current era instead of potentially next era
+            unstake_amount.era = current_era;
+
+            Ok((unstake_amount, updated_bonus_status))
         }
 
         /// Handles unstaking from an **unregistered** smart contract.
@@ -1554,7 +1558,7 @@ pub mod pallet {
             let current_era = protocol_state.era;
 
             // Extract total staked amount on the specified unregistered contract
-            let (unstake_amount, unstake_amount_iter, preserved_bonus_status) =
+            let (amount, unstake_amount_iter, preserved_bonus_status) =
                 match StakerInfo::<T>::get(&account, &smart_contract) {
                     Some(mut staking_info) => {
                         ensure!(
@@ -1563,26 +1567,12 @@ pub mod pallet {
                         );
 
                         let preserved_bonus_status = staking_info.bonus_status;
-                        // This need to be built before 'unstake', otherwise voting amount is converted into B&E amount
-                        let unstake_amount =
-                            Vec::from([staking_info.previous_staked, staking_info.staked])
-                                .into_iter()
-                                .filter(|stake_amount| !stake_amount.is_empty())
-                                .map(|mut stake_amount| {
-                                    stake_amount.era = stake_amount.era.max(current_era);
-                                    stake_amount
-                                })
-                                .max_by(|a, b| a.total().cmp(&b.total()))
-                                // At least one value exists, otherwise we wouldn't be here.
-                                .ok_or(Error::<T>::InternalUnstakeError)?;
+                        let amount = staking_info.staked.total();
 
-                        let (unstake_amount_iter, _) = staking_info.unstake(
-                            unstake_amount.total(),
-                            current_era,
-                            protocol_state.subperiod(),
-                        );
+                        let (unstake_amount_iter, _) =
+                            staking_info.unstake(amount, current_era, protocol_state.subperiod());
 
-                        (unstake_amount, unstake_amount_iter, preserved_bonus_status)
+                        (amount, unstake_amount_iter, preserved_bonus_status)
                     }
                     None => {
                         return Err(Error::<T>::NoStakingInfo.into());
@@ -1592,11 +1582,7 @@ pub mod pallet {
             // Reduce stake amount in ledger
             let mut ledger = Ledger::<T>::get(&account);
             ledger
-                .unstake_amount(
-                    unstake_amount.total(),
-                    current_era,
-                    protocol_state.period_info,
-                )
+                .unstake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| match err {
                     // These are all defensive checks, which should never fail since we already checked them above.
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
@@ -1616,6 +1602,17 @@ pub mod pallet {
             // Update remaining storage entries
             Self::update_ledger(&account, ledger)?;
             StakerInfo::<T>::remove(&account, &smart_contract);
+
+            // Return the `StakeAmount` that has max total value.
+            let mut unstake_amount = unstake_amount_iter
+                .iter()
+                .max_by(|a, b| a.total().cmp(&b.total()))
+                // At least one value exists, otherwise we wouldn't be here.
+                .ok_or(Error::<T>::InternalUnstakeError)?
+                .clone();
+
+            // Ensure we use the current era instead of potentially next era
+            unstake_amount.era = current_era;
 
             Ok((unstake_amount, preserved_bonus_status))
         }
