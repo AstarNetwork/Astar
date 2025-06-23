@@ -1603,9 +1603,6 @@ impl pallet_tx_pause::Config for Runtime {
     type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>;
 }
 
-#[cfg(feature = "runtime-benchmarks")]
-impl vesting_mbm::Config for Runtime {}
-
 construct_runtime!(
     pub struct Runtime
     {
@@ -1817,7 +1814,6 @@ mod benches {
         [pallet_price_aggregator, PriceAggregator]
         [pallet_collective_proxy, CollectiveProxy]
         [orml_oracle, Oracle]
-        [vesting_mbm, VestingMBM]
         [pallet_tx_pause, TxPause]
         [pallet_safe_mode, SafeMode]
     );

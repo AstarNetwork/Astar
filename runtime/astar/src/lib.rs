@@ -1516,8 +1516,6 @@ impl pallet_migrations::Config for Runtime {
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
 }
 
-impl democracy_mbm::Config for Runtime {}
-
 construct_runtime!(
     pub struct Runtime
     {
@@ -1582,8 +1580,6 @@ construct_runtime!(
         CollectiveProxy: pallet_collective_proxy = 109,
 
         MultiBlockMigrations: pallet_migrations = 120,
-
-        DemocracyMBM: democracy_mbm = 251,
     }
 );
 
@@ -1628,10 +1624,22 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased = (DemocracyVersionReset<Runtime>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
+
+// Remove this after runtime-1601 is applied.
+use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
+pub struct DemocracyVersionReset<T>(PhantomData<T>);
+impl<T: frame_system::Config + pallet_democracy::Config> OnRuntimeUpgrade
+    for DemocracyVersionReset<T>
+{
+    fn on_runtime_upgrade() -> Weight {
+        StorageVersion::new(1).put::<pallet_democracy::Pallet<T>>();
+        T::DbWeight::get().writes(1)
+    }
+}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1716,7 +1724,6 @@ mod benches {
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
         [orml_oracle, Oracle]
-        [democracy_mbm, DemocracyMBM]
     );
 }
 

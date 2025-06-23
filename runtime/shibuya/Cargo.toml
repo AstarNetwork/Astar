@@ -79,7 +79,6 @@ pallet-treasury = { workspace = true }
 pallet-tx-pause = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
-vesting-mbm = { workspace = true }
 
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }
@@ -265,7 +264,6 @@ std = [
 	"sp-transaction-pool/std",
 	"sp-version/std",
 	"substrate-wasm-builder",
-	"vesting-mbm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"xcm-runtime-apis/std",
@@ -328,7 +326,6 @@ runtime-benchmarks = [
 	"polkadot-primitives/runtime-benchmarks",
 	"polkadot-runtime-common/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
-	"vesting-mbm/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",
 	"xcm-runtime-apis/runtime-benchmarks",
@@ -390,7 +387,6 @@ try-runtime = [
 	"parachain-info/try-runtime",
 	"polkadot-runtime-common/try-runtime",
 	"sp-runtime/try-runtime",
-	"vesting-mbm/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",
