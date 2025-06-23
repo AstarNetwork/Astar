@@ -1671,9 +1671,6 @@ construct_runtime!(
         TxPause: pallet_tx_pause = 111,
 
         MultiBlockMigrations: pallet_migrations = 120,
-
-        #[cfg(feature = "runtime-benchmarks")]
-        VestingMBM: vesting_mbm = 250,
     }
 );
 

@@ -1630,14 +1630,21 @@ pub type Unreleased = (DemocracyVersionReset<Runtime>,);
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
 
 // Remove this after runtime-1601 is applied.
-use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
+use frame_support::{
+    migration::clear_storage_prefix,
+    traits::{OnRuntimeUpgrade, StorageVersion},
+};
 pub struct DemocracyVersionReset<T>(PhantomData<T>);
 impl<T: frame_system::Config + pallet_democracy::Config> OnRuntimeUpgrade
     for DemocracyVersionReset<T>
 {
     fn on_runtime_upgrade() -> Weight {
         StorageVersion::new(1).put::<pallet_democracy::Pallet<T>>();
-        T::DbWeight::get().writes(1)
+
+        let pallet_prefix: &[u8] = b"DemocracyMBM";
+        let _ignore = clear_storage_prefix(pallet_prefix, &[], &[], Some(1), None);
+
+        T::DbWeight::get().writes(2)
     }
 }
 
