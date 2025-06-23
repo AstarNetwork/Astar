@@ -1311,10 +1311,6 @@ pub type Executive = frame_executive::Executive<
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
-parameter_types! {
-    pub const MaxPercentages: [Option<Perbill>; 4] = [None, None, None, None];
-}
-
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased = ();
 

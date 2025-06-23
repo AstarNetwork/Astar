@@ -191,7 +191,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("astar"),
     impl_name: Cow::Borrowed("astar"),
     authoring_version: 1,
-    spec_version: 1600,
+    spec_version: 1601,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -1504,17 +1504,7 @@ parameter_types! {
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations = (
-        vesting_mbm::LazyMigration<Runtime, vesting_mbm::weights::SubstrateWeight<Runtime>>,
-        pallet_dapp_staking::migration::LazyMigration<
-            Runtime,
-            pallet_dapp_staking::weights::SubstrateWeight<Runtime>,
-        >,
-        democracy_mbm::DemocracyMigrationV1ToV2<
-            Runtime,
-            democracy_mbm::weights::SubstrateWeight<Runtime>,
-        >,
-    );
+    type Migrations = ();
     // Benchmarks need mocked migrations to guarantee that they succeed.
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -1637,21 +1627,8 @@ pub type Executive = frame_executive::Executive<
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
-parameter_types! {
-    pub const MaxPercentages: [Option<Perbill>; 4] = [
-        Some(Perbill::from_parts(35_700_000)), // 3.57%
-        Some(Perbill::from_parts(8_900_000)), // 0.89%
-        Some(Perbill::from_parts(2_380_000)), // 0.238%
-        None
-    ];
-}
-
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (
-    pallet_dapp_staking::migration::AdjustEraMigration<Runtime>,
-    pallet_inflation::migration::AdjustBlockRewardMigration<Runtime>,
-    democracy_mbm::DemocracyMigrationSaveMigrationBlock<Runtime>,
-);
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
