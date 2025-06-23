@@ -2703,6 +2703,41 @@
 <a href="#2703" id="2703">2703</a>
 <a href="#2704" id="2704">2704</a>
 <a href="#2705" id="2705">2705</a>
+<a href="#2706" id="2706">2706</a>
+<a href="#2707" id="2707">2707</a>
+<a href="#2708" id="2708">2708</a>
+<a href="#2709" id="2709">2709</a>
+<a href="#2710" id="2710">2710</a>
+<a href="#2711" id="2711">2711</a>
+<a href="#2712" id="2712">2712</a>
+<a href="#2713" id="2713">2713</a>
+<a href="#2714" id="2714">2714</a>
+<a href="#2715" id="2715">2715</a>
+<a href="#2716" id="2716">2716</a>
+<a href="#2717" id="2717">2717</a>
+<a href="#2718" id="2718">2718</a>
+<a href="#2719" id="2719">2719</a>
+<a href="#2720" id="2720">2720</a>
+<a href="#2721" id="2721">2721</a>
+<a href="#2722" id="2722">2722</a>
+<a href="#2723" id="2723">2723</a>
+<a href="#2724" id="2724">2724</a>
+<a href="#2725" id="2725">2725</a>
+<a href="#2726" id="2726">2726</a>
+<a href="#2727" id="2727">2727</a>
+<a href="#2728" id="2728">2728</a>
+<a href="#2729" id="2729">2729</a>
+<a href="#2730" id="2730">2730</a>
+<a href="#2731" id="2731">2731</a>
+<a href="#2732" id="2732">2732</a>
+<a href="#2733" id="2733">2733</a>
+<a href="#2734" id="2734">2734</a>
+<a href="#2735" id="2735">2735</a>
+<a href="#2736" id="2736">2736</a>
+<a href="#2737" id="2737">2737</a>
+<a href="#2738" id="2738">2738</a>
+<a href="#2739" id="2739">2739</a>
+<a href="#2740" id="2740">2740</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -5144,6 +5179,7 @@
             <span class="self">Self</span>::try_state_ledger()<span class="question-mark">?</span>;
             <span class="self">Self</span>::try_state_contract_stake()<span class="question-mark">?</span>;
             <span class="self">Self</span>::try_state_era_rewards()<span class="question-mark">?</span>;
+            <span class="self">Self</span>::try_state_era_info()<span class="question-mark">?</span>;
 
             <span class="prelude-val">Ok</span>(())
         }
@@ -5360,7 +5396,7 @@
         <span class="doccomment">/// ### Invariants of EraRewards
         ///
         /// 1. Era number in [`DAppTiers`] must also be stored in one of the span of [`EraRewards`].
-        /// 2. Each span lenght entry in [`EraRewards`] should be lower than or equal to the [`T::EraRewardSpanLength`] constant.
+        /// 2. Each span length entry in [`EraRewards`] should be lower than or equal to the [`T::EraRewardSpanLength`] constant.
         </span><span class="attr">#[cfg(any(feature = <span class="string">"try-runtime"</span>, test))]
         </span><span class="kw">pub fn </span>try_state_era_rewards() -&gt; <span class="prelude-ty">Result</span>&lt;(), sp_runtime::TryRuntimeError&gt; {
             <span class="kw">let </span>era_rewards = EraRewards::&lt;T&gt;::iter().collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
@@ -5390,6 +5426,40 @@
                     );
                 }
             }
+
+            <span class="prelude-val">Ok</span>(())
+        }
+
+        <span class="doccomment">/// ### Invariants of `EraInfo`
+        ///
+        /// 1. StakerInfo total voting stake == CurrentEraInfo.next_stake_amount
+        /// 2. Current voting stake ≤ Next voting stake (not equal due to possible moves)
+        </span><span class="attr">#[cfg(any(feature = <span class="string">"try-runtime"</span>, test))]
+        </span><span class="kw">pub fn </span>try_state_era_info() -&gt; <span class="prelude-ty">Result</span>&lt;(), sp_runtime::TryRuntimeError&gt; {
+            <span class="kw">let </span>protocol_state = ActiveProtocolState::&lt;T&gt;::get();
+            <span class="kw">let </span>current_period = protocol_state.period_number();
+            <span class="kw">let </span>era_info = CurrentEraInfo::&lt;T&gt;::get();
+
+            <span class="kw">let </span>current_voting = era_info.staked_amount(Subperiod::Voting);
+            <span class="kw">let </span>next_voting = era_info.staked_amount_next_era(Subperiod::Voting);
+
+            <span class="comment">// Yield voting stake amounts in [`StakerInfo`] for the current period
+            </span><span class="kw">let </span>voting_total_staked: Balance = StakerInfo::&lt;T&gt;::iter()
+                .filter(|(<span class="kw">_</span>, <span class="kw">_</span>, info)| info.period_number() == current_period)
+                .map(|(<span class="kw">_</span>, <span class="kw">_</span>, info)| info.staked_amount(Subperiod::Voting))
+                .sum();
+
+            <span class="comment">// Invariant 1
+            </span><span class="macro">ensure!</span>(
+                voting_total_staked == next_voting,
+                <span class="string">"StakerInfo voting total != CurrentEraInfo.next voting stake"
+            </span>);
+
+            <span class="comment">// Invariant 2
+            </span><span class="macro">ensure!</span>(
+                current_voting &lt;= next_voting,
+                <span class="string">"Current voting stake &gt; Next voting stake for same period"
+            </span>);
 
             <span class="prelude-val">Ok</span>(())
         }
