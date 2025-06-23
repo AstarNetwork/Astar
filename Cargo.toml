@@ -196,33 +196,33 @@ ethereum = { git = "https://github.com/rust-ethereum/ethereum", rev = "3be0d8fd4
 
 # Frontier
 # (wasm)
-fp-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false }
-fp-self-contained = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false, features = ["serde"] }
-pallet-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false, features = ["forbid-evm-reentrancy"] }
-pallet-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false, features = ["forbid-evm-reentrancy"] }
-pallet-evm-precompile-blake2 = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false }
-pallet-evm-precompile-bn128 = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false }
-pallet-evm-precompile-dispatch = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false }
-pallet-evm-precompile-ed25519 = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false }
-pallet-evm-precompile-modexp = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false }
-pallet-evm-precompile-sha3fips = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false }
-pallet-evm-precompile-simple = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false }
-pallet-base-fee = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false }
-pallet-evm-chain-id = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false }
-fp-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false }
-fp-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false }
-precompile-utils = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", default-features = false }
+fp-rpc = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false }
+fp-self-contained = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false, features = ["serde"] }
+pallet-ethereum = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false, features = ["forbid-evm-reentrancy"] }
+pallet-evm = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false, features = ["forbid-evm-reentrancy"] }
+pallet-evm-precompile-blake2 = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false }
+pallet-evm-precompile-bn128 = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false }
+pallet-evm-precompile-dispatch = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false }
+pallet-evm-precompile-ed25519 = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false }
+pallet-evm-precompile-modexp = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false }
+pallet-evm-precompile-sha3fips = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false }
+pallet-evm-precompile-simple = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false }
+pallet-base-fee = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false }
+pallet-evm-chain-id = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false }
+fp-evm = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false }
+fp-ethereum = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false }
+precompile-utils = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", default-features = false }
 
 # (native)
-fc-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper" }
-fc-db = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper" }
-fc-api = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper" }
-fc-mapping-sync = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper" }
-fc-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper", features = ["rpc-binary-search-estimate", "txpool"] }
-fc-rpc-core = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper" }
-fp-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper" }
-fp-storage = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper" }
-fc-storage = { git = "https://github.com/AstarNetwork/frontier", branch = "stable2412-txpoolwrapper" }
+fc-consensus = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb" }
+fc-db = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb" }
+fc-api = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb" }
+fc-mapping-sync = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb" }
+fc-rpc = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb", features = ["rpc-binary-search-estimate", "txpool"] }
+fc-rpc-core = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb" }
+fp-consensus = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb" }
+fp-storage = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb" }
+fc-storage = { git = "https://github.com/AstarNetwork/frontier", rev = "e74325d1b2150a6e505c20a4190236db4daca2bb" }
 
 # Cumulus
 # (wasm)
