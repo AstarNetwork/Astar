@@ -2439,6 +2439,7 @@ pub mod pallet {
             Self::try_state_ledger()?;
             Self::try_state_contract_stake()?;
             Self::try_state_era_rewards()?;
+            Self::try_state_era_info()?;
 
             Ok(())
         }
@@ -2655,7 +2656,7 @@ pub mod pallet {
         /// ### Invariants of EraRewards
         ///
         /// 1. Era number in [`DAppTiers`] must also be stored in one of the span of [`EraRewards`].
-        /// 2. Each span lenght entry in [`EraRewards`] should be lower than or equal to the [`T::EraRewardSpanLength`] constant.
+        /// 2. Each span length entry in [`EraRewards`] should be lower than or equal to the [`T::EraRewardSpanLength`] constant.
         #[cfg(any(feature = "try-runtime", test))]
         pub fn try_state_era_rewards() -> Result<(), sp_runtime::TryRuntimeError> {
             let era_rewards = EraRewards::<T>::iter().collect::<Vec<_>>();
@@ -2685,6 +2686,40 @@ pub mod pallet {
                     );
                 }
             }
+
+            Ok(())
+        }
+
+        /// ### Invariants of `EraInfo`
+        ///
+        /// 1. StakerInfo total voting stake == CurrentEraInfo.next_stake_amount
+        /// 2. Current voting stake ≤ Next voting stake (not equal due to possible moves)
+        #[cfg(any(feature = "try-runtime", test))]
+        pub fn try_state_era_info() -> Result<(), sp_runtime::TryRuntimeError> {
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let current_period = protocol_state.period_number();
+            let era_info = CurrentEraInfo::<T>::get();
+
+            let current_voting = era_info.staked_amount(Subperiod::Voting);
+            let next_voting = era_info.staked_amount_next_era(Subperiod::Voting);
+
+            // Yield voting stake amounts in [`StakerInfo`] for the current period
+            let voting_total_staked: Balance = StakerInfo::<T>::iter()
+                .filter(|(_, _, info)| info.period_number() == current_period)
+                .map(|(_, _, info)| info.staked_amount(Subperiod::Voting))
+                .sum();
+
+            // Invariant 1
+            ensure!(
+                voting_total_staked == next_voting,
+                "StakerInfo voting total != CurrentEraInfo.next voting stake"
+            );
+
+            // Invariant 2
+            ensure!(
+                current_voting <= next_voting,
+                "Current voting stake > Next voting stake for same period"
+            );
 
             Ok(())
         }
