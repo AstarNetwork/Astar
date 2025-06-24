@@ -2728,6 +2728,20 @@
 <a href="#2728" id="2728">2728</a>
 <a href="#2729" id="2729">2729</a>
 <a href="#2730" id="2730">2730</a>
+<a href="#2731" id="2731">2731</a>
+<a href="#2732" id="2732">2732</a>
+<a href="#2733" id="2733">2733</a>
+<a href="#2734" id="2734">2734</a>
+<a href="#2735" id="2735">2735</a>
+<a href="#2736" id="2736">2736</a>
+<a href="#2737" id="2737">2737</a>
+<a href="#2738" id="2738">2738</a>
+<a href="#2739" id="2739">2739</a>
+<a href="#2740" id="2740">2740</a>
+<a href="#2741" id="2741">2741</a>
+<a href="#2742" id="2742">2742</a>
+<a href="#2743" id="2743">2743</a>
+<a href="#2744" id="2744">2744</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -4246,8 +4260,6 @@
     <span class="kw">type </span>WeightInfo = pallet_migrations::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="kw">impl </span>democracy_mbm::Config <span class="kw">for </span>Runtime {}
-
 <span class="macro">construct_runtime!</span>(
     <span class="kw">pub struct </span>Runtime
     {
@@ -4312,8 +4324,6 @@
         CollectiveProxy: pallet_collective_proxy = <span class="number">109</span>,
 
         MultiBlockMigrations: pallet_migrations = <span class="number">120</span>,
-
-        DemocracyMBM: democracy_mbm = <span class="number">251</span>,
     }
 );
 
@@ -4358,10 +4368,29 @@
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = ();
+</span><span class="kw">pub type </span>Unreleased = (DemocracyVersionReset&lt;Runtime&gt;,);
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);
+
+<span class="comment">// Remove this after runtime-1601 is applied.
+</span><span class="kw">use </span>frame_support::{
+    migration::clear_storage_prefix,
+    traits::{OnRuntimeUpgrade, StorageVersion},
+};
+<span class="kw">pub struct </span>DemocracyVersionReset&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: frame_system::Config + pallet_democracy::Config&gt; OnRuntimeUpgrade
+    <span class="kw">for </span>DemocracyVersionReset&lt;T&gt;
+{
+    <span class="kw">fn </span>on_runtime_upgrade() -&gt; Weight {
+        StorageVersion::new(<span class="number">1</span>).put::&lt;pallet_democracy::Pallet&lt;T&gt;&gt;();
+
+        <span class="kw">let </span>pallet_prefix: <span class="kw-2">&amp;</span>[u8] = <span class="string">b"DemocracyMBM"</span>;
+        <span class="kw">let </span>_ignore = clear_storage_prefix(pallet_prefix, <span class="kw-2">&amp;</span>[], <span class="kw-2">&amp;</span>[], <span class="prelude-val">Some</span>(<span class="number">1</span>), <span class="prelude-val">None</span>);
+
+        T::DbWeight::get().writes(<span class="number">2</span>)
+    }
+}
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,
@@ -4446,7 +4475,6 @@
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
         [orml_oracle, Oracle]
-        [democracy_mbm, DemocracyMBM]
     );
 }
 
