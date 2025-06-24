@@ -1603,9 +1603,6 @@ impl pallet_tx_pause::Config for Runtime {
     type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>;
 }
 
-#[cfg(feature = "runtime-benchmarks")]
-impl vesting_mbm::Config for Runtime {}
-
 construct_runtime!(
     pub struct Runtime
     {
@@ -1674,9 +1671,6 @@ construct_runtime!(
         TxPause: pallet_tx_pause = 111,
 
         MultiBlockMigrations: pallet_migrations = 120,
-
-        #[cfg(feature = "runtime-benchmarks")]
-        VestingMBM: vesting_mbm = 250,
     }
 );
 
@@ -1817,7 +1811,6 @@ mod benches {
         [pallet_price_aggregator, PriceAggregator]
         [pallet_collective_proxy, CollectiveProxy]
         [orml_oracle, Oracle]
-        [vesting_mbm, VestingMBM]
         [pallet_tx_pause, TxPause]
         [pallet_safe_mode, SafeMode]
     );

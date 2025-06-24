@@ -613,7 +613,6 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-utility",
  "dapp-staking-runtime-api",
- "democracy-mbm",
  "fp-evm",
  "fp-rpc",
  "fp-self-contained",
@@ -711,7 +710,6 @@ dependencies = [
  "staging-xcm-builder",
  "staging-xcm-executor",
  "substrate-wasm-builder",
- "vesting-mbm",
  "xcm-runtime-apis",
 ]
 
@@ -15365,7 +15363,6 @@ dependencies = [
  "staging-xcm-builder",
  "staging-xcm-executor",
  "substrate-wasm-builder",
- "vesting-mbm",
  "xcm-runtime-apis",
 ]
 
@@ -15476,7 +15473,6 @@ dependencies = [
  "staging-xcm-builder",
  "staging-xcm-executor",
  "substrate-wasm-builder",
- "vesting-mbm",
  "xcm-runtime-apis",
 ]
 
