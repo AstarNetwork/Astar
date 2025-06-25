@@ -43,7 +43,7 @@ fn basic_xcmp_transact_outcome_query_response() {
         },
     );
 
-    // priveleged root call
+    // privileged root call
     let root_call =
         parachain::RuntimeCall::System(frame_system::Call::<parachain::Runtime>::set_storage {
             items: vec![(vec![0], vec![1])],
@@ -99,7 +99,7 @@ fn basic_xcmp_transact_outcome_query_response() {
         System::reset_events();
     });
 
-    // check the outcome we recieved from ParaB
+    // check the outcome we received from ParaB
     ParaA::execute_with(move || {
         let xcms = parachain::MsgQueue::received_xcmp();
         // sanity check
@@ -146,7 +146,7 @@ fn basic_xcmp_transact_outcome_query_response() {
         )));
     });
 
-    // check the outcome we recieved from ParaB
+    // check the outcome we received from ParaB
     ParaA::execute_with(|| {
         let xcms = parachain::MsgQueue::received_xcmp();
         // sanity check
