@@ -83,7 +83,7 @@ $ curl -H 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"
 ```
 
 After this step, you should have a validator node online with a session key for your node.
-For key management and validator rewards, consult our [validator guide online](https://docs.astar.network/build/validator-guide/configure-node).
+For key management and validator rewards, consult our [validator guide online](https://docs.astar.network/docs/build/nodes/).
 
 ## Versioning
 
