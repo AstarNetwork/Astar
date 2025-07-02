@@ -244,12 +244,6 @@ pub type AstarXcmFungibleFeeHandler = XcmFungibleFeeHandler<
     TreasuryAccountId,
 >;
 
-const ASSET_HUB_PARA_ID: u32 = 1000;
-
-parameter_types! {
-    pub AssetHubLocation: Location = (Parent, Parachain(ASSET_HUB_PARA_ID)).into();
-}
-
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
