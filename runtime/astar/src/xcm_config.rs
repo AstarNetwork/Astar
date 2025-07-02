@@ -56,7 +56,7 @@ use orml_xcm_support::DisabledParachainFee;
 // Astar imports
 use astar_primitives::xcm::{
     AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, AllowTopLevelPaidExecutionFrom,
-    FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
+    FixedRateOfForeignAsset, Reserves, XcmFungibleFeeHandler,
 };
 
 parameter_types! {
@@ -244,13 +244,19 @@ pub type AstarXcmFungibleFeeHandler = XcmFungibleFeeHandler<
     TreasuryAccountId,
 >;
 
+const ASSET_HUB_PARA_ID: u32 = 1000;
+
+parameter_types! {
+    pub AssetHubLocation: Location = (Parent, Parachain(ASSET_HUB_PARA_ID)).into();
+}
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = ReserveAssetFilter;
+    type IsReserve = Reserves;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
