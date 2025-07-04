@@ -1,0 +1,94 @@
+name: dAppStaking Try-State Checks
+
+on:
+  # Run daily at 10 AM UTC (aligned with era changes with a 2hours buffer)
+  schedule:
+    - cron: '0 10 * * *'
+  # TODO: Temp testing on specific branch - remove when merging
+  push:
+    branches:
+      - 'ci/try-state'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-try-state:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runtime:
+          - { name: astar, endpoint: ASTAR_RUNTIME_ENDPOINT }
+          - { name: shiden, endpoint: SHIDEN_RUNTIME_ENDPOINT }
+          - { name: shibuya, endpoint: SHIBUYA_RUNTIME_ENDPOINT }
+      fail-fast: false
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Install system dependencies
+        run: sudo apt -y install protobuf-compiler
+
+      - name: Install & display rust toolchain
+        run: rustup show
+
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
+
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build ${{ matrix.runtime.name }} runtime with try-runtime feature
+        run: |
+          echo "Building ${{ matrix.runtime.name }} runtime for try-state checks..."
+          cargo build --release --locked --package ${{ matrix.runtime.name }}-runtime --features try-runtime
+
+      - name: Verify runtime blob exists
+        run: |
+          PACKAGE_NAME=${{ matrix.runtime.name }}-runtime
+          RUNTIME_BLOB_NAME=$(echo $PACKAGE_NAME | sed 's/-/_/g').compact.compressed.wasm
+          RUNTIME_BLOB_PATH=./target/release/wbuild/$PACKAGE_NAME/$RUNTIME_BLOB_NAME
+          
+          if [ ! -f "$RUNTIME_BLOB_PATH" ]; then
+            echo "Error: Runtime blob not found at $RUNTIME_BLOB_PATH"
+            ls -la ./target/release/wbuild/$PACKAGE_NAME/
+            exit 1
+          fi
+          
+          echo "Runtime blob found: $RUNTIME_BLOB_PATH"
+          echo "RUNTIME_BLOB_PATH=$RUNTIME_BLOB_PATH" >> $GITHUB_ENV
+
+      - name: Run ${{ matrix.runtime.name }} try-state checks
+        timeout-minutes: 60
+        env:
+          ENDPOINT: ${{ secrets[matrix.runtime.endpoint] }}
+        run: |
+          echo "Running try-state checks for ${{ matrix.runtime.name }}..."
+          echo "Using endpoint: ${{ env.ENDPOINT }}"
+          echo "Using runtime: ${{ env.RUNTIME_BLOB_PATH }}"
+          
+          npx @acala-network/chopsticks try-runtime \
+            -c ${{ matrix.runtime.name }} \
+            -e ${{ env.ENDPOINT }} \
+            --import-storage .github/try-runtime-storage.yml \
+            --checks TryState \
+            --runtime ${{ env.RUNTIME_BLOB_PATH }} \
+            --disable-spec-check
