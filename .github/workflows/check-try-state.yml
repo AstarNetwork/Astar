@@ -1,13 +1,9 @@
-name: dAppStaking Try-State Checks
+name: Try-State Checks
 
 on:
-  # Run daily at 10 AM UTC (aligned with era changes with a 2hours buffer)
+  # Run daily at 10 AM UTC (aligned with dAppStaking era changes on Astar with a 2hours buffer)
   schedule:
     - cron: '0 10 * * *'
-  # TODO: Temp testing on specific branch - remove when merging
-  push:
-    branches:
-      - 'ci/try-state'
   workflow_dispatch:
 
 concurrency:
@@ -48,9 +44,8 @@ jobs:
         with:
           path: |
             ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
+            ~/.cargo/registry/
+            ~/.cargo/git
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
@@ -82,7 +77,6 @@ jobs:
           ENDPOINT: ${{ secrets[matrix.runtime.endpoint] }}
         run: |
           echo "Running try-state checks for ${{ matrix.runtime.name }}..."
-          echo "Using endpoint: ${{ env.ENDPOINT }}"
           echo "Using runtime: ${{ env.RUNTIME_BLOB_PATH }}"
           
           npx @acala-network/chopsticks try-runtime \
