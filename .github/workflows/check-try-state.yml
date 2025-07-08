@@ -2,12 +2,8 @@ name: Try-State Checks
 
 on:
   # Run daily at 10 AM UTC (aligned with dAppStaking era changes on Astar with a 2hours buffer)
-#  schedule:
-#    - cron: '0 10 * * *'
-  # TODO: Temp testing on specific branch - remove when merging
-  push:
-    branches:
-      - 'ci/try-state'
+  #  schedule:
+  #    - cron: '0 10 * * *'
   workflow_dispatch:
 
 concurrency:
