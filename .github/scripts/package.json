@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "license": "MIT",
   "dependencies": {
-    "@polkadot/util-crypto": "^10.1.10",
-    "octokit": "^3.1.2",
-    "ts-node": "^10.9.1",
-    "typescript": "^4.8.4",
-    "yargs": "^17.6.0"
+    "@polkadot/api": "^16.3.1",
+    "@polkadot/util-crypto": "^13.5.3",
+    "octokit": "^5.0.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "yargs": "^18.0.0"
   }
 }

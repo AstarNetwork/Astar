@@ -2,8 +2,12 @@ name: Try-State Checks
 
 on:
   # Run daily at 10 AM UTC (aligned with dAppStaking era changes on Astar with a 2hours buffer)
-  schedule:
-    - cron: '0 10 * * *'
+#  schedule:
+#    - cron: '0 10 * * *'
+  # TODO: Temp testing on specific branch - remove when merging
+  push:
+    branches:
+      - 'ci/try-state'
   workflow_dispatch:
 
 concurrency:
@@ -31,13 +35,52 @@ jobs:
           node-version: 20.x
 
       - name: Install system dependencies
-        run: sudo apt -y install protobuf-compiler
+        run: sudo apt -y install protobuf-compiler jq
 
       - name: Install & display rust toolchain
         run: rustup show
 
       - name: Check targets are installed correctly
         run: rustup target list --installed
+
+      - name: Install TypeScript and dependencies
+        run: |
+          npm install -g typescript ts-node
+          npm install @polkadot/api
+
+      - name: Fetch current runtime version for ${{ matrix.runtime.name }}
+        id: runtime-version
+        env:
+          ENDPOINT: ${{ secrets[matrix.runtime.endpoint] }}
+        run: |
+          echo "Fetching runtime version for ${{ matrix.runtime.name }} from $ENDPOINT"
+          
+          # Run the TypeScript script and capture output
+          RUNTIME_VERSION=$(ts-node .github/scripts/fetch-runtime-version.ts)
+          echo "Current runtime version: $RUNTIME_VERSION"
+          echo "runtime_version=$RUNTIME_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Find and checkout runtime tag
+        id: checkout-tag
+        run: |
+          RUNTIME_VERSION=${{ steps.runtime-version.outputs.runtime_version }}
+          RUNTIME_TAG="runtime-$RUNTIME_VERSION"
+          
+          echo "Looking for tag: $RUNTIME_TAG"
+          
+          # Check if the tag exists
+          if git tag -l | grep -q "^$RUNTIME_TAG$"; then
+            echo "Found tag: $RUNTIME_TAG"
+            git checkout $RUNTIME_TAG
+            echo "tag_found=true" >> $GITHUB_OUTPUT
+            echo "runtime_tag=$RUNTIME_TAG" >> $GITHUB_OUTPUT
+          else
+            echo "Tag $RUNTIME_TAG not found in repository"
+            echo "Available runtime tags:"
+            git tag -l | grep "^runtime-" | tail -10
+            echo "tag_found=false" >> $GITHUB_OUTPUT
+            echo "runtime_tag=$RUNTIME_TAG" >> $GITHUB_OUTPUT
+          fi
 
       - name: Cache cargo dependencies
         uses: actions/cache@v4
@@ -76,7 +119,10 @@ jobs:
         env:
           ENDPOINT: ${{ secrets[matrix.runtime.endpoint] }}
         run: |
-          echo "Running try-state checks for ${{ matrix.runtime.name }}..."
+          echo "Running try-state checks for ${{ matrix.runtime.name }} runtime..."
+          echo "Runtime version: ${{ steps.runtime-version.outputs.runtime_version }}"
+          echo "Runtime tag: ${{ steps.checkout-tag.outputs.runtime_tag }}"
+          echo "Tag found: ${{ steps.checkout-tag.outputs.tag_found }}"
           echo "Using runtime: ${{ env.RUNTIME_BLOB_PATH }}"
           
           npx @acala-network/chopsticks try-runtime \
