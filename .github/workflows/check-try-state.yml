@@ -50,7 +50,7 @@ jobs:
           echo "Current runtime version: $SPEC_VERSION"
           echo "runtime_version=$SPEC_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Find and checkout runtime tag
+      - name: Checkout runtime tag
         id: checkout-tag
         run: |
           RUNTIME_TAG="runtime-${{ steps.runtime-version.outputs.runtime_version }}"
