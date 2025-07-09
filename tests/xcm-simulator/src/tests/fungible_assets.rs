@@ -1004,3 +1004,113 @@ fn para_asset_trap_and_claim() {
         assert_eq!(parachain::Balances::free_balance(BOB), send_amount);
     });
 }
+
+// Send relay asset (like DOT) from Parachain C (mocking Asset Hub - with parachain_id: 1000) to Parachain A.
+// It ensures it withdraws as reserve in Parachain C, and it allows it through DotFromAssetHub filter
+#[test]
+fn transfer_relay_token_reserve_from_para_c_to_para_a() {
+    MockNet::reset();
+
+    let source_location = (Parent,);
+    let relay_asset_id = 123_u128;
+    let alice = AccountId32 {
+        network: None,
+        id: ALICE.into(),
+    };
+
+    // On Parachain A create an asset which represents a derivative of relay native asset.
+    // This asset is allowed as an XCM execution fee payment asset.
+    ParaA::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location.clone(),
+            parent_account_id(),
+            Some(true),
+            Some(1),
+            Some(1_000_000_000_000)
+        ));
+    });
+
+    // On parachain C create an asset which represents a derivative of relay native asset.
+    // This asset is allowed as an XCM execution fee payment asset.
+    ParaC::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location.clone(),
+            parent_account_id(),
+            Some(true),
+            Some(1),
+            Some(1_000_000_000_000)
+        ));
+    });
+
+    // Transfer some relay chain assets to Alice on Parachain C
+    let from_relay_amount: u128 = 100_000_000_000_000u128;
+    Relay::execute_with(|| {
+        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
+            relay_chain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parachain(1000).into()),
+            Box::new(alice.into()),
+            Box::new((Here, from_relay_amount).into()),
+            0,
+            Unlimited,
+        ));
+    });
+
+    // Build the XCM message and execute it
+    let to_para_a_amount = 10_000_000_000_000u128;
+    ParaC::execute_with(|| {
+        let asset = Asset {
+            id: AssetId(Location::new(1, Here)),
+            fun: Fungible(to_para_a_amount),
+        };
+        let beneficiary = Location::new(0, [alice.into()]);
+        let dest = Location::new(1, [Parachain(1)]);
+
+        let message = Xcm(vec![TransferReserveAsset {
+            assets: asset.clone().into(),
+            dest,
+            xcm: Xcm(vec![
+                BuyExecution {
+                    fees: asset,
+                    weight_limit: Unlimited,
+                },
+                DepositAsset {
+                    assets: Wild(AllCounted(1)),
+                    beneficiary,
+                },
+            ]),
+        }]);
+
+        assert_ok!(ParachainPalletXcm::execute(
+            parachain::RuntimeOrigin::signed(ALICE),
+            Box::new(VersionedXcm::from(message)),
+            Weight::from_parts(u64::MAX, 0),
+        ));
+
+        // Parachain C sovereign account should have its balance increased by the amount transferred
+        assert_eq!(
+            ParachainAssets::balance(relay_asset_id, &sibling_para_account_id(1)),
+            to_para_a_amount // or whatever the expected balance should be
+        );
+        // Alice's account should be decreased by the transferred amount and 4 XCM instruction executed in Parachain C
+        assert_eq!(
+            ParachainAssets::balance(relay_asset_id, &ALICE),
+            from_relay_amount
+                - to_para_a_amount
+                - (parachain::UnitWeightCost::get() * 4).ref_time() as u128
+        );
+    });
+
+    // Parachain A should receive the tokens, and some portion of it is used for XCM execution fees
+    ParaA::execute_with(|| {
+        let five_instructions_execution_cost =
+            (parachain::UnitWeightCost::get() * 5).ref_time() as u128;
+        assert_eq!(
+            parachain::Assets::balance(relay_asset_id, ALICE),
+            to_para_a_amount - five_instructions_execution_cost
+        );
+    });
+}
