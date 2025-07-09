@@ -101,9 +101,7 @@ jobs:
           ENDPOINT: ${{ secrets[matrix.runtime.endpoint] }}
         run: |
           echo "Running try-state checks for ${{ matrix.runtime.name }} runtime..."
-          echo "Runtime version: ${{ steps.runtime-version.outputs.runtime_version }}"
           echo "Runtime tag: ${{ steps.checkout-tag.outputs.runtime_tag }}"
-          echo "Tag found: ${{ steps.checkout-tag.outputs.tag_found }}"
           echo "Using runtime: ${{ env.RUNTIME_BLOB_PATH }}"
           
           npx @acala-network/chopsticks try-runtime \
