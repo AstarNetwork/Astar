@@ -56,22 +56,9 @@ jobs:
       - name: Find and checkout runtime tag
         id: checkout-tag
         run: |
-          SPEC_VERSION=${{ steps.runtime-version.outputs.runtime_version }}
-          RUNTIME_TAG="runtime-$SPEC_VERSION"
-
-          echo "Looking for tag: $RUNTIME_TAG"
-
-          if git tag -l | grep -q "^$RUNTIME_TAG$"; then
-            echo "Found tag: $RUNTIME_TAG"
-            git checkout $RUNTIME_TAG
-            echo "tag_found=true" >> $GITHUB_OUTPUT
-            echo "runtime_tag=$RUNTIME_TAG" >> $GITHUB_OUTPUT
-          else
-            echo "Tag $RUNTIME_TAG not found in repository"
-            git tag -l | grep "^runtime-" | tail -10
-            echo "tag_found=false" >> $GITHUB_OUTPUT
-            echo "runtime_tag=$RUNTIME_TAG" >> $GITHUB_OUTPUT
-          fi
+          RUNTIME_TAG="runtime-${{ steps.runtime-version.outputs.runtime_version }}"
+          git checkout $RUNTIME_TAG 2>/dev/null || echo "Tag $RUNTIME_TAG not found, using master branch"
+          echo "runtime_tag=$RUNTIME_TAG" >> $GITHUB_OUTPUT
 
       - name: Install & display rust toolchain
         run: rustup show
