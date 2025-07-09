@@ -36,17 +36,20 @@ jobs:
           node-version: 20.x
 
       - name: Install system dependencies
-        run: sudo apt -y install protobuf-compiler jq
+        run: |
+          sudo apt -y install protobuf-compiler jq
+          curl -L https://github.com/vi/websocat/releases/latest/download/websocat.x86_64-unknown-linux-musl -o websocat
+          chmod +x websocat
+          sudo mv websocat /usr/local/bin/
 
       - name: Fetch current runtime version for ${{ matrix.runtime.name }}
         id: runtime-version
         env:
           ENDPOINT: ${{ secrets[matrix.runtime.endpoint] }}
         run: |
-          echo "Fetching runtime version for ${{ matrix.runtime.name }} from ${{ matrix.runtime.url }}"
-          SPEC_VERSION=$(curl -s -L '${{ env.ENDPOINT }}' \
-            --header 'Content-Type: application/json' \
-            --data '{"jsonrpc":"2.0","method":"state_getRuntimeVersion","params":[],"id":1}' | jq -r .result.specVersion)
+          echo "Fetching runtime version for ${{ matrix.runtime.name }}"
+          SPEC_VERSION=$(echo '{"id":1,"jsonrpc":"2.0","method":"state_getRuntimeVersion","params":[]}' \
+            | websocat -n1 $ENDPOINT | jq -r .result.specVersion)
           echo "Current runtime version: $SPEC_VERSION"
           echo "runtime_version=$SPEC_VERSION" >> $GITHUB_OUTPUT
 
