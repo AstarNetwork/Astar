@@ -51,7 +51,7 @@ jobs:
           echo "Fetching runtime version for ${{ matrix.runtime.name }}"
           SPEC_VERSION=$(echo '{"id":1,"jsonrpc":"2.0","method":"state_getRuntimeVersion","params":[]}' \
             | websocat -n1 $ENDPOINT | jq -r .result.specVersion)
-          SPEC_VERSION_WITH_CURL=$(curl -s -L 'https://rpc.astar.network' \
+          SPEC_VERSION_WITH_CURL=$(curl -s -L $ENDPOINT \
             --header 'Content-Type: application/json' \
             --data '{"jsonrpc":"2.0","method":"state_getRuntimeVersion","params":[],"id":1}' | jq -r .result.specVersion)
           echo "Current runtime version: $SPEC_VERSION"
@@ -61,7 +61,7 @@ jobs:
       - name: Checkout runtime tag
         id: checkout-tag
         run: |
-          RUNTIME_TAG="runtime-1300"
+          RUNTIME_TAG="runtime-${{ steps.runtime-version.outputs.runtime_version }}"
           git checkout $RUNTIME_TAG 2>/dev/null || echo "Tag $RUNTIME_TAG not found, using master branch"
           echo "runtime_tag=$RUNTIME_TAG" >> $GITHUB_OUTPUT
 
