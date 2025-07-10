@@ -1032,33 +1032,6 @@ fn transfer_relay_token_reserve_from_para_c_to_para_a() {
         ));
     });
 
-    // On parachain C create an asset which represents a derivative of relay native asset.
-    // This asset is allowed as an XCM execution fee payment asset.
-    ParaC::execute_with(|| {
-        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
-            parachain::RuntimeOrigin::root(),
-            relay_asset_id,
-            source_location.clone(),
-            parent_account_id(),
-            Some(true),
-            Some(1),
-            Some(1_000_000_000_000)
-        ));
-    });
-
-    // Transfer some relay chain assets to Alice on Parachain C
-    let from_relay_amount: u128 = 100_000_000_000_000u128;
-    Relay::execute_with(|| {
-        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
-            relay_chain::RuntimeOrigin::signed(ALICE),
-            Box::new(Parachain(1000).into()),
-            Box::new(alice.into()),
-            Box::new((Here, from_relay_amount).into()),
-            0,
-            Unlimited,
-        ));
-    });
-
     // Build the XCM message and send it
     let to_para_a_amount = 10_000_000_000_000u128;
     ParaC::execute_with(|| {
