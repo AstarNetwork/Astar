@@ -55,7 +55,7 @@ jobs:
             --header 'Content-Type: application/json' \
             --data '{"jsonrpc":"2.0","method":"state_getRuntimeVersion","params":[],"id":1}' | jq -r .result.specVersion)
           echo "Current runtime version: $SPEC_VERSION"
-          echo "Current runtime version with curl: SPEC_VERSION_WITH_CURL"
+          echo "Current runtime version with curl: $SPEC_VERSION_WITH_CURL"
           echo "runtime_version=$SPEC_VERSION" >> $GITHUB_OUTPUT
 
       - name: Checkout runtime tag
