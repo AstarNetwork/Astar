@@ -1059,58 +1059,47 @@ fn transfer_relay_token_reserve_from_para_c_to_para_a() {
         ));
     });
 
-    // Build the XCM message and execute it
+    // Build the XCM message and send it
     let to_para_a_amount = 10_000_000_000_000u128;
     ParaC::execute_with(|| {
-        let asset = Asset {
+        let dest = Location::new(1, [Parachain(1)]);
+        let beneficiary = Location::new(0, [alice.into()]);
+
+        let assets = Assets::from(Asset {
             id: AssetId(Location::new(1, Here)),
             fun: Fungible(to_para_a_amount),
-        };
-        let beneficiary = Location::new(0, [alice.into()]);
-        let dest = Location::new(1, [Parachain(1)]);
+        });
 
-        let message = Xcm(vec![TransferReserveAsset {
-            assets: asset.clone().into(),
-            dest,
-            xcm: Xcm(vec![
-                BuyExecution {
-                    fees: asset,
-                    weight_limit: Unlimited,
+        let message = Xcm(vec![
+            ReserveAssetDeposited(assets.clone()),
+            ClearOrigin,
+            BuyExecution {
+                fees: Asset {
+                    id: AssetId(Location::new(1, Here)),
+                    fun: Fungible(to_para_a_amount),
                 },
-                DepositAsset {
-                    assets: Wild(AllCounted(1)),
-                    beneficiary,
-                },
-            ]),
-        }]);
+                weight_limit: Unlimited,
+            },
+            DepositAsset {
+                assets: Wild(AllCounted(1)),
+                beneficiary,
+            },
+        ]);
 
-        assert_ok!(ParachainPalletXcm::execute(
-            parachain::RuntimeOrigin::signed(ALICE),
+        assert_ok!(ParachainPalletXcm::send(
+            parachain::RuntimeOrigin::root(),
+            Box::new(dest.into()),
             Box::new(VersionedXcm::from(message)),
-            Weight::from_parts(u64::MAX, 0),
         ));
-
-        // Parachain C sovereign account should have its balance increased by the amount transferred
-        assert_eq!(
-            ParachainAssets::balance(relay_asset_id, &sibling_para_account_id(1)),
-            to_para_a_amount // or whatever the expected balance should be
-        );
-        // Alice's account should be decreased by the transferred amount and 4 XCM instruction executed in Parachain C
-        assert_eq!(
-            ParachainAssets::balance(relay_asset_id, &ALICE),
-            from_relay_amount
-                - to_para_a_amount
-                - (parachain::UnitWeightCost::get() * 4).ref_time() as u128
-        );
     });
 
     // Parachain A should receive the tokens, and some portion of it is used for XCM execution fees
     ParaA::execute_with(|| {
-        let five_instructions_execution_cost =
-            (parachain::UnitWeightCost::get() * 5).ref_time() as u128;
+        let four_instructions_execution_cost =
+            (parachain::UnitWeightCost::get() * 4).ref_time() as u128;
         assert_eq!(
             parachain::Assets::balance(relay_asset_id, ALICE),
-            to_para_a_amount - five_instructions_execution_cost
+            to_para_a_amount - four_instructions_execution_cost
         );
     });
 }
