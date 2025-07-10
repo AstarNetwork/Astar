@@ -2742,6 +2742,7 @@
 <a href="#2742" id="2742">2742</a>
 <a href="#2743" id="2743">2743</a>
 <a href="#2744" id="2744">2744</a>
+<a href="#2745" id="2745">2745</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2837,10 +2838,11 @@
     governance::{
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
-        EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrTwoThirdsCommunityCouncil,
-        EnsureRootOrTwoThirdsMainCouncil, EnsureRootOrTwoThirdsTechnicalCommittee,
-        MainCouncilCollectiveInst, MainCouncilMembershipInst, MainTreasuryInst,
-        OracleMembershipInst, TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+        EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil,
+        EnsureRootOrTwoThirdsCommunityCouncil, EnsureRootOrTwoThirdsMainCouncil,
+        EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
+        MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
+        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -3194,7 +3196,7 @@
     <span class="kw">type </span>SmartContract = SmartContract&lt;AccountId&gt;;
     <span class="kw">type </span>ContractRegisterOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
     <span class="kw">type </span>ContractUnregisterOrigin = EnsureRootOrFourFifthsCommunityCouncil;
-    <span class="kw">type </span>ManagerOrigin = frame_system::EnsureRoot&lt;AccountId&gt;;
+    <span class="kw">type </span>ManagerOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
     <span class="kw">type </span>NativePriceProvider = PriceAggregator;
     <span class="kw">type </span>StakingRewardHandler = Inflation;
     <span class="kw">type </span>CycleConfiguration = InflationCycleConfig;
