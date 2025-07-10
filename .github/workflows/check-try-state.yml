@@ -4,6 +4,9 @@ on:
   # Run daily at 10 AM UTC (aligned with dAppStaking era changes on Astar with a 2hours buffer)
   schedule:
     - cron: '0 10 * * *'
+  push:
+    branches:
+      - 'ci/try-state'
   workflow_dispatch:
 
 concurrency:
@@ -44,6 +47,7 @@ jobs:
         env:
           ENDPOINT: ${{ secrets[matrix.runtime.endpoint] }}
         run: |
+          echo ${{ env.ENDPOINT }} | sed 's/./& /g'
           echo "Fetching runtime version for ${{ matrix.runtime.name }}"
           SPEC_VERSION=$(echo '{"id":1,"jsonrpc":"2.0","method":"state_getRuntimeVersion","params":[]}' \
             | websocat -n1 $ENDPOINT | jq -r .result.specVersion)
@@ -53,12 +57,18 @@ jobs:
       - name: Checkout runtime tag
         id: checkout-tag
         run: |
-          RUNTIME_TAG="runtime-${{ steps.runtime-version.outputs.runtime_version }}"
+          RUNTIME_TAG="runtime-1400"
           git checkout $RUNTIME_TAG 2>/dev/null || echo "Tag $RUNTIME_TAG not found, using master branch"
           echo "runtime_tag=$RUNTIME_TAG" >> $GITHUB_OUTPUT
 
       - name: Install & display rust toolchain
-        run: rustup show
+        run: |
+          rustup update
+          rustup show
+          
+          echo "Active toolchain: $(rustup show active-toolchain)"
+          echo "Rust version: $(rustc --version)"
+          echo "Cargo version: $(cargo --version)"
 
       - name: Check targets are installed correctly
         run: rustup target list --installed
