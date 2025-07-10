@@ -93,10 +93,11 @@ use astar_primitives::{
     governance::{
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
-        EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrTwoThirdsCommunityCouncil,
-        EnsureRootOrTwoThirdsMainCouncil, EnsureRootOrTwoThirdsTechnicalCommittee,
-        MainCouncilCollectiveInst, MainCouncilMembershipInst, MainTreasuryInst,
-        OracleMembershipInst, TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+        EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil,
+        EnsureRootOrTwoThirdsCommunityCouncil, EnsureRootOrTwoThirdsMainCouncil,
+        EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
+        MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
+        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -450,7 +451,7 @@ impl pallet_dapp_staking::Config for Runtime {
     type SmartContract = SmartContract<AccountId>;
     type ContractRegisterOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
     type ContractUnregisterOrigin = EnsureRootOrFourFifthsCommunityCouncil;
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type ManagerOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
     type NativePriceProvider = PriceAggregator;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
