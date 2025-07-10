@@ -65,7 +65,7 @@ use astar_primitives::{
     oracle::PriceProvider,
     xcm::{
         AllowTopLevelPaidExecutionFrom, AssetLocationIdConverter, FixedRateOfForeignAsset,
-        ReserveAssetFilter, XcmFungibleFeeHandler,
+        Reserves, XcmFungibleFeeHandler,
     },
 };
 
@@ -442,7 +442,7 @@ impl xcm_executor::Config for XcmConfig {
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = ReserveAssetFilter;
+    type IsReserve = Reserves;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
