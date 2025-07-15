@@ -4,6 +4,9 @@ on:
   # Run daily at 10 AM UTC (aligned with dAppStaking era changes on Astar with a 2hours buffer)
   schedule:
     - cron: '0 10 * * *'
+  push:
+    branches:
+      - 'ci/try-state'
   workflow_dispatch:
 
 concurrency:
@@ -16,17 +19,12 @@ jobs:
     strategy:
       matrix:
         runtime:
-          - { name: astar, endpoint: ASTAR_RUNTIME_ENDPOINT }
-          - { name: shiden, endpoint: SHIDEN_RUNTIME_ENDPOINT }
-          - { name: shibuya, endpoint: SHIBUYA_RUNTIME_ENDPOINT }
+          - { name: astar, endpoint: ASTAR_RUNTIME_ENDPOINT, http: 'https://rpc.astar.network' }
+          - { name: shiden, endpoint: SHIDEN_RUNTIME_ENDPOINT, http: 'https://rpc.shiden.astar.network' }
+          - { name: shibuya, endpoint: SHIBUYA_RUNTIME_ENDPOINT, http: 'https://rpc.shibuya.astar.network' }
       fail-fast: false
 
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Setup node
         uses: actions/setup-node@v4
         with:
@@ -35,27 +33,21 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt -y install protobuf-compiler jq
-          curl -L https://github.com/vi/websocat/releases/latest/download/websocat.x86_64-unknown-linux-musl -o websocat
-          chmod +x websocat
-          sudo mv websocat /usr/local/bin/
 
       - name: Fetch current runtime version for ${{ matrix.runtime.name }}
         id: runtime-version
         env:
-          ENDPOINT: ${{ secrets[matrix.runtime.endpoint] }}
+          ENDPOINT: ${{ secrets[matrix.runtime.http] }}
         run: |
-          echo "Fetching runtime version for ${{ matrix.runtime.name }}"
-          SPEC_VERSION=$(echo '{"id":1,"jsonrpc":"2.0","method":"state_getRuntimeVersion","params":[]}' \
-            | websocat -n1 $ENDPOINT | jq -r .result.specVersion)
-          echo "Current runtime version: $SPEC_VERSION"
-          echo "runtime_version=$SPEC_VERSION" >> $GITHUB_OUTPUT
+          SPEC_VERSION=$(curl -s $ENDPOINT -H 'Content-Type: application/json' -d'{"jsonrpc":"2.0","method":"state_getRuntimeVersion","params":[],"id":1}' \
+            | jq -r .result.specVersion)
+          echo "RUNTIME_TAG=runtime-$SPEC_VERSION" >> $GITHUB_ENV
 
-      - name: Checkout runtime tag
-        id: checkout-tag
-        run: |
-          RUNTIME_TAG="runtime-${{ steps.runtime-version.outputs.runtime_version }}"
-          git checkout $RUNTIME_TAG 2>/dev/null || echo "Tag $RUNTIME_TAG not found, using master branch"
-          echo "runtime_tag=$RUNTIME_TAG" >> $GITHUB_OUTPUT
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RUNTIME_TAG }}
+          fetch-depth: 0
 
       - name: Install & display rust toolchain
         run: |
