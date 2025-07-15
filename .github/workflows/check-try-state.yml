@@ -47,7 +47,7 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
         with:
-          ref: ${{ steps.runtime-version.outputs.runtime-tag }}
+          ref: ${{ env.RUNTIME_TAG }}
           fetch-depth: 0
 
       - name: Print current branch
@@ -105,7 +105,6 @@ jobs:
           ENDPOINT: ${{ secrets[matrix.runtime.endpoint] }}
         run: |
           echo "Running try-state checks for ${{ matrix.runtime.name }} runtime..."
-          echo "Runtime tag: ${{ steps.checkout-tag.outputs.runtime_tag }}"
           echo "Using runtime: ${{ env.RUNTIME_BLOB_PATH }}"
           
           npx @acala-network/chopsticks try-runtime \
