@@ -4,9 +4,6 @@ on:
   # Run daily at 10 AM UTC (aligned with dAppStaking era changes on Astar with a 2hours buffer)
   schedule:
     - cron: '0 10 * * *'
-  push:
-    branches:
-      - 'ci/try-state'
   workflow_dispatch:
 
 concurrency:
@@ -49,11 +46,6 @@ jobs:
         with:
           ref: ${{ env.RUNTIME_TAG }}
           fetch-depth: 0
-
-      - name: Print current branch
-        run: |
-          echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
-          echo "Runtime tag used: ${{ env.RUNTIME_TAG }}"
 
       - name: Install & display rust toolchain
         run: |
