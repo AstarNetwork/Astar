@@ -47,12 +47,13 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.RUNTIME_TAG }}
+          ref: ${{ steps.runtime-version.outputs.runtime-tag }}
           fetch-depth: 0
 
       - name: Print current branch
         run: |
           echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
+          echo "Runtime tag used: ${{ env.RUNTIME_TAG }}"
 
       - name: Install & display rust toolchain
         run: |
