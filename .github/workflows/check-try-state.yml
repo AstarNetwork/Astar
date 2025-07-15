@@ -37,10 +37,11 @@ jobs:
       - name: Fetch current runtime version for ${{ matrix.runtime.name }}
         id: runtime-version
         env:
-          ENDPOINT: ${{ secrets[matrix.runtime.http] }}
+          ENDPOINT: ${{ matrix.runtime.http }}
         run: |
           SPEC_VERSION=$(curl -s $ENDPOINT -H 'Content-Type: application/json' -d'{"jsonrpc":"2.0","method":"state_getRuntimeVersion","params":[],"id":1}' \
             | jq -r .result.specVersion)
+          echo "Runtime version: $(SPEC_VERSION)"
           echo "RUNTIME_TAG=runtime-$SPEC_VERSION" >> $GITHUB_ENV
 
       - name: Checkout sources
