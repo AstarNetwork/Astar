@@ -41,7 +41,7 @@ jobs:
         run: |
           SPEC_VERSION=$(curl -s $ENDPOINT -H 'Content-Type: application/json' -d'{"jsonrpc":"2.0","method":"state_getRuntimeVersion","params":[],"id":1}' \
             | jq -r .result.specVersion)
-          echo "Runtime version: $(SPEC_VERSION)"
+          echo "Runtime version: $SPEC_VERSION"
           echo "RUNTIME_TAG=runtime-$SPEC_VERSION" >> $GITHUB_ENV
 
       - name: Checkout sources
@@ -49,6 +49,10 @@ jobs:
         with:
           ref: ${{ env.RUNTIME_TAG }}
           fetch-depth: 0
+
+      - name: Print current branch
+        run: |
+          echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
 
       - name: Install & display rust toolchain
         run: |
