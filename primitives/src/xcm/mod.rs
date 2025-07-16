@@ -55,6 +55,7 @@ mod tests;
 
 pub const XCM_SIZE_LIMIT: u32 = 2u32.pow(16);
 pub const MAX_ASSETS: u32 = 64;
+pub const ASSET_HUB_PARA_ID: u32 = 1000;
 
 /// Used to convert between cross-chain asset multilocation and local asset Id.
 ///
@@ -219,6 +220,32 @@ impl ContainsPair<Asset, Location> for ReserveAssetFilter {
         }
     }
 }
+
+/// Allow DOT from Asset Hub.
+pub struct DotFromAssetHub;
+impl ContainsPair<Asset, Location> for DotFromAssetHub {
+    fn contains(asset: &Asset, origin: &Location) -> bool {
+        Location::new(1, Parachain(ASSET_HUB_PARA_ID)) == *origin
+            && matches!(
+                asset,
+                Asset {
+                    id: AssetId(Location {
+                        parents: 1,
+                        interior: Here
+                    }),
+                    fun: Fungible(_),
+                },
+            )
+    }
+}
+
+/// All locations we trust as reserves for particular assets.
+pub type Reserves = (
+    // Trusted reserves and DOT from relay
+    ReserveAssetFilter,
+    // DOT from Asset Hub
+    DotFromAssetHub,
+);
 
 /// Used to deposit XCM fees into a destination account.
 ///
