@@ -355,6 +355,33 @@
 <a href="#355" id="355">355</a>
 <a href="#356" id="356">356</a>
 <a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
+<a href="#383" id="383">383</a>
+<a href="#384" id="384">384</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -412,6 +439,7 @@
 
 <span class="kw">pub const </span>XCM_SIZE_LIMIT: u32 = <span class="number">2u32</span>.pow(<span class="number">16</span>);
 <span class="kw">pub const </span>MAX_ASSETS: u32 = <span class="number">64</span>;
+<span class="kw">pub const </span>ASSET_HUB_PARA_ID: u32 = <span class="number">1000</span>;
 
 <span class="doccomment">/// Used to convert between cross-chain asset multilocation and local asset Id.
 ///
@@ -576,6 +604,32 @@
         </span>}
     }
 }
+
+<span class="doccomment">/// Allow DOT from Asset Hub.
+</span><span class="kw">pub struct </span>DotFromAssetHub;
+<span class="kw">impl </span>ContainsPair&lt;Asset, Location&gt; <span class="kw">for </span>DotFromAssetHub {
+    <span class="kw">fn </span>contains(asset: <span class="kw-2">&amp;</span>Asset, origin: <span class="kw-2">&amp;</span>Location) -&gt; bool {
+        Location::new(<span class="number">1</span>, Parachain(ASSET_HUB_PARA_ID)) == <span class="kw-2">*</span>origin
+            &amp;&amp; <span class="macro">matches!</span>(
+                asset,
+                Asset {
+                    id: AssetId(Location {
+                        parents: <span class="number">1</span>,
+                        interior: Here
+                    }),
+                    fun: Fungible(<span class="kw">_</span>),
+                },
+            )
+    }
+}
+
+<span class="doccomment">/// All locations we trust as reserves for particular assets.
+</span><span class="kw">pub type </span>Reserves = (
+    <span class="comment">// Trusted reserves and DOT from relay
+    </span>ReserveAssetFilter,
+    <span class="comment">// DOT from Asset Hub
+    </span>DotFromAssetHub,
+);
 
 <span class="doccomment">/// Used to deposit XCM fees into a destination account.
 ///

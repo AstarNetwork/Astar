@@ -442,7 +442,7 @@
 <span class="comment">// Astar imports
 </span><span class="kw">use </span>astar_primitives::xcm::{
     AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, AllowTopLevelPaidExecutionFrom,
-    FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
+    FixedRateOfForeignAsset, Reserves, XcmFungibleFeeHandler,
 };
 
 <span class="macro">parameter_types!</span> {
@@ -636,7 +636,7 @@
     <span class="kw">type </span>XcmSender = XcmRouter;
     <span class="kw">type </span>AssetTransactor = AssetTransactors;
     <span class="kw">type </span>OriginConverter = XcmOriginToTransactDispatchOrigin;
-    <span class="kw">type </span>IsReserve = ReserveAssetFilter;
+    <span class="kw">type </span>IsReserve = Reserves;
     <span class="kw">type </span>IsTeleporter = ();
     <span class="kw">type </span>UniversalLocation = UniversalLocation;
     <span class="kw">type </span>Barrier = XcmBarrier;
