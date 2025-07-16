@@ -67,6 +67,7 @@ pallet-migrations = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
+pallet-safe-mode = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true, features = ["historical"] }
 pallet-sudo = { workspace = true }
@@ -74,6 +75,7 @@ pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-treasury = { workspace = true }
+pallet-tx-pause = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 pallet-xcm-benchmarks = { workspace = true, optional = true }
@@ -151,6 +153,8 @@ std = [
 	"cumulus-pallet-parachain-system/std",
 	"cumulus-pallet-xcm/std",
 	"cumulus-pallet-xcmp-queue/std",
+	"pallet-safe-mode/std",
+	"pallet-tx-pause/std",
 	"cumulus-primitives-aura/std",
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-utility/std",
@@ -268,6 +272,8 @@ runtime-benchmarks = [
 	"orml-xtokens/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
+	"pallet-safe-mode/runtime-benchmarks",
+	"pallet-tx-pause/runtime-benchmarks",
 	"pallet-chain-extension-assets/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-collective-proxy/runtime-benchmarks",
@@ -326,6 +332,8 @@ try-runtime = [
 	"orml-xtokens/try-runtime",
 	"pallet-assets/try-runtime",
 	"pallet-aura/try-runtime",
+	"pallet-safe-mode/try-runtime",
+	"pallet-tx-pause/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-chain-extension-assets/try-runtime",

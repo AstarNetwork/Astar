@@ -37,8 +37,8 @@ use frame_support::{
     traits::{
         fungible::{Balanced, Credit, HoldConsideration},
         AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, Contains,
-        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice,
-        Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
+        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InsideBoth, InstanceFilter,
+        LinearStoragePrice, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -51,7 +51,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot, EnsureSigned,
+    EnsureRoot, EnsureSigned, EnsureWithSuccess,
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
@@ -233,7 +233,12 @@ parameter_types! {
     pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
         .base_block(BlockExecutionWeight::get())
         .for_class(DispatchClass::all(), |weights| {
-            weights.base_extrinsic = ExtrinsicBaseWeight::get();
+            // Adjusting the base extrinsic weight to account for the additional database
+            // read introduced by the `tx-pause` pallet during extrinsic filtering.
+            //
+            // TODO: This hardcoded addition is a temporary fix. Replace it with a proper
+            // benchmark in the future.
+            weights.base_extrinsic = ExtrinsicBaseWeight::get().saturating_add(<Runtime as frame_system::Config>::DbWeight::get().reads(1));
         })
         .for_class(DispatchClass::Normal, |weights| {
             weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
@@ -270,6 +275,9 @@ impl Contains<RuntimeCall> for BaseFilter {
     }
 }
 
+type SafeModeTxPauseFilter = InsideBoth<SafeMode, TxPause>;
+type BaseCallFilter = InsideBoth<BaseFilter, SafeModeTxPauseFilter>;
+
 impl frame_system::Config for Runtime {
     /// The identifier used to distinguish between accounts.
     type AccountId = AccountId;
@@ -301,7 +309,7 @@ impl frame_system::Config for Runtime {
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type DbWeight = RocksDbWeight;
-    type BaseCallFilter = BaseFilter;
+    type BaseCallFilter = BaseCallFilter;
     type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
     type BlockWeights = RuntimeBlockWeights;
     type BlockLength = RuntimeBlockLength;
@@ -818,7 +826,12 @@ impl WeightToFeePolynomial for WeightToFee {
         #[cfg(not(feature = "runtime-benchmarks"))]
         let (p, q) = (
             WeightFeeFactor::get(),
-            Balance::from(ExtrinsicBaseWeight::get().ref_time()),
+            Balance::from(
+                RuntimeBlockWeights::get()
+                    .get(DispatchClass::Normal)
+                    .base_extrinsic
+                    .ref_time(),
+            ),
         );
 
         smallvec::smallvec![WeightToFeeCoefficient {
@@ -1517,6 +1530,65 @@ impl pallet_migrations::Config for Runtime {
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
 }
 
+/// Calls that can bypass the safe-mode pallet.
+pub struct SafeModeWhitelistedCalls;
+impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
+    fn contains(call: &RuntimeCall) -> bool {
+        match call {
+            // System and Timestamp are required for block production
+            RuntimeCall::System(_)
+            | RuntimeCall::Timestamp(_)
+            | RuntimeCall::ParachainSystem(_)
+            | RuntimeCall::Sudo(_)
+            | RuntimeCall::TxPause(_) => true,
+            _ => false,
+        }
+    }
+}
+
+parameter_types! {
+    // Should be sufficient for the team to react & come up with longer term solution.
+    pub const EnterDuration: BlockNumber = 12 * HOURS;
+    // Extension in case previous time isn't enough.
+    pub const ExtendDuration: BlockNumber = 2 * HOURS;
+    // Permisonless safe mode entry isn't allowed yet.
+    pub const NoPermisionlessEntry: Option<Balance> = None;
+    pub const NoPermisionlessExtension: Option<Balance> = None;
+}
+
+impl pallet_safe_mode::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type WhitelistedCalls = SafeModeWhitelistedCalls;
+    type EnterDuration = EnterDuration;
+    type EnterDepositAmount = NoPermisionlessEntry;
+    type ExtendDuration = ExtendDuration;
+    type ExtendDepositAmount = NoPermisionlessExtension;
+    type ForceEnterOrigin =
+        EnsureWithSuccess<EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil, AccountId, EnterDuration>;
+    type ForceExtendOrigin = EnsureWithSuccess<
+        EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil,
+        AccountId,
+        ExtendDuration,
+    >;
+    type ForceExitOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
+    type ForceDepositOrigin = EnsureRoot<AccountId>;
+    type ReleaseDelay = ();
+    type Notify = DappStaking;
+    type WeightInfo = pallet_safe_mode::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_tx_pause::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type PauseOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
+    type UnpauseOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
+    type WhitelistedCalls = ();
+    type MaxNameLen = ConstU32<256>;
+    type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>;
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1579,6 +1651,8 @@ construct_runtime!(
         Treasury: pallet_treasury::<Instance1> = 107,
         CommunityTreasury: pallet_treasury::<Instance2> = 108,
         CollectiveProxy: pallet_collective_proxy = 109,
+        SafeMode: pallet_safe_mode = 110,
+        TxPause: pallet_tx_pause = 111,
 
         MultiBlockMigrations: pallet_migrations = 120,
     }
@@ -1732,6 +1806,8 @@ mod benches {
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
         [orml_oracle, Oracle]
+        [pallet_tx_pause, TxPause]
+        [pallet_safe_mode, SafeMode]
     );
 }
 
