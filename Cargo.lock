@@ -6012,6 +6012,7 @@ dependencies = [
  "pallet-aura",
  "pallet-balances",
  "pallet-collator-selection 3.3.2",
+ "pallet-collective",
  "pallet-collective-proxy",
  "pallet-contracts",
  "pallet-contracts-uapi",

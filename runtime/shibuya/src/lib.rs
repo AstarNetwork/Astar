@@ -1566,8 +1566,18 @@ impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
             RuntimeCall::System(_)
             | RuntimeCall::Timestamp(_)
             | RuntimeCall::ParachainSystem(_)
+            | RuntimeCall::Council(_)
+            | RuntimeCall::TechnicalCommittee(_)
             | RuntimeCall::Sudo(_)
-            | RuntimeCall::TxPause(_) => true,
+            | RuntimeCall::Democracy(
+                pallet_democracy::Call::external_propose_majority { .. }
+                | pallet_democracy::Call::external_propose_default { .. }
+                | pallet_democracy::Call::fast_track { .. }
+                | pallet_democracy::Call::emergency_cancel { .. }
+                | pallet_democracy::Call::cancel_referendum { .. },
+            )
+            | RuntimeCall::TxPause(_)
+            | RuntimeCall::SafeMode(_) => true,
             _ => false,
         }
     }
@@ -1580,7 +1590,14 @@ impl frame_support::traits::Contains<RuntimeCallNameOf<Runtime>> for TxPauseWhit
         let pallet_name = full_name.0.as_slice();
         matches!(
             pallet_name,
-            b"System" | b"Timestamp" | b"ParachainSystem" | b"Sudo" | b"TxPause" | b"SafeMode"
+            b"System"
+                | b"Timestamp"
+                | b"ParachainSystem"
+                | b"Council"
+                | b"TechnicalCommittee"
+                | b"Sudo"
+                | b"TxPause"
+                | b"SafeMode"
         )
     }
 }

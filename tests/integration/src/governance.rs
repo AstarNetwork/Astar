@@ -120,14 +120,6 @@ fn main_council_and_tech_committee_can_tx_pause() {
         // Main council should be able to propose a tx pause.
         propose_vote_and_close!(Council, tx_pause_proposal, 0);
 
-        println!("BOOM!");
-        pallet_tx_pause::PausedCalls::<Runtime>::iter().for_each(|(name, _)| {
-            println!(
-                "Paused call: {:?}",
-                name,
-            );
-        });
-
         // Now ensure transfer_allow_death is filtered.
         assert_noop!(
             transfer_call
@@ -143,8 +135,7 @@ fn main_council_and_tech_committee_can_tx_pause() {
         propose_vote_and_close!(TechnicalCommittee, tx_unpause_proposal, 0);
 
         // Call should once again work.
-        assert_ok!(transfer_call
-            .dispatch(RuntimeOrigin::signed(ALICE.clone()),));
+        assert_ok!(transfer_call.dispatch(RuntimeOrigin::signed(ALICE.clone()),));
     })
 }
 
@@ -186,6 +177,45 @@ fn main_council_and_tech_committee_can_trigger_safe_mode() {
         assert_ok!(transfer_call
             .clone()
             .dispatch(RuntimeOrigin::signed(ALICE.clone()),));
+    })
+}
+
+#[test]
+fn ensure_lockout_not_possible() {
+    new_test_ext().execute_with(|| {
+        // Enable safe mode.
+        let safe_mode_enter_call = RuntimeCall::SafeMode(pallet_safe_mode::Call::force_enter {});
+        propose_vote_and_close!(TechnicalCommittee, safe_mode_enter_call, 0);
+
+        // Sanity check that e.g. transfer doesn't work anymore.
+        assert_noop!(
+            RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death {
+                dest: BOB.clone().into(),
+                value: 1,
+            })
+            .dispatch(RuntimeOrigin::signed(ALICE.clone())),
+            frame_system::Error::<Runtime>::CallFiltered
+        );
+
+        // However, calls related to council & tech committee must still work.
+        let call = RuntimeCall::System(frame_system::Call::remark {
+            remark: b"abc".to_vec(),
+        });
+        assert_ok!(RuntimeCall::Council(pallet_collective::Call::propose {
+            threshold: 3,
+            proposal: Box::new(call.clone()),
+            length_bound: call.encode().len() as u32,
+        })
+        .dispatch(RuntimeOrigin::signed(ALICE.clone())));
+
+        assert_ok!(
+            RuntimeCall::TechnicalCommittee(pallet_collective::Call::propose {
+                threshold: 3,
+                proposal: Box::new(call.clone()),
+                length_bound: call.encode().len() as u32,
+            })
+            .dispatch(RuntimeOrigin::signed(ALICE.clone()))
+        );
     })
 }
 
