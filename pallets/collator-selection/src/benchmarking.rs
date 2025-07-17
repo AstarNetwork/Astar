@@ -22,7 +22,8 @@ use super::*;
 #[allow(unused)]
 use crate::Pallet as CollatorSelection;
 use frame_benchmarking::{
-    account, benchmarks, impl_benchmark_test_suite, whitelisted_caller, BenchmarkError,
+    account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller,
+    BenchmarkError,
 };
 use frame_support::{
     assert_ok,
@@ -38,15 +39,6 @@ pub type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 const SEED: u32 = 0;
-
-// TODO: remove if this is given in substrate commit.
-macro_rules! whitelist {
-    ($acc:ident) => {
-        frame_benchmarking::benchmarking::add_to_whitelist(
-            frame_system::Account::<T>::hashed_key_for(&$acc).into(),
-        );
-    };
-}
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     let events = frame_system::Pallet::<T>::events();
@@ -129,6 +121,46 @@ benchmarks! {
         assert_last_event::<T>(Event::NewInvulnerables(new_invulnerables).into());
     }
 
+    add_invulnerable {
+        let i in 1 .. T::MaxInvulnerables::get() - 1;
+
+        let mut initial_invulnerables = register_validators::<T>(i + 1);
+        let new_invulnerable = initial_invulnerables.pop().unwrap();
+
+        let origin = T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
+        <CollatorSelection<T>>::set_invulnerables(origin.clone(), initial_invulnerables.clone())?;
+        whitelist_account!(new_invulnerable);
+    }: {
+        assert_ok!(
+            <CollatorSelection<T>>::add_invulnerable(origin, new_invulnerable.clone())
+        );
+    }
+    verify {
+        let mut expected = initial_invulnerables;
+        expected.push(new_invulnerable);
+        assert_eq!(<Invulnerables<T>>::get(), expected);
+    }
+
+    remove_invulnerable {
+        let i in 2 .. T::MaxInvulnerables::get();
+
+        let initial_invulnerables = register_validators::<T>(i);
+
+        let origin = T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
+        <CollatorSelection<T>>::set_invulnerables(origin.clone(), initial_invulnerables.clone())?;
+        let to_remove = initial_invulnerables.last().unwrap().clone();
+        whitelist_account!(to_remove);
+    }: {
+        assert_ok!(
+            <CollatorSelection<T>>::remove_invulnerable(origin, to_remove)
+        );
+    }
+    verify {
+        let mut expected = initial_invulnerables;
+        expected.pop();
+        assert_eq!(<Invulnerables<T>>::get(), expected);
+    }
+
     set_desired_candidates {
         let max: u32 = 148;
         let origin = T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
@@ -189,7 +221,7 @@ benchmarks! {
         register_candidates::<T>(c);
 
         let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
-        whitelist!(leaving);
+        whitelist_account!(leaving);
     }: _(RawOrigin::Signed(leaving.clone()))
     verify {
         assert_last_event::<T>(Event::CandidateRemoved(leaving).into());
@@ -204,7 +236,7 @@ benchmarks! {
         register_candidates::<T>(T::MinCandidates::get() + 1);
 
         let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
-        whitelist!(leaving);
+        whitelist_account!(leaving);
         assert_ok!(CollatorSelection::<T>::leave_intent(RawOrigin::Signed(leaving.clone()).into()));
         let session_length = <T as session::Config>::NextSessionRotation::average_session_length();
         session::Pallet::<T>::on_initialize(session_length);
