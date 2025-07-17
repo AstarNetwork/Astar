@@ -16,25 +16,45 @@ jobs:
     strategy:
       matrix:
         runtime:
-          - { name: astar, endpoint: ASTAR_RUNTIME_ENDPOINT }
-          - { name: shiden, endpoint: SHIDEN_RUNTIME_ENDPOINT }
-          - { name: shibuya, endpoint: SHIBUYA_RUNTIME_ENDPOINT }
+          - { name: astar, endpoint: ASTAR_RUNTIME_ENDPOINT, http: 'https://rpc.astar.network' }
+          - { name: shiden, endpoint: SHIDEN_RUNTIME_ENDPOINT, http: 'https://rpc.shiden.astar.network' }
+          - { name: shibuya, endpoint: SHIBUYA_RUNTIME_ENDPOINT, http: 'https://rpc.shibuya.astar.network' }
       fail-fast: false
 
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
 
       - name: Install system dependencies
-        run: sudo apt -y install protobuf-compiler
+        run: |
+          sudo apt -y install protobuf-compiler jq
+
+      - name: Fetch current runtime version for ${{ matrix.runtime.name }}
+        id: runtime-version
+        env:
+          ENDPOINT: ${{ matrix.runtime.http }}
+        run: |
+          SPEC_VERSION=$(curl -s $ENDPOINT -H 'Content-Type: application/json' -d'{"jsonrpc":"2.0","method":"state_getRuntimeVersion","params":[],"id":1}' \
+            | jq -r .result.specVersion)
+          echo "Runtime version: $SPEC_VERSION"
+          echo "RUNTIME_TAG=runtime-$SPEC_VERSION" >> $GITHUB_ENV
+
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RUNTIME_TAG }}
+          fetch-depth: 0
 
       - name: Install & display rust toolchain
-        run: rustup show
+        run: |
+          rustup update
+          rustup show
+          
+          echo "Active toolchain: $(rustup show active-toolchain)"
+          echo "Rust version: $(rustc --version)"
+          echo "Cargo version: $(cargo --version)"
 
       - name: Check targets are installed correctly
         run: rustup target list --installed
@@ -76,7 +96,7 @@ jobs:
         env:
           ENDPOINT: ${{ secrets[matrix.runtime.endpoint] }}
         run: |
-          echo "Running try-state checks for ${{ matrix.runtime.name }}..."
+          echo "Running try-state checks for ${{ matrix.runtime.name }} runtime..."
           echo "Using runtime: ${{ env.RUNTIME_BLOB_PATH }}"
           
           npx @acala-network/chopsticks try-runtime \
