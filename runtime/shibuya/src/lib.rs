@@ -56,6 +56,7 @@ use pallet_identity::legacy::IdentityInfo;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
+use pallet_tx_pause::RuntimeCallNameOf;
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
@@ -90,10 +91,10 @@ use astar_primitives::{
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
         EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrHalfCommunityCouncil,
-        EnsureRootOrHalfMainCouncil, EnsureRootOrHalfTechnicalCommittee,
-        EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
-        MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
-        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+        EnsureRootOrHalfMainCouncil, EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil,
+        EnsureRootOrHalfTechnicalCommittee, MainCouncilCollectiveInst, MainCouncilMembershipInst,
+        MainTreasuryInst, OracleMembershipInst, TechnicalCommitteeCollectiveInst,
+        TechnicalCommitteeMembershipInst,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -1572,6 +1573,18 @@ impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
     }
 }
 
+/// Calls that cannot be paused by the tx-pause pallet.
+pub struct TxPauseWhitelistedCalls;
+impl frame_support::traits::Contains<RuntimeCallNameOf<Runtime>> for TxPauseWhitelistedCalls {
+    fn contains(full_name: &RuntimeCallNameOf<Runtime>) -> bool {
+        let pallet_name = full_name.0.as_slice();
+        matches!(
+            pallet_name,
+            b"System" | b"Timestamp" | b"ParachainSystem" | b"Sudo" | b"TxPause" | b"SafeMode"
+        )
+    }
+}
+
 impl pallet_safe_mode::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
@@ -1582,12 +1595,18 @@ impl pallet_safe_mode::Config for Runtime {
     type ExtendDuration = ConstU32<{ 2 * HOURS }>;
     type ExtendDepositAmount = ();
     // The 'Success' values below represent the number of blocks that the origin may induce safe mode
-    type ForceEnterOrigin =
-        EnsureWithSuccess<EnsureRootOrHalfTechnicalCommittee, AccountId, ConstU32<{ 4 * HOURS }>>;
-    type ForceExtendOrigin =
-        EnsureWithSuccess<EnsureRootOrHalfTechnicalCommittee, AccountId, ConstU32<{ 2 * HOURS }>>;
-    type ForceExitOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
-    type ForceDepositOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
+    type ForceEnterOrigin = EnsureWithSuccess<
+        EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil,
+        AccountId,
+        ConstU32<{ 4 * HOURS }>,
+    >;
+    type ForceExtendOrigin = EnsureWithSuccess<
+        EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil,
+        AccountId,
+        ConstU32<{ 2 * HOURS }>,
+    >;
+    type ForceExitOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
+    type ForceDepositOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
     type ReleaseDelay = ();
     type Notify = DappStaking;
     type WeightInfo = pallet_safe_mode::weights::SubstrateWeight<Runtime>;
@@ -1596,9 +1615,9 @@ impl pallet_safe_mode::Config for Runtime {
 impl pallet_tx_pause::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
-    type PauseOrigin = EnsureRootOrHalfTechnicalCommittee;
-    type UnpauseOrigin = EnsureRootOrHalfTechnicalCommittee;
-    type WhitelistedCalls = ();
+    type PauseOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
+    type UnpauseOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
+    type WhitelistedCalls = TxPauseWhitelistedCalls;
     type MaxNameLen = ConstU32<256>;
     type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>;
 }

@@ -60,6 +60,7 @@ use pallet_identity::legacy::IdentityInfo;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
+use pallet_tx_pause::RuntimeCallNameOf;
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
@@ -1540,9 +1541,22 @@ impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
             | RuntimeCall::Timestamp(_)
             | RuntimeCall::ParachainSystem(_)
             | RuntimeCall::Sudo(_)
-            | RuntimeCall::TxPause(_) => true,
+            | RuntimeCall::TxPause(_)
+            | RuntimeCall::SafeMode(_) => true,
             _ => false,
         }
+    }
+}
+
+/// Calls that cannot be paused by the tx-pause pallet.
+pub struct TxPauseWhitelistedCalls;
+impl frame_support::traits::Contains<RuntimeCallNameOf<Runtime>> for TxPauseWhitelistedCalls {
+    fn contains(full_name: &RuntimeCallNameOf<Runtime>) -> bool {
+        let pallet_name = full_name.0.as_slice();
+        matches!(
+            pallet_name,
+            b"System" | b"Timestamp" | b"ParachainSystem" | b"Sudo" | b"TxPause" | b"SafeMode"
+        )
     }
 }
 
@@ -1584,7 +1598,7 @@ impl pallet_tx_pause::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     type PauseOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
     type UnpauseOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
-    type WhitelistedCalls = ();
+    type WhitelistedCalls = TxPauseWhitelistedCalls;
     type MaxNameLen = ConstU32<256>;
     type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>;
 }

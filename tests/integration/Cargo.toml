@@ -35,8 +35,10 @@ pallet-contracts-uapi = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-proxy = { workspace = true }
+pallet-safe-mode = { workspace = true }
 pallet-session = { workspace = true }
 pallet-timestamp = { workspace = true }
+pallet-tx-pause = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-xcm = { workspace = true }
 sp-consensus-aura = { workspace = true }
@@ -110,6 +112,8 @@ std = [
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-dispatch/std",
 	"pallet-inflation/std",
+	"pallet-safe-mode/std",
+	"pallet-tx-pause/std",
 	"pallet-membership/std",
 	"pallet-price-aggregator/std",
 	"cumulus-test-relay-sproof-builder/std",
