@@ -501,9 +501,10 @@ pub mod pallet {
             Self::is_validator_registered(&who)?;
 
             <Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
-                if let Some(_) = invulnerables.iter().find(|&acc| *acc == who) {
-                    return Err(Error::<T>::AlreadyInvulnerable.into());
-                }
+                ensure!(
+                    !invulnerables.contains(&who),
+                    Error::<T>::AlreadyInvulnerable
+                );
                 invulnerables.push(who);
                 Ok(())
             })?;
