@@ -291,6 +291,8 @@ pub mod pallet {
         NotCandidate,
         /// User is already an Invulnerable
         AlreadyInvulnerable,
+        /// User is not an Invulnerable
+        NotInvulnerable,
         /// Account has no associated validator ID
         NoAssociatedValidatorId,
         /// Validator ID is not yet registered
@@ -325,12 +327,7 @@ pub mod pallet {
 
             // check if the invulnerables have associated validator keys before they are set
             for account_id in &new {
-                let validator_key = T::ValidatorIdOf::convert(account_id.clone())
-                    .ok_or(Error::<T>::NoAssociatedValidatorId)?;
-                ensure!(
-                    T::ValidatorRegistration::is_registered(&validator_key),
-                    Error::<T>::ValidatorNotRegistered
-                );
+                Self::is_validator_registered(account_id)?;
             }
 
             <Invulnerables<T>>::put(&new);
@@ -394,12 +391,7 @@ pub mod pallet {
                 Error::<T>::NotAllowedCandidate
             );
 
-            let validator_key = T::ValidatorIdOf::convert(who.clone())
-                .ok_or(Error::<T>::NoAssociatedValidatorId)?;
-            ensure!(
-                T::ValidatorRegistration::is_registered(&validator_key),
-                Error::<T>::ValidatorNotRegistered
-            );
+            Self::is_validator_registered(&who)?;
 
             // ensure candidacy has no previous locked un-bonding
             <NonCandidates<T>>::try_mutate_exists(&who, |maybe| -> DispatchResult {
@@ -497,12 +489,68 @@ pub mod pallet {
             }
             Ok(())
         }
+
+        /// Add an invulnerable collator.
+        #[pallet::call_index(7)]
+        #[pallet::weight(T::WeightInfo::add_invulnerable(T::MaxInvulnerables::get()))]
+        pub fn add_invulnerable(
+            origin: OriginFor<T>,
+            who: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            Self::is_validator_registered(&who)?;
+
+            <Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
+                ensure!(
+                    !invulnerables.contains(&who),
+                    Error::<T>::AlreadyInvulnerable
+                );
+                invulnerables.push(who);
+                Ok(())
+            })?;
+
+            Self::deposit_event(Event::NewInvulnerables(<Invulnerables<T>>::get()));
+            Ok(().into())
+        }
+
+        /// Remove an invulnerable collator.
+        #[pallet::call_index(8)]
+        #[pallet::weight(T::WeightInfo::remove_invulnerable(T::MaxInvulnerables::get()))]
+        pub fn remove_invulnerable(
+            origin: OriginFor<T>,
+            who: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            <Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
+                if let Some(pos) = invulnerables.iter().position(|acc| *acc == who) {
+                    invulnerables.remove(pos);
+                    Ok(())
+                } else {
+                    Err(Error::<T>::NotInvulnerable.into())
+                }
+            })?;
+
+            Self::deposit_event(Event::NewInvulnerables(<Invulnerables<T>>::get()));
+            Ok(().into())
+        }
     }
 
     impl<T: Config> Pallet<T> {
         /// Get a unique, inaccessible account id from the `PotId`.
         pub fn account_id() -> T::AccountId {
             T::PotId::get().into_account_truncating()
+        }
+
+        /// Checks if the account has a registered validator key.
+        fn is_validator_registered(who: &T::AccountId) -> DispatchResult {
+            let validator_key = T::ValidatorIdOf::convert(who.clone())
+                .ok_or(Error::<T>::NoAssociatedValidatorId)?;
+            ensure!(
+                T::ValidatorRegistration::is_registered(&validator_key),
+                Error::<T>::ValidatorNotRegistered
+            );
+
+            Ok(())
         }
 
         /// Removes a candidate if they exist. Start deposit un-bonding
