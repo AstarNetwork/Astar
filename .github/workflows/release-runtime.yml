@@ -8,6 +8,8 @@ env:
   SUBWASM_VERSION: 0.16.1
 jobs:
   checks-and-tests:
+    # Just to ensure this runs AFTER the tracing runtimes are built, for the sake of generating a release faster
+    needs: evm-tracing-runtimes
     runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Free disk space
@@ -43,7 +45,6 @@ jobs:
         run: make test-all
 
   evm-tracing-runtimes:
-    needs: checks-and-tests
     runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Checkout the source code
@@ -85,7 +86,6 @@ jobs:
           path: target/production/wbuild/shibuya-runtime/shibuya_evm_tracing_runtime.compact.compressed.wasm
 
   srtool:
-    needs: checks-and-tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
