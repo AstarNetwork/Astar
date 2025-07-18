@@ -201,6 +201,12 @@ mod xcm_old_interface_test {
                 )
                 .expect_no_logs()
                 .execute_returns(true);
+
+            let binding = take_sent_xcm();
+            let (_location, Xcm(instructions)) = binding.get(0).expect("XCM should be sent");
+
+            // Ensure that origin is immediately descended to eliminate sovereign parachain origin.
+            assert!(matches!(instructions.as_slice(), [DescendOrigin(..), ..]));
         });
     }
 
