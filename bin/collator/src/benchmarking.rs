@@ -435,22 +435,6 @@ where
     }
 }
 
-/// Generates inherent data for benchmarking local node.
-///
-/// Not to be used outside of benchmarking since it returns mocked values.
-pub fn local_benchmark_inherent_data(
-) -> std::result::Result<sp_inherents::InherentData, sp_inherents::Error> {
-    use sp_inherents::InherentDataProvider;
-    let mut inherent_data = sp_inherents::InherentData::new();
-
-    // Assume that all runtimes have the `timestamp` pallet.
-    let d = std::time::Duration::from_millis(0);
-    let timestamp = sp_timestamp::InherentDataProvider::new(d.into());
-    futures::executor::block_on(timestamp.provide_inherent_data(&mut inherent_data))?;
-
-    Ok(inherent_data)
-}
-
 /// Generates inherent data for benchmarking Astar, Shiden and Shibuya.
 ///
 /// Not to be used outside of benchmarking since it returns mocked values.
