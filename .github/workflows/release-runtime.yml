@@ -7,9 +7,9 @@ on:
 env:
   SUBWASM_VERSION: 0.16.1
 jobs:
-  # Just to ensure this runs AFTER the tracing runtimes are built, for the sake of generating a release faster
-  needs: evm-tracing-runtimes
   checks-and-tests:
+    # Just to ensure this runs AFTER the tracing runtimes are built, for the sake of generating a release faster
+    needs: evm-tracing-runtimes
     runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Free disk space
