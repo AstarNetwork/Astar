@@ -49,8 +49,8 @@ use frame_support::{traits::Get, weights::Weight};
 use core::marker::PhantomData;
 
 /// Weight functions for `orml_oracle`.
-pub struct WeightInfo<T>(PhantomData<T>);
-impl<T: frame_system::Config> orml_oracle::WeightInfo for WeightInfo<T> {
+pub struct SubstrateWeight<T>(PhantomData<T>);
+impl<T: frame_system::Config> orml_oracle::WeightInfo for SubstrateWeight<T> {
 	/// Storage: `OracleMembership::Members` (r:1 w:0)
 	/// Proof: `OracleMembership::Members` (`max_values`: Some(1), `max_size`: Some(513), added: 1008, mode: `MaxEncodedLen`)
 	/// Storage: `Oracle::HasDispatched` (r:1 w:1)

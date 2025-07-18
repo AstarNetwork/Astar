@@ -49,8 +49,8 @@ use frame_support::{traits::Get, weights::Weight};
 use core::marker::PhantomData;
 
 /// Weight functions for `pallet_dapp_staking`.
-pub struct WeightInfo<T>(PhantomData<T>);
-impl<T: frame_system::Config> pallet_dapp_staking::WeightInfo for WeightInfo<T> {
+pub struct SubstrateWeight<T>(PhantomData<T>);
+impl<T: frame_system::Config> pallet_dapp_staking::WeightInfo for SubstrateWeight<T> {
 	fn maintenance_mode() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`

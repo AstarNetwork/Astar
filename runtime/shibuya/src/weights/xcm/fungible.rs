@@ -49,8 +49,8 @@ use frame_support::{traits::Get, weights::Weight};
 use core::marker::PhantomData;
 
 /// Weight functions for `xcm_benchmarks_fungible`.
-pub struct WeightInfo<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo<T> {
+pub struct SubstrateWeight<T>(PhantomData<T>);
+impl<T: frame_system::Config> SubstrateWeight<T> {
 	/// Storage: `XcAssetConfig::AssetLocationToId` (r:1 w:0)
 	/// Proof: `XcAssetConfig::AssetLocationToId` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `Assets::Asset` (r:1 w:1)

@@ -40,11 +40,11 @@ use frame_support::{traits::Get, weights::Weight};
 use core::marker::PhantomData;
 
 /// Weight functions for `{{pallet}}`.
-pub struct WeightInfo<T>(PhantomData<T>);
+pub struct SubstrateWeight<T>(PhantomData<T>);
 {{#if (eq pallet "frame_system_extensions")}}
-impl<T: frame_system::Config> frame_system::ExtensionsWeightInfo for WeightInfo<T> {
+impl<T: frame_system::Config> frame_system::ExtensionsWeightInfo for SubstrateWeight<T> {
 {{else}}
-impl<T: frame_system::Config> {{pallet}}::WeightInfo for WeightInfo<T> {
+impl<T: frame_system::Config> {{pallet}}::WeightInfo for SubstrateWeight<T> {
 {{/if}}
 	{{#each benchmarks as |benchmark|}}
 	{{#each benchmark.comments as |comment|}}

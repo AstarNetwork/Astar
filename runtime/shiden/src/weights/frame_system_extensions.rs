@@ -49,8 +49,8 @@ use frame_support::{traits::Get, weights::Weight};
 use core::marker::PhantomData;
 
 /// Weight functions for `frame_system_extensions`.
-pub struct WeightInfo<T>(PhantomData<T>);
-impl<T: frame_system::Config> frame_system::ExtensionsWeightInfo for WeightInfo<T> {
+pub struct SubstrateWeight<T>(PhantomData<T>);
+impl<T: frame_system::Config> frame_system::ExtensionsWeightInfo for SubstrateWeight<T> {
 	fn check_genesis() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `30`

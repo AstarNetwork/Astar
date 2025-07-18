@@ -49,8 +49,8 @@ use frame_support::{traits::Get, weights::Weight};
 use core::marker::PhantomData;
 
 /// Weight functions for `pallet_inflation`.
-pub struct WeightInfo<T>(PhantomData<T>);
-impl<T: frame_system::Config> pallet_inflation::WeightInfo for WeightInfo<T> {
+pub struct SubstrateWeight<T>(PhantomData<T>);
+impl<T: frame_system::Config> pallet_inflation::WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Inflation::InflationParams` (r:0 w:1)
 	/// Proof: `Inflation::InflationParams` (`max_values`: Some(1), `max_size`: Some(64), added: 559, mode: `MaxEncodedLen`)
 	fn force_set_inflation_params() -> Weight {
