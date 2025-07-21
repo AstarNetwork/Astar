@@ -105,12 +105,18 @@ jobs:
 
     # TODO: Should be removed once frame-omni-bencher can be installed using
     # toolchain defined in the `rust-toolchain.toml` file.
+    - name: Install latest stable Rust
+      run: rustup install stable
+
+    - name: Set stable as default
+      run: rustup default stable
+
     - name: Install targets and components
       run: |
         rustup target add wasm32-unknown-unknown
         rustup component add rust-src
 
-    # TODO: Should be moved below the `rustup show` once the toolchain supports this build.
+    # TODO: Should be moved below the `rustup show` once the toolchain
     - name: Install frame-omni bencher tool
       run: cargo install --git https://github.com/paritytech/polkadot-sdk frame-omni-bencher --profile=production --locked
 
