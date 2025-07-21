@@ -116,7 +116,7 @@ jobs:
         rustup target add wasm32-unknown-unknown
         rustup component add rust-src
 
-    # TODO: Should be moved below the `rustup show` once the toolchain
+    # TODO: Should be moved below the `rustup show` once the defined toolchain works.
     - name: Install frame-omni bencher tool
       run: cargo install --git https://github.com/paritytech/polkadot-sdk frame-omni-bencher --profile=production --locked
 
