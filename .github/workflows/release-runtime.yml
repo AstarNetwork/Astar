@@ -3,6 +3,8 @@ on:
   push:
     tags:
       - runtime-[0-9]+*
+    branches:
+      - 'ci/test-legacy-client'
   workflow_dispatch:
 env:
   SUBWASM_VERSION: 0.16.1
@@ -355,3 +357,72 @@ jobs:
           asset_path: evm-tracing-artifacts.tar.gz
           asset_name: evm-tracing-artifacts-${{ github.ref_name }}.tar.gz
           asset_content_type: application/gzip
+
+  client-backward-compatibility:
+    needs: srtool
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chain: [ "astar", "shiden", "shibuya" ]
+    steps:
+      - name: Get latest client tag
+        id: latest-client-tag
+        # We're making an assumption that the latest client release will be within the last 30 releases
+        run: |
+          releases=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
+          
+          # client tags start with 'v'
+          TAG=$(echo "$releases" \
+            | jq -r '[.[] | select(.tag_name | startswith("v"))][0].tag_name')
+          
+          echo "Latest client tag: $TAG"
+          echo "CLIENT_TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Download latest client
+        id: latest-client
+        run: |
+          latest_client=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases/tags/${{ env.CLIENT_TAG }})
+          
+          ASSET_NAME="astar-collator-${{ env.CLIENT_TAG }}-ubuntu-x86_64.tar.gz"
+          ASSET_URL=$(echo "$latest_client" \
+          | jq -r --arg name "$ASSET_NAME" '.assets[] | select(.name == $name) | .browser_download_url')
+          
+          if [ -z "$URL" ]; then
+            echo "Asset not found: $ASSET_NAME"
+            exit 1
+          fi
+          
+          echo "Downloading from $ASSET_URL"
+          curl -L -o astar-collator.tar.gz "$ASSET_URL"
+
+      - name: Setup
+        run: |
+          tar -xzf astar-collator.tar.gz
+          mv astar-collator third-party/zombienet/astar-collator
+          chmod +x third-party/zombienet/astar-collator
+
+      - name: Setup zombienet
+        working-directory: third-party/zombienet
+        run: ./setup.sh
+
+      - name: ${{ matrix.chain }} build blocks
+        working-directory: third-party/zombienet
+        env:
+          CHAIN: ${{ matrix.chain }}-dev
+        run: zombienet -p native test smoke.zndsl
+
+      - name: Download srtool artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.chain }}-runtime
+          path: third-party/zombienet/
+
+      - name: Extract code parameters
+        working-directory: third-party/zombienet
+        run: |
+          CODE_HASH=$(jq -r '.runtimes.compressed.blake2_256' ${{ matrix.chain }}-srtool-digest.json)
+          CODE_HEX="0x$(cat ${{ matrix.chain }}_runtime.compact.compressed.wasm | xxd -p | tr -d '\n')"
+          echo "CODE_HASH=$CODE_HASH" >> $GITHUB_ENV
+          echo "CODE_HEX=$CODE_HEX" >> $GITHUB_ENV
+          echo "Code hash: $CODE_HASH"
+          echo "Code bytes (hex): $CODE_HEX"
