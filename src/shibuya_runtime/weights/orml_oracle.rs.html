@@ -139,8 +139,8 @@
 <span class="kw">use </span>core::marker::PhantomData;
 
 <span class="doccomment">/// Weight functions for `orml_oracle`.
-</span><span class="kw">pub struct </span>WeightInfo&lt;T&gt;(PhantomData&lt;T&gt;);
-<span class="kw">impl</span>&lt;T: frame_system::Config&gt; orml_oracle::WeightInfo <span class="kw">for </span>WeightInfo&lt;T&gt; {
+</span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: frame_system::Config&gt; orml_oracle::WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
 	<span class="doccomment">/// Storage: `OracleMembership::Members` (r:1 w:0)
 	/// Proof: `OracleMembership::Members` (`max_values`: Some(1), `max_size`: Some(513), added: 1008, mode: `MaxEncodedLen`)
 	/// Storage: `Oracle::HasDispatched` (r:1 w:1)

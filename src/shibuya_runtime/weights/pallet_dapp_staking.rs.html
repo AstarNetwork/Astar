@@ -614,8 +614,8 @@
 <span class="kw">use </span>core::marker::PhantomData;
 
 <span class="doccomment">/// Weight functions for `pallet_dapp_staking`.
-</span><span class="kw">pub struct </span>WeightInfo&lt;T&gt;(PhantomData&lt;T&gt;);
-<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_dapp_staking::WeightInfo <span class="kw">for </span>WeightInfo&lt;T&gt; {
+</span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_dapp_staking::WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
 	<span class="kw">fn </span>maintenance_mode() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`

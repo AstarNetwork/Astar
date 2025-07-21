@@ -238,8 +238,8 @@
 <span class="kw">use </span>core::marker::PhantomData;
 
 <span class="doccomment">/// Weight functions for `pallet_balances`.
-</span><span class="kw">pub struct </span>WeightInfo&lt;T&gt;(PhantomData&lt;T&gt;);
-<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_balances::WeightInfo <span class="kw">for </span>WeightInfo&lt;T&gt; {
+</span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_balances::WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
 	<span class="doccomment">/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	/// Storage: `UnifiedAccounts::NativeToEvm` (r:1 w:0)

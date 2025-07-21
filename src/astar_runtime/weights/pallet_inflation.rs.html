@@ -159,8 +159,8 @@
 <span class="kw">use </span>core::marker::PhantomData;
 
 <span class="doccomment">/// Weight functions for `pallet_inflation`.
-</span><span class="kw">pub struct </span>WeightInfo&lt;T&gt;(PhantomData&lt;T&gt;);
-<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_inflation::WeightInfo <span class="kw">for </span>WeightInfo&lt;T&gt; {
+</span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_inflation::WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
 	<span class="doccomment">/// Storage: `Inflation::InflationParams` (r:0 w:1)
 	/// Proof: `Inflation::InflationParams` (`max_values`: Some(1), `max_size`: Some(64), added: 559, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>force_set_inflation_params() -&gt; Weight {

@@ -171,8 +171,8 @@
 <span class="kw">use </span>core::marker::PhantomData;
 
 <span class="doccomment">/// Weight functions for `frame_system_extensions`.
-</span><span class="kw">pub struct </span>WeightInfo&lt;T&gt;(PhantomData&lt;T&gt;);
-<span class="kw">impl</span>&lt;T: frame_system::Config&gt; frame_system::ExtensionsWeightInfo <span class="kw">for </span>WeightInfo&lt;T&gt; {
+</span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: frame_system::Config&gt; frame_system::ExtensionsWeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
 	<span class="kw">fn </span>check_genesis() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `30`

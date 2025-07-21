@@ -335,8 +335,8 @@
 
 <span class="doccomment">/// Weights for `pallet_scheduler` using the Substrate node and recommended hardware.
 /// Weight functions for `pallet_scheduler`.
-</span><span class="kw">pub struct </span>WeightInfo&lt;T&gt;(PhantomData&lt;T&gt;);
-<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_scheduler::WeightInfo <span class="kw">for </span>WeightInfo&lt;T&gt; {
+</span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_scheduler::WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
 	<span class="doccomment">/// Storage: `Scheduler::IncompleteSince` (r:1 w:1)
 	/// Proof: `Scheduler::IncompleteSince` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>service_agendas_base() -&gt; Weight {
