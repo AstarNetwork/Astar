@@ -358,144 +358,64 @@ jobs:
 #          asset_name: evm-tracing-artifacts-${{ github.ref_name }}.tar.gz
 #          asset_content_type: application/gzip
 
-  client-backward-compatibility:
+  runtime-compatibility-test:
     needs: srtool
     runs-on: ubuntu-latest
     strategy:
       matrix:
         chain: [ "astar", "shiden", "shibuya" ]
+    env:
+      ZOMBIENET_DIR: third-party/zombienet
     steps:
-      - name: Get latest client tag
-        id: latest-client-tag
+      - name: Fetch latest client release
+        id: client-info
         # We're making an assumption that the latest client release will be within the last 30 releases
         run: |
-          releases=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
+          TAG=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases | \
+          jq -r '[.[] | select(.tag_name | test("^v\\d+\\.\\d+\\.\\d+$")) | .tag_name] | first')
+        
+          ASSET_NAME="astar-collator-${TAG}-ubuntu-x86_64.tar.gz"
+          ASSET_URL=$(curl -s "https://api.github.com/repos/AstarNetwork/Astar/releases/tags/${TAG}" | \
+          jq -r --arg name "$ASSET_NAME" '.assets[] | select(.name == $name) | .browser_download_url')
           
-          # client tags start with 'v'
-          TAG=$(echo "$releases" | jq -r '
-            [
-              .[] | select(.tag_name | test("^v\\d+\\.\\d+\\.\\d+$"; "i")) | .tag_name
-            ] | first
-          ')
-          
-          echo "Latest client tag: $TAG"
-          echo "CLIENT_TAG=$TAG" >> $GITHUB_ENV
+          echo "client_tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "asset_url=${ASSET_URL}" >> $GITHUB_OUTPUT
+          echo "Using client version: ${TAG}"
 
-      - name: Download latest client
-        id: latest-client
+      - name: Download and extract client
         run: |
-          latest_client=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases/tags/${{ env.CLIENT_TAG }})
-          
-          ASSET_NAME="astar-collator-${{ env.CLIENT_TAG }}-ubuntu-x86_64.tar.gz"
-          ASSET_URL=$(echo "$latest_client" \
-          | jq -r --arg name "$ASSET_NAME" '.assets[] | select(.name == $name) | .browser_download_url')
-          
-          echo "Downloading from $ASSET_URL"
-          curl -L -o astar-collator.tar.gz "$ASSET_URL"
+          curl -L -o client.tar.gz "${{ steps.client-info.outputs.asset_url }}"
+          tar -xzf client.tar.gz
+          mv astar-collator ${{ env.ZOMBIENET_DIR }}/
+          chmod +x ${{ env.ZOMBIENET_DIR }}/astar-collator
+          rm client.tar.gz
 
-      - name: Download srtool artifacts
+      - name: Download runtime artifacts
         uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.chain }}-runtime
-          path: third-party/zombienet/
+          path: ${{ env.ZOMBIENET_DIR }}
 
-      - name: Extract code parameters
-        working-directory: third-party/zombienet
+      - name: Prepare runtime for upgrade test
+        working-directory: ${{ env.ZOMBIENET_DIR }}
         run: |
-          CODE_HASH=$(jq -r '.runtimes.compressed.blake2_256' ${{ matrix.chain }}-srtool-digest.json)
-          CODE_HEX="0x$(cat ${{ matrix.chain }}_runtime.compact.compressed.wasm | xxd -p | tr -d '\n')"
-          echo "CODE_HASH=$CODE_HASH" >> $GITHUB_ENV
-          echo "CODE_HEX=$CODE_HEX" >> $GITHUB_ENV
-          echo "Code hash: $CODE_HASH"
-          echo "Code bytes (hex): $CODE_HEX"
+          RUNTIME_FILE=$(find . -maxdepth 1 -name '*_runtime.compact.compressed.wasm' -print -quit)
+          if [ -n "$RUNTIME_FILE" ]; then
+            mv "$RUNTIME_FILE" runtime.compact.compressed.wasm
+            echo "✅ Prepared runtime: $(basename "$RUNTIME_FILE") → runtime.compact.compressed.wasm"
+          else
+            echo "❌ No runtime file found matching pattern '*_runtime.compact.compressed.wasm'"
+            exit 1
+          fi
 
-      - name: Setup
-        run: |
-          tar -xzf astar-collator.tar.gz
-          mv astar-collator third-party/zombienet/astar-collator
-          chmod +x third-party/zombienet/astar-collator
-
-      - name: Setup zombienet
-        working-directory: third-party/zombienet
+      - name: Setup Zombienet
+        working-directory: ${{ env.ZOMBIENET_DIR }}
         run: ./setup.sh
 
-      - name: ${{ matrix.chain }} build blocks
-        working-directory: third-party/zombienet
-        env:
-          CHAIN: ${{ matrix.chain }}-dev
-        run: zombienet -p native test smoke.zndsl
-
-      - name: Start network for upgrade test
-        working-directory: third-party/zombienet
+      - name: Run compatibility test
+        working-directory: ${{ env.ZOMBIENET_DIR }}
         env:
           CHAIN: ${{ matrix.chain }}-dev
         run: |
-          zombienet -p native spawn smoke.toml &
-          ZOMBIENET_PID=$!
-          echo "ZOMBIENET_PID=$ZOMBIENET_PID" >> $GITHUB_ENV
-          echo "Zombienet PID: $ZOMBIENET_PID"
-          
-          # Wait for network to be ready
-          sleep 60
-
-      - name: Authorize runtime upgrade
-        working-directory: third-party/zombienet
-        run: |
-          # Get the current block number before upgrade
-          BLOCK_BEFORE=$(curl -s -X POST \
-            -H "Content-Type: application/json" \
-            -d '{"jsonrpc":"2.0","method":"chain_getBlock","params":[],"id":1}' \
-            http://localhost:9944 | jq -r '.result.block.header.number')
-          
-          echo "Block before upgrade: $BLOCK_BEFORE"
-          
-          npx --yes @polkadot/api-cli@0.63.10 \
-            --sudo \
-            --seed "//Alice" \
-            tx.system.authorizeUpgrade ${{ env.CODE_HASH }}
-
-      - name: Wait for authorization
-        run: sleep 12
-
-      - name: Apply runtime upgrade
-        working-directory: third-party/zombienet
-        run: |
-          npx --yes @polkadot/api-cli@0.63.10 \
-            --sudo \
-            --seed "//Alice" \
-            tx.system.applyAuthorizedUpgrade ${{ env.CODE_HEX }}
-
-      - name: Verify upgrade and block production
-        working-directory: third-party/zombienet
-        run: |
-          # Wait for upgrade to be processed
-          sleep 60
-        
-          BLOCK_COUNT=0
-          for i in {1..10}; do
-          BLOCK=$(curl -s -X POST \
-          -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"chain_getBlock","params":[],"id":1}' \
-          http://localhost:9944 | jq -r '.result.block.header.number')
-          
-          if [ "$BLOCK" != "null" ]; then
-          BLOCK_COUNT=$((BLOCK_COUNT + 1))
-          fi
-          sleep 6
-          done
-          
-          if [ "$BLOCK_COUNT" -gt 5 ]; then
-          echo "✅ Runtime upgrade successful - blocks are being produced"
-          else
-          echo "❌ Runtime upgrade failed - insufficient block production"
-          exit 1
-          fi
-
-      - name: Cleanup
-        if: always()
-        working-directory: third-party/zombienet
-        run: |
-          # Kill zombienet if it's still running
-          if [ -n "$ZOMBIENET_PID" ] && kill -0 $ZOMBIENET_PID 2>/dev/null; then
-            kill $ZOMBIENET_PID
-          fi
+          echo "Testing ${{ matrix.chain }} runtime compatibility with client ${{ steps.client-info.outputs.client_tag }}"
+          zombienet -p native test smoke_runtime_upgrade.zndsl
