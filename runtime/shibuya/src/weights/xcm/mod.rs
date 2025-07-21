@@ -22,8 +22,8 @@ mod generic;
 use astar_primitives::xcm::MAX_ASSETS;
 use core::cmp::min;
 use frame_support::weights::Weight;
-use fungible::WeightInfo as XcmFungibleWeight;
-use generic::WeightInfo as XcmGeneric;
+use fungible::SubstrateWeight as XcmFungibleWeight;
+use generic::SubstrateWeight as XcmGeneric;
 use sp_runtime::BoundedVec;
 use sp_std::prelude::*;
 use xcm::{
