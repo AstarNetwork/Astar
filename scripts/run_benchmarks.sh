@@ -69,9 +69,6 @@ while getopts 'bc:fo:p:v' flag; do
   esac
 done
 
-# Install omni-bencher (TODO: remove before merge)
-cargo install frame-omni-bencher --profile=production --locked
-
 
 if [ "$skip_build" != true ]
 then
