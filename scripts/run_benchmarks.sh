@@ -78,7 +78,7 @@ then
 fi
 
 # The executable to use.
-BENCHMARK_TOOL="frame-omni-bencher v1"
+BENCHMARK_TOOL=(frame-omni-bencher v1)
 
 # Manually exclude some pallets.
 EXCLUDED_PALLETS=(
@@ -87,7 +87,7 @@ EXCLUDED_PALLETS=(
 
 # Load all pallet names in an array.
 ALL_PALLETS=($(
-  $BENCHMARK_TOOL benchmark pallet --list --runtime ./target/release/wbuild/${chain}-runtime/${chain}_runtime.compact.compressed.wasm |\
+  "${BENCHMARK_TOOL[@]}" benchmark pallet --list --runtime ./target/release/wbuild/${chain}-runtime/${chain}_runtime.compact.compressed.wasm |\
     tail -n+2 |\
     cut -d',' -f1 |\
     sort |\
@@ -101,7 +101,7 @@ else
     PALLETS=($({ printf '%s\n' "${target_pallets//,/ }"; } | sort | uniq -u))
 fi
 
-echo "[+] Benchmarking ${#PALLETS[@]} Astar collator pallets."
+echo "[+] Benchmarking: ${#PALLETS[@]}"
 
 ERR_RC=0
 ERR_FILES=""
@@ -114,6 +114,8 @@ for chain in ${chains//,/ }; do
     # Delete the error file before each run.
     rm -f $ERR_FILE
 
+    RUNTIME_PATH="./target/release/wbuild/${chain}-runtime/${chain}_runtime.compact.compressed.wasm"
+
     # Benchmark each pallet.
     for PALLET in "${PALLETS[@]}"; do
       NAME_PRFX=${PALLET#*_}
@@ -124,8 +126,8 @@ for chain in ${chains//,/ }; do
       echo "[+] Benchmarking $PALLET";
 
       BASE_COMMAND=(
-        "$ASTAR_COLLATOR" benchmark pallet
-        --chain="$chain"
+        "${BENCHMARK_TOOL[@]}" benchmark pallet
+        --runtime="$RUNTIME_PATH"
         --steps=50
         --repeat=20
         --pallet="$PALLET"
@@ -165,6 +167,19 @@ for chain in ${chains//,/ }; do
         echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
       fi
     done
+
+    # Calculate base block & extrinsic weights for the runtime.
+    echo "[+] Benchmarking runtime $chain overhead.";
+    OUTPUT=$(
+      "${BENCHMARK_TOOL[@]}" benchmark overhead \
+      --runtime="$RUNTIME_PATH" \
+      --repeat=50 \
+      --weight-path="$output_path/$chain" 2>&1
+    )
+    if [ $? -ne 0 ]; then
+      echo "$OUTPUT" >> "$ERR_FILE"
+      echo "[-] Failed to benchmark runtime $chain overhead."
+    fi
 
     # Disabled for now - command isn't available (yet).
     # With latest changes we also benchmark the HW each time the client starts.
