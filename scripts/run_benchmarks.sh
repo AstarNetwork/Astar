@@ -105,7 +105,9 @@ echo "[+] Benchmarking ${#PALLETS[@]} Astar collator pallets."
 ERR_RC=0
 ERR_FILES=""
 for chain in ${chains//,/ }; do
-    mkdir $output_path/$chain
+    mkdir -p $output_path/$chain/json
+    mkdir -p $output_path/$chain/pallet
+    mkdir -p $output_path/$chain/runtime
     # Define the error file.
     ERR_FILE="$output_path/$chain/bench_errors.txt"
     # Delete the error file before each run.
@@ -115,21 +117,47 @@ for chain in ${chains//,/ }; do
     for PALLET in "${PALLETS[@]}"; do
       NAME_PRFX=${PALLET#*_}
       NAME=${NAME_PRFX//::/_}
-      # WEIGHT_FILE="./weights/${FOLDER}/weights.rs"
-      WEIGHT_FILE="$output_path/$chain/${NAME}_weights.rs"
-      echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
+      JSON_WEIGHT_FILE="$output_path/$chain/json/${NAME}_weights.json"
+      PALLET_WEIGHT_FILE="$output_path/$chain/pallet/${NAME}_weights.rs"
+      RUNTIME_WEIGHT_FILE="$output_path/$chain/runtime/${NAME}_weights.rs"
+      echo "[+] Benchmarking $PALLET";
+
+      BASE_COMMAND=(
+        "$ASTAR_COLLATOR" benchmark pallet
+        --chain="$chain"
+        --steps=50
+        --repeat=20
+        --pallet="$PALLET"
+        --extrinsic="*"
+        --wasm-execution=compiled
+        --heap-pages=4096
+      )
+
+      # Run benchmarks & generate the weight file as JSON.
+      OUTPUT=$(
+        "${BASE_COMMAND[@]}" --json-file="$JSON_WEIGHT_FILE" 2>&1
+      )
+      if [ $? -ne 0 ]; then
+        echo "$OUTPUT" >> "$ERR_FILE"
+        echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
+      fi
 
       OUTPUT=$(
-        $ASTAR_COLLATOR benchmark pallet \
-        --chain=$chain \
-        --steps=50 \
-        --repeat=20 \
-        --pallet="$PALLET" \
-        --extrinsic="*" \
-        --wasm-execution=compiled \
-        --heap-pages=4096 \
-        --output="$WEIGHT_FILE" \
-        --template=./scripts/templates/weight-template.hbs 2>&1
+        "${BASE_COMMAND[@]}" \
+          --json-input="$JSON_WEIGHT_FILE" \
+          --output="$PALLET_WEIGHT_FILE" \
+          --template=./scripts/templates/pallet-weight-template.hbs 2>&1
+      )
+      if [ $? -ne 0 ]; then
+        echo "$OUTPUT" >> "$ERR_FILE"
+        echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
+      fi
+
+      OUTPUT=$(
+        "${BASE_COMMAND[@]}" \
+          --json-input="$JSON_WEIGHT_FILE" \
+          --output="$RUNTIME_WEIGHT_FILE" \
+          --template=./scripts/templates/runtime-weight-template.hbs 2>&1
       )
       if [ $? -ne 0 ]; then
         echo "$OUTPUT" >> "$ERR_FILE"
