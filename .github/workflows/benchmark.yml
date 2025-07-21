@@ -112,7 +112,7 @@ jobs:
 
     # TODO: Should be moved below the `rustup show` once the defined toolchain works.
     - name: Install frame-omni bencher tool
-      run: cargo install --git https://github.com/paritytech/polkadot-sdk frame-omni-bencher --profile=production --locked
+      run: cargo +stable install --git https://github.com/paritytech/polkadot-sdk frame-omni-bencher --profile=production --locked
 
     - name: Checkout the source code
       uses: actions/checkout@v3
