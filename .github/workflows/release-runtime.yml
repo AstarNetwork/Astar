@@ -382,19 +382,19 @@ jobs:
           echo "asset_url=${ASSET_URL}" >> $GITHUB_OUTPUT
           echo "Using client version: ${TAG}"
 
-      - name: Download and extract client
-        run: |
-          curl -L -o client.tar.gz "${{ steps.client-info.outputs.asset_url }}"
-          tar -xzf client.tar.gz
-          mv astar-collator ${{ env.ZOMBIENET_DIR }}/
-          chmod +x ${{ env.ZOMBIENET_DIR }}/astar-collator
-          rm client.tar.gz
-
       - name: Download runtime artifacts
         uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.chain }}-runtime
           path: ${{ env.ZOMBIENET_DIR }}
+
+      - name: Download and setup client
+        run: |
+          curl -L -o astar-collator.tar.gz "${{ steps.client-info.outputs.asset_url }}"
+          tar -xzf astar-collator.tar.gz
+          mv astar-collator ${{ env.ZOMBIENET_DIR }}/astar-collator
+          chmod +x ${{ env.ZOMBIENET_DIR }}/astar-collator
+          rm astar-collator.tar.gz
 
       - name: Prepare runtime for upgrade test
         working-directory: ${{ env.ZOMBIENET_DIR }}
