@@ -390,29 +390,8 @@ jobs:
           ASSET_URL=$(echo "$latest_client" \
           | jq -r --arg name "$ASSET_NAME" '.assets[] | select(.name == $name) | .browser_download_url')
           
-          if [ -z "$URL" ]; then
-            echo "Asset not found: $ASSET_NAME"
-            exit 1
-          fi
-          
           echo "Downloading from $ASSET_URL"
           curl -L -o astar-collator.tar.gz "$ASSET_URL"
-
-      - name: Setup
-        run: |
-          tar -xzf astar-collator.tar.gz
-          mv astar-collator third-party/zombienet/astar-collator
-          chmod +x third-party/zombienet/astar-collator
-
-      - name: Setup zombienet
-        working-directory: third-party/zombienet
-        run: ./setup.sh
-
-      - name: ${{ matrix.chain }} build blocks
-        working-directory: third-party/zombienet
-        env:
-          CHAIN: ${{ matrix.chain }}-dev
-        run: zombienet -p native test smoke.zndsl
 
       - name: Download srtool artifacts
         uses: actions/download-artifact@v4
@@ -429,6 +408,22 @@ jobs:
           echo "CODE_HEX=$CODE_HEX" >> $GITHUB_ENV
           echo "Code hash: $CODE_HASH"
           echo "Code bytes (hex): $CODE_HEX"
+
+      - name: Setup
+        run: |
+          tar -xzf astar-collator.tar.gz
+          mv astar-collator third-party/zombienet/astar-collator
+          chmod +x third-party/zombienet/astar-collator
+
+      - name: Setup zombienet
+        working-directory: third-party/zombienet
+        run: ./setup.sh
+
+      - name: ${{ matrix.chain }} build blocks
+        working-directory: third-party/zombienet
+        env:
+          CHAIN: ${{ matrix.chain }}-dev
+        run: zombienet -p native test smoke.zndsl
 
       - name: Start network for upgrade test
         working-directory: third-party/zombienet
