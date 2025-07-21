@@ -30,7 +30,7 @@ while getopts 'bc:fo:p:v' flag; do
       ;;
     c)
       chains=$(echo ${OPTARG} | tr '[:upper:]' '[:lower:]')
-      chains_default=("astar-dev" "shiden-dev" "shibuya-dev" "dev")
+      chains_default=("astar" "shiden" "shibuya")
       for chain in ${chains//,/ }; do
         if [[ ! " ${chains_default[*]} " =~ " ${chain} " ]]; then
           echo "Chain input is invalid. ${chain} not included in ${chains_default[*]}"
@@ -73,11 +73,12 @@ done
 if [ "$skip_build" != true ]
 then
   echo "[+] Compiling astar-collator benchmarks..."
-  CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose --features=runtime-benchmarks
+  CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose --features=runtime-benchmarks \
+  -p astar-runtime -p shiden-runtime -p shibuya-runtime
 fi
 
 # The executable to use.
-ASTAR_COLLATOR=./target/release/astar-collator
+BENCHMARK_TOOL=(frame-omni-bencher v1)
 
 # Manually exclude some pallets.
 EXCLUDED_PALLETS=(
@@ -86,7 +87,7 @@ EXCLUDED_PALLETS=(
 
 # Load all pallet names in an array.
 ALL_PALLETS=($(
-  $ASTAR_COLLATOR benchmark pallet --list --chain=$chain |\
+  "${BENCHMARK_TOOL[@]}" benchmark pallet --list --runtime ./target/release/wbuild/${chain}-runtime/${chain}_runtime.compact.compressed.wasm |\
     tail -n+2 |\
     cut -d',' -f1 |\
     sort |\
@@ -100,7 +101,7 @@ else
     PALLETS=($({ printf '%s\n' "${target_pallets//,/ }"; } | sort | uniq -u))
 fi
 
-echo "[+] Benchmarking ${#PALLETS[@]} Astar collator pallets."
+echo "[+] Benchmarking: ${#PALLETS[@]}"
 
 ERR_RC=0
 ERR_FILES=""
@@ -113,6 +114,8 @@ for chain in ${chains//,/ }; do
     # Delete the error file before each run.
     rm -f $ERR_FILE
 
+    RUNTIME_PATH="./target/release/wbuild/${chain}-runtime/${chain}_runtime.compact.compressed.wasm"
+
     # Benchmark each pallet.
     for PALLET in "${PALLETS[@]}"; do
       NAME_PRFX=${PALLET#*_}
@@ -123,8 +126,8 @@ for chain in ${chains//,/ }; do
       echo "[+] Benchmarking $PALLET";
 
       BASE_COMMAND=(
-        "$ASTAR_COLLATOR" benchmark pallet
-        --chain="$chain"
+        "${BENCHMARK_TOOL[@]}" benchmark pallet
+        --runtime="$RUNTIME_PATH"
         --steps=50
         --repeat=20
         --pallet="$PALLET"
@@ -165,16 +168,32 @@ for chain in ${chains//,/ }; do
       fi
     done
 
-    echo "[+] Benchmarking the machine..."
+    # Calculate base block & extrinsic weights for the runtime.
+    echo "[+] Benchmarking runtime $chain overhead.";
     OUTPUT=$(
-      $ASTAR_COLLATOR benchmark machine --chain=$chain 2>&1
+      "${BENCHMARK_TOOL[@]}" benchmark overhead \
+      --runtime="$RUNTIME_PATH" \
+      --repeat=50 \
+      --weight-path="$output_path/$chain" 2>&1
     )
     if [ $? -ne 0 ]; then
-      echo "[-] Failed the machine benchmark"
       echo "$OUTPUT" >> "$ERR_FILE"
-    else
-      echo "$OUTPUT" >> "$output_path/$chain/$chain-machine-bench.txt"
+      echo "[-] Failed to benchmark runtime $chain overhead."
     fi
+
+    # Disabled for now - command isn't available (yet).
+    # With latest changes we also benchmark the HW each time the client starts.
+    #
+    # echo "[+] Benchmarking the machine..."
+    # OUTPUT=$(
+    #   $BENCHMARK_TOOL benchmark machine --runtime ./target/release/wbuild/astar-runtime/${chain}_runtime.compact.compressed.wasm 2>&1
+    # )
+    # if [ $? -ne 0 ]; then
+    #   echo "[-] Failed the machine benchmark"
+    #   echo "$OUTPUT" >> "$ERR_FILE"
+    # else
+    #   echo "$OUTPUT" >> "$output_path/$chain/$chain-machine-bench.txt"
+    # fi
 
     # Check if the error file exists.
     if [ -f "$ERR_FILE" ]; then
