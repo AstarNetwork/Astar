@@ -372,8 +372,11 @@ jobs:
           releases=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
           
           # client tags start with 'v'
-          TAG=$(echo "$releases" \
-            | jq -r '[.[] | select(.tag_name | startswith("v"))][0].tag_name')
+          TAG=$(echo "$releases" | jq -r '
+            [
+              .[] | select(.tag_name | test("^v\\d+\\.\\d+\\.\\d+$"; "i")) | .tag_name
+            ] | first
+          ')
           
           echo "Latest client tag: $TAG"
           echo "CLIENT_TAG=$TAG" >> $GITHUB_ENV
@@ -426,3 +429,78 @@ jobs:
           echo "CODE_HEX=$CODE_HEX" >> $GITHUB_ENV
           echo "Code hash: $CODE_HASH"
           echo "Code bytes (hex): $CODE_HEX"
+
+      - name: Start network for upgrade test
+        working-directory: third-party/zombienet
+        env:
+          CHAIN: ${{ matrix.chain }}-dev
+        run: |
+          zombienet -p native spawn smoke.toml &
+          ZOMBIENET_PID=$!
+          echo "ZOMBIENET_PID=$ZOMBIENET_PID" >> $GITHUB_ENV
+          echo "Zombienet PID: $ZOMBIENET_PID"
+          
+          # Wait for network to be ready
+          sleep 60
+
+      - name: Authorize runtime upgrade
+        working-directory: third-party/zombienet
+        run: |
+          # Get the current block number before upgrade
+          BLOCK_BEFORE=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"jsonrpc":"2.0","method":"chain_getBlock","params":[],"id":1}' \
+            http://localhost:9944 | jq -r '.result.block.header.number')
+          
+          echo "Block before upgrade: $BLOCK_BEFORE"
+          
+          npx --yes @polkadot/api-cli@0.63.10 \
+            --sudo \
+            --seed "//Alice" \
+            tx.system.authorizeUpgrade ${{ env.CODE_HASH }}
+
+      - name: Wait for authorization
+        run: sleep 12
+
+      - name: Apply runtime upgrade
+        working-directory: third-party/zombienet
+        run: |
+          npx --yes @polkadot/api-cli@0.63.10 \
+            --sudo \
+            --seed "//Alice" \
+            tx.system.applyAuthorizedUpgrade ${{ env.CODE_HEX }}
+
+      - name: Verify upgrade and block production
+        working-directory: third-party/zombienet
+        run: |
+          # Wait for upgrade to be processed
+          sleep 60
+        
+          BLOCK_COUNT=0
+          for i in {1..10}; do
+          BLOCK=$(curl -s -X POST \
+          -H "Content-Type: application/json" \
+          -d '{"jsonrpc":"2.0","method":"chain_getBlock","params":[],"id":1}' \
+          http://localhost:9944 | jq -r '.result.block.header.number')
+          
+          if [ "$BLOCK" != "null" ]; then
+          BLOCK_COUNT=$((BLOCK_COUNT + 1))
+          fi
+          sleep 6
+          done
+          
+          if [ "$BLOCK_COUNT" -gt 5 ]; then
+          echo "✅ Runtime upgrade successful - blocks are being produced"
+          else
+          echo "❌ Runtime upgrade failed - insufficient block production"
+          exit 1
+          fi
+
+      - name: Cleanup
+        if: always()
+        working-directory: third-party/zombienet
+        run: |
+          # Kill zombienet if it's still running
+          if [ -n "$ZOMBIENET_PID" ] && kill -0 $ZOMBIENET_PID 2>/dev/null; then
+            kill $ZOMBIENET_PID
+          fi
