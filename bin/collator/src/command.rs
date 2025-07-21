@@ -24,8 +24,6 @@ use crate::{
 };
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
-#[cfg(feature = "runtime-benchmarks")]
-use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory};
 use log::info;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -326,8 +324,7 @@ pub fn run() -> Result<()> {
         Some(Subcommand::Vanity(cmd)) => cmd.run(),
         #[cfg(feature = "runtime-benchmarks")]
         Some(Subcommand::Benchmark(cmd)) => {
-            use crate::benchmarking::*;
-            use sp_keyring::Sr25519Keyring;
+            use frame_benchmarking_cli::BenchmarkCmd;
             use sp_runtime::traits::HashingFor;
 
             let runner = cli.create_runner(cmd)?;
@@ -394,81 +391,11 @@ pub fn run() -> Result<()> {
                         })
                     }
                 }
-                BenchmarkCmd::Overhead(cmd) => {
-                    let chain_name = chain_spec.name().to_string();
-                    if chain_spec.is_dev() {
-                        runner.sync_run(|config| {
-                            let params = local::new_partial(&config, &rpc_config)?;
-                            let ext_builder = RemarkBuilder::new(params.client.clone());
-                            let inherent_data = local_benchmark_inherent_data()
-                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
-
-                            cmd.run(
-                                chain_name,
-                                params.client,
-                                inherent_data,
-                                Vec::new(),
-                                &ext_builder,
-                                true,
-                            )
-                        })
-                    } else {
-                        runner.sync_run(|config| {
-                            let params = parachain::new_partial(&config, &rpc_config)?;
-
-                            let ext_builder = RemarkBuilder::new(params.client.clone());
-                            let inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
-
-                            cmd.run(
-                                chain_name,
-                                params.client,
-                                inherent_data,
-                                Vec::new(),
-                                &ext_builder,
-                                true,
-                            )
-                        })
-                    }
+                BenchmarkCmd::Overhead(_) => {
+                    todo!("Overhead benchmarking is not supported. Use 'frame-omni-bencher' tool instead.");
                 }
-                BenchmarkCmd::Extrinsic(cmd) => {
-                    if chain_spec.is_dev() {
-                        runner.sync_run(|config| {
-                            let params = local::new_partial(&config, &rpc_config)?;
-                            let remark_builder = RemarkBuilder::new(params.client.clone());
-                            let tka_builder = TransferKeepAliveBuilder::new(
-                                params.client.clone(),
-                                Sr25519Keyring::Alice.to_account_id(),
-                                params.client.existential_deposit(),
-                            );
-                            let ext_factory = ExtrinsicFactory(vec![
-                                Box::new(remark_builder),
-                                Box::new(tka_builder),
-                            ]);
-                            let inherent_data = local_benchmark_inherent_data()
-                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
-
-                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
-                        })
-                    } else {
-                        runner.sync_run(|config| {
-                            let params = parachain::new_partial(&config, &rpc_config)?;
-                            let remark_builder = RemarkBuilder::new(params.client.clone());
-                            let tka_builder = TransferKeepAliveBuilder::new(
-                                params.client.clone(),
-                                Sr25519Keyring::Alice.to_account_id(),
-                                params.client.existential_deposit(),
-                            );
-                            let ext_factory = ExtrinsicFactory(vec![
-                                Box::new(remark_builder),
-                                Box::new(tka_builder),
-                            ]);
-                            let inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
-
-                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
-                        })
-                    }
+                BenchmarkCmd::Extrinsic(_) => {
+                    todo!("Extrinsic benchmarking is not supported.");
                 }
                 BenchmarkCmd::Machine(cmd) => {
                     runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
