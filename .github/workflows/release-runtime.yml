@@ -367,6 +367,9 @@ jobs:
     env:
       ZOMBIENET_DIR: third-party/zombienet
     steps:
+      - name: Checkout the source code
+        uses: actions/checkout@v4
+
       - name: Fetch latest client release
         id: client-info
         # We're making an assumption that the latest client release will be within the last 30 releases
