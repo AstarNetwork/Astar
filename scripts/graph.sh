@@ -21,7 +21,7 @@ if [ "$1" != "-chain" ]; then
   usage;
 fi
 
-if [ "$3" != "-rpc-url"]; then
+if [ "$3" != "-rpc-url" ]; then
   usage;
 fi
 
