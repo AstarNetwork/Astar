@@ -103,16 +103,22 @@ jobs:
     - name: Install deps
       run: sudo apt -y install protobuf-compiler
 
+    # TODO: Should be removed once frame-omni-bencher can be installed using
+    # toolchain defined in the `rust-toolchain.toml` file.
+    - name: Install targets and components
+      run: |
+        rustup target add wasm32-unknown-unknown
+        rustup component add rust-src
+
+    # TODO: Should be moved below the `rustup show` once the toolchain supports this build.
+    - name: Install frame-omni bencher tool
+      run: cargo install --git https://github.com/paritytech/polkadot-sdk frame-omni-bencher --profile=production --locked
+
     - name: Install & display rust toolchain
       run: rustup show
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
-
-    # Update to `--profile=production` after uplifting to latest polkadot-sdk (make sure to test it works with
-    # the specified toolchain first)
-    - name: Install frame-omni bencher tool
-      run: cargo install frame-omni-bencher --profile=release --locked
 
     - name: Execute benchmarking
       run: |
