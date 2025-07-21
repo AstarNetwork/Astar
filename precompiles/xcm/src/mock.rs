@@ -22,7 +22,7 @@ use super::*;
 
 use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{
-    construct_runtime, parameter_types,
+    construct_runtime, derive_impl, parameter_types,
     traits::{AsEnsureOriginWithArg, ConstU64, Everything, Nothing},
     weights::Weight,
 };
@@ -35,11 +35,8 @@ use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
-use sp_core::{ConstU32, H160, H256};
-use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
-    BuildStorage,
-};
+use sp_core::{ConstU32, H160};
+use sp_runtime::{traits::IdentityLookup, BuildStorage};
 use sp_std::cell::RefCell;
 
 use astar_primitives::xcm::AllowTopLevelPaidExecutionFrom;
@@ -215,36 +212,12 @@ parameter_types! {
     pub const SS58Prefix: u8 = 42;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Runtime {
-    type BaseCallFilter = Everything;
-    type DbWeight = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
     type Block = Block;
-    type RuntimeCall = RuntimeCall;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type BlockWeights = ();
-    type BlockLength = ();
-    type SS58Prefix = SS58Prefix;
-    type OnSetCode = ();
-    type MaxConsumers = frame_support::traits::ConstU32<16>;
-    type RuntimeTask = RuntimeTask;
-    type SingleBlockMigrations = ();
-    type MultiBlockMigrator = ();
-    type PreInherents = ();
-    type PostInherents = ();
-    type PostTransactions = ();
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -279,31 +252,20 @@ parameter_types! {
     pub const MinimumPeriod: u64 = 5;
 }
 
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for Runtime {
-    type Moment = u64;
-    type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
-    type WeightInfo = ();
 }
 
 parameter_types! {
     pub const ExistentialDeposit: u128 = 1;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Runtime {
-    type MaxReserves = ();
-    type ReserveIdentifier = ();
-    type MaxLocks = ();
     type Balance = Balance;
-    type RuntimeEvent = RuntimeEvent;
-    type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type WeightInfo = ();
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type FreezeIdentifier = ();
-    type RuntimeFreezeReason = ();
-    type MaxFreezes = ();
 }
 
 // These parameters dont matter much as this will only be called by root with the forced arguments
@@ -317,6 +279,7 @@ parameter_types! {
     pub const MetadataDepositPerByte: Balance = 0;
 }
 
+#[derive_impl(pallet_assets::config_preludes::TestDefaultConfig)]
 impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
@@ -330,14 +293,10 @@ impl pallet_assets::Config for Runtime {
     type ApprovalDeposit = ApprovalDeposit;
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
-    type Extra = ();
     type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<0>;
     type AssetIdParameter = AssetId;
-    type CallbackHandle = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = ();
 }
 
 pub struct AssetIdConverter<AssetId>(PhantomData<AssetId>);
@@ -390,7 +349,8 @@ impl pallet_evm::Config for Runtime {
     type OnCreate = ();
     type WeightInfo = ();
     type GasLimitPovSizeRatio = ConstU64<4>;
-    type SuicideQuickClearLimit = ConstU32<0>;
+    type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
+    type GasLimitStorageGrowthRatio = ConstU64<0>;
     type Timestamp = Timestamp;
 }
 
@@ -436,7 +396,7 @@ impl xcm_executor::Config for XcmConfig {
     type XcmSender = StoringRouter;
     type AssetTransactor = LocalAssetTransactor;
     type OriginConverter = ();
-    type IsReserve = ();
+    type IsReserve = Everything;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = Barrier;
@@ -460,6 +420,7 @@ impl xcm_executor::Config for XcmConfig {
     type HrmpNewChannelOpenRequestHandler = ();
     type HrmpChannelAcceptedHandler = ();
     type HrmpChannelClosingHandler = ();
+    type XcmRecorder = ();
 }
 
 parameter_types! {

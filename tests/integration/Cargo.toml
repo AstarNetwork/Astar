@@ -13,6 +13,7 @@ hex = { workspace = true }
 libsecp256k1 = { workspace = true, features = ["hmac", "static-context"] }
 parity-scale-codec = { workspace = true }
 sha3 = { workspace = true }
+smallvec = { workspace = true }
 
 # frontier
 fp-evm = { workspace = true }
@@ -34,20 +35,24 @@ pallet-contracts-uapi = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-proxy = { workspace = true }
+pallet-session = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-utility = { workspace = true }
+pallet-xcm = { workspace = true }
+sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-trie = { workspace = true }
 xcm = { workspace = true }
-xcm-fee-payment-runtime-api = { workspace = true }
+xcm-executor = { workspace = true }
+xcm-runtime-apis = { workspace = true }
 
 # astar dependencies
 assets-chain-extension-types = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-collective-proxy = { workspace = true }
-pallet-dapp-staking-v3 = { workspace = true }
+pallet-dapp-staking = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
@@ -64,7 +69,7 @@ shibuya-runtime = { workspace = true, optional = true }
 shiden-runtime = { workspace = true, optional = true }
 
 # evm-tracing tests
-ethereum = { workspace = true, features = ["with-codec"], optional = true }
+ethereum = { workspace = true, features = ["with-scale"], optional = true }
 fp-rpc = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 pallet-ethereum = { workspace = true, optional = true }
@@ -98,7 +103,7 @@ std = [
 	"cumulus-pallet-parachain-system/std",
 	"pallet-democracy/std",
 	"pallet-timestamp/std",
-	"pallet-dapp-staking-v3/std",
+	"pallet-dapp-staking/std",
 	"pallet-ethereum?/std",
 	"pallet-ethereum-checked/std",
 	"pallet-evm/std",
@@ -111,6 +116,7 @@ std = [
 	"pallet-proxy/std",
 	"pallet-unified-accounts/std",
 	"pallet-utility/std",
+	"pallet-xcm/std",
 	"parity-scale-codec/std",
 	"precompile-utils/std",
 	"pallet-aura/std",
@@ -120,7 +126,10 @@ std = [
 	"sp-runtime/std",
 	"unified-accounts-chain-extension-types/std",
 	"xcm/std",
-	"xcm-fee-payment-runtime-api/std",
+	"xcm-runtime-apis/std",
+	"xcm-executor/std",
+	"pallet-session/std",
+	"sp-consensus-aura/std",
 ]
 shibuya = ["shibuya-runtime"]
 shiden = ["shiden-runtime"]

@@ -49,6 +49,7 @@
 //! `ExecutionPaymentRate` interface for fetching `units per second` if asset is supported payment asset
 //! - `get_units_per_second`
 //!
+//! - `weight_to_fee` method is used to convert weight to fee based on units per second and weight.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -72,13 +73,15 @@ pub use weights::WeightInfo;
 pub mod pallet {
 
     use crate::weights::WeightInfo;
-    use frame_support::{pallet_prelude::*, traits::EnsureOrigin};
+    use frame_support::{
+        pallet_prelude::*, traits::EnsureOrigin, weights::constants::WEIGHT_REF_TIME_PER_SECOND,
+    };
     use frame_system::pallet_prelude::*;
     use parity_scale_codec::HasCompact;
     use sp_std::boxed::Box;
-    use xcm::{v4::Location, VersionedLocation};
+    use xcm::{v5::Location, VersionedLocation};
 
-    const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(4);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -113,6 +116,14 @@ pub mod pallet {
     impl<T: Config> ExecutionPaymentRate for Pallet<T> {
         fn get_units_per_second(asset_location: Location) -> Option<u128> {
             AssetLocationUnitsPerSecond::<T>::get(asset_location.into_versioned())
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        /// Convert weight to fee based on units per second and weight.
+        pub fn weight_to_fee(weight: Weight, units_per_second: u128) -> u128 {
+            units_per_second.saturating_mul(weight.ref_time() as u128)
+                / (WEIGHT_REF_TIME_PER_SECOND as u128)
         }
     }
 
@@ -212,9 +223,9 @@ pub mod pallet {
                 Error::<T>::AssetAlreadyRegistered
             );
 
-            let v4_asset_loc = Location::try_from(*asset_location)
+            let v5_asset_loc = Location::try_from(*asset_location)
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
-            let asset_location = VersionedLocation::V4(v4_asset_loc);
+            let asset_location = VersionedLocation::V5(v5_asset_loc);
 
             AssetIdToLocation::<T>::insert(&asset_id, asset_location.clone());
             AssetLocationToId::<T>::insert(&asset_location, asset_id);
@@ -237,9 +248,9 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let v4_asset_loc = Location::try_from(*asset_location)
+            let v5_asset_loc = Location::try_from(*asset_location)
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
-            let asset_location = VersionedLocation::V4(v4_asset_loc);
+            let asset_location = VersionedLocation::V5(v5_asset_loc);
 
             ensure!(
                 AssetLocationToId::<T>::contains_key(&asset_location),
@@ -266,9 +277,9 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let v4_asset_loc = Location::try_from(*new_asset_location)
+            let v5_asset_loc = Location::try_from(*new_asset_location)
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
-            let new_asset_location = VersionedLocation::V4(v4_asset_loc);
+            let new_asset_location = VersionedLocation::V5(v5_asset_loc);
 
             let previous_asset_location =
                 AssetIdToLocation::<T>::get(&asset_id).ok_or(Error::<T>::AssetDoesNotExist)?;
@@ -304,9 +315,9 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let v4_asset_loc = Location::try_from(*asset_location)
+            let v5_asset_loc = Location::try_from(*asset_location)
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
-            let asset_location = VersionedLocation::V4(v4_asset_loc);
+            let asset_location = VersionedLocation::V5(v5_asset_loc);
 
             AssetLocationUnitsPerSecond::<T>::remove(&asset_location);
 

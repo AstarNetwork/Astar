@@ -8,58 +8,49 @@ import path from "path";
 type Await<T> = T extends PromiseLike<infer U> ? U : T;
 type Commits = Await<ReturnType<Octokit["rest"]["repos"]["compareCommits"]>>["data"]["commits"];
 
+function getPackageInfo(tag: string, packageName: string) {
+  let packageInfo: string;
+  try {
+    packageInfo = execSync(
+      `git show ${tag}:../../Cargo.lock | grep ${packageName}? | grep source | head -1 | grep -o '".*"'`
+    ).toString();
+  } catch (error) {
+    console.error('An error occurred while executing the shell command:', error);
+    return null;
+  }
+
+  const commitMatch = /#([0-9a-f]*)/g.exec(packageInfo);
+  if (commitMatch == null) {
+    return null;
+  }
+  const commit = commitMatch[1].slice(0, 8);
+
+  const repoMatch = /(https:\/\/.*)\?/g.exec(packageInfo);
+  if (repoMatch == null) {
+    return null;
+  }
+  const repo = repoMatch[1];
+
+  return { commit, repo };
+}
+
 function getCompareLink(packageName: string, previousTag: string, newTag: string) {
-  // Previous
-  let previousPackage: string;
-  try {
-    previousPackage = execSync(
-      `git show ${previousTag}:../../Cargo.lock | grep ${packageName}? | head -1 | grep -o '".*"'`
-    ).toString();
-  } catch (error) {
-    console.error('An error occurred while executing the shell command:', error);
-    return ""
+  const previousPackageInfo = getPackageInfo(previousTag, packageName);
+  if (previousPackageInfo == null) {
+    return "";
   }
 
-  const previousCommitTmp = /#([0-9a-f]*)/g.exec(previousPackage);
-  if (previousCommitTmp == null) { // regexp didn't match
-    return ""
-  };
-  const previousCommit = previousCommitTmp[1].slice(0, 8);
-
-  const previousRepoTmp = /(https:\/\/.*)\?/g.exec(previousPackage);
-  if (previousRepoTmp == null) {
-    return ""
-  };
-  const previousRepo = previousRepoTmp[1];
-
-  // New
-  let newPackage: string;
-  try {
-    newPackage = execSync(
-      `git show ${newTag}:../../Cargo.lock | grep ${packageName}? | head -1 | grep -o '".*"'`
-    ).toString();
-  } catch (error) {
-    console.error('An error occurred while executing the shell command:', error);
-    return ""
+  const newPackageInfo = getPackageInfo(newTag, packageName);
+  if (newPackageInfo == null) {
+    return "";
   }
 
-  const newCommitTmp = /#([0-9a-f]*)/g.exec(newPackage)
-  if (newCommitTmp == null) {
-    return ""
-  };
-  const newCommit = newCommitTmp[1].slice(0, 8);
-
-  const newRepoTmp = /(https:\/\/.*)\?/g.exec(newPackage);
-  if (newRepoTmp == null) {
-    return ""
-  }
-  const newRepo = newRepoTmp[1];
-  const newRepoOrganization = /github.com\/([^\/]*)/g.exec(newRepo)[1];
+  const newRepoOrganization = /github.com\/([^\/]*)/g.exec(newPackageInfo.repo)[1];
 
   const diffLink =
-    previousRepo !== newRepo
-      ? `${previousRepo}/compare/${previousCommit}...${newRepoOrganization}:${newCommit}`
-      : `${previousRepo}/compare/${previousCommit}...${newCommit}`;
+  previousPackageInfo.repo !== newPackageInfo.repo
+      ? `${previousPackageInfo.repo}/compare/${previousPackageInfo.commit}...${newRepoOrganization}:${newPackageInfo.commit}`
+      : `${previousPackageInfo.repo}/compare/${previousPackageInfo.commit}...${newPackageInfo.commit}`;
 
   return diffLink;
 }
@@ -236,25 +227,30 @@ async function main() {
       from: {
         type: "string",
         describe: "previous tag to retrieve commits from",
-        required: true,
+        requiresArg: true,
       },
       to: {
         type: "string",
         describe: "current tag being drafted",
-        required: true,
+        requiresArg: true,
       },
       owner: {
         type: "string",
         describe: "Repository owner (Ex: AstarNetwork)",
-        required: true,
+        requiresArg: true,
       },
       repo: {
         type: "string",
         describe: "Repository name (Ex: Astar)",
-        required: true,
+        requiresArg: true,
       },
+      type: {
+        type: "string",
+        describe: "Type of release - runtime or client",
+        choices: ["runtime", "client"],
+        requiresArg: true,
+      }
     })
-    .demandOption(["from", "to"])
     .help().argv;
 
   const octokit = new Octokit({
@@ -263,10 +259,6 @@ async function main() {
 
   const previousTag = argv.from;
   const newTag = argv.to;
-
-  const runtimes = ["shibuya", "shiden", "astar"].map((runtimeName) =>
-    getRuntimeInfo(argv["srtool-report-folder"], runtimeName)
-  );
 
   const moduleLinks = ["polkadot-sdk", "frontier"].map((repoName) => ({
     name: repoName,
@@ -297,7 +289,8 @@ async function main() {
     }
   };
 
-  const template = `
+  if (argv.type === "client") {
+    const template = `
 ## Description
 (Placeholder for release descriptions, please freely write explanations for this release here.)
 
@@ -308,31 +301,12 @@ async function main() {
 > MEDIUM - some minor changes to the client
 > LOW - no client changes
 
-${runtimes.length > 0 ? `## Runtimes
-${runtimes
-        .map(
-          (runtime) => `### ${capitalize(runtime.name)}
-\`\`\`
-✨ spec_version:                ${runtime.version}
-🏋 Runtime Size:                ${runtime.srtool.runtimes.compressed.size}
-🗜 Compressed:                  ${runtime.srtool.runtimes.compressed.subwasm.compression.compressed ? "Yes" : "No"}
-🎁 Metadata version:            ${runtime.srtool.runtimes.compressed.subwasm.metadata_version}
-🗳️ sha256:                      ${runtime.srtool.runtimes.compressed.sha256}
-🗳️ blake2-256:                  ${runtime.srtool.runtimes.compressed.blake2_256}
-🗳️ proposal (authorizeUpgrade): ${runtime.srtool.runtimes.compressed.subwasm.parachain_authorize_upgrade_hash}
-📦 IPFS:                        ${runtime.srtool.runtimes.compressed.subwasm.ipfs_hash}
-\`\`\`
-`).join(`\n`)}` : ""}
-
-## Build Info
-WASM runtime built using \`${runtimes[0]?.srtool.info.rustc}\`
-
 ## Changes
 ### Client
 ${clientPRs.length > 0 ? `
 ${clientPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : "None"}
-### Runtime
+### Runtime (impacts built-in runtimes)
 ${runtimePRs.length > 0 ? `
 ${runtimePRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : "None"}
@@ -340,6 +314,9 @@ ${runtimePRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ${remainingPRs.length > 0 ? `
 ${remainingPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : "None"}
+
+## Recommended sidecar version:
+- [TODO: add sidecar version]
 
 ## Dependency Changes
 Astar: https://github.com/${argv.owner}/${argv.repo}/compare/${previousTag}...${newTag}
@@ -353,9 +330,56 @@ ${moduleLinks.map((modules) => `${capitalize(modules.name)}: ${modules.link}`).j
 | \`Ubuntu aarch64\` | [Download](https://github.com/AstarNetwork/Astar/releases/download/${newTag}/astar-collator-${newTag}-ubuntu-aarch64.tar.gz) |
 
 [<img src="https://github.com/AstarNetwork/Astar/blob/master/.github/images/docker.webp" height="200px">](https://hub.docker.com/r/staketechnologies/astar-collator/tags)
-`
+    `
+    console.log(template);    
+  } else if (argv.type === "runtime") {
+    const runtimes = ["shibuya", "shiden", "astar"].map((runtimeName) =>
+      getRuntimeInfo(argv["srtool-report-folder"], runtimeName)
+    );
+    
+    const template = `
+## Description
+(Placeholder for release descriptions, please freely write explanations for this release here.)
 
-  console.log(template);
+${runtimes.length > 0 ? `## Runtimes
+${runtimes
+        .map(
+          (runtime) => `### ${capitalize(runtime.name)}
+\`\`\`
+✨ spec_version:                ${runtime.version}
+🏋 Runtime Size:                ${runtime.srtool.runtimes.compressed.size}
+🗜 Compressed:                  ${runtime.srtool.runtimes.compressed.subwasm.compression.compressed ? "Yes" : "No"}
+🎁 Metadata version:            ${runtime.srtool.runtimes.compressed.subwasm.metadata_version}
+🗳️ sha256:                      ${runtime.srtool.runtimes.compressed.sha256}
+🗳️ blake2-256:                  ${runtime.srtool.runtimes.compressed.blake2_256}
+📦 IPFS:                        ${runtime.srtool.runtimes.compressed.subwasm.ipfs_hash}
+\`\`\`
+`).join(`\n`)}` : ""}
+
+## Build Info
+WASM runtime built using \`${runtimes[0]?.srtool.info.rustc}\`
+
+## Changes
+### Runtime
+${runtimePRs.length > 0 ? `
+${runtimePRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
+` : "None"}
+### Others
+${remainingPRs.length > 0 ? `
+${remainingPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
+` : "None"}
+
+## Recommended sidecar version:
+- [TODO: add sidecar version]
+
+## Dependency Changes
+Astar: https://github.com/${argv.owner}/${argv.repo}/compare/${previousTag}...${newTag}
+${moduleLinks.map((modules) => `${capitalize(modules.name)}: ${modules.link}`).join("\n")}
+    `
+    console.log(template);
+  } else {
+    console.log("Invalid type - should not happen.");
+  }
 }
 
 main();

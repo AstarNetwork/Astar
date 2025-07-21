@@ -17,12 +17,12 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::{pallet::Error, pallet::Event, *};
-use frame_support::{assert_noop, assert_ok, WeakBoundedVec};
+use frame_support::{assert_noop, assert_ok};
 use mock::*;
 use sp_runtime::traits::BadOrigin;
 use xcm::latest::prelude::*;
 
-use xcm::{v4::Location, VersionedLocation};
+use xcm::{v5::Location, VersionedLocation};
 
 #[test]
 fn only_root_as_origin() {
@@ -87,7 +87,7 @@ fn register_asset_location_and_units_per_sec_is_ok() {
         ));
         System::assert_last_event(mock::RuntimeEvent::XcAssetConfig(Event::AssetRegistered {
             asset_location: asset_location.clone().into_versioned(),
-            asset_id: asset_id,
+            asset_id,
         }));
 
         // Assert storage state after registering asset
@@ -182,7 +182,7 @@ fn change_asset_location_is_ok() {
         System::assert_last_event(mock::RuntimeEvent::XcAssetConfig(
             Event::AssetLocationChanged {
                 previous_asset_location: asset_location.clone().into_versioned(),
-                asset_id: asset_id,
+                asset_id,
                 new_asset_location: new_asset_location.clone().into_versioned(),
             },
         ));
@@ -275,7 +275,7 @@ fn remove_asset_is_ok() {
         assert_ok!(XcAssetConfig::remove_asset(RuntimeOrigin::root(), asset_id,));
         System::assert_last_event(mock::RuntimeEvent::XcAssetConfig(Event::AssetRemoved {
             asset_location: asset_location.clone().into_versioned(),
-            asset_id: asset_id,
+            asset_id,
         }));
 
         // Assert that storage is empty after successful removal
@@ -351,7 +351,7 @@ fn public_interfaces_are_ok() {
         );
         assert!(XcAssetConfig::get_units_per_second(asset_location.clone()).is_none());
 
-        // Register ups and expect value value to be returned
+        // Register ups and expect value to be returned
         assert_ok!(XcAssetConfig::set_asset_units_per_second(
             RuntimeOrigin::root(),
             Box::new(asset_location.clone().into_versioned()),
@@ -369,7 +369,7 @@ fn different_xcm_versions_are_ok() {
     ExternalityBuilder::build().execute_with(|| {
         // Prepare location and Id
         let legacy_asset_location = xcm::v3::MultiLocation::parent();
-        let new_asset_location = xcm::v4::Location::parent();
+        let new_asset_location = xcm::v5::Location::parent();
         let asset_id = 17;
 
         // Register asset using legacy multilocation
@@ -383,56 +383,6 @@ fn different_xcm_versions_are_ok() {
         assert_eq!(
             XcAssetConfig::get_xc_asset_location(asset_id),
             Some(new_asset_location.clone())
-        );
-    })
-}
-
-#[test]
-fn incompatible_versioned_multilocations_are_not_ok() {
-    ExternalityBuilder::build().execute_with(|| {
-        // Location that cannot be converted from v2 to v4
-        // all v3 are compatible with v4
-        let incompatible_asset_location = xcm::v2::MultiLocation {
-            parents: 1,
-            interior: xcm::v2::Junctions::X1(xcm::v2::Junction::GeneralKey(
-                WeakBoundedVec::<_, _>::force_from([123_u8; 33].to_vec(), None),
-            )),
-        };
-        let asset_id = 123;
-
-        assert_noop!(
-            XcAssetConfig::register_asset_location(
-                RuntimeOrigin::root(),
-                Box::new(VersionedLocation::V2(incompatible_asset_location.clone())),
-                asset_id
-            ),
-            Error::<Test>::MultiLocationNotSupported
-        );
-
-        assert_noop!(
-            XcAssetConfig::set_asset_units_per_second(
-                RuntimeOrigin::root(),
-                Box::new(VersionedLocation::V2(incompatible_asset_location.clone())),
-                12345,
-            ),
-            Error::<Test>::MultiLocationNotSupported
-        );
-
-        assert_noop!(
-            XcAssetConfig::change_existing_asset_location(
-                RuntimeOrigin::root(),
-                Box::new(VersionedLocation::V2(incompatible_asset_location.clone())),
-                12345,
-            ),
-            Error::<Test>::MultiLocationNotSupported
-        );
-
-        assert_noop!(
-            XcAssetConfig::remove_payment_asset(
-                RuntimeOrigin::root(),
-                Box::new(VersionedLocation::V2(incompatible_asset_location.clone())),
-            ),
-            Error::<Test>::MultiLocationNotSupported
         );
     })
 }

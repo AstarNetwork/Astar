@@ -1,0 +1,108 @@
+name: Try-State Checks
+
+on:
+  # Run daily at 10 AM UTC (aligned with dAppStaking era changes on Astar with a 2hours buffer)
+  schedule:
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-try-state:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runtime:
+          - { name: astar, endpoint: ASTAR_RUNTIME_ENDPOINT, http: 'https://rpc.astar.network' }
+          - { name: shiden, endpoint: SHIDEN_RUNTIME_ENDPOINT, http: 'https://rpc.shiden.astar.network' }
+          - { name: shibuya, endpoint: SHIBUYA_RUNTIME_ENDPOINT, http: 'https://rpc.shibuya.astar.network' }
+      fail-fast: false
+
+    steps:
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Install system dependencies
+        run: |
+          sudo apt -y install protobuf-compiler jq
+
+      - name: Fetch current runtime version for ${{ matrix.runtime.name }}
+        id: runtime-version
+        env:
+          ENDPOINT: ${{ matrix.runtime.http }}
+        run: |
+          SPEC_VERSION=$(curl -s $ENDPOINT -H 'Content-Type: application/json' -d'{"jsonrpc":"2.0","method":"state_getRuntimeVersion","params":[],"id":1}' \
+            | jq -r .result.specVersion)
+          echo "Runtime version: $SPEC_VERSION"
+          echo "RUNTIME_TAG=runtime-$SPEC_VERSION" >> $GITHUB_ENV
+
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RUNTIME_TAG }}
+          fetch-depth: 0
+
+      - name: Install & display rust toolchain
+        run: |
+          rustup update
+          rustup show
+          
+          echo "Active toolchain: $(rustup show active-toolchain)"
+          echo "Rust version: $(rustc --version)"
+          echo "Cargo version: $(cargo --version)"
+
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
+
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build ${{ matrix.runtime.name }} runtime with try-runtime feature
+        run: |
+          echo "Building ${{ matrix.runtime.name }} runtime for try-state checks..."
+          cargo build --release --locked --package ${{ matrix.runtime.name }}-runtime --features try-runtime
+
+      - name: Verify runtime blob exists
+        run: |
+          PACKAGE_NAME=${{ matrix.runtime.name }}-runtime
+          RUNTIME_BLOB_NAME=$(echo $PACKAGE_NAME | sed 's/-/_/g').compact.compressed.wasm
+          RUNTIME_BLOB_PATH=./target/release/wbuild/$PACKAGE_NAME/$RUNTIME_BLOB_NAME
+          
+          if [ ! -f "$RUNTIME_BLOB_PATH" ]; then
+            echo "Error: Runtime blob not found at $RUNTIME_BLOB_PATH"
+            ls -la ./target/release/wbuild/$PACKAGE_NAME/
+            exit 1
+          fi
+          
+          echo "Runtime blob found: $RUNTIME_BLOB_PATH"
+          echo "RUNTIME_BLOB_PATH=$RUNTIME_BLOB_PATH" >> $GITHUB_ENV
+
+      - name: Run ${{ matrix.runtime.name }} try-state checks
+        timeout-minutes: 60
+        env:
+          ENDPOINT: ${{ secrets[matrix.runtime.endpoint] }}
+        run: |
+          echo "Running try-state checks for ${{ matrix.runtime.name }} runtime..."
+          echo "Using runtime: ${{ env.RUNTIME_BLOB_PATH }}"
+          
+          npx @acala-network/chopsticks try-runtime \
+            -c ${{ matrix.runtime.name }} \
+            -e ${{ env.ENDPOINT }} \
+            --import-storage .github/try-runtime-storage.yml \
+            --checks TryState \
+            --runtime ${{ env.RUNTIME_BLOB_PATH }} \
+            --disable-spec-check

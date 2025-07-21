@@ -19,12 +19,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-    construct_runtime,
+    construct_runtime, derive_impl,
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, Contains, Everything,
-        InstanceFilter, Nothing,
+        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, Contains,
+        Everything, InstanceFilter, Nothing,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -37,7 +37,6 @@ use frame_system::{
     EnsureRoot, EnsureSigned,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
-use sp_core::H256;
 use sp_runtime::{
     traits::{AccountIdConversion, Convert, Get, IdentityLookup, MaybeEquivalence},
     AccountId32, FixedU128, Perbill, RuntimeDebug,
@@ -66,7 +65,7 @@ use astar_primitives::{
     oracle::PriceProvider,
     xcm::{
         AllowTopLevelPaidExecutionFrom, AssetLocationIdConverter, FixedRateOfForeignAsset,
-        ReserveAssetFilter, XcmFungibleFeeHandler,
+        Reserves, XcmFungibleFeeHandler,
     },
 };
 
@@ -80,36 +79,12 @@ parameter_types! {
     pub const BlockHashCount: u64 = 250;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Runtime {
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeCall = RuntimeCall;
-    type Nonce = u64;
     type Block = Block;
-    type Hash = H256;
-    type Hashing = sp_runtime::traits::BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type BlockWeights = ();
-    type BlockLength = ();
-    type Version = ();
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type DbWeight = ();
-    type BaseCallFilter = Everything;
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
-    type MaxConsumers = frame_support::traits::ConstU32<16>;
-    type RuntimeTask = RuntimeTask;
-    type SingleBlockMigrations = ();
-    type MultiBlockMigrator = ();
-    type PreInherents = ();
-    type PostInherents = ();
-    type PostTransactions = ();
 }
 
 parameter_types! {
@@ -118,17 +93,11 @@ parameter_types! {
     pub const MaxReserves: u32 = 50;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Runtime {
-    type MaxLocks = MaxLocks;
     type Balance = Balance;
-    type RuntimeEvent = RuntimeEvent;
-    type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type WeightInfo = ();
-    type MaxReserves = MaxReserves;
-    type ReserveIdentifier = [u8; 8];
-    type RuntimeHoldReason = RuntimeHoldReason;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = RuntimeFreezeReason;
     type MaxFreezes = ConstU32<1>;
@@ -141,6 +110,7 @@ impl pallet_utility::Config for Runtime {
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
+#[derive_impl(pallet_assets::config_preludes::TestDefaultConfig)]
 impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
@@ -154,21 +124,14 @@ impl pallet_assets::Config for Runtime {
     type MetadataDepositPerByte = ConstU128<1>;
     type AssetAccountDeposit = ConstU128<10>;
     type ApprovalDeposit = ConstU128<10>;
-    type StringLimit = ConstU32<50>;
     type Freezer = ();
-    type Extra = ();
     type RemoveItemsLimit = ConstU32<100>;
-    type CallbackHandle = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = ();
 }
 
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for Runtime {
-    type Moment = u64;
-    type OnTimestampSet = ();
     type MinimumPeriod = ConstU64<1>;
-    type WeightInfo = ();
 }
 
 impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
@@ -185,7 +148,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
-    polkadot_primitives::MAX_POV_SIZE as u64,
+    astar_primitives::MAX_POV_SIZE as u64,
 );
 
 parameter_types! {
@@ -239,6 +202,7 @@ impl Contains<RuntimeCall> for CallFilter {
     }
 }
 
+#[derive_impl(pallet_contracts::config_preludes::TestDefaultConfig)]
 impl pallet_contracts::Config for Runtime {
     type Time = Timestamp;
     type Randomness = Randomness;
@@ -253,29 +217,12 @@ impl pallet_contracts::Config for Runtime {
     /// change because that would break already deployed contracts. The `Call` structure itself
     /// is not allowed to change the indices of existing pallets, too.
     type CallFilter = CallFilter;
-    type DepositPerItem = DepositPerItem;
-    type DepositPerByte = DepositPerByte;
-    type DefaultDepositLimit = DefaultDepositLimit;
     type CallStack = [pallet_contracts::Frame<Self>; 5];
     /// We are not using the pallet_transaction_payment for simplicity
-    type WeightPrice = Self;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = ();
     type Schedule = Schedule;
-    type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
-    type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
-    type MaxStorageKeyLen = ConstU32<128>;
-    type UnsafeUnstableInterface = ConstBool<true>;
-    type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
-    type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
-    type MaxDelegateDependencies = MaxDelegateDependencies;
-    type Migrations = ();
-    type Debug = ();
-    type Environment = ();
-    type Xcm = ();
     type UploadOrigin = EnsureSigned<AccountId32>;
     type InstantiateOrigin = EnsureSigned<AccountId32>;
-    type ApiVersion = ();
 }
 
 /// The type used to represent the kinds of proxying allowed.
@@ -320,7 +267,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                 matches!(
                     c,
                     RuntimeCall::DappStaking(
-                        pallet_dapp_staking_v3::Call::claim_staker_rewards { .. }
+                        pallet_dapp_staking::Call::claim_staker_rewards { .. }
                     ) | RuntimeCall::Utility(..)
                 )
             }
@@ -495,7 +442,7 @@ impl xcm_executor::Config for XcmConfig {
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = ReserveAssetFilter;
+    type IsReserve = Reserves;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
@@ -523,6 +470,7 @@ impl xcm_executor::Config for XcmConfig {
     type HrmpNewChannelOpenRequestHandler = ();
     type HrmpChannelAcceptedHandler = ();
     type HrmpChannelClosingHandler = ();
+    type XcmRecorder = ();
 }
 
 impl mock_msg_queue::Config for Runtime {
@@ -684,7 +632,7 @@ pub(crate) type MockSmartContract = SmartContract<AccountId>;
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
-impl pallet_dapp_staking_v3::BenchmarkHelper<MockSmartContract, AccountId>
+impl pallet_dapp_staking::BenchmarkHelper<MockSmartContract, AccountId>
     for BenchmarkHelper<MockSmartContract, AccountId>
 {
     fn get_smart_contract(id: u32) -> MockSmartContract {
@@ -702,7 +650,7 @@ parameter_types! {
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
 
-impl pallet_dapp_staking_v3::Config for Runtime {
+impl pallet_dapp_staking::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
@@ -727,6 +675,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
+    type MaxBonusSafeMovesPerPeriod = ConstU8<0>;
     type WeightInfo = ();
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
@@ -743,7 +692,7 @@ construct_runtime!(
         Assets: pallet_assets,
         XcAssetConfig: pallet_xc_asset_config,
         CumulusXcm: cumulus_pallet_xcm,
-        DappStaking: pallet_dapp_staking_v3,
+        DappStaking: pallet_dapp_staking,
         Proxy: pallet_proxy,
         Utility: pallet_utility,
         Randomness: pallet_insecure_randomness_collective_flip,

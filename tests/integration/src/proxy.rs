@@ -18,7 +18,8 @@
 
 use crate::setup::*;
 use astar_primitives::dapp_staking::SmartContractHandle;
-use pallet_dapp_staking_v3::ForcingType;
+use pallet_dapp_staking::ForcingType;
+use parity_scale_codec::Decode;
 
 #[test]
 fn test_utility_call_pass_for_any() {
@@ -180,9 +181,8 @@ fn test_staker_reward_claim_proxy_works() {
             0
         ));
 
-        let contract = <Runtime as pallet_dapp_staking_v3::Config>::SmartContract::evm(
-            H160::repeat_byte(0x01),
-        );
+        let contract =
+            <Runtime as pallet_dapp_staking::Config>::SmartContract::evm(H160::repeat_byte(0x01));
         let staker_reward_claim_call =
             RuntimeCall::DappStaking(DappStakingCall::Call::claim_staker_rewards {});
         let call = Box::new(staker_reward_claim_call);
@@ -219,4 +219,30 @@ fn test_staker_reward_claim_proxy_works() {
 
         expect_events(vec![ProxyEvent::ProxyExecuted { result: Ok(()) }.into()]);
     })
+}
+
+#[test]
+fn test_set_keys_pass_for_non_transfer_proxy() {
+    new_test_ext().execute_with(|| {
+        assert_ok!(Proxy::add_proxy(
+            RuntimeOrigin::signed(ALICE),
+            MultiAddress::Id(BOB),
+            ProxyType::NonTransfer,
+            0
+        ));
+
+        let keys = [0u8; 128];
+        let set_keys_call = Box::new(RuntimeCall::Session(SessionCall::set_keys {
+            keys: Decode::decode(&mut &keys[..]).unwrap(),
+            proof: Vec::new(),
+        }));
+
+        assert_ok!(Proxy::proxy(
+            RuntimeOrigin::signed(BOB),
+            MultiAddress::Id(ALICE),
+            None,
+            set_keys_call
+        ));
+        expect_events(vec![ProxyEvent::ProxyExecuted { result: Ok(()) }.into()]);
+    });
 }

@@ -38,8 +38,8 @@
 use super::*;
 
 use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU64, Everything},
+    construct_runtime, derive_impl, parameter_types,
+    traits::{AsEnsureOriginWithArg, ConstU64},
     weights::Weight,
 };
 
@@ -50,11 +50,8 @@ use precompile_utils::{
     testing::{AddressInPrefixedSet, MockAccount},
 };
 
-use sp_core::{ConstU32, H160, H256};
-use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
-    BuildStorage,
-};
+use sp_core::{ConstU32, H160};
+use sp_runtime::{traits::IdentityLookup, BuildStorage};
 
 pub type AccountId = MockAccount;
 pub type AssetId = u128;
@@ -92,67 +89,32 @@ parameter_types! {
     pub const SS58Prefix: u8 = 42;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Runtime {
-    type BaseCallFilter = Everything;
-    type DbWeight = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
     type Block = Block;
-    type RuntimeCall = RuntimeCall;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type BlockWeights = ();
-    type BlockLength = ();
-    type SS58Prefix = SS58Prefix;
-    type OnSetCode = ();
-    type MaxConsumers = frame_support::traits::ConstU32<16>;
-    type RuntimeTask = RuntimeTask;
-    type SingleBlockMigrations = ();
-    type MultiBlockMigrator = ();
-    type PreInherents = ();
-    type PostInherents = ();
-    type PostTransactions = ();
 }
 
 parameter_types! {
     pub const MinimumPeriod: u64 = 5;
 }
 
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for Runtime {
-    type Moment = u64;
-    type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
-    type WeightInfo = ();
 }
 
 parameter_types! {
     pub const ExistentialDeposit: u128 = 1;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Runtime {
-    type MaxReserves = ();
-    type ReserveIdentifier = ();
-    type MaxLocks = ();
     type Balance = Balance;
-    type RuntimeEvent = RuntimeEvent;
-    type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type WeightInfo = ();
-    type RuntimeHoldReason = ();
-    type FreezeIdentifier = ();
-    type RuntimeFreezeReason = ();
-    type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {
@@ -184,7 +146,8 @@ impl pallet_evm::Config for Runtime {
     type OnCreate = ();
     type WeightInfo = ();
     type GasLimitPovSizeRatio = ConstU64<4>;
-    type SuicideQuickClearLimit = ConstU32<0>;
+    type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
+    type GasLimitStorageGrowthRatio = ConstU64<0>;
 }
 
 // These parameters dont matter much as this will only be called by root with the forced arguments
@@ -198,6 +161,7 @@ parameter_types! {
     pub const MetadataDepositPerByte: Balance = 0;
 }
 
+#[derive_impl(pallet_assets::config_preludes::TestDefaultConfig)]
 impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
@@ -211,14 +175,10 @@ impl pallet_assets::Config for Runtime {
     type ApprovalDeposit = ApprovalDeposit;
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
-    type Extra = ();
     type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<0>;
     type AssetIdParameter = AssetId;
-    type CallbackHandle = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = ();
 }
 
 // Configure a mock runtime to test the pallet.

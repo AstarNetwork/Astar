@@ -198,7 +198,7 @@ pub mod pallet {
     /// Candidates who initiated leave intent or kicked.
     #[pallet::storage]
     pub type NonCandidates<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, (SessionIndex, BalanceOf<T>), ValueQuery>;
+        StorageMap<_, Twox64Concat, T::AccountId, (SessionIndex, BalanceOf<T>), OptionQuery>;
 
     /// Last block authored by collator.
     #[pallet::storage]
@@ -219,7 +219,7 @@ pub mod pallet {
 
     /// Destination account for slashed amount.
     #[pallet::storage]
-    pub type SlashDestination<T> = StorageValue<_, <T as frame_system::Config>::AccountId>;
+    pub type SlashDestination<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
     #[pallet::genesis_config]
     #[derive(DefaultNoBound)]
@@ -236,8 +236,9 @@ pub mod pallet {
                 .invulnerables
                 .iter()
                 .collect::<sp_std::collections::btree_set::BTreeSet<_>>();
-            assert!(
-                duplicate_invulnerables.len() == self.invulnerables.len(),
+            assert_eq!(
+                duplicate_invulnerables.len(),
+                self.invulnerables.len(),
                 "duplicate invulnerables in genesis."
             );
 
@@ -290,6 +291,8 @@ pub mod pallet {
         NotCandidate,
         /// User is already an Invulnerable
         AlreadyInvulnerable,
+        /// User is not an Invulnerable
+        NotInvulnerable,
         /// Account has no associated validator ID
         NoAssociatedValidatorId,
         /// Validator ID is not yet registered
@@ -324,12 +327,7 @@ pub mod pallet {
 
             // check if the invulnerables have associated validator keys before they are set
             for account_id in &new {
-                let validator_key = T::ValidatorIdOf::convert(account_id.clone())
-                    .ok_or(Error::<T>::NoAssociatedValidatorId)?;
-                ensure!(
-                    T::ValidatorRegistration::is_registered(&validator_key),
-                    Error::<T>::ValidatorNotRegistered
-                );
+                Self::is_validator_registered(account_id)?;
             }
 
             <Invulnerables<T>>::put(&new);
@@ -393,12 +391,7 @@ pub mod pallet {
                 Error::<T>::NotAllowedCandidate
             );
 
-            let validator_key = T::ValidatorIdOf::convert(who.clone())
-                .ok_or(Error::<T>::NoAssociatedValidatorId)?;
-            ensure!(
-                T::ValidatorRegistration::is_registered(&validator_key),
-                Error::<T>::ValidatorNotRegistered
-            );
+            Self::is_validator_registered(&who)?;
 
             // ensure candidacy has no previous locked un-bonding
             <NonCandidates<T>>::try_mutate_exists(&who, |maybe| -> DispatchResult {
@@ -480,12 +473,84 @@ pub mod pallet {
 
             Ok(())
         }
+
+        /// Set slash destination.
+        /// Use `Some` to deposit slashed balance into destination or `None` to burn it.
+        #[pallet::call_index(6)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(1, 1))]
+        pub fn set_slash_destination(
+            origin: OriginFor<T>,
+            destination: Option<T::AccountId>,
+        ) -> DispatchResult {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            match destination {
+                Some(account) => <SlashDestination<T>>::put(account),
+                None => <SlashDestination<T>>::kill(),
+            }
+            Ok(())
+        }
+
+        /// Add an invulnerable collator.
+        #[pallet::call_index(7)]
+        #[pallet::weight(T::WeightInfo::add_invulnerable(T::MaxInvulnerables::get()))]
+        pub fn add_invulnerable(
+            origin: OriginFor<T>,
+            who: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            Self::is_validator_registered(&who)?;
+
+            <Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
+                ensure!(
+                    !invulnerables.contains(&who),
+                    Error::<T>::AlreadyInvulnerable
+                );
+                invulnerables.push(who);
+                Ok(())
+            })?;
+
+            Self::deposit_event(Event::NewInvulnerables(<Invulnerables<T>>::get()));
+            Ok(().into())
+        }
+
+        /// Remove an invulnerable collator.
+        #[pallet::call_index(8)]
+        #[pallet::weight(T::WeightInfo::remove_invulnerable(T::MaxInvulnerables::get()))]
+        pub fn remove_invulnerable(
+            origin: OriginFor<T>,
+            who: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            <Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
+                if let Some(pos) = invulnerables.iter().position(|acc| *acc == who) {
+                    invulnerables.remove(pos);
+                    Ok(())
+                } else {
+                    Err(Error::<T>::NotInvulnerable.into())
+                }
+            })?;
+
+            Self::deposit_event(Event::NewInvulnerables(<Invulnerables<T>>::get()));
+            Ok(().into())
+        }
     }
 
     impl<T: Config> Pallet<T> {
         /// Get a unique, inaccessible account id from the `PotId`.
         pub fn account_id() -> T::AccountId {
             T::PotId::get().into_account_truncating()
+        }
+
+        /// Checks if the account has a registered validator key.
+        fn is_validator_registered(who: &T::AccountId) -> DispatchResult {
+            let validator_key = T::ValidatorIdOf::convert(who.clone())
+                .ok_or(Error::<T>::NoAssociatedValidatorId)?;
+            ensure!(
+                T::ValidatorRegistration::is_registered(&validator_key),
+                Error::<T>::ValidatorNotRegistered
+            );
+
+            Ok(())
         }
 
         /// Removes a candidate if they exist. Start deposit un-bonding
@@ -545,16 +610,21 @@ pub mod pallet {
                 if now.saturating_sub(last_authored) < kick_threshold {
                     continue;
                 }
-                // still candidate, kick and slash
+                // stale candidate, kick and slash
                 if Self::is_account_candidate(&who) {
                     if Candidates::<T>::get().len() > T::MinCandidates::get() as usize {
                         // no error, who is a candidate
                         let _ = Self::try_remove_candidate(&who);
                         Self::slash_non_candidate(&who);
                     }
-                } else {
-                    // slash un-bonding candidate
-                    Self::slash_non_candidate(&who);
+                } else if let Some((locked_until, _)) = NonCandidates::<T>::get(&who) {
+                    if T::ValidatorSet::session_index() > locked_until {
+                        // bond is already unlocked
+                        <LastAuthoredBlock<T>>::remove(who);
+                    } else {
+                        // slash un-bonding candidate
+                        Self::slash_non_candidate(&who);
+                    }
                 }
             }
             (

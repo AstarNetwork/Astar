@@ -6,7 +6,8 @@ This document will act as a starting point for those who want to be part of the 
 
 ## Types of Contribution
 
-We welcome any types of contributions that can improve the project/network in any shape or form, may it be directly to the Astar repository codebase, feedback, or making community contributions. You don't have to be a developer to contribute to the network.
+We are an open source project and will accept contributions which fix an issue, provide a new required feature, etc.
+However, at this time, we're not accepting pull requests which aim to fix typos, change comment wording, rename variables, etc.
 
 ## Using GitHub
 
@@ -34,7 +35,12 @@ In short:
 6. Wait for the maintainers approval or change requests
 7. Your code will be merged
 
-Note: all the commits in your pull request are required to be signed and can be verified by GitHub. Refer to [this doc](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification) for details.
+Some notes: 
+1. All the commits in your pull request are required to be signed and can be verified by GitHub. Refer to [this doc](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification) for details.
+2. You don't need to squash your commits manually, it will be done during merge.
+3. In case of any merge conflicts please use merge not rebase.
+4. In general: please avoid force pushes. Any existing reviews will be dropped after that.
+5. There are e2e tests that run post merge. It's a good idea to run them in advance (especially for breaking changes). Refer to [this doc](https://github.com/AstarNetwork/e2e-tests) for details.
 
 ### Mandatory PR Labels
 When submitting a Pull Request (PR), please make sure to include the necessary labels to help us categorize and prioritize your changes. PRs should contain at least one of the following mandatory labels:

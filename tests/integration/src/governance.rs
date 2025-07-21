@@ -62,7 +62,7 @@ fn external_proposals_work() {
             RuntimeOrigin::signed(ALICE.clone()),
             external_propose_call_hash,
             0,
-            external_propose_call.get_dispatch_info().weight,
+            external_propose_call.get_dispatch_info().total_weight(),
             external_propose_call.encode().len() as u32,
         ));
 
@@ -102,7 +102,7 @@ fn external_proposals_work() {
             RuntimeOrigin::signed(ALICE.clone()),
             fast_track_call_hash,
             0,
-            fast_track_call.get_dispatch_info().weight,
+            fast_track_call.get_dispatch_info().total_weight(),
             fast_track_call.encode().len() as u32,
         ));
 
@@ -126,7 +126,7 @@ fn community_council_can_execute_dapp_staking_calls() {
         Balances::make_free_balance_be(&proxy_account, lock_amount);
 
         // Prepare the wrapped dApp staking lock call
-        let lock_call = RuntimeCall::DappStaking(pallet_dapp_staking_v3::Call::lock {
+        let lock_call = RuntimeCall::DappStaking(pallet_dapp_staking::Call::lock {
             amount: lock_amount,
         });
         let collective_proxy_call =
@@ -156,13 +156,13 @@ fn community_council_can_execute_dapp_staking_calls() {
             RuntimeOrigin::signed(ALICE.clone()),
             collective_proxy_call_hash,
             0,
-            collective_proxy_call.get_dispatch_info().weight,
+            collective_proxy_call.get_dispatch_info().total_weight(),
             collective_proxy_call.encode().len() as u32,
         ));
 
         // Check that the lock was successful
         assert_eq!(
-            pallet_dapp_staking_v3::Ledger::<Runtime>::get(&proxy_account).locked,
+            pallet_dapp_staking::Ledger::<Runtime>::get(&proxy_account).locked(),
             lock_amount
         );
     })

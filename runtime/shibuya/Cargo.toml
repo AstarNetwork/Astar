@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "5.42.2"
+version = "16.1.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -14,9 +14,11 @@ log = { workspace = true, optional = true }
 num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
+serde_json = { workspace = true }
 smallvec = { workspace = true }
 
 # primitives
+fp-evm = { workspace = true }
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }
 sp-api = { workspace = true }
@@ -46,7 +48,6 @@ pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-collective = { workspace = true }
-pallet-collective-proxy = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-ethereum = { workspace = true }
@@ -63,9 +64,11 @@ pallet-identity = { workspace = true }
 pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-message-queue = { workspace = true }
+pallet-migrations = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
+pallet-safe-mode = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true }
 pallet-sudo = { workspace = true }
@@ -73,18 +76,17 @@ pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-treasury = { workspace = true }
+pallet-tx-pause = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }
-cumulus-pallet-dmp-queue = { workspace = true }
-cumulus-pallet-parachain-system = { workspace = true, features = ["parameterized-consensus-hook"] }
+cumulus-pallet-parachain-system = { workspace = true }
 cumulus-pallet-xcm = { workspace = true }
 cumulus-pallet-xcmp-queue = { workspace = true }
 cumulus-primitives-aura = { workspace = true }
 cumulus-primitives-core = { workspace = true }
-cumulus-primitives-timestamp = { workspace = true }
 cumulus-primitives-utility = { workspace = true }
 parachain-info = { workspace = true }
 parachains-common = { workspace = true }
@@ -96,7 +98,7 @@ polkadot-runtime-common = { workspace = true }
 xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
-xcm-fee-payment-runtime-api = { workspace = true }
+xcm-runtime-apis = { workspace = true }
 
 # orml dependencies
 orml-oracle = { workspace = true }
@@ -108,11 +110,12 @@ astar-primitives = { workspace = true }
 astar-xcm-benchmarks = { workspace = true, optional = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-collator-selection = { workspace = true }
-pallet-dapp-staking-v3 = { workspace = true }
+pallet-collective-proxy = { workspace = true }
+pallet-dapp-staking = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
-pallet-evm-precompile-dapp-staking-v3 = { workspace = true }
+pallet-evm-precompile-dapp-staking = { workspace = true }
 pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
@@ -125,7 +128,7 @@ pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 pallet-xcm-benchmarks = { workspace = true, optional = true }
 
-dapp-staking-v3-runtime-api = { workspace = true }
+dapp-staking-runtime-api = { workspace = true }
 
 precompile-utils = { workspace = true }
 
@@ -151,228 +154,237 @@ substrate-wasm-builder = { workspace = true, optional = true }
 [features]
 default = ["std"]
 std = [
-	"parity-scale-codec/std",
+	"astar-primitives/std",
+	"astar-xcm-benchmarks?/std",
+	"cumulus-pallet-aura-ext/std",
+	"cumulus-pallet-parachain-system/std",
+	"cumulus-pallet-xcm/std",
+	"cumulus-pallet-xcmp-queue/std",
+	"cumulus-primitives-aura/std",
+	"cumulus-primitives-core/std",
+	"cumulus-primitives-utility/std",
+	"dapp-staking-runtime-api/std",
+	"fp-evm/std",
 	"fp-rpc/std",
 	"fp-self-contained/std",
-	"sp-std/std",
-	"sp-api/std",
-	"pallet-democracy/std",
-	"pallet-collective/std",
-	"pallet-collective-proxy/std",
-	"pallet-treasury/std",
-	"sp-core/std",
-	"sp-genesis-builder/std",
-	"sp-consensus-aura/std",
-	"sp-io/std",
-	"sp-runtime/std",
-	"sp-runtime-interface/std",
-	"pallet-membership/std",
-	"sp-version/std",
-	"sp-block-builder/std",
-	"sp-transaction-pool/std",
-	"sp-inherents/std",
-	"sp-arithmetic/std",
-	"frame-support/std",
+	"frame-benchmarking/std",
 	"frame-executive/std",
-	"frame-system/std",
-	"frame-system-rpc-runtime-api/std",
 	"frame-metadata-hash-extension/std",
-	"pallet-authorship/std",
-	"pallet-aura/std",
+	"frame-support/std",
+	"frame-system-benchmarking?/std",
+	"frame-system-rpc-runtime-api/std",
+	"frame-system/std",
+	"frame-try-runtime/std",
+	"log?/std",
+	"moonbeam-evm-tracer/std",
+	"moonbeam-rpc-primitives-debug/std",
+	"moonbeam-rpc-primitives-txpool/std",
+	"num_enum/std",
+	"orml-oracle/std",
+	"orml-xcm-support/std",
+	"orml-xtokens/std",
 	"pallet-assets/std",
+	"pallet-aura/std",
+	"pallet-authorship/std",
 	"pallet-balances/std",
-	"pallet-contracts/std",
+	"pallet-chain-extension-assets/std",
 	"pallet-chain-extension-unified-accounts/std",
+	"pallet-collator-selection/std",
+	"pallet-collective-proxy/std",
+	"pallet-collective/std",
+	"pallet-contracts/std",
+	"pallet-dapp-staking/std",
+	"pallet-democracy/std",
 	"pallet-dynamic-evm-base-fee/std",
+	"pallet-ethereum-checked/std",
 	"pallet-ethereum/std",
-	"pallet-preimage/std",
-	"pallet-evm/std",
 	"pallet-evm-chain-id/std",
+	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-blake2/std",
-	"pallet-evm-precompile-simple/std",
 	"pallet-evm-precompile-bn128/std",
+	"pallet-evm-precompile-dapp-staking/std",
+	"pallet-evm-precompile-dispatch-lockdrop/std",
 	"pallet-evm-precompile-dispatch/std",
 	"pallet-evm-precompile-ed25519/std",
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
-	"pallet-evm-precompile-dapp-staking-v3/std",
+	"pallet-evm-precompile-simple/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
-	"pallet-evm-precompile-assets-erc20/std",
-	"pallet-evm-precompile-xcm/std",
 	"pallet-evm-precompile-unified-accounts/std",
-	"xcm-fee-payment-runtime-api/std",
-	"pallet-evm-precompile-dispatch-lockdrop/std",
-	"pallet-dapp-staking-v3/std",
-	"orml-oracle/std",
-	"dapp-staking-v3-runtime-api/std",
-	"pallet-inflation/std",
-	"pallet-price-aggregator/std",
+	"pallet-evm-precompile-xcm/std",
+	"pallet-evm/std",
 	"pallet-identity/std",
-	"pallet-multisig/std",
+	"pallet-inflation/std",
 	"pallet-insecure-randomness-collective-flip/std",
-	"pallet-session/std",
-	"pallet-utility/std",
-	"pallet-timestamp/std",
-	"pallet-vesting/std",
+	"pallet-membership/std",
+	"pallet-message-queue/std",
+	"pallet-migrations/std",
+	"pallet-multisig/std",
+	"pallet-preimage/std",
+	"pallet-price-aggregator/std",
 	"pallet-proxy/std",
-	"sp-offchain/std",
-	"sp-session/std",
-	"pallet-sudo/std",
-	"pallet-transaction-payment/std",
-	"pallet-transaction-payment-rpc-runtime-api/std",
-	"pallet-xcm/std",
-	"pallet-xc-asset-config/std",
-	"pallet-unified-accounts/std",
-	"pallet-ethereum-checked/std",
+	"pallet-safe-mode/std",
 	"pallet-scheduler/std",
+	"pallet-session/std",
+	"pallet-sudo/std",
+	"pallet-timestamp/std",
+	"pallet-transaction-payment-rpc-runtime-api/std",
+	"pallet-transaction-payment/std",
+	"pallet-treasury/std",
+	"pallet-tx-pause/std",
+	"pallet-unified-accounts/std",
+	"pallet-utility/std",
+	"pallet-vesting/std",
+	"pallet-xc-asset-config/std",
+	"pallet-xcm-benchmarks?/std",
+	"pallet-xcm/std",
 	"parachain-info/std",
+	"parachains-common/std",
+	"parity-scale-codec/std",
 	"polkadot-parachain/std",
 	"polkadot-primitives/std",
 	"polkadot-runtime-common/std",
-	"cumulus-primitives-aura/std",
-	"cumulus-primitives-core/std",
-	"cumulus-primitives-utility/std",
-	"cumulus-primitives-timestamp/std",
-	"cumulus-pallet-parachain-system/std",
-	"cumulus-pallet-aura-ext/std",
-	"cumulus-pallet-dmp-queue/std",
-	"cumulus-pallet-xcmp-queue/std",
-	"cumulus-pallet-xcm/std",
-	"pallet-collator-selection/std",
-	"frame-benchmarking/std",
-	"frame-try-runtime/std",
-	"moonbeam-evm-tracer/std",
-	"moonbeam-rpc-primitives-debug/std",
-	"moonbeam-rpc-primitives-txpool/std",
-	"xcm/std",
-	"xcm-builder/std",
-	"xcm-executor/std",
-	"substrate-wasm-builder",
-	"pallet-chain-extension-assets/std",
-	"orml-xtokens/std",
-	"orml-xcm-support/std",
-	"astar-primitives/std",
-	"pallet-message-queue/std",
-	"parachains-common/std",
-	"astar-xcm-benchmarks?/std",
-	"frame-system-benchmarking?/std",
-	"log?/std",
-	"num_enum/std",
-	"pallet-xcm-benchmarks?/std",
 	"precompile-utils/std",
 	"scale-info/std",
+	"serde_json/std",
+	"sp-api/std",
+	"sp-arithmetic/std",
+	"sp-block-builder/std",
+	"sp-consensus-aura/std",
+	"sp-core/std",
+	"sp-genesis-builder/std",
+	"sp-inherents/std",
+	"sp-io/std",
+	"sp-offchain/std",
+	"sp-runtime-interface/std",
+	"sp-runtime/std",
+	"sp-session/std",
+	"sp-std/std",
+	"sp-transaction-pool/std",
+	"sp-version/std",
+	"substrate-wasm-builder",
+	"xcm-builder/std",
+	"xcm-executor/std",
+	"xcm-runtime-apis/std",
+	"xcm/std",
 ]
 runtime-benchmarks = [
+	"astar-primitives/runtime-benchmarks",
 	"astar-xcm-benchmarks/runtime-benchmarks",
-	"pallet-xcm-benchmarks/runtime-benchmarks",
-	"pallet-collective-proxy/runtime-benchmarks",
-	"pallet-treasury/runtime-benchmarks",
-	"pallet-democracy/runtime-benchmarks",
-	"pallet-collective/runtime-benchmarks",
+	"cumulus-pallet-parachain-system/runtime-benchmarks",
+	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
+	"cumulus-primitives-core/runtime-benchmarks",
+	"cumulus-primitives-utility/runtime-benchmarks",
 	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"sp-runtime/runtime-benchmarks",
-	"pallet-dapp-staking-v3/runtime-benchmarks",
-	"pallet-inflation/runtime-benchmarks",
-	"pallet-balances/runtime-benchmarks",
-	"pallet-membership/runtime-benchmarks",
-	"pallet-timestamp/runtime-benchmarks",
-	"pallet-ethereum/runtime-benchmarks",
-	"pallet-xcm/runtime-benchmarks",
-	"pallet-xc-asset-config/runtime-benchmarks",
-	"pallet-price-aggregator/runtime-benchmarks",
-	"xcm-builder/runtime-benchmarks",
-	"pallet-preimage/runtime-benchmarks",
-	"pallet-collator-selection/runtime-benchmarks",
-	"pallet-ethereum-checked/runtime-benchmarks",
-	"pallet-unified-accounts/runtime-benchmarks",
+	"orml-oracle/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
-	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
-	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
-	"cumulus-primitives-utility/runtime-benchmarks",
-	"pallet-message-queue/runtime-benchmarks",
-	"cumulus-pallet-parachain-system/runtime-benchmarks",
-	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
-	"frame-benchmarking/runtime-benchmarks",
+	"pallet-balances/runtime-benchmarks",
 	"pallet-chain-extension-assets/runtime-benchmarks",
+	"pallet-collator-selection/runtime-benchmarks",
+	"pallet-collective-proxy/runtime-benchmarks",
+	"pallet-collective/runtime-benchmarks",
 	"pallet-contracts/runtime-benchmarks",
-	"pallet-evm/runtime-benchmarks",
+	"pallet-dapp-staking/runtime-benchmarks",
+	"pallet-democracy/runtime-benchmarks",
+	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
+	"pallet-ethereum-checked/runtime-benchmarks",
+	"pallet-ethereum/runtime-benchmarks",
 	"pallet-evm-precompile-assets-erc20/runtime-benchmarks",
-	"pallet-evm-precompile-dapp-staking-v3/runtime-benchmarks",
+	"pallet-evm-precompile-dapp-staking/runtime-benchmarks",
 	"pallet-evm-precompile-xcm/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
 	"pallet-identity/runtime-benchmarks",
+	"pallet-inflation/runtime-benchmarks",
+	"pallet-membership/runtime-benchmarks",
+	"pallet-message-queue/runtime-benchmarks",
+	"pallet-migrations/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
+	"pallet-preimage/runtime-benchmarks",
+	"pallet-price-aggregator/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
+	"pallet-safe-mode/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
+	"pallet-timestamp/runtime-benchmarks",
+	"pallet-transaction-payment/runtime-benchmarks",
+	"pallet-treasury/runtime-benchmarks",
+	"pallet-tx-pause/runtime-benchmarks",
+	"pallet-unified-accounts/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
+	"pallet-xc-asset-config/runtime-benchmarks",
+	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"pallet-xcm/runtime-benchmarks",
+	"parachains-common/runtime-benchmarks",
 	"polkadot-parachain/runtime-benchmarks",
 	"polkadot-primitives/runtime-benchmarks",
 	"polkadot-runtime-common/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"xcm-builder/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",
-	"cumulus-pallet-dmp-queue/runtime-benchmarks",
-	"cumulus-primitives-core/runtime-benchmarks",
-	"parachains-common/runtime-benchmarks",
-	"orml-oracle/runtime-benchmarks",
+	"xcm-runtime-apis/runtime-benchmarks",
 ]
 try-runtime = [
-	"fp-self-contained/try-runtime",
-	"log",
-	"frame-try-runtime/try-runtime",
-	"frame-executive/try-runtime",
-	"frame-support/try-runtime",
-	"frame-system/try-runtime",
-	"pallet-aura/try-runtime",
-	"pallet-balances/try-runtime",
-	"pallet-dapp-staking-v3/try-runtime",
-	"pallet-inflation/try-runtime",
-	"pallet-sudo/try-runtime",
-	"pallet-timestamp/try-runtime",
-	"pallet-transaction-payment/try-runtime",
-	"orml-oracle/try-runtime",
-	"pallet-utility/try-runtime",
-	"pallet-vesting/try-runtime",
-	"pallet-price-aggregator/try-runtime",
-	"pallet-ethereum/try-runtime",
-	"pallet-membership/try-runtime",
-	"pallet-xc-asset-config/try-runtime",
-	"pallet-collective-proxy/try-runtime",
-	"pallet-treasury/try-runtime",
-	"pallet-collective/try-runtime",
-	"pallet-democracy/try-runtime",
-	"pallet-assets/try-runtime",
-	"pallet-authorship/try-runtime",
-	"pallet-collator-selection/try-runtime",
-	"pallet-session/try-runtime",
-	"pallet-xcm/try-runtime",
-	"pallet-identity/try-runtime",
-	"pallet-multisig/try-runtime",
-	"pallet-insecure-randomness-collective-flip/try-runtime",
-	"pallet-scheduler/try-runtime",
-	"pallet-proxy/try-runtime",
-	"pallet-contracts/try-runtime",
-	"pallet-evm-chain-id/try-runtime",
+	"astar-primitives/try-runtime",
+	"astar-xcm-benchmarks?/try-runtime",
 	"cumulus-pallet-aura-ext/try-runtime",
-	"cumulus-pallet-dmp-queue/try-runtime",
 	"cumulus-pallet-parachain-system/try-runtime",
 	"cumulus-pallet-xcm/try-runtime",
 	"cumulus-pallet-xcmp-queue/try-runtime",
-	"parachain-info/try-runtime",
-	"pallet-preimage/try-runtime",
-	"pallet-dynamic-evm-base-fee/try-runtime",
-	"pallet-evm/try-runtime",
-	"pallet-unified-accounts/try-runtime",
-	"pallet-ethereum-checked/try-runtime",
+	"fp-self-contained/try-runtime",
+	"frame-executive/try-runtime",
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"frame-try-runtime/try-runtime",
+	"log",
+	"orml-oracle/try-runtime",
 	"orml-xtokens/try-runtime",
-	"pallet-message-queue/try-runtime",
-	"astar-primitives/try-runtime",
-	"astar-xcm-benchmarks?/try-runtime",
+	"pallet-assets/try-runtime",
+	"pallet-aura/try-runtime",
+	"pallet-authorship/try-runtime",
+	"pallet-balances/try-runtime",
 	"pallet-chain-extension-assets/try-runtime",
+	"pallet-collator-selection/try-runtime",
+	"pallet-collective-proxy/try-runtime",
+	"pallet-collective/try-runtime",
+	"pallet-contracts/try-runtime",
+	"pallet-dapp-staking/try-runtime",
+	"pallet-democracy/try-runtime",
+	"pallet-dynamic-evm-base-fee/try-runtime",
+	"pallet-ethereum-checked/try-runtime",
+	"pallet-ethereum/try-runtime",
+	"pallet-evm-chain-id/try-runtime",
+	"pallet-evm/try-runtime",
+	"pallet-identity/try-runtime",
+	"pallet-inflation/try-runtime",
+	"pallet-insecure-randomness-collective-flip/try-runtime",
+	"pallet-membership/try-runtime",
+	"pallet-message-queue/try-runtime",
+	"pallet-migrations/try-runtime",
+	"pallet-multisig/try-runtime",
+	"pallet-preimage/try-runtime",
+	"pallet-price-aggregator/try-runtime",
+	"pallet-proxy/try-runtime",
+	"pallet-safe-mode/try-runtime",
+	"pallet-scheduler/try-runtime",
+	"pallet-session/try-runtime",
+	"pallet-sudo/try-runtime",
+	"pallet-timestamp/try-runtime",
+	"pallet-transaction-payment/try-runtime",
+	"pallet-treasury/try-runtime",
+	"pallet-tx-pause/try-runtime",
+	"pallet-unified-accounts/try-runtime",
+	"pallet-utility/try-runtime",
+	"pallet-vesting/try-runtime",
+	"pallet-xc-asset-config/try-runtime",
+	"pallet-xcm/try-runtime",
+	"parachain-info/try-runtime",
 	"polkadot-runtime-common/try-runtime",
 	"sp-runtime/try-runtime",
 ]

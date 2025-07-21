@@ -34,7 +34,7 @@ mod xcm_old_interface_test {
     use super::*;
     #[test]
     fn wrong_assets_len_or_fee_index_reverts() {
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
@@ -74,7 +74,7 @@ mod xcm_old_interface_test {
 
     #[test]
     fn sanity_checks_for_parameters() {
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             // parachain id resolution failure
             precompiles()
                 .prepare_test(
@@ -128,7 +128,7 @@ mod xcm_old_interface_test {
 
     #[test]
     fn assets_withdraw_works() {
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             // SS58
             precompiles()
                 .prepare_test(
@@ -184,7 +184,7 @@ mod xcm_old_interface_test {
 
     #[test]
     fn remote_transact_works() {
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             // SS58
             precompiles()
                 .prepare_test(
@@ -206,7 +206,7 @@ mod xcm_old_interface_test {
 
     #[test]
     fn reserve_transfer_assets_works() {
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             // SS58
             precompiles()
                 .prepare_test(
@@ -252,7 +252,7 @@ mod xcm_old_interface_test {
 
                 let non_native_asset = Asset {
                     fun: Fungible(42000),
-                    id: xcm::v4::AssetId::from(Location {
+                    id: xcm::v5::AssetId::from(Location {
                         parents: 0,
                         interior: Here,
                     }),
@@ -272,7 +272,8 @@ mod xcm_old_interface_test {
                                 interior: Junctions::X1(_),
                             },
                             ..
-                        }
+                        },
+                        SetTopic(..)
                     ]
 
                     if fees.contains(&non_native_asset) && assets.contains(&non_native_asset)
@@ -283,7 +284,7 @@ mod xcm_old_interface_test {
 
     #[test]
     fn reserve_transfer_currency_works() {
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
@@ -327,7 +328,7 @@ mod xcm_old_interface_test {
 
                 let native_asset = Asset {
                     fun: Fungible(42000),
-                    id: xcm::v4::AssetId::from(Location {
+                    id: xcm::v5::AssetId::from(Location {
                         parents: 0,
                         interior: Parachain(123).into(),
                     }),
@@ -348,7 +349,8 @@ mod xcm_old_interface_test {
                                 interior: Junctions::X1(_),
                             },
                             ..
-                        }
+                        },
+                        SetTopic(..)
                     ]
                     if fees.contains(&native_asset) && assets.contains(&native_asset)
                 ));
@@ -358,7 +360,7 @@ mod xcm_old_interface_test {
 
     #[test]
     fn test_send_clear_origin() {
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             let dest: Location = Location {
                 parents: 1,
                 interior: AccountId32 {
@@ -367,7 +369,7 @@ mod xcm_old_interface_test {
                 }
                 .into(),
             };
-            let xcm_to_send = VersionedXcm::<()>::V4(Xcm(vec![ClearOrigin])).encode();
+            let xcm_to_send = VersionedXcm::<()>::V5(Xcm(vec![ClearOrigin])).encode();
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
@@ -396,7 +398,7 @@ mod xcm_new_interface_test {
     fn xtokens_transfer_works() {
         let weight = WeightV2::from(3_000_000_000u64, 1024);
 
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             let parent_destination = Location {
                 parents: 1,
                 interior: Junctions::from(Junction::AccountId32 {
@@ -489,7 +491,7 @@ mod xcm_new_interface_test {
             }),
         };
 
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             // sending native token to relay
             precompiles()
                 .prepare_test(
@@ -525,7 +527,7 @@ mod xcm_new_interface_test {
     #[test]
     fn xtokens_transfer_with_fee_works() {
         let weight = WeightV2::from(3_000_000_000u64, 1024);
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             let parent_destination = Location {
                 parents: 1,
                 interior: Junctions::from(Junction::AccountId32 {
@@ -582,7 +584,7 @@ mod xcm_new_interface_test {
             }),
         };
 
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             // sending native token to relay
             precompiles()
                 .prepare_test(
@@ -622,7 +624,7 @@ mod xcm_new_interface_test {
     #[test]
     fn transfer_multiasset_works() {
         let weight = WeightV2::from(3_000_000_000u64, 1024);
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             let relay_token_location = Location {
                 parents: 1,
                 interior: Junctions::Here,
@@ -771,7 +773,7 @@ mod xcm_new_interface_test {
         ]
         .into();
 
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
@@ -837,7 +839,7 @@ mod xcm_new_interface_test {
         ]
         .into();
 
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
@@ -887,7 +889,7 @@ mod xcm_new_interface_test {
         ])
         .unwrap();
 
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
@@ -944,7 +946,7 @@ mod xcm_new_interface_test {
         ]
         .into();
 
-        ExtBuilder::default().build().execute_with(|| {
+        ExtBuilder.build().execute_with(|| {
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,

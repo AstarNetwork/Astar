@@ -44,10 +44,17 @@ pub mod oracle;
 /// Governance primitives.
 pub mod governance;
 
+/// Genesis generation helpers & primitives.
+pub mod genesis;
+
+/// Parachain related constants.
+pub mod parachain;
+
 /// Benchmark primitives
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarks;
 
+use frame_support::migrations::{FailedMigrationHandler, FailedMigrationHandling};
 use sp_runtime::{
     generic,
     traits::{BlakeTwo256, IdentifyAccount, Verify},
@@ -81,3 +88,23 @@ pub type AssetId = u128;
 pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
 /// Index of a transaction in the chain.
 pub type Nonce = u32;
+
+/// Unfreeze chain on failed migration and continue with extrinsic execution.
+/// Migration must be tested and make sure it doesn't fail. If it happens, we don't have other
+/// choices but unfreeze chain and continue with extrinsic execution.
+pub struct UnfreezeChainOnFailedMigration;
+impl FailedMigrationHandler for UnfreezeChainOnFailedMigration {
+    fn failed(migration: Option<u32>) -> FailedMigrationHandling {
+        log::error!(target: "mbm", "Migration failed at cursor: {migration:?}");
+        FailedMigrationHandling::ForceUnstuck
+    }
+}
+
+/// Currently used MAX_POV_SIZE on Polkadot & Kusama is 10 MiB.
+/// At the moment of adding this constant, we're using `stable2412` which still has 5MiB limit.
+///
+/// To prevent excessive increase in gas used by ethereum transactions, we'll define this temporary
+/// constant for the correct PoV limit. After the next uplift, this should be removed & replaced with value from polkadot-sdk.
+///
+// For reference: https://github.com/paritytech/polkadot-sdk/blob/f6cd17e550caeaa1b8184b5f3135ca21f2cb16eb/polkadot/primitives/src/v8/mod.rs#L455
+pub const MAX_POV_SIZE: u32 = 10 * 1024 * 1024;

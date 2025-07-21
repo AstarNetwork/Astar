@@ -16,11 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+use astar_primitives::Block;
 use sc_chain_spec::ChainSpecExtension;
 use serde::{Deserialize, Serialize};
-use sp_core::{Pair, Public};
-
-use astar_primitives::Block;
 
 pub mod astar;
 pub mod shibuya;
@@ -50,11 +48,4 @@ impl Extensions {
     pub fn try_get(chain_spec: &dyn sc_service::ChainSpec) -> Option<&Self> {
         sc_chain_spec::get_extension(chain_spec.extensions())
     }
-}
-
-/// Helper function to generate a crypto pair from seed
-fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-    TPublic::Pair::from_string(&format!("//{}", seed), None)
-        .expect("static values are valid; qed")
-        .public()
 }

@@ -17,13 +17,13 @@ Usage
 /bench astar pallet_balances
 
 # benchmark multiple pallets
-/bench astar pallet_balances,pallet_dapps_staking
+/bench astar pallet_balances,pallet_dapp_staking
 
 # benchmark all pallets
 /bench astar all
 
 # benchmark multiple runtimes with multiple pallets
-/bench astar,shibuya pallet_balances,pallet_dapps_staking
+/bench astar,shibuya pallet_balances,pallet_dapp_staking
 ```
 
 

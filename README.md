@@ -40,10 +40,10 @@ $ cd Astar
 
 # compile the node
 # note: you may encounter some errors if `wasm32-unknown-unknown` is not installed, or if the toolchain channel is outdated
-$ cargo build --release
+$ cargo build --profile production
 
 # show list of available commands
-$ ./target/release/astar-collator --help
+$ ./target/production/astar-collator --help
 ```
 
 ### Building with Nix
@@ -84,6 +84,28 @@ $ curl -H 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"
 
 After this step, you should have a validator node online with a session key for your node.
 For key management and validator rewards, consult our [validator guide online](https://docs.astar.network/build/validator-guide/configure-node).
+
+## Versioning
+
+### Historical Versioning (Up to `v5.44.0`)
+
+Up to the release `v5.44.0`, **Astar** releases contained both the client & the runtime blobs.
+In general, each release contained both, with some specific releases (related to fixes) which only released e.g. client or runtime.
+Standard semantic versioning approach was used.
+
+### New Versioning Approach (From `v5.45.0`)
+
+Starting with v5.45.0, the release process has been split into separate client and runtime releases, each following distinct versioning schemes:
+
+The **client release** will continue to follow semantic versioning, continuing where the former approach left off.
+E.g. the next expected minor release will be `v5.45.0`.
+
+The **runtime release** will follow a new versioning approach - `runtime-XXYY`.
+
+* The `XX` part will be a number of 2 or more digits, starting with **10**, and will be incremented by **1** each time a new runtime release is made. E.g. `runtime-1000` will be followed by `runtime-1100`, which will be followed by `runtime-1200`, and so on. This is like a combination of _major_ and _minor_ semver versions.
+* The `YY` part will always be a 2 digit number, and serves as a _patch_ semver version. E.g. if we have `runtime-1000` and need to release a fix, the new release version will be `runtime-1001`.
+
+The runtime crate version will align its major and minor versions with the Rust crate version, while the patch version will always remain `00`. For example, a runtime release for `runtime-1100` corresponds to the Rust runtime crate version `11.0.0`. A minor runtime release such as `runtime-1101` corresponds to the Rust runtime crate version `11.1.0`.
 
 ## Workspace Dependency Handling
 

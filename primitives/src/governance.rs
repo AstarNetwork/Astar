@@ -44,6 +44,11 @@ pub type EnsureRootOrTwoThirdsMainCouncil = EitherOfDiverse<
     pallet_collective::EnsureProportionAtLeast<AccountId, MainCouncilCollectiveInst, 2, 3>,
 >;
 
+pub type EnsureRootOrHalfMainCouncil = EitherOfDiverse<
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, MainCouncilCollectiveInst, 1, 2>,
+>;
+
 // Technical Committee
 pub type EnsureRootOrAllTechnicalCommittee = EitherOfDiverse<
     EnsureRoot<AccountId>,
@@ -55,6 +60,11 @@ pub type EnsureRootOrTwoThirdsTechnicalCommittee = EitherOfDiverse<
     pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollectiveInst, 2, 3>,
 >;
 
+pub type EnsureRootOrHalfTechnicalCommittee = EitherOfDiverse<
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollectiveInst, 1, 2>,
+>;
+
 // Community Council
 pub type EnsureRootOrAllCommunityCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
@@ -64,4 +74,20 @@ pub type EnsureRootOrAllCommunityCouncil = EitherOfDiverse<
 pub type EnsureRootOrTwoThirdsCommunityCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, CommunityCouncilCollectiveInst, 2, 3>,
+>;
+
+pub type EnsureRootOrHalfCommunityCouncil = EitherOfDiverse<
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, CommunityCouncilCollectiveInst, 1, 2>,
+>;
+
+pub type EnsureRootOrFourFifthsCommunityCouncil = EitherOfDiverse<
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, CommunityCouncilCollectiveInst, 4, 5>,
+>;
+
+// Combination
+pub type EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil = EitherOfDiverse<
+    EnsureRootOrHalfTechnicalCommittee,
+    pallet_collective::EnsureProportionAtLeast<AccountId, MainCouncilCollectiveInst, 2, 3>,
 >;

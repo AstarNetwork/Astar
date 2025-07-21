@@ -36,7 +36,7 @@ fn precompiles() -> TestPrecompileSet<TestRuntime> {
 
 #[test]
 fn dispatch_calls_on_behalf_of_lockdrop_works() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         // Transfer balance to Alice
         let call = RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
             dest: ALICE,
@@ -73,7 +73,7 @@ fn dispatch_calls_on_behalf_of_lockdrop_works() {
 
 #[test]
 fn proper_gas_is_charged() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         let call = RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
             dest: ALICE,
             value: 15 * ONE,
@@ -82,7 +82,7 @@ fn proper_gas_is_charged() {
         // Dispatch a call and ensure gas is charged properly
         // Expected gas is the constant weight of 1_000_000_000 and the weight of the call
         // In mock one unit of ref_time us charged 1
-        let expected_gas = 1_000_000_000u64 + call.get_dispatch_info().weight.ref_time();
+        let expected_gas = 1_000_000_000u64 + call.get_dispatch_info().total_weight().ref_time();
 
         // Get Alice EVM address based on the Public Key
         let alice_eth = crate::tests::eth_address(&alice_secret());
@@ -109,7 +109,7 @@ fn proper_gas_is_charged() {
 
 #[test]
 fn pubkey_does_not_match_caller_address() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         // Transfer balance to Alice
         let call = RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
             dest: ALICE,
@@ -146,7 +146,7 @@ fn pubkey_does_not_match_caller_address() {
 
 #[test]
 fn pubkey_derive_to_proper_ss58() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         // Transfer balance to Alice
         let call = RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
             dest: ALICE,
@@ -187,7 +187,7 @@ fn pubkey_derive_to_proper_ss58() {
 
 #[test]
 fn decode_limit_too_high() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         let mut nested_call =
             RuntimeCall::System(frame_system::Call::remark { remark: Vec::new() });
 
@@ -224,7 +224,7 @@ fn decode_limit_too_high() {
 
 #[test]
 fn decode_limit_bounded() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         let calls: Vec<_> = (0..681)
             .map(|_| RuntimeCall::System(frame_system::Call::remark { remark: Vec::new() }))
             .collect();
@@ -273,7 +273,7 @@ fn decode_limit_bounded() {
 
 #[test]
 fn decode_limit_ok() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         let mut nested_call =
             RuntimeCall::System(frame_system::Call::remark { remark: Vec::new() });
 
@@ -309,7 +309,7 @@ fn decode_limit_ok() {
 
 #[test]
 fn only_whitelisted_calls_can_be_dispatched() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         // Transfer balance to Alice
         let call = RuntimeCall::System(frame_system::Call::remark_with_event {
             remark: b"Hello World".to_vec(),

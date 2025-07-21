@@ -18,7 +18,7 @@
 use crate as collator_selection;
 use crate::{
     mock::*, CandidacyBond, CandidateInfo, Candidates, DesiredCandidates, Error, Invulnerables,
-    LastAuthoredBlock, NonCandidates,
+    LastAuthoredBlock, NonCandidates, SlashDestination,
 };
 use frame_support::{
     assert_noop, assert_ok,
@@ -62,6 +62,60 @@ fn it_should_set_invulnerables() {
                 invulnerables.clone()
             ),
             Error::<Test>::ValidatorNotRegistered
+        );
+    });
+}
+
+#[test]
+fn add_invulnerable_works() {
+    new_test_ext().execute_with(|| {
+        assert_eq!(Invulnerables::<Test>::get(), vec![1, 2]);
+        assert_ok!(CollatorSelection::add_invulnerable(
+            RuntimeOrigin::signed(RootAccount::get()),
+            3
+        ));
+        assert_eq!(Invulnerables::<Test>::get(), vec![1, 2, 3]);
+
+        // cannot add with non-root.
+        assert_noop!(
+            CollatorSelection::add_invulnerable(RuntimeOrigin::signed(1), 4),
+            BadOrigin
+        );
+
+        // cannot add existing invulnerable
+        assert_noop!(
+            CollatorSelection::add_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 1),
+            Error::<Test>::AlreadyInvulnerable
+        );
+
+        // cannot add invulnerable without associated validator keys
+        assert_noop!(
+            CollatorSelection::add_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 7),
+            Error::<Test>::ValidatorNotRegistered
+        );
+    });
+}
+
+#[test]
+fn remove_invulnerable_works() {
+    new_test_ext().execute_with(|| {
+        assert_eq!(Invulnerables::<Test>::get(), vec![1, 2]);
+        assert_ok!(CollatorSelection::remove_invulnerable(
+            RuntimeOrigin::signed(RootAccount::get()),
+            1
+        ));
+        assert_eq!(Invulnerables::<Test>::get(), vec![2]);
+
+        // cannot remove with non-root.
+        assert_noop!(
+            CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(1), 2),
+            BadOrigin
+        );
+
+        // cannot remove non-existent invulnerable
+        assert_noop!(
+            CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 1),
+            Error::<Test>::NotInvulnerable
         );
     });
 }
@@ -282,7 +336,7 @@ fn leave_intent() {
         assert_eq!(Balances::reserved_balance(3), 10);
         assert_eq!(LastAuthoredBlock::<Test>::get(3), 10);
         // 10 unbonding from session 1
-        assert_eq!(NonCandidates::<Test>::get(3), (1, 10));
+        assert_eq!(NonCandidates::<Test>::get(3), Some((1, 10)));
     });
 }
 
@@ -313,7 +367,7 @@ fn withdraw_unbond() {
 
         initialize_to_block(10);
         assert_ok!(CollatorSelection::withdraw_bond(RuntimeOrigin::signed(3)));
-        assert_eq!(NonCandidates::<Test>::get(3), (0, 0));
+        assert_eq!(NonCandidates::<Test>::get(3), None);
         assert_eq!(Balances::free_balance(3), 100);
         assert_eq!(Balances::reserved_balance(3), 0);
 
@@ -493,7 +547,7 @@ fn kick_and_slash_mechanism() {
 }
 
 #[test]
-fn slash_mechanism_for_unbonding_candidates() {
+fn slash_mechanism_for_unbonding_candidates_who_missed_block() {
     new_test_ext().execute_with(|| {
         // Define slash destination account
         <crate::SlashDestination<Test>>::put(5);
@@ -535,6 +589,45 @@ fn slash_mechanism_for_unbonding_candidates() {
         // slashed collator gets funds back except slashed 10% (of 10 bond)
         assert_eq!(Balances::free_balance(3), 99);
         assert_eq!(Balances::free_balance(5), 101);
+    });
+}
+
+#[test]
+fn should_not_slash_unbonding_candidates() {
+    new_test_ext().execute_with(|| {
+        // add a new collator
+        assert_ok!(CollatorSelection::register_as_candidate(
+            RuntimeOrigin::signed(3)
+        ));
+        assert_ok!(CollatorSelection::register_as_candidate(
+            RuntimeOrigin::signed(4)
+        ));
+        assert_eq!(LastAuthoredBlock::<Test>::get(3), 10);
+        assert_eq!(LastAuthoredBlock::<Test>::get(4), 10);
+
+        assert_ok!(CollatorSelection::leave_intent(RuntimeOrigin::signed(3)));
+        // can withdraw on next session
+        assert_eq!(NonCandidates::<Test>::get(3), Some((1, 10)));
+
+        initialize_to_block(10);
+        // not included next session and doesn't withdraw bond
+        assert_eq!(NextSessionCollators::get(), vec![1, 2, 4]);
+        assert_eq!(LastAuthoredBlock::<Test>::get(3), 10);
+        assert_eq!(LastAuthoredBlock::<Test>::get(4), 10);
+        assert_eq!(NonCandidates::<Test>::get(3), Some((1, 10)));
+        assert_eq!(Balances::free_balance(3), 90);
+
+        initialize_to_block(20);
+        assert_eq!(SessionChangeBlock::get(), 20);
+        assert!(!LastAuthoredBlock::<Test>::contains_key(3));
+        assert_eq!(LastAuthoredBlock::<Test>::get(4), 20);
+
+        assert_eq!(NonCandidates::<Test>::get(3), Some((1, 10)));
+        assert_eq!(Balances::free_balance(3), 90);
+
+        assert_ok!(CollatorSelection::withdraw_bond(RuntimeOrigin::signed(3)));
+        assert_eq!(NonCandidates::<Test>::get(3), None);
+        assert_eq!(Balances::free_balance(3), 100);
     });
 }
 
@@ -588,4 +681,31 @@ fn cannot_set_genesis_value_twice() {
     };
     // collator selection must be initialized before session.
     collator_selection.assimilate_storage(&mut t).unwrap();
+}
+
+#[test]
+fn set_slash_destination() {
+    new_test_ext().execute_with(|| {
+        assert_eq!(SlashDestination::<Test>::get(), None);
+
+        // only UpdateOrigin can update
+        assert_noop!(
+            CollatorSelection::set_slash_destination(RuntimeOrigin::signed(1), Some(1)),
+            sp_runtime::DispatchError::BadOrigin
+        );
+
+        // set destination
+        assert_ok!(CollatorSelection::set_slash_destination(
+            RuntimeOrigin::signed(RootAccount::get()),
+            Some(1),
+        ));
+        assert_eq!(SlashDestination::<Test>::get(), Some(1));
+
+        // remove destination
+        assert_ok!(CollatorSelection::set_slash_destination(
+            RuntimeOrigin::signed(RootAccount::get()),
+            None,
+        ));
+        assert_eq!(SlashDestination::<Test>::get(), None);
+    });
 }

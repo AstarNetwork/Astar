@@ -186,17 +186,27 @@ impl<AccountId> AccountCheck<AccountId> for () {
 /// Trait for calculating the total number of tier slots for the given price.
 pub trait TierSlots {
     /// Returns the total number of tier slots for the given price.
-    fn number_of_slots(price: CurrencyAmount) -> u16;
+    ///
+    /// # Arguments
+    /// * `price` - price (e.g. moving average over some time period) of the native currency.
+    /// * `args` - arguments, `a` & `b`, for the linear equation `number_of_slots = a * price + b`.
+    ///
+    /// Returns the total number of tier slots.
+    fn number_of_slots(price: CurrencyAmount, args: (u64, u64)) -> u16;
 }
 
 /// Standard tier slots implementation, as proposed in the Tokenomics 2.0 document.
 pub struct StandardTierSlots;
 impl TierSlots for StandardTierSlots {
-    fn number_of_slots(price: CurrencyAmount) -> u16 {
-        let result: u64 = price.saturating_mul_int(1000_u64).saturating_add(50);
+    fn number_of_slots(price: CurrencyAmount, args: (u64, u64)) -> u16 {
+        let result: u64 = price.saturating_mul_int(args.0).saturating_add(args.1);
         result.unique_saturated_into()
     }
 }
+
+/// Standard tier slots arguments.
+/// Initially decided for Astar, during the Tokenomics 2.0 work.
+pub const STANDARD_TIER_SLOTS_ARGS: (u64, u64) = (1000, 50);
 
 /// RankedTier is wrapper around u8 to hold both tier and rank. u8 has 2 bytes (8bits) and they're using in this order `0xrank_tier`.
 /// First 4 bits are used to hold rank and second 4 bits are used to hold tier.

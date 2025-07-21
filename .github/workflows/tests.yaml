@@ -5,6 +5,7 @@ on:
     - '**'
     tags-ignore:
     - v[0-9]+.[0-9]+.[0-9]+*
+    - runtime-[0-9]+*
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

@@ -21,7 +21,7 @@ jobs:
     - name: Setup node
       uses: actions/setup-node@v4
       with:
-        node-version: 18.x
+        node-version: 20.x
         cache: 'yarn'
         cache-dependency-path: e2e-tests/yarn.lock
 
@@ -55,4 +55,4 @@ jobs:
       run: yarn test
       env:
         ASTAR_WASM: wasm/astar_runtime.wasm
-        SHIDEN_WASM: wasm/astar_runtime.wasm
+        SHIDEN_WASM: wasm/shiden_runtime.wasm

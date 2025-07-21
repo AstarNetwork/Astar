@@ -19,18 +19,18 @@
 //! A mock runtime for XCM benchmarking.
 
 use crate::{fungible, generic, *};
-use astar_primitives::xcm::ReserveAssetFilter;
+use astar_primitives::xcm::Reserves;
 use frame_benchmarking::BenchmarkError;
 use frame_support::{
-    assert_ok, parameter_types,
+    assert_ok, derive_impl, parameter_types,
     traits::{fungible::ItemOf, AsEnsureOriginWithArg, Everything, Nothing},
     weights::Weight,
 };
 use frame_system::{EnsureRoot, EnsureSigned};
 
 use core::marker::PhantomData;
-use sp_core::{ConstU32, ConstU64, Get, H256};
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+use sp_core::{ConstU64, Get};
+use sp_runtime::traits::IdentityLookup;
 use xcm::latest::prelude::*;
 use xcm_builder::{AllowUnpaidExecutionFrom, FungiblesAdapter, MintLocation, NoChecking};
 
@@ -104,58 +104,25 @@ parameter_types! {
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, u64::MAX));
     pub UniversalLocation: InteriorLocation = Here;
 }
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
-    type BaseCallFilter = Everything;
-    type BlockWeights = ();
-    type BlockLength = ();
     type Block = Block;
-    type DbWeight = ();
-    type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
-    type Hash = H256;
-    type RuntimeCall = RuntimeCall;
-    type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<u64>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
-    type MaxConsumers = ConstU32<16>;
-    type RuntimeTask = RuntimeTask;
-    type SingleBlockMigrations = ();
-    type MultiBlockMigrator = ();
-    type PreInherents = ();
-    type PostInherents = ();
-    type PostTransactions = ();
 }
 
 parameter_types! {
     pub const ExistentialDeposit: u64 = 10;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
-    type MaxLocks = ();
-    type MaxReserves = ();
-    type ReserveIdentifier = [u8; 8];
     type Balance = Balance;
-    type DustRemoval = ();
-    type RuntimeEvent = RuntimeEvent;
-    type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type WeightInfo = ();
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type FreezeIdentifier = ();
-    type RuntimeFreezeReason = ();
-    type MaxFreezes = ConstU32<0>;
 }
 
+#[derive_impl(pallet_assets::config_preludes::TestDefaultConfig)]
 impl pallet_assets::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
@@ -169,14 +136,7 @@ impl pallet_assets::Config for Test {
     type MetadataDepositPerByte = ConstU64<1>;
     type AssetAccountDeposit = ConstU64<10>;
     type ApprovalDeposit = ConstU64<10>;
-    type StringLimit = ConstU32<50>;
     type Freezer = ();
-    type Extra = ();
-    type RemoveItemsLimit = ConstU32<100>;
-    type CallbackHandle = ();
-    type WeightInfo = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = ();
 }
 
 pub struct MatchOnlyAsset<MatchAsset>(PhantomData<MatchAsset>);
@@ -230,7 +190,7 @@ impl xcm_executor::Config for XcmConfig {
     type XcmSender = DevNull;
     type AssetTransactor = AssetTransactor;
     type OriginConverter = ();
-    type IsReserve = ReserveAssetFilter;
+    type IsReserve = Reserves;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = AllowUnpaidExecutionFrom<Everything>;
@@ -254,6 +214,7 @@ impl xcm_executor::Config for XcmConfig {
     type HrmpNewChannelOpenRequestHandler = ();
     type HrmpChannelAcceptedHandler = ();
     type HrmpChannelClosingHandler = ();
+    type XcmRecorder = ();
 }
 
 impl pallet_xcm_benchmarks::Config for Test {

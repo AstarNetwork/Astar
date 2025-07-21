@@ -94,12 +94,83 @@ fn force_inflation_recalculation_work() {
         );
     })
 }
+
 #[test]
 fn force_inflation_fails_due_to_unprivileged_origin() {
     ExternalityBuilder::build().execute_with(|| {
         // Make sure action is privileged
         assert_noop!(
             Inflation::force_inflation_recalculation(RuntimeOrigin::signed(1), 100),
+            BadOrigin
+        );
+    })
+}
+
+#[test]
+fn force_readjust_config_works() {
+    ExternalityBuilder::build().execute_with(|| {
+        // Init values
+        let old_params = InflationParams::<Test>::get();
+        let old_config = ActiveInflationConfig::<Test>::get();
+
+        // Change params, modifying staker reward parts
+        let mut new_params = old_params;
+        new_params.base_stakers_part = Perquintill::from_percent(10);
+        new_params.adjustable_stakers_part = Perquintill::from_percent(50);
+        assert_ne!(new_params, old_params, "Sanity check, must be different.");
+        assert!(new_params.is_valid(), "Sanity check.");
+
+        // Force set new params, before calling `force_readjust_config`
+        assert_ok!(Inflation::force_set_inflation_params(
+            RuntimeOrigin::root(),
+            new_params
+        ));
+
+        // Force readjust config
+        assert_ok!(Inflation::force_readjust_config(RuntimeOrigin::root()));
+        let new_config = ActiveInflationConfig::<Test>::get();
+        assert_ne!(new_config, old_config, "Config should change.");
+        System::assert_last_event(
+            Event::ForcedInflationRecalculation { config: new_config }.into(),
+        );
+
+        // Value checks of the new config
+        // These should remain unchanged
+        lenient_balance_assert_eq!(
+            new_config.collator_reward_per_block,
+            old_config.collator_reward_per_block
+        );
+        lenient_balance_assert_eq!(
+            new_config.treasury_reward_per_block,
+            old_config.treasury_reward_per_block
+        );
+        lenient_balance_assert_eq!(
+            new_config.dapp_reward_pool_per_era,
+            old_config.dapp_reward_pool_per_era
+        );
+        lenient_balance_assert_eq!(
+            new_config.bonus_reward_pool_per_period,
+            old_config.bonus_reward_pool_per_period
+        );
+        assert_eq!(new_config.ideal_staking_rate, old_config.ideal_staking_rate,);
+        assert_eq!(new_config.recalculation_era, old_config.recalculation_era,);
+
+        // These should change
+        assert!(
+            new_config.base_staker_reward_pool_per_era < old_config.base_staker_reward_pool_per_era
+        );
+        assert!(
+            new_config.adjustable_staker_reward_pool_per_era
+                > old_config.adjustable_staker_reward_pool_per_era
+        )
+    })
+}
+
+#[test]
+fn force_readjust_config_fails_due_to_unprivileged_origin() {
+    ExternalityBuilder::build().execute_with(|| {
+        assert_noop!(
+            Inflation::force_readjust_config(RuntimeOrigin::signed(1)),
             BadOrigin
         );
     })
@@ -140,8 +211,6 @@ fn inflation_recalculation_occurs_when_expected() {
             init_total_issuance,
             "Total issuance must not change when inflation is recalculated - nothing is minted until it's needed."
         );
-
-        assert_eq!(new_config.issuance_safety_cap, init_total_issuance + InflationParams::<Test>::get().max_inflation_rate * init_total_issuance);
     })
 }
 
@@ -217,10 +286,6 @@ fn inflation_recalculation_works() {
         assert_eq!(
             new_config.recalculation_era,
             now + <Test as Config>::CycleConfiguration::eras_per_cycle()
-        );
-        assert_eq!(
-            new_config.issuance_safety_cap,
-            total_issuance + max_emission,
         );
 
         // Verify collator rewards are as expected
@@ -381,41 +446,6 @@ fn basic_payout_reward_is_ok() {
 
         assert_eq!(Balances::free_balance(&account), init_balance + reward);
         assert_eq!(Balances::total_issuance(), init_issuance + reward);
-    })
-}
-
-#[test]
-fn payout_reward_with_exceeded_cap_but_not_exceeded_relaxed_cap_is_ok() {
-    ExternalityBuilder::build().execute_with(|| {
-        // Prepare reward payout params
-        let config = ActiveInflationConfig::<Test>::get();
-        let account = 1;
-
-        let relaxed_cap = config.issuance_safety_cap * 101 / 100;
-        let reward = relaxed_cap - Balances::total_issuance();
-        let init_balance = Balances::free_balance(&account);
-        let init_issuance = Balances::total_issuance();
-
-        // Payout reward and verify balances are as expected
-        assert_ok!(Inflation::payout_reward(&account, reward));
-
-        assert_eq!(Balances::free_balance(&account), init_balance + reward);
-        assert_eq!(Balances::total_issuance(), init_issuance + reward);
-    })
-}
-
-#[test]
-fn payout_reward_fails_when_relaxed_cap_is_exceeded() {
-    ExternalityBuilder::build().execute_with(|| {
-        // Prepare reward payout params
-        let config = ActiveInflationConfig::<Test>::get();
-        let account = 1;
-
-        let relaxed_cap = config.issuance_safety_cap * 101 / 100;
-        let reward = relaxed_cap - Balances::total_issuance() + 1;
-
-        // Payout should be a failure, with storage noop.
-        assert_noop!(Inflation::payout_reward(&account, reward), ());
     })
 }
 

@@ -29,7 +29,7 @@ fn precompiles() -> TestPrecompileSet<TestRuntime> {
 #[test]
 fn test_get_evm_address() {
     // Case 1 : Address Not Mapped
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         let alice_default_evm =
             <TestRuntime as pallet_unified_accounts::Config>::DefaultMappings::to_default_h160(
                 &ALICE,
@@ -49,7 +49,7 @@ fn test_get_evm_address() {
     });
 
     // Case 2 : Address Mapped
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
         let signature = get_evm_signature(&ALICE, &alice_secret());
 
@@ -77,7 +77,7 @@ fn test_get_evm_address() {
 #[test]
 fn test_get_native_address() {
     // Case 1: not mapped native address (default address)
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
         let alice_eth_address: Address = alice_eth.into();
 
@@ -101,7 +101,7 @@ fn test_get_native_address() {
     });
 
     // Case 2 : mapped address
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         // claiming address
         let alice_eth: Address = UnifiedAccounts::eth_address(&alice_secret()).into();
         let signature = get_evm_signature(&ALICE, &alice_secret());

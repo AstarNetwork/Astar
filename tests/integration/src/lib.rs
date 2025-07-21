@@ -36,7 +36,7 @@ mod dispatch_precompile_filter;
 mod unified_accounts;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod dapp_staking_v3;
+mod dapp_staking;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod assets_chain_extensions;
@@ -47,8 +47,11 @@ mod oracle;
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod evm_tracing;
 
-#[cfg(any(feature = "shibuya"))]
+#[cfg(any(feature = "shibuya", feature = "astar"))]
 mod governance;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod xcm_api;
+
+#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
+mod fees;

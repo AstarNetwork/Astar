@@ -76,9 +76,9 @@ fn para_to_para_reserve_transfer_and_back_via_xtokens() {
 
     // Parachain B should receive parachain A native assets and should mint their local derivate.
     // Portion of those assets should be taken as the XCM execution fee.
-    let four_instructions_execution_cost =
-        (parachain::UnitWeightCost::get() * 4).ref_time() as u128;
-    let remaining = withdraw_amount - four_instructions_execution_cost;
+    let five_instructions_execution_cost =
+        (parachain::UnitWeightCost::get() * 5).ref_time() as u128;
+    let remaining = withdraw_amount - five_instructions_execution_cost;
     ParaB::execute_with(|| {
         // Ensure Alice received assets on ParaB (sent amount minus expenses)
         assert_eq!(
@@ -113,15 +113,15 @@ fn para_to_para_reserve_transfer_and_back_via_xtokens() {
         // ParaB soveregin account account should have only the execution cost
         assert_eq!(
             parachain::Balances::free_balance(&sibling_para_account_id(2)),
-            INITIAL_BALANCE + four_instructions_execution_cost
+            INITIAL_BALANCE + five_instructions_execution_cost
         );
         // ParaA alice should have initial amount backed subtracted with execution costs
-        // which is 2xfour_instructions_execution_cost
-        // or withdraw_amount + remaining - four_instructions_execution_cost
+        // which is 2xfive_instructions_execution_cost
+        // or withdraw_amount + remaining - five_instructions_execution_cost
         // both are same
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),
-            INITIAL_BALANCE - withdraw_amount + remaining - four_instructions_execution_cost
+            INITIAL_BALANCE - withdraw_amount + remaining - five_instructions_execution_cost
         );
     });
 }
@@ -174,9 +174,9 @@ fn para_to_para_reserve_transfer_and_back() {
 
     // Parachain B should receive parachain A native assets and should mint their local derivate.
     // Portion of those assets should be taken as the XCM execution fee.
-    let four_instructions_execution_cost =
-        (parachain::UnitWeightCost::get() * 4).ref_time() as u128;
-    let remaining = withdraw_amount - four_instructions_execution_cost;
+    let five_instructions_execution_cost =
+        (parachain::UnitWeightCost::get() * 5).ref_time() as u128;
+    let remaining = withdraw_amount - five_instructions_execution_cost;
     ParaB::execute_with(|| {
         // Ensure Alice received assets on ParaB (sent amount minus expenses)
         assert_eq!(
@@ -200,15 +200,15 @@ fn para_to_para_reserve_transfer_and_back() {
         // ParaB soveregin account account should have only the execution cost
         assert_eq!(
             parachain::Balances::free_balance(&sibling_para_account_id(2)),
-            INITIAL_BALANCE + four_instructions_execution_cost
+            INITIAL_BALANCE + five_instructions_execution_cost
         );
         // ParaA alice should have initial amount backed subtracted with execution costs
-        // which is 2xfour_instructions_execution_cost
-        // or withdraw_amount + remaining - four_instructions_execution_cost
+        // which is 2xfive_instructions_execution_cost
+        // or withdraw_amount + remaining - five_instructions_execution_cost
         // both are same
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),
-            INITIAL_BALANCE - withdraw_amount + remaining - four_instructions_execution_cost
+            INITIAL_BALANCE - withdraw_amount + remaining - five_instructions_execution_cost
         );
     });
 }
@@ -685,9 +685,11 @@ fn para_a_send_relay_asset_to_para_b() {
 
     // Para B balances should have been credited
     ParaB::execute_with(|| {
+        let five_instructions_execution_cost =
+            (parachain::UnitWeightCost::get() * 5).ref_time() as u128;
         assert_eq!(
             parachain::Assets::balance(relay_asset_id, ALICE),
-            withdraw_amount - 40
+            withdraw_amount - five_instructions_execution_cost
         );
     });
 }
@@ -962,7 +964,7 @@ fn para_asset_trap_and_claim() {
 
         assert_ok!(ParachainPalletXcm::execute(
             parachain::RuntimeOrigin::signed(ALICE.into()),
-            Box::new(VersionedXcm::V4(xcm)),
+            Box::new(VersionedXcm::V5(xcm)),
             Weight::from_parts(100_000_000_000, 1024 * 1024)
         ));
 
@@ -994,11 +996,83 @@ fn para_asset_trap_and_claim() {
 
         assert_ok!(ParachainPalletXcm::execute(
             parachain::RuntimeOrigin::signed(ALICE.into()),
-            Box::new(VersionedXcm::V4(xcm)),
+            Box::new(VersionedXcm::V5(xcm)),
             Weight::from_parts(100_000_000_000, 1024 * 1024)
         ));
 
         // Bob's Balance increased after assets claimed
         assert_eq!(parachain::Balances::free_balance(BOB), send_amount);
+    });
+}
+
+// Send relay asset (like DOT) from Parachain C (mocking Asset Hub - with parachain_id: 1000) to Parachain A.
+// It ensures it withdraws as reserve in Parachain C, and it allows it through DotFromAssetHub filter
+#[test]
+fn transfer_relay_token_reserve_from_para_c_to_para_a() {
+    MockNet::reset();
+
+    let source_location = (Parent,);
+    let relay_asset_id = 123_u128;
+    let alice = AccountId32 {
+        network: None,
+        id: ALICE.into(),
+    };
+
+    // On Parachain A create an asset which represents a derivative of relay native asset.
+    // This asset is allowed as an XCM execution fee payment asset.
+    ParaA::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location.clone(),
+            parent_account_id(),
+            Some(true),
+            Some(1),
+            Some(1_000_000_000_000)
+        ));
+    });
+
+    // Build the XCM message and send it
+    let to_para_a_amount = 10_000_000_000_000u128;
+    ParaC::execute_with(|| {
+        let dest = Location::new(1, [Parachain(1)]);
+        let beneficiary = Location::new(0, [alice.into()]);
+
+        let assets = Assets::from(Asset {
+            id: AssetId(Location::new(1, Here)),
+            fun: Fungible(to_para_a_amount),
+        });
+
+        let message = Xcm(vec![
+            ReserveAssetDeposited(assets.clone()),
+            ClearOrigin,
+            BuyExecution {
+                fees: Asset {
+                    id: AssetId(Location::new(1, Here)),
+                    fun: Fungible(to_para_a_amount),
+                },
+                weight_limit: Unlimited,
+            },
+            DepositAsset {
+                assets: Wild(AllCounted(1)),
+                beneficiary,
+            },
+        ]);
+
+        assert_ok!(ParachainPalletXcm::send(
+            parachain::RuntimeOrigin::root(),
+            Box::new(dest.into()),
+            Box::new(VersionedXcm::from(message)),
+        ));
+    });
+
+    // Parachain A should receive the tokens, and some portion of it is used for XCM execution fees
+    ParaA::execute_with(|| {
+        let four_instructions_execution_cost =
+            (parachain::UnitWeightCost::get() * 4).ref_time() as u128;
+        assert_eq!(
+            parachain::Assets::balance(relay_asset_id, ALICE),
+            to_para_a_amount - four_instructions_execution_cost
+        );
     });
 }

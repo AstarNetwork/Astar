@@ -20,26 +20,22 @@
 use crate::{
     cli::{Cli, RelayChainCli, Subcommand},
     local::{self, development_config},
-    parachain::{
-        self, chain_spec, service::AdditionalConfig, start_astar_node, start_shibuya_node,
-        start_shiden_node,
-    },
+    parachain::{self, chain_spec, service::AdditionalConfig},
 };
 use cumulus_primitives_core::ParaId;
-use log::{error, info};
+use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
+#[cfg(feature = "runtime-benchmarks")]
+use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory};
+use log::info;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
-    NetworkParams, Result, SharedParams, SubstrateCli,
+    NetworkParams, Result, RpcEndpoint, SharedParams, SubstrateCli,
 };
 use sc_service::{
     config::{BasePath, PrometheusConfig},
     PartialComponents,
 };
 use sp_runtime::traits::AccountIdConversion;
-use std::net::SocketAddr;
-
-#[cfg(feature = "runtime-benchmarks")]
-use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
 
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
@@ -75,6 +71,18 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
     }
     fn is_shibuya(&self) -> bool {
         <dyn sc_service::ChainSpec>::is_shibuya(self)
+    }
+}
+
+/// A trait to identify the network backend based on the chain spec.
+pub trait IdentifyChainNetworkBackend {
+    /// Returns the default network backend.
+    fn default_network_backend(&self) -> sc_network::config::NetworkBackendType;
+}
+
+impl IdentifyChainNetworkBackend for Box<dyn ChainSpec> {
+    fn default_network_backend(&self) -> sc_network::config::NetworkBackendType {
+        sc_network::config::NetworkBackendType::Libp2p
     }
 }
 
@@ -198,169 +206,53 @@ pub fn run() -> Result<()> {
         }
         Some(Subcommand::CheckBlock(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            if runner.config().chain_spec.is_astar() {
-                runner.async_run(|config| {
-                    let PartialComponents {
-                        client,
-                        task_manager,
-                        import_queue,
-                        ..
-                    } = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue,
-                    )?;
-                    Ok((cmd.run(client, import_queue), task_manager))
-                })
-            } else if runner.config().chain_spec.is_shiden() {
-                runner.async_run(|config| {
-                    let PartialComponents {
-                        client,
-                        task_manager,
-                        import_queue,
-                        ..
-                    } = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue_fallback,
-                    )?;
-                    Ok((cmd.run(client, import_queue), task_manager))
-                })
-            } else {
-                runner.async_run(|config| {
-                    let PartialComponents {
-                        client,
-                        task_manager,
-                        import_queue,
-                        ..
-                    } = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue,
-                    )?;
-                    Ok((cmd.run(client, import_queue), task_manager))
-                })
-            }
+            let rpc_config = cli.eth_api_options.new_rpc_config();
+            runner.async_run(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    import_queue,
+                    ..
+                } = parachain::new_partial(&config, &rpc_config)?;
+                Ok((cmd.run(client, import_queue), task_manager))
+            })
         }
         Some(Subcommand::ExportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            if runner.config().chain_spec.is_astar() {
-                runner.async_run(|config| {
-                    let PartialComponents {
-                        client,
-                        task_manager,
-                        ..
-                    } = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue,
-                    )?;
-                    Ok((cmd.run(client, config.database), task_manager))
-                })
-            } else if runner.config().chain_spec.is_shiden() {
-                runner.async_run(|config| {
-                    let PartialComponents {
-                        client,
-                        task_manager,
-                        ..
-                    } = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue_fallback,
-                    )?;
-                    Ok((cmd.run(client, config.database), task_manager))
-                })
-            } else {
-                runner.async_run(|config| {
-                    let PartialComponents {
-                        client,
-                        task_manager,
-                        ..
-                    } = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue,
-                    )?;
-                    Ok((cmd.run(client, config.database), task_manager))
-                })
-            }
+            let rpc_config = cli.eth_api_options.new_rpc_config();
+            runner.async_run(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    ..
+                } = parachain::new_partial(&config, &rpc_config)?;
+                Ok((cmd.run(client, config.database), task_manager))
+            })
         }
         Some(Subcommand::ExportState(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            if runner.config().chain_spec.is_astar() {
-                runner.async_run(|config| {
-                    let PartialComponents {
-                        client,
-                        task_manager,
-                        ..
-                    } = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue,
-                    )?;
-                    Ok((cmd.run(client, config.chain_spec), task_manager))
-                })
-            } else if runner.config().chain_spec.is_shiden() {
-                runner.async_run(|config| {
-                    let PartialComponents {
-                        client,
-                        task_manager,
-                        ..
-                    } = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue_fallback,
-                    )?;
-                    Ok((cmd.run(client, config.chain_spec), task_manager))
-                })
-            } else {
-                runner.async_run(|config| {
-                    let PartialComponents {
-                        client,
-                        task_manager,
-                        ..
-                    } = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue,
-                    )?;
-                    Ok((cmd.run(client, config.chain_spec), task_manager))
-                })
-            }
+            let rpc_config = cli.eth_api_options.new_rpc_config();
+            runner.async_run(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    ..
+                } = parachain::new_partial(&config, &rpc_config)?;
+                Ok((cmd.run(client, config.chain_spec), task_manager))
+            })
         }
         Some(Subcommand::ImportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            if runner.config().chain_spec.is_astar() {
-                runner.async_run(|config| {
-                    let PartialComponents {
-                        client,
-                        task_manager,
-                        import_queue,
-                        ..
-                    } = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue,
-                    )?;
-                    Ok((cmd.run(client, import_queue), task_manager))
-                })
-            } else if runner.config().chain_spec.is_shiden() {
-                runner.async_run(|config| {
-                    let PartialComponents {
-                        client,
-                        task_manager,
-                        import_queue,
-                        ..
-                    } = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue_fallback,
-                    )?;
-                    Ok((cmd.run(client, import_queue), task_manager))
-                })
-            } else {
-                runner.async_run(|config| {
-                    let PartialComponents {
-                        client,
-                        task_manager,
-                        import_queue,
-                        ..
-                    } = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue,
-                    )?;
-                    Ok((cmd.run(client, import_queue), task_manager))
-                })
-            }
+            let rpc_config = cli.eth_api_options.new_rpc_config();
+            runner.async_run(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    import_queue,
+                    ..
+                } = parachain::new_partial(&config, &rpc_config)?;
+                Ok((cmd.run(client, import_queue), task_manager))
+            })
         }
         Some(Subcommand::PurgeChain(cmd)) => {
             let runner = cli.create_runner(cmd)?;
@@ -383,34 +275,16 @@ pub fn run() -> Result<()> {
         }
         Some(Subcommand::Revert(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            if runner.config().chain_spec.is_astar() {
+            let chain_spec = &runner.config().chain_spec;
+            let rpc_config = cli.eth_api_options.new_rpc_config();
+            if chain_spec.is_dev() {
                 runner.async_run(|config| {
                     let PartialComponents {
                         client,
                         task_manager,
                         backend,
                         ..
-                    } = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue,
-                    )?;
-                    let aux_revert = Box::new(|client, _, blocks| {
-                        sc_consensus_grandpa::revert(client, blocks)?;
-                        Ok(())
-                    });
-                    Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
-                })
-            } else if runner.config().chain_spec.is_shiden() {
-                runner.async_run(|config| {
-                    let PartialComponents {
-                        client,
-                        task_manager,
-                        backend,
-                        ..
-                    } = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue_fallback,
-                    )?;
+                    } = local::new_partial(&config, &rpc_config)?;
                     let aux_revert = Box::new(|client, _, blocks| {
                         sc_consensus_grandpa::revert(client, blocks)?;
                         Ok(())
@@ -424,48 +298,19 @@ pub fn run() -> Result<()> {
                         task_manager,
                         backend,
                         ..
-                    } = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
-                        &config,
-                        parachain::build_import_queue,
-                    )?;
-                    let aux_revert = Box::new(|client, _, blocks| {
-                        sc_consensus_grandpa::revert(client, blocks)?;
-                        Ok(())
-                    });
-                    Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
+                    } = parachain::new_partial(&config, &rpc_config)?;
+                    Ok((cmd.run(client, backend, None), task_manager))
                 })
             }
         }
         Some(Subcommand::ExportGenesisState(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            if runner.config().chain_spec.is_astar() {
-                runner.sync_run(|config| {
-                    let PartialComponents { client, .. } =
-                        parachain::new_partial::<astar_runtime::RuntimeApi, _>(
-                            &config,
-                            parachain::build_import_queue,
-                        )?;
-                    cmd.run(client)
-                })
-            } else if runner.config().chain_spec.is_shiden() {
-                runner.sync_run(|config| {
-                    let PartialComponents { client, .. } =
-                        parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
-                            &config,
-                            parachain::build_import_queue_fallback,
-                        )?;
-                    cmd.run(client)
-                })
-            } else {
-                runner.sync_run(|config| {
-                    let PartialComponents { client, .. } =
-                        parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
-                            &config,
-                            parachain::build_import_queue,
-                        )?;
-                    cmd.run(client)
-                })
-            }
+            let rpc_config = cli.eth_api_options.new_rpc_config();
+            runner.sync_run(|config| {
+                let PartialComponents { client, .. } =
+                    parachain::new_partial(&config, &rpc_config)?;
+                cmd.run(client)
+            })
         }
         Some(Subcommand::ExportGenesisWasm(cmd)) => {
             let runner = cli.create_runner(cmd)?;
@@ -486,6 +331,7 @@ pub fn run() -> Result<()> {
             use sp_runtime::traits::HashingFor;
 
             let runner = cli.create_runner(cmd)?;
+            let rpc_config = cli.eth_api_options.new_rpc_config();
             let chain_spec = &runner.config().chain_spec;
 
             match cmd {
@@ -517,66 +363,22 @@ pub fn run() -> Result<()> {
                     }
                 }
                 BenchmarkCmd::Block(cmd) => {
-                    if chain_spec.is_astar() {
+                    if chain_spec.is_dev() {
                         runner.sync_run(|config| {
-                            let params = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
-                                &config,
-                                parachain::build_import_queue,
-                            )?;
-                            cmd.run(params.client)
-                        })
-                    } else if chain_spec.is_shiden() {
-                        runner.sync_run(|config| {
-                            let params = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
-                                &config,
-                                parachain::build_import_queue_fallback,
-                            )?;
-                            cmd.run(params.client)
-                        })
-                    } else if chain_spec.is_shibuya() {
-                        runner.sync_run(|config| {
-                            let params = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
-                                &config,
-                                parachain::build_import_queue,
-                            )?;
+                            let params = local::new_partial(&config, &rpc_config)?;
                             cmd.run(params.client)
                         })
                     } else {
                         runner.sync_run(|config| {
-                            let params = local::new_partial(&config)?;
+                            let params = parachain::new_partial(&config, &rpc_config)?;
                             cmd.run(params.client)
                         })
                     }
                 }
                 BenchmarkCmd::Storage(cmd) => {
-                    if chain_spec.is_astar() {
+                    if chain_spec.is_dev() {
                         runner.sync_run(|config| {
-                            let params = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
-                                &config,
-                                parachain::build_import_queue,
-                            )?;
-                            let db = params.backend.expose_db();
-                            let storage = params.backend.expose_storage();
-
-                            cmd.run(config, params.client, db, storage)
-                        })
-                    } else if chain_spec.is_shiden() {
-                        runner.sync_run(|config| {
-                            let params = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
-                                &config,
-                                parachain::build_import_queue_fallback,
-                            )?;
-                            let db = params.backend.expose_db();
-                            let storage = params.backend.expose_storage();
-
-                            cmd.run(config, params.client, db, storage)
-                        })
-                    } else if chain_spec.is_shibuya() {
-                        runner.sync_run(|config| {
-                            let params = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
-                                &config,
-                                parachain::build_import_queue,
-                            )?;
+                            let params = local::new_partial(&config, &rpc_config)?;
                             let db = params.backend.expose_db();
                             let storage = params.backend.expose_storage();
 
@@ -584,7 +386,7 @@ pub fn run() -> Result<()> {
                         })
                     } else {
                         runner.sync_run(|config| {
-                            let params = local::new_partial(&config)?;
+                            let params = parachain::new_partial(&config, &rpc_config)?;
                             let db = params.backend.expose_db();
                             let storage = params.backend.expose_storage();
 
@@ -593,146 +395,46 @@ pub fn run() -> Result<()> {
                     }
                 }
                 BenchmarkCmd::Overhead(cmd) => {
-                    if chain_spec.is_astar() {
+                    let chain_name = chain_spec.name().to_string();
+                    if chain_spec.is_dev() {
                         runner.sync_run(|config| {
-                            let params = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
-                                &config,
-                                parachain::build_import_queue,
-                            )?;
-                            let ext_builder = RemarkBuilder::new(params.client.clone());
-                            let inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
-
-                            cmd.run(
-                                config,
-                                params.client,
-                                inherent_data,
-                                Vec::new(),
-                                &ext_builder,
-                            )
-                        })
-                    } else if chain_spec.is_shiden() {
-                        runner.sync_run(|config| {
-                            let params = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
-                                &config,
-                                parachain::build_import_queue_fallback,
-                            )?;
-
-                            let ext_builder = RemarkBuilder::new(params.client.clone());
-                            let inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
-
-                            cmd.run(
-                                config,
-                                params.client,
-                                inherent_data,
-                                Vec::new(),
-                                &ext_builder,
-                            )
-                        })
-                    } else if chain_spec.is_shibuya() {
-                        runner.sync_run(|config| {
-                            let params = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
-                                &config,
-                                parachain::build_import_queue,
-                            )?;
-
-                            let ext_builder = RemarkBuilder::new(params.client.clone());
-                            let inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
-
-                            cmd.run(
-                                config,
-                                params.client,
-                                inherent_data,
-                                Vec::new(),
-                                &ext_builder,
-                            )
-                        })
-                    } else {
-                        runner.sync_run(|config| {
-                            let params = local::new_partial(&config)?;
+                            let params = local::new_partial(&config, &rpc_config)?;
                             let ext_builder = RemarkBuilder::new(params.client.clone());
                             let inherent_data = local_benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
 
                             cmd.run(
-                                config,
+                                chain_name,
                                 params.client,
                                 inherent_data,
                                 Vec::new(),
                                 &ext_builder,
+                                true,
+                            )
+                        })
+                    } else {
+                        runner.sync_run(|config| {
+                            let params = parachain::new_partial(&config, &rpc_config)?;
+
+                            let ext_builder = RemarkBuilder::new(params.client.clone());
+                            let inherent_data = para_benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(
+                                chain_name,
+                                params.client,
+                                inherent_data,
+                                Vec::new(),
+                                &ext_builder,
+                                true,
                             )
                         })
                     }
                 }
                 BenchmarkCmd::Extrinsic(cmd) => {
-                    if chain_spec.is_astar() {
+                    if chain_spec.is_dev() {
                         runner.sync_run(|config| {
-                            let params = parachain::new_partial::<astar_runtime::RuntimeApi, _>(
-                                &config,
-                                parachain::build_import_queue,
-                            )?;
-                            let remark_builder = RemarkBuilder::new(params.client.clone());
-                            let tka_builder = TransferKeepAliveBuilder::new(
-                                params.client.clone(),
-                                Sr25519Keyring::Alice.to_account_id(),
-                                params.client.existential_deposit(),
-                            );
-                            let ext_factory = ExtrinsicFactory(vec![
-                                Box::new(remark_builder),
-                                Box::new(tka_builder),
-                            ]);
-                            let inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
-
-                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
-                        })
-                    } else if chain_spec.is_shiden() {
-                        runner.sync_run(|config| {
-                            let params = parachain::new_partial::<shiden_runtime::RuntimeApi, _>(
-                                &config,
-                                parachain::build_import_queue_fallback,
-                            )?;
-                            let remark_builder = RemarkBuilder::new(params.client.clone());
-                            let tka_builder = TransferKeepAliveBuilder::new(
-                                params.client.clone(),
-                                Sr25519Keyring::Alice.to_account_id(),
-                                params.client.existential_deposit(),
-                            );
-                            let ext_factory = ExtrinsicFactory(vec![
-                                Box::new(remark_builder),
-                                Box::new(tka_builder),
-                            ]);
-                            let inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
-
-                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
-                        })
-                    } else if chain_spec.is_shibuya() {
-                        runner.sync_run(|config| {
-                            let params = parachain::new_partial::<shibuya_runtime::RuntimeApi, _>(
-                                &config,
-                                parachain::build_import_queue,
-                            )?;
-                            let remark_builder = RemarkBuilder::new(params.client.clone());
-                            let tka_builder = TransferKeepAliveBuilder::new(
-                                params.client.clone(),
-                                Sr25519Keyring::Alice.to_account_id(),
-                                params.client.existential_deposit(),
-                            );
-                            let ext_factory = ExtrinsicFactory(vec![
-                                Box::new(remark_builder),
-                                Box::new(tka_builder),
-                            ]);
-                            let inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
-
-                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
-                        })
-                    } else {
-                        runner.sync_run(|config| {
-                            let params = local::new_partial(&config)?;
+                            let params = local::new_partial(&config, &rpc_config)?;
                             let remark_builder = RemarkBuilder::new(params.client.clone());
                             let tka_builder = TransferKeepAliveBuilder::new(
                                 params.client.clone(),
@@ -744,6 +446,24 @@ pub fn run() -> Result<()> {
                                 Box::new(tka_builder),
                             ]);
                             let inherent_data = local_benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
+                        })
+                    } else {
+                        runner.sync_run(|config| {
+                            let params = parachain::new_partial(&config, &rpc_config)?;
+                            let remark_builder = RemarkBuilder::new(params.client.clone());
+                            let tka_builder = TransferKeepAliveBuilder::new(
+                                params.client.clone(),
+                                Sr25519Keyring::Alice.to_account_id(),
+                                params.client.existential_deposit(),
+                            );
+                            let ext_factory = ExtrinsicFactory(vec![
+                                Box::new(remark_builder),
+                                Box::new(tka_builder),
+                            ]);
+                            let inherent_data = para_benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
 
                             cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
@@ -759,21 +479,15 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
 
-            #[cfg(feature = "evm-tracing")]
-            let evm_tracing_config = crate::evm_tracing_types::EvmTracingConfig {
-                ethapi: cli.eth_api_options.ethapi,
-                ethapi_max_permits: cli.eth_api_options.ethapi_max_permits,
-                ethapi_trace_max_count: cli.eth_api_options.ethapi_trace_max_count,
-                ethapi_trace_cache_duration: cli.eth_api_options.ethapi_trace_cache_duration,
-                eth_log_block_cache: cli.eth_api_options.eth_log_block_cache,
-                eth_statuses_cache: cli.eth_api_options.eth_statuses_cache,
-                max_past_logs: cli.eth_api_options.max_past_logs,
-                tracing_raw_max_memory_usage: cli.eth_api_options.tracing_raw_max_memory_usage,
-            };
+            let evm_tracing_config = cli.eth_api_options.new_rpc_config();
 
             runner.run_node_until_exit(|config| async move {
                 if config.chain_spec.is_dev() {
-                    return local::start_node::<sc_network::NetworkWorker<_, _>>(config, #[cfg(feature = "evm-tracing")] evm_tracing_config).map_err(Into::into);
+                    return local::start_node::<sc_network::NetworkWorker<_, _>>(
+                        config,
+                        evm_tracing_config,
+                    )
+                    .map_err(Into::into);
                 }
 
                 let polkadot_cli = RelayChainCli::new(
@@ -786,11 +500,13 @@ pub fn run() -> Result<()> {
                 let para_id = ParaId::from(
                     chain_spec::Extensions::try_get(&*config.chain_spec)
                         .map(|e| e.para_id)
-                        .ok_or("ParaId not found in chain spec extension")?
+                        .ok_or("ParaId not found in chain spec extension")?,
                 );
 
                 let parachain_account =
-                    AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&para_id);
+                    AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(
+                        &para_id,
+                    );
 
                 let polkadot_config = SubstrateCli::create_configuration(
                     &polkadot_cli,
@@ -813,54 +529,31 @@ pub fn run() -> Result<()> {
                 let hwbench = (!cli.no_hardware_benchmarks)
                     .then_some(config.database.path().map(|database_path| {
                         let _ = std::fs::create_dir_all(database_path);
-                        sc_sysinfo::gather_hwbench(Some(database_path))
+                        sc_sysinfo::gather_hwbench(
+                            Some(database_path),
+                            &SUBSTRATE_REFERENCE_HARDWARE,
+                        )
                     }))
                     .flatten();
 
                 let additional_config = AdditionalConfig {
-                    #[cfg(feature = "evm-tracing")]
-                    evm_tracing_config: evm_tracing_config,
+                    evm_tracing_config,
                     enable_evm_rpc: cli.enable_evm_rpc,
                     proposer_block_size_limit: cli.proposer_block_size_limit,
                     proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
                     hwbench,
                 };
 
-                if config.chain_spec.is_astar() {
-                    start_astar_node(
-                        config,
-                        polkadot_config,
-                        collator_options,
-                        para_id,
-                        additional_config
-                    )
-                        .await
-                        .map(|r| r.0)
-                        .map_err(Into::into)
-                } else if config.chain_spec.is_shiden() {
-                    start_shiden_node( config,
-                        polkadot_config,
-                        collator_options,
-                        para_id,
-                        additional_config
-                    )
-                        .await
-                        .map(|r| r.0)
-                        .map_err(Into::into)
-                } else if config.chain_spec.is_shibuya() {
-                    start_shibuya_node( config,
-                        polkadot_config,
-                        collator_options,
-                        para_id,
-                        additional_config)
-                        .await
-                        .map(|r| r.0)
-                        .map_err(Into::into)
-                } else {
-                    let err_msg = "Unrecognized chain spec - name should start with one of: astar or shiden or shibuya";
-                    error!("{}", err_msg);
-                    Err(err_msg.into())
-                }
+                parachain::start_node(
+                    config,
+                    polkadot_config,
+                    collator_options,
+                    para_id,
+                    additional_config,
+                )
+                .await
+                .map(|r| r.0)
+                .map_err(Into::into)
             })
         }
     }
@@ -904,7 +597,7 @@ impl CliConfiguration<Self> for RelayChainCli {
             .or_else(|| self.base_path.clone().map(Into::into)))
     }
 
-    fn rpc_addr(&self, default_listen_port: u16) -> Result<Option<SocketAddr>> {
+    fn rpc_addr(&self, default_listen_port: u16) -> Result<Option<Vec<RpcEndpoint>>> {
         self.base.base.rpc_addr(default_listen_port)
     }
 
@@ -918,15 +611,9 @@ impl CliConfiguration<Self> for RelayChainCli {
             .prometheus_config(default_listen_port, chain_spec)
     }
 
-    fn init<F>(
-        &self,
-        _support_url: &String,
-        _impl_version: &String,
-        _logger_hook: F,
-        _config: &sc_service::Configuration,
-    ) -> Result<()>
+    fn init<F>(&self, _support_url: &String, _impl_version: &String, _logger_hook: F) -> Result<()>
     where
-        F: FnOnce(&mut sc_cli::LoggerBuilder, &sc_service::Configuration),
+        F: FnOnce(&mut sc_cli::LoggerBuilder),
     {
         unreachable!("PolkadotCli is never initialized; qed");
     }
