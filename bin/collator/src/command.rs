@@ -330,7 +330,7 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(cmd)?;
             let rpc_config = cli.eth_api_options.new_rpc_config();
             let chain_spec = &runner.config().chain_spec;
-
+            // DELTA
             match cmd {
                 BenchmarkCmd::Pallet(cmd) => {
                     if chain_spec.is_astar() {
