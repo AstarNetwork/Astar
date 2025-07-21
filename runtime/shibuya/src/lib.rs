@@ -38,9 +38,7 @@ use frame_support::{
         LinearStoragePrice, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
-        constants::{
-            BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
-        },
+        constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
         ConstantMultiplier, Weight, WeightToFee as WeightToFeeT, WeightToFeeCoefficient,
         WeightToFeeCoefficients, WeightToFeePolynomial,
     },
@@ -122,8 +120,10 @@ pub use sp_runtime::BuildStorage;
 mod chain_extensions;
 pub mod genesis_config;
 mod precompiles;
-mod weights;
 pub mod xcm_config;
+
+mod weights;
+use weights::{BlockExecutionWeight, ExtrinsicBaseWeight};
 
 pub type ShibuyaAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
