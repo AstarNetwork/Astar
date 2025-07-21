@@ -107,8 +107,8 @@ jobs:
 
     - name: Install targets and components
       run: |
-        rustup target add wasm32-unknown-unknown
-        rustup component add rust-src
+        rustup +stable target add wasm32-unknown-unknown
+        rustup +stable component add rust-src
 
     # TODO: Should be moved below the `rustup show` once the defined toolchain works.
     - name: Install frame-omni bencher tool
