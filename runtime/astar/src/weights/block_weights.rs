@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2025-07-21 (Y/M/D)
+//! DATE: 2025-07-22 (Y/M/D)
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
 //!
 //! SHORT-NAME: `block`, LONG-NAME: `BlockExecution`, RUNTIME: `astar`
@@ -32,6 +32,7 @@
 //   overhead
 //   --runtime=./target/release/wbuild/astar-runtime/astar_runtime.compact.compressed.wasm
 //   --repeat=50
+//   --header=./.github/license-check/headers/HEADER-GNUv3
 //   --weight-path=./benchmark-results/astar
 
 use sp_core::parameter_types;
@@ -42,17 +43,17 @@ parameter_types! {
     /// Calculated by multiplying the *Average* with `1.0` and adding `0`.
     ///
     /// Stats nanoseconds:
-    ///   Min, Max: 563_423, 712_739
-    ///   Average:  604_519
-    ///   Median:   611_883
-    ///   Std-Dev:  28291.8
+    ///   Min, Max: 583_675, 697_917
+    ///   Average:  615_726
+    ///   Median:   611_138
+    ///   Std-Dev:  28557.24
     ///
     /// Percentiles nanoseconds:
-    ///   99th: 712_739
-    ///   95th: 651_540
-    ///   75th: 616_862
+    ///   99th: 697_917
+    ///   95th: 682_427
+    ///   75th: 623_746
     pub const BlockExecutionWeight: Weight =
-        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(604_519), 5_386);
+        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(615_726), 5_525);
 }
 
 #[cfg(test)]

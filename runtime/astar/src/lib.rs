@@ -1543,6 +1543,7 @@ impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
                 | pallet_democracy::Call::remove_vote { .. }
                 | pallet_democracy::Call::veto_external { .. },
             )
+            | RuntimeCall::Proxy(_)
             | RuntimeCall::TxPause(_)
             | RuntimeCall::SafeMode(_) => true,
             _ => false,
