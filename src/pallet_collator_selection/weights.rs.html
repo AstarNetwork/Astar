@@ -463,7 +463,7 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 46.2.0
 //! DATE: 2025-07-17, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `Ashutoshs-MacBook-Pro.local`, CPU: `&lt;UNKNOWN&gt;`
+//! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
 //! WASM-EXECUTION: `Compiled`, CHAIN: `Some("astar-dev")`, DB CACHE: 1024
 
 </span><span class="comment">// Executed Command:
@@ -477,7 +477,7 @@
 // --extrinsic=*
 // --wasm-execution=compiled
 // --heap-pages=4096
-// --output=./pallet_collator_selection.rs
+// --output=./benchmark-results/astar-dev/collator_selection_weights.rs
 // --template=./scripts/templates/weight-template.hbs
 
 </span><span class="attr">#![cfg_attr(rustfmt, rustfmt_skip)]
@@ -515,11 +515,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `206 + b * (79 ±0)`
 		//  Estimated: `1195 + b * (2554 ±0)`
-		// Minimum execution time: 11_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">12_121_969</span>, <span class="number">0</span>)
+		// Minimum execution time: 13_659_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">12_436_893</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">1195</span>))
-			<span class="comment">// Standard Error: 45_020
-			</span>.saturating_add(Weight::from_parts(<span class="number">3_557_786</span>, <span class="number">0</span>).saturating_mul(b.into()))
+			<span class="comment">// Standard Error: 5_865
+			</span>.saturating_add(Weight::from_parts(<span class="number">3_244_480</span>, <span class="number">0</span>).saturating_mul(b.into()))
 			.saturating_add(T::DbWeight::get().reads((<span class="number">1_u64</span>).saturating_mul(b.into())))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2554</span>).saturating_mul(b.into()))
@@ -533,11 +533,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `476 + i * (43 ±0)`
 		//  Estimated: `3938 + i * (43 ±0)`
-		// Minimum execution time: 16_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">18_381_292</span>, <span class="number">0</span>)
+		// Minimum execution time: 18_476_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">19_627_571</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3938</span>))
-			<span class="comment">// Standard Error: 2_288
-			</span>.saturating_add(Weight::from_parts(<span class="number">57_683</span>, <span class="number">0</span>).saturating_mul(i.into()))
+			<span class="comment">// Standard Error: 1_462
+			</span>.saturating_add(Weight::from_parts(<span class="number">73_371</span>, <span class="number">0</span>).saturating_mul(i.into()))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">2</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">43</span>).saturating_mul(i.into()))
@@ -549,11 +549,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `153 + i * (32 ±0)`
 		//  Estimated: `1638 + i * (32 ±0)`
-		// Minimum execution time: 10_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">11_181_282</span>, <span class="number">0</span>)
+		// Minimum execution time: 11_565_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">12_248_242</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">1638</span>))
-			<span class="comment">// Standard Error: 1_467
-			</span>.saturating_add(Weight::from_parts(<span class="number">19_441</span>, <span class="number">0</span>).saturating_mul(i.into()))
+			<span class="comment">// Standard Error: 547
+			</span>.saturating_add(Weight::from_parts(<span class="number">41_773</span>, <span class="number">0</span>).saturating_mul(i.into()))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">1</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">32</span>).saturating_mul(i.into()))
@@ -564,8 +564,8 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">5_000_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 6_195_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">6_382_000</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
@@ -575,8 +575,8 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">5_000_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 6_222_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">6_349_000</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>))
 	}
@@ -601,11 +601,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `963 + c * (50 ±0)`
 		//  Estimated: `4308 + c * (51 ±0)`
-		// Minimum execution time: 43_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">48_442_591</span>, <span class="number">0</span>)
+		// Minimum execution time: 45_396_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">47_625_572</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4308</span>))
-			<span class="comment">// Standard Error: 1_849
-			</span>.saturating_add(Weight::from_parts(<span class="number">33_173</span>, <span class="number">0</span>).saturating_mul(c.into()))
+			<span class="comment">// Standard Error: 761
+			</span>.saturating_add(Weight::from_parts(<span class="number">60_366</span>, <span class="number">0</span>).saturating_mul(c.into()))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">7</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">51</span>).saturating_mul(c.into()))
@@ -621,11 +621,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `735 + c * (48 ±0)`
 		//  Estimated: `2179 + c * (49 ±0)`
-		// Minimum execution time: 15_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">16_251_029</span>, <span class="number">0</span>)
+		// Minimum execution time: 17_730_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">18_223_413</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2179</span>))
-			<span class="comment">// Standard Error: 786
-			</span>.saturating_add(Weight::from_parts(<span class="number">28_554</span>, <span class="number">0</span>).saturating_mul(c.into()))
+			<span class="comment">// Standard Error: 345
+			</span>.saturating_add(Weight::from_parts(<span class="number">47_399</span>, <span class="number">0</span>).saturating_mul(c.into()))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">2</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">2</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">49</span>).saturating_mul(c.into()))
@@ -640,8 +640,8 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `759`
 		//  Estimated: `4224`
-		// Minimum execution time: 31_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">33_000_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 31_378_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">31_843_000</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4224</span>))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">2</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">2</span>))
@@ -654,8 +654,8 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `259`
 		//  Estimated: `6196`
-		// Minimum execution time: 42_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">43_000_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 40_569_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">40_891_000</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">6196</span>))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">2</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">3</span>))
@@ -680,11 +680,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `4688 + c * (97 ±0) + r * (112 ±0)`
 		//  Estimated: `6296 + c * (2637 ±2) + r * (2599 ±0)`
-		// Minimum execution time: 17_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">18_000_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 20_677_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">21_024_000</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">6296</span>))
-			<span class="comment">// Standard Error: 675_337
-			</span>.saturating_add(Weight::from_parts(<span class="number">22_127_564</span>, <span class="number">0</span>).saturating_mul(c.into()))
+			<span class="comment">// Standard Error: 602_275
+			</span>.saturating_add(Weight::from_parts(<span class="number">20_306_626</span>, <span class="number">0</span>).saturating_mul(c.into()))
 			.saturating_add(T::DbWeight::get().reads(<span class="number">4</span>))
 			.saturating_add(T::DbWeight::get().reads((<span class="number">1_u64</span>).saturating_mul(c.into())))
 			.saturating_add(T::DbWeight::get().writes((<span class="number">1_u64</span>).saturating_mul(c.into())))
@@ -705,11 +705,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `206 + b * (79 ±0)`
 		//  Estimated: `1195 + b * (2554 ±0)`
-		// Minimum execution time: 11_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">12_121_969</span>, <span class="number">0</span>)
+		// Minimum execution time: 13_659_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">12_436_893</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">1195</span>))
-			<span class="comment">// Standard Error: 45_020
-			</span>.saturating_add(Weight::from_parts(<span class="number">3_557_786</span>, <span class="number">0</span>).saturating_mul(b.into()))
+			<span class="comment">// Standard Error: 5_865
+			</span>.saturating_add(Weight::from_parts(<span class="number">3_244_480</span>, <span class="number">0</span>).saturating_mul(b.into()))
 			.saturating_add(RocksDbWeight::get().reads((<span class="number">1_u64</span>).saturating_mul(b.into())))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2554</span>).saturating_mul(b.into()))
@@ -723,11 +723,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `476 + i * (43 ±0)`
 		//  Estimated: `3938 + i * (43 ±0)`
-		// Minimum execution time: 16_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">18_381_292</span>, <span class="number">0</span>)
+		// Minimum execution time: 18_476_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">19_627_571</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">3938</span>))
-			<span class="comment">// Standard Error: 2_288
-			</span>.saturating_add(Weight::from_parts(<span class="number">57_683</span>, <span class="number">0</span>).saturating_mul(i.into()))
+			<span class="comment">// Standard Error: 1_462
+			</span>.saturating_add(Weight::from_parts(<span class="number">73_371</span>, <span class="number">0</span>).saturating_mul(i.into()))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">2</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">43</span>).saturating_mul(i.into()))
@@ -739,11 +739,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `153 + i * (32 ±0)`
 		//  Estimated: `1638 + i * (32 ±0)`
-		// Minimum execution time: 10_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">11_181_282</span>, <span class="number">0</span>)
+		// Minimum execution time: 11_565_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">12_248_242</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">1638</span>))
-			<span class="comment">// Standard Error: 1_467
-			</span>.saturating_add(Weight::from_parts(<span class="number">19_441</span>, <span class="number">0</span>).saturating_mul(i.into()))
+			<span class="comment">// Standard Error: 547
+			</span>.saturating_add(Weight::from_parts(<span class="number">41_773</span>, <span class="number">0</span>).saturating_mul(i.into()))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">1</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">32</span>).saturating_mul(i.into()))
@@ -754,8 +754,8 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">5_000_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 6_195_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">6_382_000</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1</span>))
 	}
@@ -765,8 +765,8 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">5_000_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 6_222_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">6_349_000</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">0</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1</span>))
 	}
@@ -791,11 +791,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `963 + c * (50 ±0)`
 		//  Estimated: `4308 + c * (51 ±0)`
-		// Minimum execution time: 43_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">48_442_591</span>, <span class="number">0</span>)
+		// Minimum execution time: 45_396_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">47_625_572</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4308</span>))
-			<span class="comment">// Standard Error: 1_849
-			</span>.saturating_add(Weight::from_parts(<span class="number">33_173</span>, <span class="number">0</span>).saturating_mul(c.into()))
+			<span class="comment">// Standard Error: 761
+			</span>.saturating_add(Weight::from_parts(<span class="number">60_366</span>, <span class="number">0</span>).saturating_mul(c.into()))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">7</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">3</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">51</span>).saturating_mul(c.into()))
@@ -811,11 +811,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `735 + c * (48 ±0)`
 		//  Estimated: `2179 + c * (49 ±0)`
-		// Minimum execution time: 15_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">16_251_029</span>, <span class="number">0</span>)
+		// Minimum execution time: 17_730_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">18_223_413</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2179</span>))
-			<span class="comment">// Standard Error: 786
-			</span>.saturating_add(Weight::from_parts(<span class="number">28_554</span>, <span class="number">0</span>).saturating_mul(c.into()))
+			<span class="comment">// Standard Error: 345
+			</span>.saturating_add(Weight::from_parts(<span class="number">47_399</span>, <span class="number">0</span>).saturating_mul(c.into()))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">2</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">2</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">49</span>).saturating_mul(c.into()))
@@ -830,8 +830,8 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `759`
 		//  Estimated: `4224`
-		// Minimum execution time: 31_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">33_000_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 31_378_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">31_843_000</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">4224</span>))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">2</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">2</span>))
@@ -844,8 +844,8 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `259`
 		//  Estimated: `6196`
-		// Minimum execution time: 42_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">43_000_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 40_569_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">40_891_000</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">6196</span>))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">2</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">3</span>))
@@ -870,11 +870,11 @@
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `4688 + c * (97 ±0) + r * (112 ±0)`
 		//  Estimated: `6296 + c * (2637 ±2) + r * (2599 ±0)`
-		// Minimum execution time: 17_000_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">18_000_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 20_677_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">21_024_000</span>, <span class="number">0</span>)
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">6296</span>))
-			<span class="comment">// Standard Error: 675_337
-			</span>.saturating_add(Weight::from_parts(<span class="number">22_127_564</span>, <span class="number">0</span>).saturating_mul(c.into()))
+			<span class="comment">// Standard Error: 602_275
+			</span>.saturating_add(Weight::from_parts(<span class="number">20_306_626</span>, <span class="number">0</span>).saturating_mul(c.into()))
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">4</span>))
 			.saturating_add(RocksDbWeight::get().reads((<span class="number">1_u64</span>).saturating_mul(c.into())))
 			.saturating_add(RocksDbWeight::get().writes((<span class="number">1_u64</span>).saturating_mul(c.into())))
