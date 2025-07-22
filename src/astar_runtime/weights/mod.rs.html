@@ -25,6 +25,12 @@
 <a href="#25" id="25">25</a>
 <a href="#26" id="26">26</a>
 <a href="#27" id="27">27</a>
+<a href="#28" id="28">28</a>
+<a href="#29" id="29">29</a>
+<a href="#30" id="30">30</a>
+<a href="#31" id="31">31</a>
+<a href="#32" id="32">32</a>
+<a href="#33" id="33">33</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -43,7 +49,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see &lt;http://www.gnu.org/licenses/&gt;.
 
-</span><span class="kw">pub mod </span>frame_system_extensions;
+</span><span class="kw">mod </span>block_weights;
+<span class="kw">mod </span>extrinsic_weights;
+
+<span class="kw">pub mod </span>frame_system_extensions;
 <span class="kw">pub mod </span>orml_oracle;
 <span class="kw">pub mod </span>pallet_assets;
 <span class="kw">pub mod </span>pallet_dapp_staking;
@@ -52,4 +61,7 @@
 <span class="kw">pub mod </span>pallet_transaction_payment;
 <span class="kw">pub mod </span>pallet_xcm;
 <span class="kw">pub mod </span>xcm;
+
+<span class="kw">pub use </span>block_weights::BlockExecutionWeight;
+<span class="kw">pub use </span>extrinsic_weights::ExtrinsicBaseWeight;
 </code></pre></div></section></main></body></html>

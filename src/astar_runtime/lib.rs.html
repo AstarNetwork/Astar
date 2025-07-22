@@ -2786,9 +2786,7 @@
         Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
-        constants::{
-            BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
-        },
+        constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
         ConstantMultiplier, Weight, WeightToFee <span class="kw">as </span>WeightToFeeT, WeightToFeeCoefficient,
         WeightToFeeCoefficients, WeightToFeePolynomial,
     },
@@ -2869,8 +2867,10 @@
 <span class="kw">mod </span>chain_extensions;
 <span class="kw">pub mod </span>genesis_config;
 <span class="kw">mod </span>precompiles;
-<span class="kw">mod </span>weights;
 <span class="kw">pub mod </span>xcm_config;
+
+<span class="kw">mod </span>weights;
+<span class="kw">use </span>weights::{BlockExecutionWeight, ExtrinsicBaseWeight};
 
 <span class="kw">pub type </span>AstarAssetLocationIdConverter = AssetLocationIdConverter&lt;AssetId, XcAssetConfig&gt;;
 

@@ -2814,16 +2814,6 @@
 <a href="#2814" id="2814">2814</a>
 <a href="#2815" id="2815">2815</a>
 <a href="#2816" id="2816">2816</a>
-<a href="#2817" id="2817">2817</a>
-<a href="#2818" id="2818">2818</a>
-<a href="#2819" id="2819">2819</a>
-<a href="#2820" id="2820">2820</a>
-<a href="#2821" id="2821">2821</a>
-<a href="#2822" id="2822">2822</a>
-<a href="#2823" id="2823">2823</a>
-<a href="#2824" id="2824">2824</a>
-<a href="#2825" id="2825">2825</a>
-<a href="#2826" id="2826">2826</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2864,9 +2854,7 @@
         LinearStoragePrice, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
-        constants::{
-            BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
-        },
+        constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
         ConstantMultiplier, Weight, WeightToFee <span class="kw">as </span>WeightToFeeT, WeightToFeeCoefficient,
         WeightToFeeCoefficients, WeightToFeePolynomial,
     },
@@ -2948,8 +2936,10 @@
 <span class="kw">mod </span>chain_extensions;
 <span class="kw">pub mod </span>genesis_config;
 <span class="kw">mod </span>precompiles;
-<span class="kw">mod </span>weights;
 <span class="kw">pub mod </span>xcm_config;
+
+<span class="kw">mod </span>weights;
+<span class="kw">use </span>weights::{BlockExecutionWeight, ExtrinsicBaseWeight};
 
 <span class="kw">pub type </span>ShibuyaAssetLocationIdConverter = AssetLocationIdConverter&lt;AssetId, XcAssetConfig&gt;;
 
@@ -3077,12 +3067,7 @@
     <span class="kw">pub </span>RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
         .base_block(BlockExecutionWeight::get())
         .for_class(DispatchClass::all(), |weights| {
-            <span class="comment">// Adjusting the base extrinsic weight to account for the additional database
-            // read introduced by the `tx-pause` pallet during extrinsic filtering.
-            //
-            // TODO: This hardcoded addition is a temporary fix. Replace it with a proper
-            // benchmark in the future.
-            </span>weights.base_extrinsic = ExtrinsicBaseWeight::get().saturating_add(&lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight::get().reads(<span class="number">1</span>));
+            weights.base_extrinsic = ExtrinsicBaseWeight::get();
         })
         .for_class(DispatchClass::Normal, |weights| {
             weights.max_total = <span class="prelude-val">Some</span>(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
@@ -3648,12 +3633,7 @@
         <span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
         </span><span class="kw">let </span>(p, q) = (
             WeightFeeFactor::get(),
-            Balance::from(
-                RuntimeBlockWeights::get()
-                    .get(DispatchClass::Normal)
-                    .base_extrinsic
-                    .ref_time(),
-            ),
+            Balance::from(ExtrinsicBaseWeight::get().ref_time()),
         );
 
         <span class="macro">smallvec::smallvec!</span>[WeightToFeeCoefficient {
