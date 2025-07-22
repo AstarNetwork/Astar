@@ -389,6 +389,7 @@ jobs:
     needs: [srtool, fetch-github-releases]
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         chain: [ "astar", "shiden", "shibuya" ]
     env:
