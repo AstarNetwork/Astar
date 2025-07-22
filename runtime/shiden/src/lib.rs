@@ -40,9 +40,7 @@ use frame_support::{
         Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
-        constants::{
-            BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
-        },
+        constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
         ConstantMultiplier, Weight, WeightToFee as WeightToFeeT, WeightToFeeCoefficient,
         WeightToFeeCoefficients, WeightToFeePolynomial,
     },
@@ -115,8 +113,10 @@ pub use sp_runtime::BuildStorage;
 mod chain_extensions;
 pub mod genesis_config;
 mod precompiles;
-mod weights;
 pub mod xcm_config;
+
+mod weights;
+use weights::{BlockExecutionWeight, ExtrinsicBaseWeight};
 
 pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
@@ -305,7 +305,7 @@ impl frame_system::Config for Runtime {
     type PreInherents = ();
     type PostInherents = ();
     type PostTransactions = ();
-    type ExtensionsWeightInfo = weights::frame_system_extensions::WeightInfo<Runtime>;
+    type ExtensionsWeightInfo = weights::frame_system_extensions::SubstrateWeight<Runtime>;
 }
 
 impl pallet_timestamp::Config for Runtime {
@@ -453,7 +453,7 @@ impl pallet_dapp_staking::Config for Runtime {
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
     type MaxBonusSafeMovesPerPeriod = ConstU8<2>;
-    type WeightInfo = weights::pallet_dapp_staking::WeightInfo<Runtime>;
+    type WeightInfo = weights::pallet_dapp_staking::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>;
 }
@@ -493,7 +493,7 @@ impl pallet_inflation::Config for Runtime {
     type PayoutPerBlock = InflationPayoutPerBlock;
     type CycleConfiguration = InflationCycleConfig;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = weights::pallet_inflation::WeightInfo<Runtime>;
+    type WeightInfo = weights::pallet_inflation::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -682,7 +682,7 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
-    type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+    type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
     type CallbackHandle = EvmRevertCodeHandler<Self, Self>;
@@ -850,7 +850,7 @@ impl pallet_transaction_payment::Config for Runtime {
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthFeeFactor>;
     #[cfg(feature = "runtime-benchmarks")]
     type LengthToFee = ConstantMultiplier<Balance, sp_core::ConstU128<1>>;
-    type WeightInfo = weights::pallet_transaction_payment::WeightInfo<Self>;
+    type WeightInfo = weights::pallet_transaction_payment::SubstrateWeight<Self>;
 }
 
 parameter_types! {
@@ -1156,7 +1156,7 @@ impl orml_oracle::Config for Runtime {
     #[cfg(not(feature = "runtime-benchmarks"))]
     type Members = OracleMembership;
     type MaxHasDispatchedSize = ConstU32<8>;
-    type WeightInfo = weights::orml_oracle::WeightInfo<Runtime>;
+    type WeightInfo = weights::orml_oracle::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type MaxFeedValues = ConstU32<2>;
     #[cfg(not(feature = "runtime-benchmarks"))]

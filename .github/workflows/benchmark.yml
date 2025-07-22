@@ -94,14 +94,31 @@ jobs:
             body: process.env.MESSAGE
           })
 
+    - name: Install deps
+      run: sudo apt -y install protobuf-compiler
+
+    # TODO: Should be removed once frame-omni-bencher can be installed using
+    # toolchain defined in the `rust-toolchain.toml` file.
+    - name: Install latest stable Rust
+      run: rustup install stable
+
+    - name: Set stable as default
+      run: rustup default stable
+
+    - name: Install targets and components
+      run: |
+        rustup +stable target add wasm32-unknown-unknown
+        rustup +stable component add rust-src
+
+    # TODO: Should be moved below the `rustup show` once the defined toolchain works.
+    - name: Install frame-omni bencher tool
+      run: cargo +stable install --git https://github.com/paritytech/polkadot-sdk frame-omni-bencher --profile=production --locked
+
     - name: Checkout the source code
       uses: actions/checkout@v3
       with:
         ref: ${{ steps.get_branch_sha.outputs.sha }}
         submodules: true
-
-    - name: Install deps
-      run: sudo apt -y install protobuf-compiler
 
     - name: Install & display rust toolchain
       run: rustup show

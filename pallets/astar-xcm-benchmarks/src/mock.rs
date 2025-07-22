@@ -19,7 +19,7 @@
 //! A mock runtime for XCM benchmarking.
 
 use crate::{fungible, generic, *};
-use astar_primitives::xcm::ReserveAssetFilter;
+use astar_primitives::xcm::Reserves;
 use frame_benchmarking::BenchmarkError;
 use frame_support::{
     assert_ok, derive_impl, parameter_types,
@@ -190,7 +190,7 @@ impl xcm_executor::Config for XcmConfig {
     type XcmSender = DevNull;
     type AssetTransactor = AssetTransactor;
     type OriginConverter = ();
-    type IsReserve = ReserveAssetFilter;
+    type IsReserve = Reserves;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = AllowUnpaidExecutionFrom<Everything>;

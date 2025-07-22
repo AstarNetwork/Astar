@@ -50,6 +50,15 @@ decl_test_parachain! {
     }
 }
 
+decl_test_parachain! {
+    pub struct ParaC {
+        Runtime = parachain::Runtime,
+        XcmpMessageHandler = parachain::MsgQueue,
+        DmpMessageHandler = parachain::MsgQueue,
+        new_ext = para_ext(1000),
+    }
+}
+
 decl_test_relay_chain! {
     pub struct Relay {
         Runtime = relay_chain::Runtime,
@@ -68,6 +77,7 @@ decl_test_network! {
         parachains = vec![
             (1, ParaA),
             (2, ParaB),
+            (1000, ParaC),
         ],
     }
 }

@@ -16,6 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+mod block_weights;
+mod extrinsic_weights;
+
 pub mod frame_system_extensions;
 pub mod orml_oracle;
 pub mod pallet_assets;
@@ -25,3 +28,6 @@ pub mod pallet_scheduler;
 pub mod pallet_transaction_payment;
 pub mod pallet_xcm;
 pub mod xcm;
+
+pub use block_weights::BlockExecutionWeight;
+pub use extrinsic_weights::ExtrinsicBaseWeight;

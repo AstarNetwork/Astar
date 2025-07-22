@@ -67,6 +67,60 @@ fn it_should_set_invulnerables() {
 }
 
 #[test]
+fn add_invulnerable_works() {
+    new_test_ext().execute_with(|| {
+        assert_eq!(Invulnerables::<Test>::get(), vec![1, 2]);
+        assert_ok!(CollatorSelection::add_invulnerable(
+            RuntimeOrigin::signed(RootAccount::get()),
+            3
+        ));
+        assert_eq!(Invulnerables::<Test>::get(), vec![1, 2, 3]);
+
+        // cannot add with non-root.
+        assert_noop!(
+            CollatorSelection::add_invulnerable(RuntimeOrigin::signed(1), 4),
+            BadOrigin
+        );
+
+        // cannot add existing invulnerable
+        assert_noop!(
+            CollatorSelection::add_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 1),
+            Error::<Test>::AlreadyInvulnerable
+        );
+
+        // cannot add invulnerable without associated validator keys
+        assert_noop!(
+            CollatorSelection::add_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 7),
+            Error::<Test>::ValidatorNotRegistered
+        );
+    });
+}
+
+#[test]
+fn remove_invulnerable_works() {
+    new_test_ext().execute_with(|| {
+        assert_eq!(Invulnerables::<Test>::get(), vec![1, 2]);
+        assert_ok!(CollatorSelection::remove_invulnerable(
+            RuntimeOrigin::signed(RootAccount::get()),
+            1
+        ));
+        assert_eq!(Invulnerables::<Test>::get(), vec![2]);
+
+        // cannot remove with non-root.
+        assert_noop!(
+            CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(1), 2),
+            BadOrigin
+        );
+
+        // cannot remove non-existent invulnerable
+        assert_noop!(
+            CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 1),
+            Error::<Test>::NotInvulnerable
+        );
+    });
+}
+
+#[test]
 fn set_desired_candidates_works() {
     new_test_ext().execute_with(|| {
         // given
