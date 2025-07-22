@@ -3,8 +3,6 @@ on:
   push:
     tags:
       - runtime-[0-9]+*
-    branches:
-      - 'ci/test-legacy-client'
   workflow_dispatch:
 env:
   SUBWASM_VERSION: 0.16.1
@@ -433,5 +431,5 @@ jobs:
         env:
           CHAIN: ${{ matrix.chain }}-dev
         run: |
-          echo "Testing new ${{ matrix.chain }} ${{ github.ref_name }} compatibility with client ${{ needs.fetch-github-releases.outputs.client_tag }}"
+          echo "Testing new ${{ matrix.chain }} compatibility with client ${{ needs.fetch-github-releases.outputs.client_tag }}"
           zombienet -p native test smoke_runtime_upgrade.zndsl
