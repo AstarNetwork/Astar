@@ -22,6 +22,7 @@ use frame_support::{
     dispatch::GetDispatchInfo,
     traits::{Currency, StorePreimage},
 };
+use pallet_democracy::{AccountVote, Conviction, Vote};
 use pallet_tx_pause::RuntimeCallNameOf;
 use parity_scale_codec::Encode;
 use sp_runtime::traits::{BlakeTwo256, Dispatchable, Hash};
@@ -219,6 +220,88 @@ fn ensure_lockout_not_possible() {
     })
 }
 
+#[test]
+fn simulate_chain_recovery() {
+    new_test_ext().execute_with(|| {
+        // 1. First put the runtime into safe mode.
+        let safe_mode_enter_call = RuntimeCall::SafeMode(pallet_safe_mode::Call::force_enter {});
+        propose_vote_and_close!(TechnicalCommittee, safe_mode_enter_call, 0);
+
+        // 2. Now prepare a call that will "save" the chain.
+        let transfer_amount = 1337;
+        let recovery_call = RuntimeCall::Balances(pallet_balances::Call::force_transfer {
+            source: BOB.clone().into(),
+            dest: ALICE.clone().into(),
+            value: transfer_amount,
+        });
+        let recovery_call_bounded = Preimage::bound(recovery_call).unwrap();
+
+        // 3. Use the council to prepare an external proposal
+        let external_propose_call =
+            RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority {
+                proposal: recovery_call_bounded.clone(),
+            });
+        propose_vote_and_close!(Council, external_propose_call, 0);
+
+        let next_external_proposal = pallet_democracy::NextExternal::<Runtime>::get().unwrap();
+        assert_eq!(
+            next_external_proposal.0, recovery_call_bounded,
+            "Call should have been put as the next external proposal."
+        );
+
+        // 4. Use tech committee to fast-track it
+        let (voting_period, delay) = (1, 1);
+        let fast_track_call = RuntimeCall::Democracy(pallet_democracy::Call::fast_track {
+            proposal_hash: next_external_proposal.0.hash(),
+            voting_period,
+            delay,
+        });
+        propose_vote_and_close!(TechnicalCommittee, fast_track_call, 1);
+
+        // 5. Vote for it, it must succeed
+        assert_ok!(RuntimeCall::Democracy(pallet_democracy::Call::vote {
+            ref_index: 0,
+            vote: AccountVote::Standard {
+                vote: Vote {
+                    aye: true,
+                    conviction: Conviction::Locked1x
+                },
+                balance: 1337
+            },
+        })
+        .dispatch(RuntimeOrigin::signed(ALICE.clone())));
+        let init_alice_balance = Balances::free_balance(&ALICE);
+
+        // 6. Demonstrate it's possible to prevent votes using tx-pause.
+        let tx_pause_proposal = RuntimeCall::TxPause(pallet_tx_pause::Call::pause {
+            full_name: full_name::<Runtime>(b"Democracy", b"vote"),
+        });
+        propose_vote_and_close!(Council, tx_pause_proposal, 1);
+        assert_noop!(
+            RuntimeCall::Democracy(pallet_democracy::Call::vote {
+                ref_index: 0,
+                vote: AccountVote::Standard {
+                    vote: Vote {
+                        aye: true,
+                        conviction: Conviction::Locked1x
+                    },
+                    balance: 1337
+                },
+            })
+            .dispatch(RuntimeOrigin::signed(BOB.clone())),
+            frame_system::Error::<Runtime>::CallFiltered
+        );
+
+        // 7. Complete the referendum, schedule the call, and have it executed.
+        run_for_blocks(2);
+        assert_eq!(
+            Balances::free_balance(&ALICE),
+            init_alice_balance + transfer_amount,
+            "Alice should have received the transfer amount."
+        );
+    })
+}
+
 /// Helper function to create a full name for a call in the format needed by the TxPause pallet.
 fn full_name<T: pallet_tx_pause::Config>(
     pallet_name: &[u8],
@@ -243,31 +326,31 @@ macro_rules! propose_vote_and_close {
             let call_hash = BlakeTwo256::hash_of(&call);
 
             // Propose the call as Alice
-            assert_ok!($collective::propose(
-                RuntimeOrigin::signed(ALICE.clone()),
-                3,
-                Box::new(call.clone()),
-                call.encode().len() as u32
-            ));
+            assert_ok!(RuntimeCall::$collective(pallet_collective::Call::propose {
+                threshold: 3,
+                proposal: Box::new(call.clone()),
+                length_bound: call.encode().len() as u32
+            })
+            .dispatch(RuntimeOrigin::signed(ALICE.clone())));
 
             // Vote 'aye'
             for signer in &[ALICE, BOB, CAT] {
-                assert_ok!($collective::vote(
-                    RuntimeOrigin::signed(signer.clone()),
-                    call_hash,
-                    $index,
-                    true
-                ));
+                assert_ok!(RuntimeCall::$collective(pallet_collective::Call::vote {
+                    proposal: call_hash,
+                    index: $index,
+                    approve: true
+                })
+                .dispatch(RuntimeOrigin::signed(signer.clone())));
             }
 
             // Close the proposal & execute it
-            assert_ok!($collective::close(
-                RuntimeOrigin::signed(ALICE.clone()),
-                call_hash,
-                $index,
-                call.get_dispatch_info().total_weight(),
-                call.encode().len() as u32,
-            ));
+            assert_ok!(RuntimeCall::$collective(pallet_collective::Call::close {
+                proposal_hash: call_hash,
+                index: $index,
+                proposal_weight_bound: call.get_dispatch_info().total_weight(),
+                length_bound: call.encode().len() as u32,
+            })
+            .dispatch(RuntimeOrigin::signed(ALICE.clone())));
         }
     }};
 }

@@ -1548,7 +1548,10 @@ impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
                 | pallet_democracy::Call::external_propose_default { .. }
                 | pallet_democracy::Call::fast_track { .. }
                 | pallet_democracy::Call::emergency_cancel { .. }
-                | pallet_democracy::Call::cancel_referendum { .. },
+                | pallet_democracy::Call::cancel_referendum { .. }
+                | pallet_democracy::Call::vote { .. }
+                | pallet_democracy::Call::remove_vote { .. }
+                | pallet_democracy::Call::veto_external { .. },
             )
             | RuntimeCall::TxPause(_)
             | RuntimeCall::SafeMode(_) => true,
