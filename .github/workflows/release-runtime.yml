@@ -166,8 +166,44 @@ jobs:
             ${{ matrix.chain }}-metadata.json
             ${{ matrix.chain }}-diff.txt
 
+  fetch-github-releases:
+    runs-on: ubuntu-latest
+    outputs:
+      client_tag: ${{ steps.parse-releases.outputs.client_tag }}
+      client_asset_url: ${{ steps.parse-releases.outputs.client_asset_url }}
+      latest_release_tag: ${{ steps.parse-releases.outputs.latest_release_tag }}
+    steps:
+      - name: Fetch and parse releases
+        id: parse-releases
+        # We're making an assumption that the latest runtime release will be within the last 30 releases
+        run: |
+          RELEASES=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
+          
+          # Get latest client tag (v*.*.* format)
+          CLIENT_TAG=$(echo "$RELEASES" | jq -r '[.[] | select(.tag_name | test("^v\\d+\\.\\d+\\.\\d+$")) | .tag_name] | first')
+          
+          # Get client asset URL
+          ASSET_NAME="astar-collator-${CLIENT_TAG}-ubuntu-x86_64.tar.gz"
+          CLIENT_ASSET_URL=$(curl -s "https://api.github.com/repos/AstarNetwork/Astar/releases/tags/${CLIENT_TAG}" | \
+            jq -r --arg name "$ASSET_NAME" '.assets[] | select(.name == $name) | .browser_download_url')
+          
+          # Get latest release tag (runtime-* or v*.*.* format)
+          LATEST_RELEASE_TAG=$(echo "$RELEASES" | jq -r '
+            [
+              (.[] | select(.name | test("^runtime-\\d{4,}$"; "i")) | .tag_name),
+              (.[] | select(.name | test("^v\\d+\\.\\d+\\.\\d+$"; "i")) | .tag_name)
+            ] | first
+          ')
+          
+          echo "client_tag=${CLIENT_TAG}" >> $GITHUB_OUTPUT
+          echo "client_asset_url=${CLIENT_ASSET_URL}" >> $GITHUB_OUTPUT
+          echo "latest_release_tag=${LATEST_RELEASE_TAG}" >> $GITHUB_OUTPUT
+          
+          echo "Latest Client Tag: ${CLIENT_TAG}"
+          echo "Latest Release Tag (runtime or client): ${LATEST_RELEASE_TAG}"
+
   publish-release-draft:
-    needs: [evm-tracing-runtimes, srtool]
+    needs: [evm-tracing-runtimes, srtool, fetch-github-releases]
     runs-on: ubuntu-latest
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
@@ -200,22 +236,6 @@ jobs:
         with:
           node-version: 20.x
 
-      - name: Get the latest runtime release
-        id: latest-release
-        # We're making an assumption that the latest runtime release will be within the last 30 releases
-        run: |
-          releases=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
-
-          latest_runtime_tag=$(echo "$releases" | jq -r '
-            [
-              (.[] | select(.name | test("^runtime-\\d{4,}$"; "i")) | .tag_name),
-              (.[] | select(.name | test("^v\\d+\\.\\d+\\.\\d+$"; "i")) | .tag_name)
-            ] | first
-          ')
-          echo "latest_runtime_tag=$latest_runtime_tag" >> $GITHUB_OUTPUT
-
-          echo "$latest_runtime_tag"
-
       - name: Generate Release Body
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -226,7 +246,7 @@ jobs:
           yarn -s run ts-node generate-release-body.ts generate \
             --owner "${{ github.repository_owner }}" \
             --repo "$(basename ${{ github.repository }})" \
-            --from "${{ steps.latest-release.outputs.latest_runtime_tag }}" \
+            --from "${{ needs.fetch-github-releases.outputs.latest_release_tag }}" \
             --to "${{ github.ref_name }}" \
             --type runtime \
             --srtool-report-folder '../../runtime-artifacts/' \
@@ -359,7 +379,7 @@ jobs:
           asset_content_type: application/gzip
 
   runtime-compatibility-test:
-    needs: srtool
+    needs: [srtool, fetch-github-releases]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -370,21 +390,6 @@ jobs:
       - name: Checkout the source code
         uses: actions/checkout@v4
 
-      - name: Fetch latest client release
-        id: client-info
-        # We're making an assumption that the latest client release will be within the last 30 releases
-        run: |
-          TAG=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases | \
-          jq -r '[.[] | select(.tag_name | test("^v\\d+\\.\\d+\\.\\d+$")) | .tag_name] | first')
-        
-          ASSET_NAME="astar-collator-${TAG}-ubuntu-x86_64.tar.gz"
-          ASSET_URL=$(curl -s "https://api.github.com/repos/AstarNetwork/Astar/releases/tags/${TAG}" | \
-          jq -r --arg name "$ASSET_NAME" '.assets[] | select(.name == $name) | .browser_download_url')
-          
-          echo "client_tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "asset_url=${ASSET_URL}" >> $GITHUB_OUTPUT
-          echo "Using client version: ${TAG}"
-
       - name: Download runtime artifacts
         uses: actions/download-artifact@v4
         with:
@@ -393,7 +398,7 @@ jobs:
 
       - name: Download and setup client
         run: |
-          curl -L -o astar-collator.tar.gz "${{ steps.client-info.outputs.asset_url }}"
+          curl -L -o astar-collator.tar.gz "${{ needs.fetch-github-releases.outputs.client_asset_url }}"
           tar -xzf astar-collator.tar.gz
           mv astar-collator ${{ env.ZOMBIENET_DIR }}/astar-collator
           chmod +x ${{ env.ZOMBIENET_DIR }}/astar-collator
@@ -420,5 +425,5 @@ jobs:
         env:
           CHAIN: ${{ matrix.chain }}-dev
         run: |
-          echo "Testing new ${{ matrix.chain }} ${{ github.ref_name }} compatibility with client ${{ steps.client-info.outputs.client_tag }}"
+          echo "Testing new ${{ matrix.chain }} ${{ github.ref_name }} compatibility with client ${{ needs.fetch-github-releases.outputs.client_tag }}"
           zombienet -p native test smoke_runtime_upgrade.zndsl
