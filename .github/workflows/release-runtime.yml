@@ -177,7 +177,14 @@ jobs:
         id: parse-releases
         # We're making an assumption that the latest runtime release will be within the last 30 releases
         run: |
-          RELEASES=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
+          # Retry API calls to handle rate limiting
+          for i in {1..3}; do
+            RELEASES=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
+            if echo "$RELEASES" | jq empty 2>/dev/null; then
+              break
+            fi
+            sleep $((i * 5))
+          done
           
           # Get latest client tag (v*.*.* format)
           CLIENT_TAG=$(echo "$RELEASES" | jq -r '[.[] | select(.tag_name | test("^v\\d+\\.\\d+\\.\\d+$")) | .tag_name] | first')
