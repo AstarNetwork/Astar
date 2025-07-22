@@ -38,9 +38,7 @@ use frame_support::{
         LinearStoragePrice, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
-        constants::{
-            BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
-        },
+        constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
         ConstantMultiplier, Weight, WeightToFee as WeightToFeeT, WeightToFeeCoefficient,
         WeightToFeeCoefficients, WeightToFeePolynomial,
     },
@@ -122,8 +120,10 @@ pub use sp_runtime::BuildStorage;
 mod chain_extensions;
 pub mod genesis_config;
 mod precompiles;
-mod weights;
 pub mod xcm_config;
+
+mod weights;
+use weights::{BlockExecutionWeight, ExtrinsicBaseWeight};
 
 pub type ShibuyaAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
@@ -251,12 +251,7 @@ parameter_types! {
     pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
         .base_block(BlockExecutionWeight::get())
         .for_class(DispatchClass::all(), |weights| {
-            // Adjusting the base extrinsic weight to account for the additional database
-            // read introduced by the `tx-pause` pallet during extrinsic filtering.
-            //
-            // TODO: This hardcoded addition is a temporary fix. Replace it with a proper
-            // benchmark in the future.
-            weights.base_extrinsic = ExtrinsicBaseWeight::get().saturating_add(<Runtime as frame_system::Config>::DbWeight::get().reads(1));
+            weights.base_extrinsic = ExtrinsicBaseWeight::get();
         })
         .for_class(DispatchClass::Normal, |weights| {
             weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
@@ -822,12 +817,7 @@ impl WeightToFeePolynomial for WeightToFee {
         #[cfg(not(feature = "runtime-benchmarks"))]
         let (p, q) = (
             WeightFeeFactor::get(),
-            Balance::from(
-                RuntimeBlockWeights::get()
-                    .get(DispatchClass::Normal)
-                    .base_extrinsic
-                    .ref_time(),
-            ),
+            Balance::from(ExtrinsicBaseWeight::get().ref_time()),
         );
 
         smallvec::smallvec![WeightToFeeCoefficient {
