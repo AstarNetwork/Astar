@@ -299,6 +299,17 @@ fn simulate_chain_recovery() {
             init_alice_balance + transfer_amount,
             "Alice should have received the transfer amount."
         );
+
+        // 8. Exit safe mode.
+        let safe_mode_exit_call = RuntimeCall::SafeMode(pallet_safe_mode::Call::force_exit {});
+        propose_vote_and_close!(Council, safe_mode_exit_call, 2);
+        assert_ok!(
+            RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death {
+                dest: BOB.clone().into(),
+                value: 1,
+            })
+            .dispatch(RuntimeOrigin::signed(ALICE.clone())),
+        );
     })
 }
 
