@@ -198,6 +198,7 @@ jobs:
           echo "Latest Client Tag: ${CLIENT_TAG}"
 
   tmp-test:
+    needs: fetch-client-info
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
