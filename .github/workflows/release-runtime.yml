@@ -164,51 +164,21 @@ jobs:
             ${{ matrix.chain }}-metadata.json
             ${{ matrix.chain }}-diff.txt
 
-  fetch-github-releases:
+  tmp-test:
     runs-on: ubuntu-latest
-    outputs:
-      client_tag: ${{ steps.parse-releases.outputs.client_tag }}
-      client_asset_url: ${{ steps.parse-releases.outputs.client_asset_url }}
-      latest_release_tag: ${{ steps.parse-releases.outputs.latest_release_tag }}
     steps:
-      - name: Fetch and parse releases
-        id: parse-releases
-        # We're making an assumption that the latest runtime release will be within the last 30 releases
+      - name: Test token permissions
         run: |
-          # Retry API calls to handle rate limiting
-          for i in {1..3}; do
-            RELEASES=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
-            if echo "$RELEASES" | jq empty 2>/dev/null; then
-              break
-            fi
-            sleep $((i * 5))
-          done
+          echo "Testing GITHUB_TOKEN..."
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/artifacts" || echo "GITHUB_TOKEN failed"
           
-          # Get latest client tag (v*.*.* format)
-          CLIENT_TAG=$(echo "$RELEASES" | jq -r '[.[] | select(.tag_name | test("^v\\d+\\.\\d+\\.\\d+$")) | .tag_name] | first')
-          
-          # Get client asset URL
-          ASSET_NAME="astar-collator-${CLIENT_TAG}-ubuntu-x86_64.tar.gz"
-          CLIENT_ASSET_URL=$(curl -s "https://api.github.com/repos/AstarNetwork/Astar/releases/tags/${CLIENT_TAG}" | \
-            jq -r --arg name "$ASSET_NAME" '.assets[] | select(.name == $name) | .browser_download_url')
-          
-          # Get latest release tag (runtime-* or v*.*.* format)
-          LATEST_RELEASE_TAG=$(echo "$RELEASES" | jq -r '
-            [
-              (.[] | select(.name | test("^runtime-\\d{4,}$"; "i")) | .tag_name),
-              (.[] | select(.name | test("^v\\d+\\.\\d+\\.\\d+$"; "i")) | .tag_name)
-            ] | first
-          ')
-          
-          echo "client_tag=${CLIENT_TAG}" >> $GITHUB_OUTPUT
-          echo "client_asset_url=${CLIENT_ASSET_URL}" >> $GITHUB_OUTPUT
-          echo "latest_release_tag=${LATEST_RELEASE_TAG}" >> $GITHUB_OUTPUT
-          
-          echo "Latest Client Tag: ${CLIENT_TAG}"
-          echo "Latest Release Tag (runtime or client): ${LATEST_RELEASE_TAG}"
+          echo "Testing GH_PAT..."
+          curl -H "Authorization: token ${{ secrets.GH_PAT }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/artifacts" || echo "GH_PAT failed"
 
   publish-release-draft:
-    needs: [evm-tracing-runtimes, srtool, fetch-github-releases]
+    needs: [evm-tracing-runtimes, srtool]
     runs-on: ubuntu-latest
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
@@ -241,6 +211,21 @@ jobs:
         with:
           node-version: 20.x
 
+      - name: Get the latest runtime release
+        id: latest-release
+        # We're making an assumption that the latest runtime release will be within the last 30 releases
+        run: |
+          releases=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
+          
+          latest_runtime_tag=$(echo "$releases" | jq -r '
+            [
+              (.[] | select(.name | test("^runtime-\\d{4,}$"; "i")) | .tag_name),
+              (.[] | select(.name | test("^v\\d+\\.\\d+\\.\\d+$"; "i")) | .tag_name)
+            ] | first
+          ')
+          echo "latest_runtime_tag=$latest_runtime_tag" >> $GITHUB_OUTPUT
+          echo "$latest_runtime_tag"
+
       - name: Generate Release Body
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -251,7 +236,7 @@ jobs:
           yarn -s run ts-node generate-release-body.ts generate \
             --owner "${{ github.repository_owner }}" \
             --repo "$(basename ${{ github.repository }})" \
-            --from "${{ needs.fetch-github-releases.outputs.latest_release_tag }}" \
+            --from "${{ steps.latest-release.outputs.latest_runtime_tag }}" \
             --to "${{ github.ref_name }}" \
             --type runtime \
             --srtool-report-folder '../../runtime-artifacts/' \
@@ -382,54 +367,3 @@ jobs:
           asset_path: evm-tracing-artifacts.tar.gz
           asset_name: evm-tracing-artifacts-${{ github.ref_name }}.tar.gz
           asset_content_type: application/gzip
-
-  runtime-compatibility-test:
-    needs: [srtool, fetch-github-releases]
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        chain: [ "astar", "shiden", "shibuya" ]
-    env:
-      ZOMBIENET_DIR: third-party/zombienet
-    steps:
-      - name: Checkout the source code
-        uses: actions/checkout@v4
-
-      - name: Download runtime artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.chain }}-runtime
-          path: ${{ env.ZOMBIENET_DIR }}
-
-      - name: Download and setup client
-        run: |
-          curl -L -o astar-collator.tar.gz "${{ needs.fetch-github-releases.outputs.client_asset_url }}"
-          tar -xzf astar-collator.tar.gz
-          mv astar-collator ${{ env.ZOMBIENET_DIR }}/astar-collator
-          chmod +x ${{ env.ZOMBIENET_DIR }}/astar-collator
-          rm astar-collator.tar.gz
-
-      - name: Prepare runtime for upgrade test
-        working-directory: ${{ env.ZOMBIENET_DIR }}
-        run: |
-          RUNTIME_FILE=$(find . -maxdepth 1 -name "${{ matrix.chain }}_runtime.compact.compressed.wasm" -print -quit)
-          if [ -n "$RUNTIME_FILE" ]; then
-            mv "$RUNTIME_FILE" runtime.compact.compressed.wasm
-            echo "✅ Renamed runtime: $(basename "$RUNTIME_FILE") → runtime.compact.compressed.wasm"
-          else
-            echo "❌ No runtime file found matching pattern '${{ matrix.chain }}_runtime.compact.compressed.wasm'"
-            exit 1
-          fi
-
-      - name: Setup Zombienet
-        working-directory: ${{ env.ZOMBIENET_DIR }}
-        run: ./setup.sh
-
-      - name: Run compatibility test
-        working-directory: ${{ env.ZOMBIENET_DIR }}
-        env:
-          CHAIN: ${{ matrix.chain }}-dev
-        run: |
-          echo "Testing new ${{ matrix.chain }} compatibility with client ${{ needs.fetch-github-releases.outputs.client_tag }}"
-          zombienet -p native test smoke_runtime_upgrade.zndsl
