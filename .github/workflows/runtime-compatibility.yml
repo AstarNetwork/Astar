@@ -4,9 +4,17 @@ on:
     workflows: ["Release Runtime Build"]
     types:
       - completed
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Workflow run ID to download artifacts from'
+        required: true
+        type: string
 
 jobs:
   fetch-client-info:
+    # Only run if workflow_run was successful OR if manually triggered
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     outputs:
       client_tag: ${{ steps.parse-releases.outputs.client_tag }}
@@ -39,8 +47,8 @@ jobs:
 
   runtime-compatibility-test:
     needs: fetch-client-info
-    # Only run if the release workflow completed successfully
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Only run if workflow_run was successful OR if manually triggered
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -52,13 +60,25 @@ jobs:
       - name: Checkout the source code
         uses: actions/checkout@v4
 
+      - name: Determine workflow run ID
+        id: determine-run-id
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RUN_ID="${{ github.event.inputs.run_id }}"
+            echo "Provided run ID: ${RUN_ID}"
+          else
+            RUN_ID="${{ github.event.workflow_run.id }}"
+            echo "Using workflow_run event run ID: ${RUN_ID}"
+          fi
+          echo "run_id=${RUN_ID}" >> $GITHUB_OUTPUT
+
       - name: Download runtime artifacts
         uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.chain }}-runtime
           path: ${{ env.ZOMBIENET_DIR }}
-          #run-id: ${{ github.event.workflow_run.id }}
-          run-id: 16482755124
+          run-id: ${{ steps.determine-run-id.outputs.run_id }}
+          repository: AstarNetwork/Astar
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List downloaded files (debug)
