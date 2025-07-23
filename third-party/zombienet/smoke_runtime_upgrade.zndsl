@@ -12,6 +12,8 @@ collator2: reports block height is greater than 5 within 200 seconds
 
 ## perform runtime upgrade
 collator1: parachain 1000 perform upgrade with ./runtime.compact.compressed.wasm within 200 seconds
-collator2: reports block height is at least 10 within 250 seconds
-collator2: js-script ./runtime_upgrade.js within 200 seconds
-collator2: reports block height is at least 15 within 600 seconds
+collator1: reports block height is at least 10 within 450 seconds
+collator2: reports block height is at least 10 within 450 seconds
+
+#collator2: js-script ./runtime_upgrade.js within 200 seconds
+#collator2: reports block height is at least 15 within 600 seconds

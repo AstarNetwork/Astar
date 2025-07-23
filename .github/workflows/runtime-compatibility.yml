@@ -3,7 +3,7 @@ on:
   workflow_run:
     workflows: ["Release Runtime Build"]
     types:
-      - completed
+      - in_progress
 
 jobs:
   fetch-client-info:
@@ -57,8 +57,9 @@ jobs:
         with:
           name: ${{ matrix.chain }}-runtime
           path: ${{ env.ZOMBIENET_DIR }}
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GH_PAT }}
+          #run-id: ${{ github.event.workflow_run.id }}
+          run-id: 16443086835
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List downloaded files (debug)
         working-directory: ${{ env.ZOMBIENET_DIR }}
