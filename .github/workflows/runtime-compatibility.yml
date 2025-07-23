@@ -77,12 +77,12 @@ jobs:
       - name: Prepare runtime for upgrade test
         working-directory: ${{ env.ZOMBIENET_DIR }}
         run: |
-          RUNTIME_FILE=$(find . -maxdepth 1 -name "${{ matrix.chain }}_[0-9][0-9][0-9][0-9].wasm" -print -quit)
+          RUNTIME_FILE=$(find . -maxdepth 1 -name "${{ matrix.chain }}_runtime.compact.compressed.wasm" -print -quit)
           if [ -n "$RUNTIME_FILE" ]; then
             mv "$RUNTIME_FILE" runtime.compact.compressed.wasm
             echo "✅ Renamed runtime: $(basename "$RUNTIME_FILE") → runtime.compact.compressed.wasm"
           else
-            echo "❌ No runtime file found matching pattern '${{ matrix.chain }}_[0-9][0-9][0-9][0-9].wasm'"
+            echo "❌ No runtime file found matching pattern '${{ matrix.chain }}_runtime.compact.compressed.wasm'"
             exit 1
           fi
 
