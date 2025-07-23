@@ -203,7 +203,7 @@ jobs:
         # We're making an assumption that the latest runtime release will be within the last 30 releases
         run: |
           releases=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
-
+          
           latest_runtime_tag=$(echo "$releases" | jq -r '
             [
               (.[] | select(.name | test("^runtime-\\d{4,}$"; "i")) | .tag_name),
@@ -211,6 +211,7 @@ jobs:
             ] | first
           ')
           echo "latest_runtime_tag=$latest_runtime_tag" >> $GITHUB_OUTPUT
+
           echo "$latest_runtime_tag"
 
       - name: Generate Release Body
