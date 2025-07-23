@@ -30,13 +30,16 @@ orml-oracle = { workspace = true }
 pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
+pallet-collective = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-uapi = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-proxy = { workspace = true }
+pallet-safe-mode = { workspace = true }
 pallet-session = { workspace = true }
 pallet-timestamp = { workspace = true }
+pallet-tx-pause = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-xcm = { workspace = true }
 sp-consensus-aura = { workspace = true }
@@ -94,6 +97,7 @@ std = [
 	"moonbeam-rpc-primitives-debug?/std",
 	"orml-oracle/std",
 	"pallet-assets/std",
+	"pallet-collective/std",
 	"sp-trie/std",
 	"pallet-balances/std",
 	"pallet-collator-selection/std",
@@ -110,6 +114,8 @@ std = [
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-dispatch/std",
 	"pallet-inflation/std",
+	"pallet-safe-mode/std",
+	"pallet-tx-pause/std",
 	"pallet-membership/std",
 	"pallet-price-aggregator/std",
 	"cumulus-test-relay-sproof-builder/std",
