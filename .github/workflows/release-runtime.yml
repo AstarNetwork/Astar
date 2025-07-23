@@ -3,6 +3,8 @@ on:
   push:
     tags:
       - runtime-[0-9]+*
+    branches:
+      - 'ci/test-legacy-client'
   workflow_dispatch:
 env:
   SUBWASM_VERSION: 0.16.1
