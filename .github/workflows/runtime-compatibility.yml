@@ -81,12 +81,6 @@ jobs:
           repository: AstarNetwork/Astar
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: List downloaded files (debug)
-        working-directory: ${{ env.ZOMBIENET_DIR }}
-        run: |
-          echo "Files in zombienet directory:"
-          ls -la
-
       - name: Download and setup client
         run: |
           curl -L -o astar-collator.tar.gz "${{ needs.fetch-client-info.outputs.client_asset_url }}"
