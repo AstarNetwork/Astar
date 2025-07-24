@@ -17,33 +17,39 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     outputs:
-      client_tag: ${{ steps.parse-releases.outputs.client_tag }}
-      client_asset_url: ${{ steps.parse-releases.outputs.client_asset_url }}
+      client_tag_1: ${{ steps.parse-releases.outputs.client_tag_1 }}
+      client_asset_url_1: ${{ steps.parse-releases.outputs.client_asset_url_1 }}
+      client_tag_2: ${{ steps.parse-releases.outputs.client_tag_2 }}
+      client_asset_url_2: ${{ steps.parse-releases.outputs.client_asset_url_2 }}
     steps:
       - name: Fetch and parse client releases
         id: parse-releases
         run: |
-          # Retry API calls to handle rate limiting
-          for i in {1..3}; do
-            RELEASES=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
-            if echo "$RELEASES" | jq empty 2>/dev/null; then
-              break
-            fi
-            sleep $((i * 5))
-          done
-          
-          # Get latest client tag (v*.*.* format)
-          CLIENT_TAG=$(echo "$RELEASES" | jq -r '[.[] | select(.tag_name | test("^v\\d+\\.\\d+\\.\\d+$")) | .tag_name] | first')
-          
-          # Get client asset URL
-          ASSET_NAME="astar-collator-${CLIENT_TAG}-ubuntu-x86_64.tar.gz"
-          CLIENT_ASSET_URL=$(curl -s "https://api.github.com/repos/AstarNetwork/Astar/releases/tags/${CLIENT_TAG}" | \
-            jq -r --arg name "$ASSET_NAME" '.assets[] | select(.name == $name) | .browser_download_url')
-          
-          echo "client_tag=${CLIENT_TAG}" >> $GITHUB_OUTPUT
-          echo "client_asset_url=${CLIENT_ASSET_URL}" >> $GITHUB_OUTPUT
-          
-          echo "Latest Client Tag: ${CLIENT_TAG}"
+          RELEASES=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
+
+          # Get latest 2 client tags (v*.*.* format)
+          CLIENT_TAGS_ARRAY=($(echo "$RELEASES" | jq -r '[.[] | select(.tag_name | test("^v\\d+\\.\\d+\\.\\d+$")) | .tag_name] | .[0:2] | .[]'))
+
+          # Get latest client info
+          CLIENT_TAG_1="${CLIENT_TAGS_ARRAY[0]}"
+          ASSET_NAME_1="astar-collator-${CLIENT_TAG_1}-ubuntu-x86_64.tar.gz"
+          CLIENT_ASSET_URL_1=$(curl -s "https://api.github.com/repos/AstarNetwork/Astar/releases/tags/${CLIENT_TAG_1}" | \
+          jq -r --arg name "$ASSET_NAME_1" '.assets[] | select(.name == $name) | .browser_download_url')
+ 
+          # Get second latest client info
+          CLIENT_TAG_2="${CLIENT_TAGS_ARRAY[1]}"
+          ASSET_NAME_2="astar-collator-${CLIENT_TAG_2}-ubuntu-x86_64.tar.gz"
+          CLIENT_ASSET_URL_2=$(curl -s "https://api.github.com/repos/AstarNetwork/Astar/releases/tags/${CLIENT_TAG_2}" | \
+          jq -r --arg name "$ASSET_NAME_2" '.assets[] | select(.name == $name) | .browser_download_url')
+               
+          # Output variables
+          echo "client_tag_1=${CLIENT_TAG_1}" >> $GITHUB_OUTPUT
+          echo "client_asset_url_1=${CLIENT_ASSET_URL_1}" >> $GITHUB_OUTPUT
+          echo "client_tag_2=${CLIENT_TAG_2}" >> $GITHUB_OUTPUT
+          echo "client_asset_url_2=${CLIENT_ASSET_URL_2}" >> $GITHUB_OUTPUT
+
+          echo "Latest Client Tag: ${CLIENT_TAG_1} -> ${CLIENT_ASSET_URL_1}"
+          echo "Second Latest Client Tag: ${CLIENT_TAG_2} -> ${CLIENT_ASSET_URL_2}"
 
   runtime-compatibility-test:
     needs: fetch-client-info
@@ -54,6 +60,11 @@ jobs:
       fail-fast: false
       matrix:
         chain: [ "astar", "shiden", "shibuya" ]
+        client:
+          - tag: ${{ needs.fetch-client-info.outputs.client_tag_1 }}
+            asset_url: ${{ needs.fetch-client-info.outputs.client_asset_url_1 }}
+          - tag: ${{ needs.fetch-client-info.outputs.client_tag_2 }}
+            asset_url: ${{ needs.fetch-client-info.outputs.client_asset_url_2 }}
     env:
       ZOMBIENET_DIR: third-party/zombienet
     steps:
@@ -83,7 +94,8 @@ jobs:
 
       - name: Download and setup client
         run: |
-          curl -L -o astar-collator.tar.gz "${{ needs.fetch-client-info.outputs.client_asset_url }}"
+          echo "Setting up client version: ${{ matrix.client.tag }}"
+          curl -L -o astar-collator.tar.gz "${{ matrix.client.asset_url }}"
           tar -xzf astar-collator.tar.gz
           mv astar-collator ${{ env.ZOMBIENET_DIR }}/astar-collator
           chmod +x ${{ env.ZOMBIENET_DIR }}/astar-collator
@@ -110,5 +122,6 @@ jobs:
         env:
           CHAIN: ${{ matrix.chain }}-dev
         run: |
-          echo "Testing new ${{ matrix.chain }} compatibility with client ${{ needs.fetch-client-info.outputs.client_tag }}"
+          version=$(cat "${{ matrix.chain }}-srtool-digest.json" | jq -r '.version')
+          echo "🧪 Testing ${{ matrix.chain }}-runtime v${version} compatibility with client ${{ matrix.client.tag }}"
           zombienet -p native test smoke_runtime_upgrade.zndsl
