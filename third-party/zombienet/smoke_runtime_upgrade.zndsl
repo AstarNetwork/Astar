@@ -1,5 +1,5 @@
 Description: Runtime Upgrade Test
-Network: ./smoke.toml
+Network: ./smoke_runtime_upgrade.toml
 Creds: config
 
 alice: is up
@@ -11,6 +11,8 @@ collator1: reports block height is greater than 5 within 200 seconds
 collator2: reports block height is greater than 5 within 200 seconds
 
 ## perform runtime upgrade
-collator1: parachain 1000 perform upgrade with ./runtime.compact.compressed.wasm within 200 seconds
+collator2: parachain 1000 perform upgrade with ./runtime.compact.compressed.wasm within 200 seconds
+
+## test the block height again
 collator1: reports block height is at least 10 within 450 seconds
 collator2: reports block height is at least 10 within 450 seconds

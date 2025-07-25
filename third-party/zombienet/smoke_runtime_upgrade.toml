@@ -1,0 +1,38 @@
+[settings]
+timeout = 1000
+
+# Used to start 4 validator nodes and 2 collator nodes with mixed client versions for a single parachain.
+
+[relaychain]
+default_command = "./polkadot"
+chain = "rococo-local"
+
+  [[relaychain.nodes]]
+  name = "alice"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "bob"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "charlie"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "dave"
+  validator = true
+
+[[parachains]]
+id = 1000
+chain = "{{CHAIN}}"
+cumulus_based = true
+
+  [[parachains.collators]]
+  name = "collator1"
+  command = "./astar-collator-1"
+  rpc_port=9944
+
+  [[parachains.collators]]
+  name = "collator2"
+  command = "./astar-collator-2"

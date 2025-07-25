@@ -8,9 +8,9 @@ then
   exit 1
 fi
 
-if ! command -v ./astar-collator &> /dev/null
+if ! [ -x ./astar-collator ] && ( ! [ -x ./astar-collator-1 ] || ! [ -x ./astar-collator-2 ] )
 then
-  echo "No executable astar-collator binary in zombienet directory"
+  echo "No astar-collator binary found: expected ./astar-collator or both ./astar-collator-1 and ./astar-collator-2"
   exit 1
 fi
 
