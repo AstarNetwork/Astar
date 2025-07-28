@@ -1547,6 +1547,7 @@ impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
             | RuntimeCall::Multisig(_)
             | RuntimeCall::Preimage(_)
             | RuntimeCall::Oracle(_)
+            | RuntimeCall::Utility(_)
             | RuntimeCall::TxPause(_)
             | RuntimeCall::SafeMode(_) => true,
             _ => false,
