@@ -1570,6 +1570,9 @@ impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
                 | pallet_democracy::Call::veto_external { .. },
             )
             | RuntimeCall::Proxy(_)
+            | RuntimeCall::Multisig(_)
+            | RuntimeCall::Preimage(_)
+            | RuntimeCall::Oracle(_)
             | RuntimeCall::TxPause(_)
             | RuntimeCall::SafeMode(_) => true,
             _ => false,
