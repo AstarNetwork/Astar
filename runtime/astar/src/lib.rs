@@ -37,8 +37,8 @@ use frame_support::{
     traits::{
         fungible::{Balanced, Credit, HoldConsideration},
         AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, Contains,
-        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice,
-        Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
+        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InsideBoth, InstanceFilter,
+        LinearStoragePrice, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -49,7 +49,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot, EnsureSigned,
+    EnsureRoot, EnsureSigned, EnsureWithSuccess,
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
@@ -58,6 +58,7 @@ use pallet_identity::legacy::IdentityInfo;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
+use pallet_tx_pause::RuntimeCallNameOf;
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
@@ -270,6 +271,9 @@ impl Contains<RuntimeCall> for BaseFilter {
     }
 }
 
+type SafeModeTxPauseFilter = InsideBoth<SafeMode, TxPause>;
+type BaseCallFilter = InsideBoth<BaseFilter, SafeModeTxPauseFilter>;
+
 impl frame_system::Config for Runtime {
     /// The identifier used to distinguish between accounts.
     type AccountId = AccountId;
@@ -301,7 +305,7 @@ impl frame_system::Config for Runtime {
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type DbWeight = RocksDbWeight;
-    type BaseCallFilter = BaseFilter;
+    type BaseCallFilter = BaseCallFilter;
     type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
     type BlockWeights = RuntimeBlockWeights;
     type BlockLength = RuntimeBlockLength;
@@ -1517,6 +1521,102 @@ impl pallet_migrations::Config for Runtime {
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
 }
 
+/// Calls that can bypass the safe-mode pallet.
+pub struct SafeModeWhitelistedCalls;
+impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
+    fn contains(call: &RuntimeCall) -> bool {
+        match call {
+            // System and Timestamp are required for block production
+            RuntimeCall::System(_)
+            | RuntimeCall::Timestamp(_)
+            | RuntimeCall::ParachainSystem(_)
+            | RuntimeCall::Council(_)
+            | RuntimeCall::TechnicalCommittee(_)
+            | RuntimeCall::Sudo(_)
+            | RuntimeCall::Democracy(
+                pallet_democracy::Call::external_propose_majority { .. }
+                | pallet_democracy::Call::external_propose_default { .. }
+                | pallet_democracy::Call::fast_track { .. }
+                | pallet_democracy::Call::emergency_cancel { .. }
+                | pallet_democracy::Call::cancel_referendum { .. }
+                | pallet_democracy::Call::vote { .. }
+                | pallet_democracy::Call::remove_vote { .. }
+                | pallet_democracy::Call::veto_external { .. },
+            )
+            | RuntimeCall::Proxy(_)
+            | RuntimeCall::Multisig(_)
+            | RuntimeCall::Preimage(_)
+            | RuntimeCall::Oracle(_)
+            | RuntimeCall::Utility(_)
+            | RuntimeCall::TxPause(_)
+            | RuntimeCall::SafeMode(_) => true,
+            _ => false,
+        }
+    }
+}
+
+/// Calls that cannot be paused by the tx-pause pallet.
+pub struct TxPauseWhitelistedCalls;
+impl frame_support::traits::Contains<RuntimeCallNameOf<Runtime>> for TxPauseWhitelistedCalls {
+    fn contains(full_name: &RuntimeCallNameOf<Runtime>) -> bool {
+        let pallet_name = full_name.0.as_slice();
+        matches!(
+            pallet_name,
+            b"System"
+                | b"Timestamp"
+                | b"ParachainSystem"
+                | b"Council"
+                | b"TechnicalCommittee"
+                | b"Sudo"
+                | b"TxPause"
+                | b"SafeMode"
+        )
+    }
+}
+
+parameter_types! {
+    // Should be sufficient for the team to react & come up with longer term solution.
+    pub const EnterDuration: BlockNumber = 12 * HOURS;
+    // Extension in case previous time isn't enough.
+    pub const ExtendDuration: BlockNumber = 2 * HOURS;
+    // Permisonless safe mode entry isn't allowed yet.
+    pub const NoPermisionlessEntry: Option<Balance> = None;
+    pub const NoPermisionlessExtension: Option<Balance> = None;
+}
+
+impl pallet_safe_mode::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type WhitelistedCalls = SafeModeWhitelistedCalls;
+    type EnterDuration = EnterDuration;
+    type EnterDepositAmount = NoPermisionlessEntry;
+    type ExtendDuration = ExtendDuration;
+    type ExtendDepositAmount = NoPermisionlessExtension;
+    type ForceEnterOrigin =
+        EnsureWithSuccess<EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil, AccountId, EnterDuration>;
+    type ForceExtendOrigin = EnsureWithSuccess<
+        EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil,
+        AccountId,
+        ExtendDuration,
+    >;
+    type ForceExitOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
+    type ForceDepositOrigin = EnsureRoot<AccountId>;
+    type ReleaseDelay = ();
+    type Notify = DappStaking;
+    type WeightInfo = pallet_safe_mode::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_tx_pause::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type PauseOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
+    type UnpauseOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
+    type WhitelistedCalls = TxPauseWhitelistedCalls;
+    type MaxNameLen = ConstU32<256>;
+    type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>;
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1579,6 +1679,8 @@ construct_runtime!(
         Treasury: pallet_treasury::<Instance1> = 107,
         CommunityTreasury: pallet_treasury::<Instance2> = 108,
         CollectiveProxy: pallet_collective_proxy = 109,
+        SafeMode: pallet_safe_mode = 110,
+        TxPause: pallet_tx_pause = 111,
 
         MultiBlockMigrations: pallet_migrations = 120,
     }
@@ -1732,6 +1834,8 @@ mod benches {
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
         [orml_oracle, Oracle]
+        [pallet_tx_pause, TxPause]
+        [pallet_safe_mode, SafeMode]
     );
 }
 

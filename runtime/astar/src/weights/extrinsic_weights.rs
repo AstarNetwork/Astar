@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2025-07-21 (Y/M/D)
+//! DATE: 2025-07-22 (Y/M/D)
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
 //!
 //! SHORT-NAME: `extrinsic`, LONG-NAME: `ExtrinsicBase`, RUNTIME: `astar`
@@ -32,6 +32,7 @@
 //   overhead
 //   --runtime=./target/release/wbuild/astar-runtime/astar_runtime.compact.compressed.wasm
 //   --repeat=50
+//   --header=./.github/license-check/headers/HEADER-GNUv3
 //   --weight-path=./benchmark-results/astar
 
 use sp_core::parameter_types;
@@ -42,17 +43,17 @@ parameter_types! {
     /// Calculated by multiplying the *Average* with `1.0` and adding `0`.
     ///
     /// Stats nanoseconds:
-    ///   Min, Max: 100_125, 101_636
-    ///   Average:  100_663
-    ///   Median:   100_586
-    ///   Std-Dev:  332.53
+    ///   Min, Max: 112_959, 114_898
+    ///   Average:  113_599
+    ///   Median:   113_519
+    ///   Std-Dev:  384.67
     ///
     /// Percentiles nanoseconds:
-    ///   99th: 101_636
-    ///   95th: 101_256
-    ///   75th: 100_831
+    ///   99th: 114_898
+    ///   95th: 114_372
+    ///   75th: 113_802
     pub const ExtrinsicBaseWeight: Weight =
-        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(100_663), 166);
+        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(113_599), 167);
 }
 
 #[cfg(test)]

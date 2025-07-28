@@ -175,6 +175,7 @@ for chain in ${chains//,/ }; do
       "${BENCHMARK_TOOL[@]}" benchmark overhead \
       --runtime="$RUNTIME_PATH" \
       --repeat=50 \
+      --header=./.github/license-check/headers/HEADER-GNUv3 \
       --weight-path="$output_path/$chain" 2>&1
     )
     if [ $? -ne 0 ]; then
