@@ -8,19 +8,19 @@ then
   exit 1
 fi
 
-if ! command -v ./astar-collator &> /dev/null
+if ! [ -x ./astar-collator ] && ( ! [ -x ./astar-collator-1 ] || ! [ -x ./astar-collator-2 ] )
 then
-  echo "No executable astar-collator binary in zombienet directory"
+  echo "No astar-collator binary found: expected ./astar-collator or both ./astar-collator-1 and ./astar-collator-2"
   exit 1
 fi
 
-ZOMBINET_VERSION=v1.3.106
+ZOMBIENET_VERSION=v1.3.133
 
 if ! command -v zombienet &> /dev/null
 then
-    echo "Install zombienet $ZOMBINET_VERSION"
+    echo "Install zombienet $ZOMBIENET_VERSION"
     mkdir -p $HOME/.local/bin
-    wget -q -O $HOME/.local/bin/zombienet https://github.com/paritytech/zombienet/releases/download/$ZOMBINET_VERSION/zombienet-linux-x64
+    wget -q -O $HOME/.local/bin/zombienet https://github.com/paritytech/zombienet/releases/download/$ZOMBIENET_VERSION/zombienet-linux-x64
     chmod a+x $HOME/.local/bin/zombienet
     PATH=$HOME/.local/bin:$PATH
     zombienet version

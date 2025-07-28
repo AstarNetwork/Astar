@@ -1,0 +1,135 @@
+name: Runtime Compatibility Test
+on:
+  workflow_run:
+    workflows: ["Release Runtime Build"]
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Workflow run ID to download artifacts from'
+        required: true
+        type: string
+
+jobs:
+  fetch-client-info:
+    # Only run if workflow_run was successful OR if manually triggered
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    outputs:
+      client_tags: ${{ steps.parse-releases.outputs.client_tags }}
+      client_asset_urls: ${{ steps.parse-releases.outputs.client_asset_urls }}
+    steps:
+      - name: Fetch and parse client releases
+        id: parse-releases
+        run: |
+          RELEASES=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
+
+          # Get latest 2 client tags (v*.*.* format)
+          CLIENT_TAGS_ARRAY=($(echo "$RELEASES" | jq -r '[.[] | select(.tag_name | test("^v\\d+\\.\\d+\\.\\d+$")) | .tag_name] | .[0:2] | .[]'))
+          
+          declare -a CLIENT_TAGS=()
+          declare -a CLIENT_ASSET_URLS=()
+          
+          for i in {0..1}; do
+            CLIENT_TAG="${CLIENT_TAGS_ARRAY[i]}"
+            ASSET_NAME="astar-collator-${CLIENT_TAG}-ubuntu-x86_64.tar.gz"
+            CLIENT_ASSET_URL=$(curl -s "https://api.github.com/repos/AstarNetwork/Astar/releases/tags/${CLIENT_TAG}" | \
+              jq -r --arg name "$ASSET_NAME" '.assets[] | select(.name == $name) | .browser_download_url')
+          
+            CLIENT_TAGS[i]="$CLIENT_TAG"
+            CLIENT_ASSET_URLS[i]="$CLIENT_ASSET_URL"
+          
+            echo "Client $((i+1)): ${CLIENT_TAG} -> ${CLIENT_ASSET_URL}"
+          done
+          
+          echo "client_tags=${CLIENT_TAGS[*]}" >> $GITHUB_OUTPUT
+          echo "client_asset_urls=${CLIENT_ASSET_URLS[*]}" >> $GITHUB_OUTPUT
+
+  runtime-compatibility-test:
+    needs: fetch-client-info
+    # Only run if workflow_run was successful OR if manually triggered
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        chain: [ "astar", "shiden", "shibuya" ]
+    env:
+      ZOMBIENET_DIR: third-party/zombienet
+      CLIENT_TAGS: ${{ needs.fetch-client-info.outputs.client_tags }}
+      CLIENT_ASSET_URLS: ${{ needs.fetch-client-info.outputs.client_asset_urls }}
+    steps:
+      - name: Checkout the source code
+        uses: actions/checkout@v4
+
+      - name: Determine workflow run ID
+        id: determine-run-id
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RUN_ID="${{ github.event.inputs.run_id }}"
+            echo "Provided run ID: ${RUN_ID}"
+          else
+            RUN_ID="${{ github.event.workflow_run.id }}"
+            echo "Using workflow_run event run ID: ${RUN_ID}"
+          fi
+          echo "run_id=${RUN_ID}" >> $GITHUB_OUTPUT
+
+      - name: Download runtime artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.chain }}-runtime
+          path: ${{ env.ZOMBIENET_DIR }}
+          run-id: ${{ steps.determine-run-id.outputs.run_id }}
+          repository: AstarNetwork/Astar
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download and setup clients
+        run: |
+          CLIENT_TAGS_ARRAY=($CLIENT_TAGS)
+          CLIENT_URLS_ARRAY=($CLIENT_ASSET_URLS)
+          
+          for i in {0..1}; do
+            CLIENT_NUM=$((i + 1))
+            CLIENT_TAG="${CLIENT_TAGS_ARRAY[i]}"
+            CLIENT_URL="${CLIENT_URLS_ARRAY[i]}"
+          
+            echo "Setting up client ${CLIENT_TAG}"
+            curl -L -o "astar-collator-${CLIENT_NUM}.tar.gz" "${CLIENT_URL}"
+            tar -xzf "astar-collator-${CLIENT_NUM}.tar.gz"
+            mv astar-collator ${{ env.ZOMBIENET_DIR }}/astar-collator-${CLIENT_NUM}
+            chmod +x ${{ env.ZOMBIENET_DIR }}/astar-collator-${CLIENT_NUM}
+            rm "astar-collator-${CLIENT_NUM}.tar.gz"
+          
+            # Verification
+            echo "Client ${CLIENT_NUM} version (${CLIENT_TAG}):"
+            ${{ env.ZOMBIENET_DIR }}/astar-collator-${CLIENT_NUM} --version || echo "Version check failed"
+            echo ""
+          done
+
+      - name: Prepare runtime for upgrade test
+        working-directory: ${{ env.ZOMBIENET_DIR }}
+        run: |
+          RUNTIME_FILE=$(find . -maxdepth 1 -name "${{ matrix.chain }}_runtime.compact.compressed.wasm" -print -quit)
+          if [ -n "$RUNTIME_FILE" ]; then
+            mv "$RUNTIME_FILE" runtime.compact.compressed.wasm
+            echo "✅ Renamed runtime: $(basename "$RUNTIME_FILE") → runtime.compact.compressed.wasm"
+          else
+            echo "❌ No runtime file found matching pattern '${{ matrix.chain }}_runtime.compact.compressed.wasm'"
+            exit 1
+          fi
+
+      - name: Setup Zombienet
+        working-directory: ${{ env.ZOMBIENET_DIR }}
+        run: ./setup.sh
+
+      - name: Run compatibility test
+        working-directory: ${{ env.ZOMBIENET_DIR }}
+        env:
+          CHAIN: ${{ matrix.chain }}-dev
+        run: |
+          version=$(cat "${{ matrix.chain }}-srtool-digest.json" | jq -r '.version')
+          echo "🧪 Testing ${{ matrix.chain }}-runtime v${version} compatibility with mixed client versions"
+          echo "  - Collator1: $(echo $CLIENT_TAGS | cut -d' ' -f1)"
+          echo "  - Collator2: $(echo $CLIENT_TAGS | cut -d' ' -f2)"
+          zombienet -p native test smoke_runtime_upgrade.zndsl
