@@ -239,6 +239,23 @@ impl ContainsPair<Asset, Location> for DotFromAssetHub {
     }
 }
 
+/// Used to determine whether the cross-chain asset is coming from a trusted reserve or not
+///
+/// Basically, we trust any cross-chain asset from any location to act as a reserve since
+/// in order to support the xc-asset, we need to first register it in the `XcAssetConfig` pallet.
+///
+pub struct SiblingReserveAssetFilter;
+impl ContainsPair<Asset, Location> for SiblingReserveAssetFilter {
+    fn contains(asset: &Asset, origin: &Location) -> bool {
+        let AssetId(location) = &asset.id;
+        match (location.parents, location.first_interior()) {
+            // Accept only sibling parachain reserves (excludes relay-chain assets like DOT/KSM).
+            (1, Some(Parachain(id))) => origin == &Location::new(1, [Parachain(*id)]),
+            _ => false,
+        }
+    }
+}
+
 /// All locations we trust as reserves for particular assets.
 pub type Reserves = (
     // Trusted reserves and DOT from relay
@@ -318,6 +335,34 @@ impl<AbsoluteLocation: Get<Location>> Reserve
                 reserve_location
             }
         })
+    }
+}
+
+/// `Asset` reserve location provider. It's based on `RelativeReserveProvider` and in
+/// addition will convert self absolute location to relative location.
+/// This struct will ensure that during (and only during) asset migration, no DOT/KSM token will get stuck
+/// on relay chain.
+pub struct AbsoluteAndRelativeReserveProviderAssetHubMigration<AbsoluteLocation>(
+    PhantomData<AbsoluteLocation>,
+);
+impl<AbsoluteLocation: Get<Location>> Reserve
+    for AbsoluteAndRelativeReserveProviderAssetHubMigration<AbsoluteLocation>
+{
+    fn reserve(asset: &Asset) -> Option<Location> {
+        let reserve_location = RelativeReserveProvider::reserve(asset)?;
+
+        if reserve_location.parents == 1
+            && !matches!(reserve_location.first_interior(), Some(Parachain(_)))
+        {
+            // DOT/KSM token is not allowed to be migrated to sibling parachain as it will use relay as reserve
+            // update this to `Some(Location::new(1, [Parachain(ASSET_HUB_PARA_ID)]))` when migration is done
+            return None;
+        }
+
+        if reserve_location == AbsoluteLocation::get() {
+            return Some(Location::here());
+        }
+        Some(reserve_location)
     }
 }
 
