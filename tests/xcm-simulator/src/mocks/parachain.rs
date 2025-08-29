@@ -60,7 +60,6 @@ use orml_xcm_support::DisabledParachainFee;
 
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
-use astar_primitives::xcm::{DotFromAssetHub, SiblingReserveAssetFilter};
 use astar_primitives::{
     dapp_staking::{AccountCheck, CycleConfiguration, SmartContract, StakingRewardHandler},
     oracle::PriceProvider,
@@ -443,7 +442,7 @@ impl xcm_executor::Config for XcmConfig {
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = (SiblingReserveAssetFilter, DotFromAssetHub);
+    type IsReserve = Reserves;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
