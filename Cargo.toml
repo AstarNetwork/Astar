@@ -1,32 +1,32 @@
 [workspace]
 members = [
-    "bin/collator",
-    "bin/xcm-tools",
-    "runtime/local",
-    "runtime/astar",
-    "runtime/shiden",
-    "runtime/shibuya",
-    "tests/xcm-simulator",
-    "tests/integration",
-    "tests/utils",
-    "pallets/*",
-    "precompiles/*",
-    "primitives",
-    "chain-extensions/pallet-assets",
-    "chain-extensions/unified-accounts",
-    "chain-extensions/types/*",
-    "vendor/evm-tracing",
-    "vendor/primitives/debug",
-    "vendor/primitives/evm-tracing-events",
-    "vendor/primitives/txpool",
-    "vendor/rpc/debug",
-    "vendor/rpc/trace",
-    "vendor/rpc-core/debug",
-    "vendor/rpc-core/trace",
-    "vendor/rpc-core/types",
-    "vendor/runtime/evm-tracer",
-    "vendor/runtime/ext",
-    "vendor/treasury",
+	"bin/collator",
+	"bin/xcm-tools",
+	"runtime/local",
+	"runtime/astar",
+	"runtime/shiden",
+	"runtime/shibuya",
+	"tests/xcm-simulator",
+	"tests/integration",
+	"tests/utils",
+	"pallets/*",
+	"precompiles/*",
+	"primitives",
+	"chain-extensions/pallet-assets",
+	"chain-extensions/unified-accounts",
+	"chain-extensions/types/*",
+	"vendor/evm-tracing",
+	"vendor/primitives/debug",
+	"vendor/primitives/evm-tracing-events",
+	"vendor/primitives/txpool",
+	"vendor/rpc/debug",
+	"vendor/rpc/trace",
+	"vendor/rpc-core/debug",
+	"vendor/rpc-core/trace",
+	"vendor/rpc-core/types",
+	"vendor/runtime/evm-tracer",
+	"vendor/runtime/ext",
+	"vendor/treasury",
 ]
 
 resolver = "2"
@@ -50,8 +50,6 @@ repository = "https://github.com/AstarNetwork/Astar"
 
 [replace]
 "yamux:0.13.6" = { git = "https://github.com/AstarNetwork/rust-yamux", rev = "9aa5c1d87adbf0ae1b675aeccee39dbf5d7ac524" }
-
-
 
 [workspace.dependencies]
 # General deps
