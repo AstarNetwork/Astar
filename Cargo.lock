@@ -2977,7 +2977,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d162beedaa69905488a8da94f5ac3edb4dd4788b732fadb7bd120b2625c1976"
 dependencies = [
  "data-encoding",
- "syn 2.0.101",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -6678,7 +6678,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc2f4eb4bc735547cfed7c0a4922cbd04a4655978c09b54f1f7b228750664c34"
 dependencies = [
  "cfg-if",
- "windows-targets 0.52.6",
+ "windows-targets 0.48.5",
 ]
 
 [[package]]
@@ -7334,7 +7334,7 @@ dependencies = [
  "url",
  "x25519-dalek",
  "x509-parser 0.17.0",
- "yamux 0.13.6",
+ "yamux 0.13.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "yasna",
  "zeroize",
 ]
@@ -19708,6 +19708,12 @@ name = "yamux"
 version = "0.13.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b2dd50a6d6115feb3e5d7d0efd45e8ca364b6c83722c1e9c602f5764e0e9597"
+replace = "yamux 0.13.6 (git+https://github.com/AstarNetwork/rust-yamux?rev=9aa5c1d87adbf0ae1b675aeccee39dbf5d7ac524)"
+
+[[package]]
+name = "yamux"
+version = "0.13.6"
+source = "git+https://github.com/AstarNetwork/rust-yamux?rev=9aa5c1d87adbf0ae1b675aeccee39dbf5d7ac524#9aa5c1d87adbf0ae1b675aeccee39dbf5d7ac524"
 dependencies = [
  "futures 0.3.31",
  "log",
