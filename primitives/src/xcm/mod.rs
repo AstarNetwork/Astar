@@ -340,13 +340,13 @@ impl<AbsoluteLocation: Get<Location>> Reserve
 
 /// `Asset` reserve location provider. It's based on `RelativeReserveProvider` and in
 /// addition will convert self absolute location to relative location.
-/// This struct will ensure that during (and only during) asset migration, no DOT/KSM token will get stuck
-/// on relay chain.
-pub struct AbsoluteAndRelativeReserveProviderAssetHubMigration<AbsoluteLocation>(
+/// This struct intended to be only used for Asset Hub migration on Shiden
+/// it will ensure that during (and only during) asset migration, no KSM token will get stuck on Kusama relay.
+pub struct AbsoluteAndRelativeReserveProviderShiden<AbsoluteLocation>(
     PhantomData<AbsoluteLocation>,
 );
 impl<AbsoluteLocation: Get<Location>> Reserve
-    for AbsoluteAndRelativeReserveProviderAssetHubMigration<AbsoluteLocation>
+    for AbsoluteAndRelativeReserveProviderShiden<AbsoluteLocation>
 {
     fn reserve(asset: &Asset) -> Option<Location> {
         let reserve_location = RelativeReserveProvider::reserve(asset)?;
@@ -354,7 +354,7 @@ impl<AbsoluteLocation: Get<Location>> Reserve
         if reserve_location.parents == 1
             && !matches!(reserve_location.first_interior(), Some(Parachain(_)))
         {
-            // DOT/KSM token is not allowed to be migrated to sibling parachain as it will use relay as reserve
+            // KSM token is not allowed to be migrated to sibling parachain as it will use relay as reserve
             // update this to `Some(Location::new(1, [Parachain(ASSET_HUB_PARA_ID)]))` when migration is done
             return None;
         }
