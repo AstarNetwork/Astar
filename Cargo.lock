@@ -7334,7 +7334,7 @@ dependencies = [
  "url",
  "x25519-dalek",
  "x509-parser 0.17.0",
- "yamux 0.13.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "yamux 0.13.6",
  "yasna",
  "zeroize",
 ]
@@ -19702,13 +19702,6 @@ dependencies = [
  "rand 0.8.5",
  "static_assertions",
 ]
-
-[[package]]
-name = "yamux"
-version = "0.13.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b2dd50a6d6115feb3e5d7d0efd45e8ca364b6c83722c1e9c602f5764e0e9597"
-replace = "yamux 0.13.6 (git+https://github.com/AstarNetwork/rust-yamux?rev=9aa5c1d87adbf0ae1b675aeccee39dbf5d7ac524)"
 
 [[package]]
 name = "yamux"
