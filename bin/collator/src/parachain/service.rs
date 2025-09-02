@@ -59,6 +59,7 @@ use super::shell_upgrade::*;
 use crate::{
     evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig},
     rpc::tracing,
+    IdentifyChainNetworkBackend,
 };
 
 /// Parachain host functions
@@ -728,7 +729,12 @@ pub async fn start_node(
     para_id: ParaId,
     additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(TaskManager, Arc<FullClient>)> {
-    let network_backend = parachain_config.network.network_backend;
+    let default_backend = parachain_config.chain_spec.default_network_backend();
+    // If the network backend is unspecified, use the default for the given chain.
+    let network_backend = parachain_config
+        .network
+        .network_backend
+        .unwrap_or(default_backend);
     match network_backend {
         NetworkBackendType::Libp2p => {
             start_node_impl::<sc_network::NetworkWorker<_, _>>(

@@ -48,11 +48,6 @@ edition = "2021"
 homepage = "https://astar.network"
 repository = "https://github.com/AstarNetwork/Astar"
 
-[patch.crates-io]
-# `yamux 13.6` used by `litep2p` is using a Rust 1.87 associated method. Remove this patch when it has been fixed or when we update rust version
-# https://github.com/libp2p/rust-yamux/issues/207
-yamux = { git = "https://github.com/AstarNetwork/rust-yamux", rev = "9aa5c1d87adbf0ae1b675aeccee39dbf5d7ac524" }
-
 [workspace.dependencies]
 # General deps
 # (wasm)
