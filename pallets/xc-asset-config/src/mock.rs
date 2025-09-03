@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::self as pallet_xc_asset_config;
+use crate as pallet_xc_asset_config;
 
 use frame_support::{construct_runtime, derive_impl, parameter_types, weights::Weight};
 
