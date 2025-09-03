@@ -42,7 +42,7 @@
 #![allow(unused_parens)]
 #![allow(unused_imports)]
 
-use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+use frame_support::{traits::Get, weights::{constants::RocksDbWeight, Weight}};
 use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_xc_asset_config.
@@ -52,6 +52,7 @@ pub trait WeightInfo {
 	fn change_existing_asset_location() -> Weight;
 	fn remove_payment_asset() -> Weight;
 	fn remove_asset() -> Weight;
+	fn update_migration_step() -> Weight;
 }
 
 /// Weights for pallet_xc_asset_config using the Substrate node and recommended hardware.
@@ -117,6 +118,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
+
+	fn update_migration_step() -> Weight {
+		// Minimum execution time: 18_645 nanoseconds.
+		Weight::from_parts(18_878_000, 0)
+			.saturating_add(Weight::from_parts(0, 2987))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
+	}
 }
 
 // For backwards compatibility and tests
@@ -175,6 +184,14 @@ impl WeightInfo for () {
 	// Storage: XcAssetConfig AssetLocationToId (r:0 w:1)
 	// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
 	fn remove_asset() -> Weight {
+		// Minimum execution time: 18_645 nanoseconds.
+		Weight::from_parts(18_878_000, 0)
+			.saturating_add(Weight::from_parts(0, 2987))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
+	}
+
+	fn update_migration_step() -> Weight {
 		// Minimum execution time: 18_645 nanoseconds.
 		Weight::from_parts(18_878_000, 0)
 			.saturating_add(Weight::from_parts(0, 2987))

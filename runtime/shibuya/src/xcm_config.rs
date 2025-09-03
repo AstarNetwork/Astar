@@ -183,7 +183,7 @@ impl xcm_executor::Config for XcmConfig {
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = ReserveAssetFilter;
+    type IsReserve = ReserveAssetFilter<Runtime>;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
@@ -309,7 +309,7 @@ impl orml_xtokens::Config for Runtime {
     // Default impl. Refer to `orml-xtokens` docs for more details.
     type MinXcmFee = DisabledParachainFee;
     type LocationsFilter = Everything;
-    type ReserveProvider = AbsoluteAndRelativeReserveProvider<ShibuyaLocationAbsolute>;
+    type ReserveProvider = AbsoluteAndRelativeReserveProvider<Runtime, ShibuyaLocationAbsolute>;
     type RateLimiter = ();
     type RateLimiterId = ();
 }

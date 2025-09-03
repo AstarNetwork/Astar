@@ -56,9 +56,8 @@ use parachains_common::message_queue::ParaIdToSibling;
 
 // Astar imports
 use astar_primitives::xcm::{
-    AbsoluteAndRelativeReserveProviderShiden, AccountIdToMultiLocation,
-    AllowTopLevelPaidExecutionFrom, DotFromAssetHub, FixedRateOfForeignAsset,
-    SiblingReserveAssetFilter, XcmFungibleFeeHandler,
+    AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, AllowTopLevelPaidExecutionFrom,
+    FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
 };
 
 parameter_types! {
@@ -255,7 +254,7 @@ impl xcm_executor::Config for XcmConfig {
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = (SiblingReserveAssetFilter, DotFromAssetHub);
+    type IsReserve = ReserveAssetFilter<Runtime>;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
@@ -385,7 +384,7 @@ impl orml_xtokens::Config for Runtime {
     // Default impl. Refer to `orml-xtokens` docs for more details.
     type MinXcmFee = DisabledParachainFee;
     type LocationsFilter = Everything;
-    type ReserveProvider = AbsoluteAndRelativeReserveProviderShiden<ShidenLocationAbsolute>;
+    type ReserveProvider = AbsoluteAndRelativeReserveProvider<Runtime, ShidenLocationAbsolute>;
     type RateLimiter = ();
     type RateLimiterId = ();
 }
