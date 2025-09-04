@@ -49,7 +49,7 @@ use xcm_executor::traits::{MatchesFungibles, Properties, ShouldExecute, WeightTr
 use orml_traits::location::{RelativeReserveProvider, Reserve};
 
 use pallet_xc_asset_config::types::MigrationStep;
-use pallet_xc_asset_config::{AssetHubMigrationStep, ExecutionPaymentRate, XcAssetLocation};
+use pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 
 #[cfg(test)]
 mod tests;
@@ -202,12 +202,12 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> Drop for FixedRateOfForeignAsset<T
 /// in order to support the xc-asset, we need to first register it in the `XcAssetConfig` pallet.
 ///
 pub struct ReserveAssetFilter<T>(PhantomData<T>);
-impl<T> ContainsPair<Asset, Location> for ReserveAssetFilter<T>
+impl<MigrationGetter> ContainsPair<Asset, Location> for ReserveAssetFilter<MigrationGetter>
 where
-    T: pallet_xc_asset_config::Config,
+    MigrationGetter: Get<MigrationStep>,
 {
     fn contains(asset: &Asset, origin: &Location) -> bool {
-        let asset_hub_migration_step = AssetHubMigrationStep::<T>::get();
+        let asset_hub_migration_step = MigrationGetter::get();
         // We only accept relay chain as reserve for KSM/DOT before the migration
         let allow_relay = matches!(asset_hub_migration_step, MigrationStep::NotStarted);
 
@@ -306,33 +306,32 @@ impl Convert<AccountId, Location> for AccountIdToMultiLocation {
 
 /// `Asset` reserve location provider. It's based on `RelativeReserveProvider` and in
 /// addition will convert self absolute location to relative location.
-pub struct AbsoluteAndRelativeReserveProvider<T, AbsoluteLocation>(
-    PhantomData<(T, AbsoluteLocation)>,
+pub struct AbsoluteAndRelativeReserveProvider<MigrationGetter, AbsoluteLocation>(
+    PhantomData<(MigrationGetter, AbsoluteLocation)>,
 );
-impl<T: pallet_xc_asset_config::Config, AbsoluteLocation: Get<Location>> Reserve
-    for AbsoluteAndRelativeReserveProvider<T, AbsoluteLocation>
+impl<MigrationGetter: Get<MigrationStep>, AbsoluteLocation: Get<Location>> Reserve
+    for AbsoluteAndRelativeReserveProvider<MigrationGetter, AbsoluteLocation>
 {
     fn reserve(asset: &Asset) -> Option<Location> {
-        let asset_hub_migration_step = AssetHubMigrationStep::<T>::get();
+        let asset_hub_migration_step = MigrationGetter::get();
         let reserve_location = RelativeReserveProvider::reserve(asset)?;
-
-        let is_relay_token = reserve_location.parents == 1
-            && !matches!(reserve_location.first_interior(), Some(Parachain(_)));
-
-        // KSM/DOT token is not allowed to be transferred to sibling parachain as it will use relay as reserve during migration
-        if is_relay_token && asset_hub_migration_step == MigrationStep::Ongoing {
-            return None;
-        }
-
-        // KSM/DOT reserve is Asset Hub
-        if is_relay_token && asset_hub_migration_step == MigrationStep::Finished {
-            return Some(Location::new(1, [Parachain(ASSET_HUB_PARA_ID)]));
-        }
 
         if reserve_location == AbsoluteLocation::get() {
             return Some(Location::here());
         }
-        Some(reserve_location)
+
+        let is_relay_token = reserve_location.parents == 1
+            && !matches!(reserve_location.first_interior(), Some(Parachain(_)));
+
+        match (is_relay_token, asset_hub_migration_step) {
+            // KSM/DOT token is not allowed to be transferred to sibling parachain as it will use relay as reserve during migration
+            (true, MigrationStep::Ongoing) => None,
+            // KSM/DOT reserve is Asset Hub when migration is finished
+            (true, MigrationStep::Finished) => {
+                Some(Location::new(1, [Parachain(ASSET_HUB_PARA_ID)]))
+            }
+            _ => Some(reserve_location),
+        }
     }
 }
 

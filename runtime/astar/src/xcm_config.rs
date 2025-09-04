@@ -33,7 +33,7 @@ use sp_runtime::traits::{Convert, MaybeEquivalence};
 
 // Polkadot imports
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
-use frame_support::traits::TransformOrigin;
+use frame_support::traits::{Get, TransformOrigin};
 use parachains_common::message_queue::ParaIdToSibling;
 use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use xcm::latest::prelude::*;
@@ -58,6 +58,7 @@ use astar_primitives::xcm::{
     AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, AllowTopLevelPaidExecutionFrom,
     FixedRateOfForeignAsset, Reserves, XcmFungibleFeeHandler,
 };
+use pallet_xc_asset_config::types::MigrationStep;
 
 parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Polkadot);
@@ -244,13 +245,20 @@ pub type AstarXcmFungibleFeeHandler = XcmFungibleFeeHandler<
     TreasuryAccountId,
 >;
 
+pub struct MigrationStepGetter;
+impl Get<MigrationStep> for MigrationStepGetter {
+    fn get() -> MigrationStep {
+        pallet_xc_asset_config::AssetHubMigrationStep::<Runtime>::get()
+    }
+}
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = Reserves<Runtime>;
+    type IsReserve = Reserves<MigrationStepGetter>;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
@@ -380,7 +388,8 @@ impl orml_xtokens::Config for Runtime {
     // Default impl. Refer to `orml-xtokens` docs for more details.
     type MinXcmFee = DisabledParachainFee;
     type LocationsFilter = Everything;
-    type ReserveProvider = AbsoluteAndRelativeReserveProvider<Runtime, AstarLocationAbsolute>;
+    type ReserveProvider =
+        AbsoluteAndRelativeReserveProvider<MigrationStepGetter, AstarLocationAbsolute>;
     type RateLimiter = ();
     type RateLimiterId = ();
 }
