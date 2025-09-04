@@ -740,6 +740,7 @@ dependencies = [
  "log",
  "pallet-assets",
  "pallet-balances",
+ "pallet-xc-asset-config",
  "pallet-xcm-benchmarks",
  "parity-scale-codec",
  "scale-info",
