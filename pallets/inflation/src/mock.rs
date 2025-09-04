@@ -166,8 +166,3 @@ macro_rules! lenient_balance_assert_eq {
         );
     }};
 }
-
-pub fn assert_close(left: u128, right: u128, tolerance: u128, msg: &str) {
-    let diff = left.max(right).saturating_sub(left.min(right));
-    assert!(diff < tolerance, "{}", msg);
-}
