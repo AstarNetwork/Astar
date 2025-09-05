@@ -57,7 +57,7 @@ use parachains_common::message_queue::ParaIdToSibling;
 // Astar imports
 use astar_primitives::xcm::{
     AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, AllowTopLevelPaidExecutionFrom,
-    FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
+    FixedRateOfForeignAsset, Reserves, XcmFungibleFeeHandler,
 };
 use pallet_xc_asset_config::types::MigrationStep;
 
@@ -262,7 +262,7 @@ impl xcm_executor::Config for XcmConfig {
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = ReserveAssetFilter<MigrationStepGetter>;
+    type IsReserve = Reserves<MigrationStepGetter>;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;

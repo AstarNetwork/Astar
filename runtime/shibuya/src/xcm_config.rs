@@ -54,7 +54,7 @@ use orml_xcm_support::DisabledParachainFee;
 // Astar imports
 use astar_primitives::xcm::{
     AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, AllowTopLevelPaidExecutionFrom,
-    FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler, MAX_ASSETS,
+    FixedRateOfForeignAsset, Reserves, XcmFungibleFeeHandler, MAX_ASSETS,
 };
 use pallet_xc_asset_config::types::MigrationStep;
 
@@ -191,7 +191,7 @@ impl xcm_executor::Config for XcmConfig {
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = ReserveAssetFilter<MigrationStepGetter>;
+    type IsReserve = Reserves<MigrationStepGetter>;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
