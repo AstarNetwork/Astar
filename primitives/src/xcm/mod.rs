@@ -207,6 +207,8 @@ where
     MigrationGetter: Get<MigrationStep>,
 {
     fn contains(asset: &Asset, origin: &Location) -> bool {
+        // This call cost 1 db read. We don't take it into account because it is only temporary
+        // and will be removed after Shiden/Astar AH migration
         let asset_hub_migration_step = MigrationGetter::get();
         // We only accept relay chain as reserve for KSM/DOT before the migration
         let allow_relay = matches!(asset_hub_migration_step, MigrationStep::NotStarted);
@@ -313,6 +315,8 @@ impl<MigrationGetter: Get<MigrationStep>, AbsoluteLocation: Get<Location>> Reser
     for AbsoluteAndRelativeReserveProvider<MigrationGetter, AbsoluteLocation>
 {
     fn reserve(asset: &Asset) -> Option<Location> {
+        // This call cost 1 db read. We don't take it into account because it is only temporary
+        // and will be removed after Shiden/Astar AH migration
         let asset_hub_migration_step = MigrationGetter::get();
         let reserve_location = RelativeReserveProvider::reserve(asset)?;
 
