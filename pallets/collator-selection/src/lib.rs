@@ -422,7 +422,7 @@ pub mod pallet {
         ///
         /// This call is not available to `Invulnerable` collators.
         #[pallet::call_index(3)]
-        #[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
+        #[pallet::weight(T::WeightInfo::register_as_candidate())]
         pub fn register_as_candidate(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let _who = ensure_signed(origin)?;
             // Always fail with permission error to enforce new workflow
@@ -536,7 +536,7 @@ pub mod pallet {
         ///
         /// This call is not available to `Invulnerable` collators or exisiting candidates.
         #[pallet::call_index(9)]
-        #[pallet::weight(T::WeightInfo::remove_invulnerable(T::MaxInvulnerables::get()))]
+        #[pallet::weight(T::WeightInfo::apply_for_candidacy())]
         pub fn apply_for_candidacy(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
@@ -603,7 +603,7 @@ pub mod pallet {
         /// This will remove the application from pending status and immediately add the account
         /// to the candidates list, making them eligible for collator selection.
         #[pallet::call_index(11)]
-        #[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
+        #[pallet::weight(T::WeightInfo::approve_application(T::MaxCandidates::get()))]
         pub fn approve_application(
             origin: OriginFor<T>,
             who: T::AccountId,
@@ -638,7 +638,7 @@ pub mod pallet {
             });
 
             Self::deposit_event(Event::CandidateAdded(who, deposit));
-            Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
+            Ok(Some(T::WeightInfo::approve_application(current_count as u32)).into())
         }
 
         /// Reject a pending candidacy application and unreserve the bond.
@@ -646,7 +646,7 @@ pub mod pallet {
         /// This will remove the application from pending status and unreserve the
         /// applicant's bond, effectively denying their candidacy request.
         #[pallet::call_index(12)]
-        #[pallet::weight(T::WeightInfo::withdraw_bond())]
+        #[pallet::weight(T::WeightInfo::reject_application())]
         pub fn reject_application(
             origin: OriginFor<T>,
             who: T::AccountId,
@@ -672,7 +672,7 @@ pub mod pallet {
         /// This call will fail if removing the candidate would bring the total
         /// number of candidates below the minimum threshold.
         #[pallet::call_index(13)]
-        #[pallet::weight(T::WeightInfo::remove_invulnerable(T::MaxInvulnerables::get()))]
+        #[pallet::weight(T::WeightInfo::kick_candidate(T::MaxInvulnerables::get()))]
         pub fn kick_candidate(
             origin: OriginFor<T>,
             who: T::AccountId,
@@ -686,7 +686,7 @@ pub mod pallet {
             Self::slash_non_candidate(&who);
 
             Self::deposit_event(Event::CandidateKickedByCouncil(who));
-            Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
+            Ok(Some(T::WeightInfo::kick_candidate(current_count as u32)).into())
         }
     }
 
