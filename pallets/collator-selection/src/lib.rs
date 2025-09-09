@@ -17,7 +17,7 @@
 
 //! Collator Selection pallet.
 //!
-//! A pallet to manage collators in a parachain.
+//! A pallet to manage collators in a parachain with council-approved candidacy.
 //!
 //! ## Overview
 //!
@@ -25,11 +25,29 @@
 //! secure activity** and this pallet does not implement any game-theoretic mechanisms to meet BFT
 //! safety assumptions of the chosen set.
 //!
+//! ## Permissioned Candidacy System
+//!
+//! As of this version, collator candidacy requires governance approval:
+//! 1. Accounts must first apply via `apply_for_candidacy` (reserves bond)
+//! 2. Governance reviews and either approves via `approve_application` (directly adds to candidates)
+//!    or rejects via `reject_application` (unreserves bond)
+//! 3. Governance can force-remove candidates via `kick_candidate`
+//! 4. Users can withdraw pending applications via `withdraw_application` (only before processing)
+//!
+//! The old `register_as_candidate` extrinsic is deprecated and will fail with a Permission error.
+//!
 //! ## Terminology
 //!
 //! - Collator: A parachain block producer.
 //! - Bond: An amount of `Balance` _reserved_ for candidate registration.
 //! - Invulnerable: An account guaranteed to be in the collator set.
+//! - Pending Application: An application that has been submitted but not yet processed.
+//!
+//! ## Governance Origins
+//!
+//! The pallet uses two configurable origins for governance actions:
+//! - `GovernanceOrigin`: Can approve/reject candidacy applications
+//! - `ForceRemovalOrigin`: Can forcibly remove active candidates
 //!
 //! ## Implementation
 //!
@@ -37,7 +55,7 @@
 //!
 //! 1. [`Invulnerables`]: a set of collators appointed by governance. These accounts will always be
 //!    collators.
-//! 2. [`Candidates`]: these are *candidates to the collation task* and may or may not be elected as
+//! 2. [`Candidates`]: these are *governance-approved candidates to the collation task* and may or may not be elected as
 //!    a final collator.
 //!
 //! The current implementation resolves congestion of [`Candidates`] in a first-come-first-serve
@@ -80,6 +98,7 @@ pub mod pallet {
     use core::ops::Div;
     use frame_support::{
         dispatch::{DispatchClass, DispatchResultWithPostInfo},
+        ensure,
         pallet_prelude::*,
         sp_runtime::{
             traits::{AccountIdConversion, CheckedSub, Saturating, Zero},
@@ -126,6 +145,14 @@ pub mod pallet {
 
         /// Origin that can dictate updating parameters of this pallet.
         type UpdateOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
+        /// Origin that can approve or reject candidacy applications.
+        /// Typically the governance council or root.
+        type GovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
+        /// Origin that can forcibly remove candidates from the active set.
+        /// Typically the same as GovernanceOrigin but separated for flexibility.
+        type ForceRemovalOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
         /// Account Identifier from which the internal Pot is generated.
         type PotId: Get<PalletId>;
@@ -190,7 +217,7 @@ pub mod pallet {
     #[pallet::storage]
     pub type Invulnerables<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
-    /// The (community, limited) collation candidates.
+    /// The (community approved, limited) collation candidates.
     #[pallet::storage]
     pub type Candidates<T: Config> =
         StorageValue<_, Vec<CandidateInfo<T::AccountId, BalanceOf<T>>>, ValueQuery>;
@@ -220,6 +247,11 @@ pub mod pallet {
     /// Destination account for slashed amount.
     #[pallet::storage]
     pub type SlashDestination<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
+
+    /// Pending applications to become a collator.
+    #[pallet::storage]
+    pub type PendingApplications<T: Config> =
+        StorageMap<_, Twox64Concat, T::AccountId, BalanceOf<T>, OptionQuery>;
 
     #[pallet::genesis_config]
     #[derive(DefaultNoBound)]
@@ -272,6 +304,16 @@ pub mod pallet {
         CandidateRemoved(T::AccountId),
         /// A candidate was slashed.
         CandidateSlashed(T::AccountId),
+        /// A new candidacy application was submitted.
+        CandidacyApplicationSubmitted(T::AccountId, BalanceOf<T>),
+        /// A candidacy application was approved.
+        CandidacyApplicationApproved(T::AccountId, BalanceOf<T>),
+        /// A candidacy application was withdrawn.
+        CandidacyApplicationWithdrawn(T::AccountId),
+        /// A candidacy application was rejected.
+        CandidacyApplicationRejected(T::AccountId),
+        /// A candidate was kicked by council.
+        CandidateKickedByCouncil(T::AccountId),
     }
 
     // Errors inform users that something went wrong.
@@ -303,6 +345,10 @@ pub mod pallet {
         BondStillLocked,
         /// No candidacy bond available for withdrawal.
         NoCandidacyBond,
+        /// User has already submitted an application
+        PendingApplicationExists,
+        /// No candidacy application found
+        NoApplicationFound,
     }
 
     #[pallet::hooks]
@@ -368,68 +414,19 @@ pub mod pallet {
         }
 
         /// Register this account as a collator candidate. The account must (a) already have
-        /// registered session keys and (b) be able to reserve the `CandidacyBond`.
+        /// candidacy application approved and (b) already have registered session keys.
+        ///
+        /// **DEPRECATED**: This extrinsic is deprecated and will be removed in a future version.
+        /// Applications are now automatically processed when approved via `accept_application`.
+        /// This function now always fails to enforce the new permissioned workflow.
         ///
         /// This call is not available to `Invulnerable` collators.
         #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
         pub fn register_as_candidate(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-
-            // ensure we are below limit.
-            let length = <Candidates<T>>::decode_len().unwrap_or_default();
-            ensure!(
-                (length as u32) < DesiredCandidates::<T>::get(),
-                Error::<T>::TooManyCandidates
-            );
-            ensure!(
-                !Invulnerables::<T>::get().contains(&who),
-                Error::<T>::AlreadyInvulnerable
-            );
-            ensure!(
-                T::AccountCheck::allowed_candidacy(&who),
-                Error::<T>::NotAllowedCandidate
-            );
-
-            Self::is_validator_registered(&who)?;
-
-            // ensure candidacy has no previous locked un-bonding
-            <NonCandidates<T>>::try_mutate_exists(&who, |maybe| -> DispatchResult {
-                if let Some((index, deposit)) = maybe.take() {
-                    ensure!(
-                        T::ValidatorSet::session_index() >= index,
-                        Error::<T>::BondStillLocked
-                    );
-                    // unreserve previous deposit and continue with registration
-                    T::Currency::unreserve(&who, deposit);
-                }
-                Ok(())
-            })?;
-
-            let deposit = CandidacyBond::<T>::get();
-            // First authored block is current block plus kick threshold to handle session delay
-            let incoming = CandidateInfo {
-                who: who.clone(),
-                deposit,
-            };
-
-            let current_count =
-                <Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
-                    if candidates.iter_mut().any(|candidate| candidate.who == who) {
-                        Err(Error::<T>::AlreadyCandidate)?
-                    } else {
-                        T::Currency::reserve(&who, deposit)?;
-                        candidates.push(incoming);
-                        <LastAuthoredBlock<T>>::insert(
-                            &who,
-                            frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
-                        );
-                        Ok(candidates.len())
-                    }
-                })?;
-
-            Self::deposit_event(Event::CandidateAdded(who, deposit));
-            Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
+            let _who = ensure_signed(origin)?;
+            // Always fail with permission error to enforce new workflow
+            Err(Error::<T>::Permission.into())
         }
 
         /// Deregister `origin` as a collator candidate. Note that the collator can only leave on
@@ -532,6 +529,164 @@ pub mod pallet {
 
             Self::deposit_event(Event::NewInvulnerables(<Invulnerables<T>>::get()));
             Ok(().into())
+        }
+
+        /// Submit an application to become a collator candidate. The account must (a) already
+        /// have candidacy application approved and (b) already have registered session keys.
+        ///
+        /// This call is not available to `Invulnerable` collators or exisiting candidates.
+        #[pallet::call_index(9)]
+        #[pallet::weight(T::WeightInfo::remove_invulnerable(T::MaxInvulnerables::get()))]
+        pub fn apply_for_candidacy(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            ensure!(
+                !PendingApplications::<T>::contains_key(&who),
+                Error::<T>::PendingApplicationExists
+            );
+            ensure!(
+                !Invulnerables::<T>::get().contains(&who),
+                Error::<T>::AlreadyInvulnerable
+            );
+            ensure!(
+                T::AccountCheck::allowed_candidacy(&who),
+                Error::<T>::NotAllowedCandidate
+            );
+            ensure!(
+                !Self::is_account_candidate(&who),
+                Error::<T>::AlreadyCandidate
+            );
+
+            Self::is_validator_registered(&who)?;
+
+            // ensure candidacy has no previous locked un-bonding
+            <NonCandidates<T>>::try_mutate_exists(&who, |maybe| -> DispatchResult {
+                if let Some((index, deposit)) = maybe.take() {
+                    ensure!(
+                        T::ValidatorSet::session_index() >= index,
+                        Error::<T>::BondStillLocked
+                    );
+                    // unreserve previous deposit and continue with registration
+                    T::Currency::unreserve(&who, deposit);
+                }
+                Ok(())
+            })?;
+
+            let bond = CandidacyBond::<T>::get();
+            T::Currency::reserve(&who, bond)?;
+            PendingApplications::<T>::insert(&who, bond);
+
+            Self::deposit_event(Event::CandidacyApplicationSubmitted(who, bond));
+            Ok(().into())
+        }
+
+        /// Withdraw a pending candidacy application and unreserve the bond.
+        ///
+        /// Can only be called by the account that submitted the application.
+        /// Only works for pending applications that have not been processed yet.
+        #[pallet::call_index(10)]
+        #[pallet::weight(T::WeightInfo::withdraw_bond())]
+        pub fn withdraw_application(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            let deposit =
+                PendingApplications::<T>::take(&who).ok_or(Error::<T>::NoApplicationFound)?;
+
+            T::Currency::unreserve(&who, deposit);
+
+            Self::deposit_event(Event::CandidacyApplicationWithdrawn(who));
+            Ok(().into())
+        }
+
+        /// Approve a pending candidacy application.
+        ///
+        /// This will remove the application from pending status and immediately add the account
+        /// to the candidates list, making them eligible for collator selection.
+        #[pallet::call_index(11)]
+        #[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
+        pub fn approve_application(
+            origin: OriginFor<T>,
+            who: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            T::GovernanceOrigin::ensure_origin(origin)?;
+
+            let deposit =
+                PendingApplications::<T>::take(&who).ok_or(Error::<T>::NoApplicationFound)?;
+
+            // Check candidate limits
+            let current_candidates = Candidates::<T>::decode_len().unwrap_or_default() as u32;
+            ensure!(
+                current_candidates < DesiredCandidates::<T>::get(),
+                Error::<T>::TooManyCandidates
+            );
+
+            Self::is_validator_registered(&who)?;
+
+            // First authored block is current block plus kick threshold to handle session delay
+            let incoming = CandidateInfo {
+                who: who.clone(),
+                deposit,
+            };
+
+            let current_count = <Candidates<T>>::mutate(|candidates| {
+                candidates.push(incoming);
+                <LastAuthoredBlock<T>>::insert(
+                    &who,
+                    frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
+                );
+                candidates.len()
+            });
+
+            Self::deposit_event(Event::CandidateAdded(who, deposit));
+            Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
+        }
+
+        /// Reject a pending candidacy application and unreserve the bond.
+        ///
+        /// This will remove the application from pending status and unreserve the
+        /// applicant's bond, effectively denying their candidacy request.
+        #[pallet::call_index(12)]
+        #[pallet::weight(T::WeightInfo::withdraw_bond())]
+        pub fn reject_application(
+            origin: OriginFor<T>,
+            who: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            T::GovernanceOrigin::ensure_origin(origin)?;
+
+            let deposit =
+                PendingApplications::<T>::take(&who).ok_or(Error::<T>::NoApplicationFound)?;
+
+            // Unreserve the bond
+            T::Currency::unreserve(&who, deposit);
+
+            Self::deposit_event(Event::CandidacyApplicationRejected(who));
+            Ok(().into())
+        }
+
+        /// Forcibly remove a candidate from the active set.
+        ///
+        /// This will immediately remove the candidate from the candidates list and
+        /// start the un-bonding process for their deposit. The candidate will also
+        /// be slashed according to the configured slash ratio.
+        ///
+        /// This call will fail if removing the candidate would bring the total
+        /// number of candidates below the minimum threshold.
+        #[pallet::call_index(13)]
+        #[pallet::weight(T::WeightInfo::remove_invulnerable(T::MaxInvulnerables::get()))]
+        pub fn kick_candidate(
+            origin: OriginFor<T>,
+            who: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            T::ForceRemovalOrigin::ensure_origin(origin)?;
+            ensure!(
+                Candidates::<T>::get().len() > T::MinCandidates::get() as usize,
+                Error::<T>::TooFewCandidates
+            );
+            let current_count = Self::try_remove_candidate(&who)?;
+            Self::slash_non_candidate(&who);
+
+            Self::deposit_event(Event::CandidateKickedByCouncil(who));
+            Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
         }
     }
 

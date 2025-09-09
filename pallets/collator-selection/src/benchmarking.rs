@@ -26,7 +26,7 @@ use frame_benchmarking::{
     BenchmarkError,
 };
 use frame_support::{
-    assert_ok,
+    assert_noop, assert_ok,
     traits::{Currency, EnsureOrigin, Get},
 };
 use frame_system::{pallet_prelude::BlockNumberFor, EventRecord, RawOrigin};
@@ -99,9 +99,12 @@ fn register_candidates<T: Config>(count: u32) {
         "Bond cannot be zero!"
     );
 
+    let gov_origin = T::GovernanceOrigin::try_successful_origin().unwrap();
+
     for who in candidates {
         T::Currency::make_free_balance_be(&who, <CandidacyBond<T>>::get() * 2u32.into());
-        <CollatorSelection<T>>::register_as_candidate(RawOrigin::Signed(who).into()).unwrap();
+        <CollatorSelection<T>>::apply_for_candidacy(RawOrigin::Signed(who.clone()).into()).unwrap();
+        <CollatorSelection<T>>::approve_application(gov_origin.clone(), who).unwrap();
     }
 }
 
@@ -185,9 +188,58 @@ benchmarks! {
         assert_last_event::<T>(Event::NewCandidacyBond(bond).into());
     }
 
+    register_as_candidate {
+        let caller: T::AccountId = whitelisted_caller();
+        let origin = RawOrigin::Signed(caller.clone()).into();
+    }: {
+        assert_noop!(<CollatorSelection<T>>::register_as_candidate(origin), Error::<T>::Permission);
+    }
+    verify {
+    }
+
+    apply_for_candidacy {
+        <CandidacyBond<T>>::put(T::Currency::minimum_balance());
+
+        let caller: T::AccountId = whitelisted_caller();
+        let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
+        T::Currency::make_free_balance_be(&caller, bond);
+
+        <session::Pallet<T>>::set_keys(
+            RawOrigin::Signed(caller.clone()).into(),
+            keys::<T>(1),
+            Vec::new()
+        ).unwrap();
+
+    }: _(RawOrigin::Signed(caller.clone()))
+    verify {
+        assert_last_event::<T>(Event::CandidacyApplicationSubmitted(caller, bond / 2u32.into()).into());
+    }
+
+    withdraw_application {
+        <CandidacyBond<T>>::put(T::Currency::minimum_balance());
+
+        let caller: T::AccountId = whitelisted_caller();
+        let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
+        T::Currency::make_free_balance_be(&caller, bond);
+
+        <session::Pallet<T>>::set_keys(
+            RawOrigin::Signed(caller.clone()).into(),
+            keys::<T>(1),
+            Vec::new()
+        ).unwrap();
+
+        <CollatorSelection<T>>::apply_for_candidacy(
+            RawOrigin::Signed(caller.clone()).into(),
+        ).unwrap();
+
+    }: _(RawOrigin::Signed(caller.clone()))
+    verify {
+        assert_last_event::<T>(Event::CandidacyApplicationWithdrawn(caller).into());
+    }
+
     // worse case is when we have all the max-candidate slots filled except one, and we fill that
     // one.
-    register_as_candidate {
+    approve_application {
         let c in 1 .. T::MaxCandidates::get();
 
         <CandidacyBond<T>>::put(T::Currency::minimum_balance());
@@ -196,6 +248,7 @@ benchmarks! {
         register_validators::<T>(c);
         register_candidates::<T>(c);
 
+        let origin = T::GovernanceOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
         let caller: T::AccountId = whitelisted_caller();
         let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
         T::Currency::make_free_balance_be(&caller, bond);
@@ -206,9 +259,36 @@ benchmarks! {
             Vec::new()
         ).unwrap();
 
-    }: _(RawOrigin::Signed(caller.clone()))
+        <CollatorSelection<T>>::apply_for_candidacy(
+            RawOrigin::Signed(caller.clone()).into(),
+        ).unwrap();
+
+    }: {
+        assert_ok!(<CollatorSelection<T>>::approve_application(origin, caller.clone()));
+    }
     verify {
         assert_last_event::<T>(Event::CandidateAdded(caller, bond / 2u32.into()).into());
+    }
+
+    // worse case is the last candidate kicking.
+    kick_candidate {
+        let c in (T::MinCandidates::get() + 1) .. T::MaxCandidates::get();
+        <CandidacyBond<T>>::put(T::Currency::minimum_balance());
+        <DesiredCandidates<T>>::put(c);
+
+        register_validators::<T>(c);
+        register_candidates::<T>(c);
+
+        let origin = T::GovernanceOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
+        let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
+        whitelist_account!(leaving);
+    }: {
+        assert_ok!(
+            <CollatorSelection<T>>::kick_candidate(origin, leaving.clone())
+        );
+    }
+    verify {
+        assert_last_event::<T>(Event::CandidateKickedByCouncil(leaving).into());
     }
 
     // worse case is the last candidate leaving.
