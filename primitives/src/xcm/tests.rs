@@ -75,6 +75,13 @@ fn execution_fee(weight: Weight, units_per_second: u128) -> u128 {
     units_per_second * (weight.ref_time() as u128) / (WEIGHT_REF_TIME_PER_SECOND as u128)
 }
 
+pub struct MigrationStepGetter;
+impl Get<MigrationStep> for MigrationStepGetter {
+    fn get() -> MigrationStep {
+        MigrationStep::NotStarted
+    }
+}
+
 #[test]
 fn asset_location_to_id() {
     // Test cases where the Location is valid
@@ -352,7 +359,10 @@ fn reserve_asset_filter_for_sibling_parachain_is_ok() {
         interior: [Parachain(20)].into(),
     };
 
-    assert!(ReserveAssetFilter::contains(&multi_asset, &origin));
+    assert!(ReserveAssetFilter::<MigrationStepGetter>::contains(
+        &multi_asset,
+        &origin
+    ));
 }
 
 #[test]
@@ -370,7 +380,10 @@ fn reserve_asset_filter_for_relay_chain_is_ok() {
         interior: Here,
     };
 
-    assert!(ReserveAssetFilter::contains(&multi_asset, &origin));
+    assert!(ReserveAssetFilter::<MigrationStepGetter>::contains(
+        &multi_asset,
+        &origin
+    ));
 }
 
 #[test]
@@ -388,7 +401,10 @@ fn reserve_asset_filter_with_origin_mismatch() {
         interior: Here,
     };
 
-    assert!(!ReserveAssetFilter::contains(&multi_asset, &origin));
+    assert!(!ReserveAssetFilter::<MigrationStepGetter>::contains(
+        &multi_asset,
+        &origin
+    ));
 }
 
 #[test]
@@ -407,7 +423,10 @@ fn reserve_asset_filter_for_unsupported_asset_multi_location() {
         interior: Here,
     };
 
-    assert!(!ReserveAssetFilter::contains(&multi_asset, &origin));
+    assert!(!ReserveAssetFilter::<MigrationStepGetter>::contains(
+        &multi_asset,
+        &origin
+    ));
 
     // 2nd case
     let asset_xc_location = Location {
@@ -423,5 +442,8 @@ fn reserve_asset_filter_for_unsupported_asset_multi_location() {
         interior: [GeneralIndex(50)].into(),
     };
 
-    assert!(!ReserveAssetFilter::contains(&multi_asset, &origin));
+    assert!(!ReserveAssetFilter::<MigrationStepGetter>::contains(
+        &multi_asset,
+        &origin
+    ));
 }

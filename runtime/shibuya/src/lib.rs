@@ -1166,6 +1166,8 @@ impl pallet_xc_asset_config::Config for Runtime {
     type AssetId = AssetId;
     // Good enough for testnet since we lack pallet-assets hooks for now
     type ManagerOrigin = EnsureRoot<AccountId>;
+    // Good enough for testnet since it will only be relevant for shiden and astar
+    type AssetHubMigrationUpdater = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
