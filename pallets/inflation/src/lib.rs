@@ -137,7 +137,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -146,6 +146,13 @@ pub mod pallet {
     // Negative imbalance type of this pallet.
     pub(crate) type CreditOf<T> =
         Credit<<T as frame_system::Config>::AccountId, <T as Config>::Currency>;
+
+    pub struct DecayFactorOnEmpty;
+    impl Get<Perquintill> for DecayFactorOnEmpty {
+        fn get() -> Perquintill {
+            Perquintill::one()
+        }
+    }
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -173,6 +180,8 @@ pub mod pallet {
         ForcedInflationRecalculation { config: InflationConfiguration },
         /// New inflation configuration has been set.
         NewInflationConfiguration { config: InflationConfiguration },
+        /// Inflation decay rate has been updated. This will take effect in the next cycle.
+        DecayRateUpdated { new_decay_rate: Perquintill },
     }
 
     #[pallet::error]
@@ -196,6 +205,13 @@ pub mod pallet {
     #[pallet::whitelist_storage]
     pub type DoRecalculation<T: Config> = StorageValue<_, EraNumber, OptionQuery>;
 
+    /// Compounded decay since the start of the current cycle.
+    /// Multiplied into rewards when they are actually paid.
+    /// Reset to `Perquintill::one()` at the start of each cycle.
+    #[pallet::storage]
+    #[pallet::whitelist_storage]
+    pub type DecayFactor<T: Config> = StorageValue<_, Perquintill, ValueQuery, DecayFactorOnEmpty>;
+
     #[pallet::genesis_config]
     #[derive(DefaultNoBound)]
     pub struct GenesisConfig<T> {
@@ -214,6 +230,7 @@ pub mod pallet {
             let config = Pallet::<T>::recalculate_inflation(starting_era);
 
             ActiveInflationConfig::<T>::put(config);
+            DecayFactor::<T>::put(Perquintill::one());
             InflationParams::<T>::put(self.params);
         }
     }
@@ -221,13 +238,22 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_now: BlockNumberFor<T>) -> Weight {
-            Self::payout_block_rewards();
+            let mut weight = T::DbWeight::get().reads(2);
+
+            let config = ActiveInflationConfig::<T>::get();
+            let mut decay_factor = DecayFactor::<T>::get();
+
+            if config.decay_rate != Perquintill::one() {
+                decay_factor = decay_factor * config.decay_rate;
+                DecayFactor::<T>::put(decay_factor);
+                weight = weight.saturating_add(T::DbWeight::get().writes(1));
+            }
+
+            Self::payout_block_rewards(&config, decay_factor);
 
             // Benchmarks won't account for the whitelisted storage access so this needs to be added manually.
-            //
-            // ActiveInflationConfig - 1 DB read
             // DoRecalculation - 1 DB read
-            <T as frame_system::Config>::DbWeight::get().reads(2)
+            weight.saturating_add(<T as frame_system::Config>::DbWeight::get().reads(1))
         }
 
         fn on_finalize(_now: BlockNumberFor<T>) {
@@ -240,6 +266,8 @@ pub mod pallet {
             if let Some(next_era) = DoRecalculation::<T>::get() {
                 let config = Self::recalculate_inflation(next_era);
                 ActiveInflationConfig::<T>::put(config.clone());
+                // reset decay factor
+                DecayFactor::<T>::put(Perquintill::one());
                 DoRecalculation::<T>::kill();
 
                 Self::deposit_event(Event::<T>::NewInflationConfiguration { config });
@@ -295,8 +323,10 @@ pub mod pallet {
             ensure_root(origin)?;
 
             let config = Self::recalculate_inflation(next_era);
-
             ActiveInflationConfig::<T>::put(config.clone());
+
+            // reset decay factor
+            DecayFactor::<T>::put(Perquintill::one());
 
             Self::deposit_event(Event::<T>::ForcedInflationRecalculation { config });
 
@@ -310,12 +340,6 @@ pub mod pallet {
         /// (The 'force' approach uses the current total issuance)
         ///
         /// This call should be used in case inflation parameters have changed during the cycle, and the configuration should be adjusted now.
-        ///
-        /// NOTE:
-        /// The call will do the best possible approximation of what the calculated max emission was at the moment when last inflation recalculation was done.
-        /// But due to rounding losses, it's not possible to get the exact same value. As a consequence, repeated calls to this function
-        /// might result in changes to the configuration, even though the inflation parameters haven't changed.
-        /// However, since this function isn't supposed to be called often, and changes are minimal, this is acceptable.
         #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::force_readjust_config().saturating_add(T::DbWeight::get().writes(1)))]
         pub fn force_readjust_config(origin: OriginFor<T>) -> DispatchResult {
@@ -324,26 +348,52 @@ pub mod pallet {
             let config = Self::readjusted_config();
             ActiveInflationConfig::<T>::put(config.clone());
 
+            // reset decay factor
+            DecayFactor::<T>::put(Perquintill::one());
+
             Self::deposit_event(Event::<T>::ForcedInflationRecalculation { config });
+
+            Ok(().into())
+        }
+
+        /// Used to force-set the per-block decay rate for rewards.
+        ///
+        /// Must be called by `root` origin.
+        ///
+        /// The new rate will be applied starting from the next inflation recalculation (next cycle).
+        #[pallet::call_index(3)]
+        #[pallet::weight(T::WeightInfo::force_set_decay_rate())]
+        pub fn force_set_decay_rate(
+            origin: OriginFor<T>,
+            decay_rate: Perquintill,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+
+            InflationParams::<T>::mutate(|params| {
+                params.decay_rate = decay_rate;
+            });
+
+            Self::deposit_event(Event::<T>::DecayRateUpdated {
+                new_decay_rate: decay_rate,
+            });
 
             Ok(().into())
         }
     }
 
     impl<T: Config> Pallet<T> {
-        /// Payout block rewards to the beneficiaries.
+        /// Payout block rewards to the beneficiaries applying the decay factor.
         ///
         /// Return the total amount issued.
-        fn payout_block_rewards() -> Balance {
-            let config = ActiveInflationConfig::<T>::get();
+        fn payout_block_rewards(config: &InflationConfiguration, decay_factor: Perquintill) {
+            let collator_rewards = decay_factor * config.collator_reward_per_block;
+            let treasury_rewards = decay_factor * config.treasury_reward_per_block;
 
-            let collator_amount = T::Currency::issue(config.collator_reward_per_block);
-            let treasury_amount = T::Currency::issue(config.treasury_reward_per_block);
+            let collator_amount = T::Currency::issue(collator_rewards);
+            let treasury_amount = T::Currency::issue(treasury_rewards);
 
             T::PayoutPerBlock::collators(collator_amount);
             T::PayoutPerBlock::treasury(treasury_amount);
-
-            config.collator_reward_per_block + config.treasury_reward_per_block
         }
 
         /// Recalculates the inflation based on the current total issuance & inflation parameters.
@@ -478,6 +528,7 @@ pub mod pallet {
                 adjustable_staker_reward_pool_per_era,
                 bonus_reward_pool_per_period,
                 ideal_staking_rate: params.ideal_staking_rate,
+                decay_rate: params.decay_rate,
             };
             new_inflation_config.sanity_check();
 
@@ -503,6 +554,7 @@ pub mod pallet {
     impl<T: Config> StakingRewardHandler<T::AccountId> for Pallet<T> {
         fn staker_and_dapp_reward_pools(total_value_staked: Balance) -> (Balance, Balance) {
             let config = ActiveInflationConfig::<T>::get();
+            let decay_factor = DecayFactor::<T>::get();
             let total_issuance = T::Currency::total_issuance();
 
             // First calculate the adjustable part of the staker reward pool, according to formula:
@@ -512,15 +564,19 @@ pub mod pallet {
             let adjustment_factor = staked_ratio / config.ideal_staking_rate;
 
             let adjustable_part = adjustment_factor * config.adjustable_staker_reward_pool_per_era;
-            let staker_reward_pool = config
-                .base_staker_reward_pool_per_era
-                .saturating_add(adjustable_part);
+            let staker_reward_pool = decay_factor
+                * config
+                    .base_staker_reward_pool_per_era
+                    .saturating_add(adjustable_part);
+            let dapp_reward_pool = decay_factor * config.dapp_reward_pool_per_era;
 
-            (staker_reward_pool, config.dapp_reward_pool_per_era)
+            (staker_reward_pool, dapp_reward_pool)
         }
 
         fn bonus_reward_pool() -> Balance {
-            ActiveInflationConfig::<T>::get().bonus_reward_pool_per_period
+            let config = ActiveInflationConfig::<T>::get();
+            let decay_factor = DecayFactor::<T>::get();
+            decay_factor * config.bonus_reward_pool_per_period
         }
 
         fn payout_reward(account: &T::AccountId, reward: Balance) -> Result<(), ()> {
@@ -571,6 +627,10 @@ pub struct InflationConfiguration {
     /// Used to derive exact amount of adjustable staker rewards.
     #[codec(compact)]
     pub ideal_staking_rate: Perquintill,
+    /// Per-block decay rate applied to all reward pools and per-block rewards.
+    /// A value of `Perquintill::one()` means no decay.
+    #[codec(compact)]
+    pub decay_rate: Perquintill,
 }
 
 impl InflationConfiguration {
@@ -643,6 +703,10 @@ pub struct InflationParameters {
     /// Used to derive exact amount of adjustable staker rewards.
     #[codec(compact)]
     pub ideal_staking_rate: Perquintill,
+    /// Per-block decay rate applied to all reward pools and per-block rewards.
+    /// A value of `Perquintill::one()` means no decay.
+    #[codec(compact)]
+    pub decay_rate: Perquintill,
 }
 
 impl InflationParameters {
@@ -682,6 +746,7 @@ impl Default for InflationParameters {
             adjustable_stakers_part: Perquintill::from_percent(35),
             bonus_part: Perquintill::from_percent(12),
             ideal_staking_rate: Perquintill::from_percent(50),
+            decay_rate: Perquintill::one(),
         }
     }
 }

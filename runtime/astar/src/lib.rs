@@ -1726,8 +1726,13 @@ pub type Executive = frame_executive::Executive<
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
+parameter_types! {
+    pub const DecayRate: Perquintill = Perquintill::one();
+}
+
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased =
+    (pallet_inflation::migration::versioned_migrations::V1ToV2<Runtime, DecayRate>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);

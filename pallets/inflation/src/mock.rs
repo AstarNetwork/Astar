@@ -42,6 +42,7 @@ pub const INIT_PARAMS: InflationParameters = InflationParameters {
     adjustable_stakers_part: Perquintill::from_percent(35),
     bonus_part: Perquintill::from_percent(12),
     ideal_staking_rate: Perquintill::from_percent(50),
+    decay_rate: Perquintill::one(),
 };
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
