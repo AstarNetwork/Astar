@@ -36,7 +36,7 @@
 #![allow(missing_docs)]
 #![allow(dead_code)]
 
-use frame_support::{traits::Get, weights::Weight};
+use frame_support::{traits::Get, weights::{constants::RocksDbWeight, Weight}};
 use core::marker::PhantomData;
 
 /// Weight info trait.
@@ -90,6 +90,53 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			{{/if}}
 			{{#each benchmark.component_writes as |cw|}}
 			.saturating_add(T::DbWeight::get().writes(({{cw.slope}}_u64).saturating_mul({{cw.name}}.into())))
+			{{/each}}
+			{{#each benchmark.component_calculated_proof_size as |cp|}}
+			.saturating_add(Weight::from_parts(0, {{cp.slope}}).saturating_mul({{cp.name}}.into()))
+			{{/each}}
+	}
+	{{/each}}
+}
+
+/// Weights for tests
+{{#if (eq pallet "frame_system_extensions")}}
+impl frame_system::ExtensionsWeightInfo for () {
+{{else}}
+impl WeightInfo for () {
+{{/if}}
+	{{#each benchmarks as |benchmark|}}
+	{{#each benchmark.comments as |comment|}}
+	/// {{comment}}
+	{{/each}}
+	{{#each benchmark.component_ranges as |range|}}
+	/// The range of component `{{range.name}}` is `[{{range.min}}, {{range.max}}]`.
+	{{/each}}
+	fn {{benchmark.name~}}
+	(
+		{{~#each benchmark.components as |c| ~}}
+		{{~#if (not c.is_used)}}_{{/if}}{{c.name}}: u32, {{/each~}}
+	) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `{{benchmark.base_recorded_proof_size}}{{#each benchmark.component_recorded_proof_size as |cp|}} + {{cp.name}} * ({{cp.slope}} ±{{underscore cp.error}}){{/each}}`
+		//  Estimated: `{{benchmark.base_calculated_proof_size}}{{#each benchmark.component_calculated_proof_size as |cp|}} + {{cp.name}} * ({{cp.slope}} ±{{underscore cp.error}}){{/each}}`
+		// Minimum execution time: {{underscore benchmark.min_execution_time}}_000 picoseconds.
+		Weight::from_parts({{underscore benchmark.base_weight}}, 0)
+			.saturating_add(Weight::from_parts(0, {{benchmark.base_calculated_proof_size}}))
+			{{#each benchmark.component_weight as |cw|}}
+			// Standard Error: {{underscore cw.error}}
+			.saturating_add(Weight::from_parts({{underscore cw.slope}}, 0).saturating_mul({{cw.name}}.into()))
+			{{/each}}
+			{{#if (ne benchmark.base_reads "0")}}
+			.saturating_add(RocksDbWeight::get().reads({{benchmark.base_reads}}))
+			{{/if}}
+			{{#each benchmark.component_reads as |cr|}}
+			.saturating_add(RocksDbWeight::get().reads(({{cr.slope}}_u64).saturating_mul({{cr.name}}.into())))
+			{{/each}}
+			{{#if (ne benchmark.base_writes "0")}}
+			.saturating_add(RocksDbWeight::get().writes({{benchmark.base_writes}}))
+			{{/if}}
+			{{#each benchmark.component_writes as |cw|}}
+			.saturating_add(RocksDbWeight::get().writes(({{cw.slope}}_u64).saturating_mul({{cw.name}}.into())))
 			{{/each}}
 			{{#each benchmark.component_calculated_proof_size as |cp|}}
 			.saturating_add(Weight::from_parts(0, {{cp.slope}}).saturating_mul({{cp.name}}.into()))
