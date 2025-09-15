@@ -83,11 +83,7 @@ fn force_inflation_recalculation_work() {
             RuntimeOrigin::root(),
             next_era,
         ));
-        assert_eq!(
-            DecayFactor::<Test>::get(),
-            Perquintill::one(),
-            "Decay Factor should be reset"
-        );
+        assert_eq!(DecayFactor::<Test>::get(), Perquintill::one(), "Decay Factor should be reset");
 
         let new_config = ActiveInflationConfig::<Test>::get();
         assert_ne!(
@@ -134,11 +130,7 @@ fn force_readjust_config_works() {
 
         // Force readjust config
         assert_ok!(Inflation::force_readjust_config(RuntimeOrigin::root()));
-        assert_eq!(
-            DecayFactor::<Test>::get(),
-            Perquintill::one(),
-            "Decay Factor should be reset"
-        );
+        assert_eq!(DecayFactor::<Test>::get(), Perquintill::one(), "Decay Factor should be reset");
         let new_config = ActiveInflationConfig::<Test>::get();
         assert_ne!(new_config, old_config, "Config should change.");
         System::assert_last_event(
@@ -601,11 +593,7 @@ fn force_readjust_config_with_decay_works() {
         }
 
         assert_ok!(Inflation::force_readjust_config(RuntimeOrigin::root()));
-        assert_eq!(
-            DecayFactor::<Test>::get(),
-            Perquintill::one(),
-            "Decay Factor should be reset"
-        );
+        assert_eq!(DecayFactor::<Test>::get(), Perquintill::one(), "Decay Factor should be reset");
 
         let new_config = ActiveInflationConfig::<Test>::get();
         // New config is based on original max emission
@@ -628,7 +616,10 @@ fn force_readjust_config_with_decay_works() {
             + new_config.bonus_reward_pool_per_period
                 * Balance::from(<Test as Config>::CycleConfiguration::periods_per_cycle());
 
-        lenient_balance_assert_eq!(original_max_emission, new_max_emission_from_config);
+        lenient_balance_assert_eq!(
+            original_max_emission,
+            new_max_emission_from_config
+        );
     })
 }
 
@@ -660,7 +651,10 @@ fn decay_calculation_rewards_works() {
             "Decay factor should match compounded decay rate",
         );
         let issuance = Balances::total_issuance();
-        lenient_balance_assert_eq!(issuance, initial_issuance + total_expected_payout);
+        lenient_balance_assert_eq!(
+            issuance,
+            initial_issuance + total_expected_payout
+        );
 
         // Config unchanged
         let cfg = ActiveInflationConfig::<Test>::get();

@@ -253,7 +253,8 @@ pub mod pallet {
 
             // Benchmarks won't account for the whitelisted storage access so this needs to be added manually.
             // DoRecalculation - 1 DB read
-            weight.saturating_add(<T as frame_system::Config>::DbWeight::get().reads(1))
+            weight
+                .saturating_add(<T as frame_system::Config>::DbWeight::get().reads(1))
         }
 
         fn on_finalize(_now: BlockNumberFor<T>) {
@@ -564,13 +565,12 @@ pub mod pallet {
             let adjustment_factor = staked_ratio / config.ideal_staking_rate;
 
             let adjustable_part = adjustment_factor * config.adjustable_staker_reward_pool_per_era;
-            let staker_reward_pool = decay_factor
-                * config
-                    .base_staker_reward_pool_per_era
-                    .saturating_add(adjustable_part);
+            let staker_reward_pool = decay_factor * config
+                .base_staker_reward_pool_per_era
+                .saturating_add(adjustable_part);
             let dapp_reward_pool = decay_factor * config.dapp_reward_pool_per_era;
 
-            (staker_reward_pool, dapp_reward_pool)
+                (staker_reward_pool, dapp_reward_pool)
         }
 
         fn bonus_reward_pool() -> Balance {
