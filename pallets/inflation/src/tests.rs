@@ -619,12 +619,7 @@ fn force_readjust_config_with_decay_works() {
             + new_config.bonus_reward_pool_per_period
                 * Balance::from(<Test as Config>::CycleConfiguration::periods_per_cycle());
 
-        assert_close(
-            original_max_emission,
-            new_max_emission_from_config,
-            300,
-            "Max emission changes too much",
-        );
+        lenient_balance_assert_eq!(original_max_emission, new_max_emission_from_config);
     })
 }
 
@@ -654,47 +649,17 @@ fn decay_calculation_rewards_works() {
             expected_factor * initial_config.adjustable_staker_reward_pool_per_era;
         let expected_bonus = expected_factor * initial_config.bonus_reward_pool_per_period;
 
-        assert_close(
-            final_config.collator_reward_per_block,
-            expected_collator,
-            10,
-            "Collator reward decay calculation incorrect",
-        );
-        assert_close(
-            final_config.collator_reward_per_block,
-            expected_collator,
-            10,
-            "Collator reward decay calculation incorrect",
-        );
-        assert_close(
-            final_config.treasury_reward_per_block,
-            expected_treasury,
-            10,
-            "Treasury reward decay calculation incorrect",
-        );
-        assert_close(
-            final_config.dapp_reward_pool_per_era,
-            expected_dapp,
-            10,
-            "dApp reward decay calculation incorrect",
-        );
-        assert_close(
+        lenient_balance_assert_eq!(final_config.collator_reward_per_block, expected_collator);
+        lenient_balance_assert_eq!(final_config.treasury_reward_per_block, expected_treasury);
+        lenient_balance_assert_eq!(final_config.dapp_reward_pool_per_era, expected_dapp);
+        lenient_balance_assert_eq!(
             final_config.base_staker_reward_pool_per_era,
-            expected_base_staker,
-            10,
-            "Base staker reward decay calculation incorrect",
+            expected_base_staker
         );
-        assert_close(
+        lenient_balance_assert_eq!(
             final_config.adjustable_staker_reward_pool_per_era,
-            expected_adjustable_staker,
-            10,
-            "Adjustable staker reward decay calculation incorrect",
+            expected_adjustable_staker
         );
-        assert_close(
-            final_config.bonus_reward_pool_per_period,
-            expected_bonus,
-            10,
-            "Bonus reward decay calculation incorrect",
-        );
+        lenient_balance_assert_eq!(final_config.bonus_reward_pool_per_period, expected_bonus);
     })
 }
