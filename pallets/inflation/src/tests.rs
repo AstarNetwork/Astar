@@ -568,7 +568,9 @@ fn set_decay_rate_works() {
             RuntimeOrigin::root(),
             new_decay_rate
         ));
-        System::assert_last_event(Event::DecayRateUpdated { new_decay_rate }.into());
+        let config = ActiveInflationConfig::<Test>::get();
+        System::assert_last_event(Event::DecayRateUpdated { config }.into());
+        assert_eq!(config.decay_rate, new_decay_rate);
         assert_eq!(InflationParams::<Test>::get().decay_rate, new_decay_rate);
     })
 }

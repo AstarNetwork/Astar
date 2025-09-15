@@ -123,7 +123,8 @@ mod benchmarks {
         #[extrinsic_call]
         _(RawOrigin::Root, new_decay_rate);
 
-        assert_last_event::<T>(Event::<T>::DecayRateUpdated { new_decay_rate }.into());
+        let config = ActiveInflationConfig::<T>::get();
+        assert_last_event::<T>(Event::<T>::DecayRateUpdated { config }.into());
     }
 
     #[benchmark]

@@ -174,7 +174,7 @@ pub mod pallet {
         /// New inflation configuration has been set.
         NewInflationConfiguration { config: InflationConfiguration },
         /// Inflation decay rate has been updated. This will take effect in the next cycle.
-        DecayRateUpdated { new_decay_rate: Perquintill },
+        DecayRateUpdated { config: InflationConfiguration },
     }
 
     #[pallet::error]
@@ -332,8 +332,6 @@ pub mod pallet {
         /// Used to force-set the per-block decay rate for rewards.
         ///
         /// Must be called by `root` origin.
-        ///
-        /// The new rate will be applied starting from the next inflation recalculation (next cycle).
         #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::force_set_decay_rate())]
         pub fn force_set_decay_rate(
@@ -346,8 +344,11 @@ pub mod pallet {
                 params.decay_rate = decay_rate;
             });
 
+            let config = Self::readjusted_config();
+            ActiveInflationConfig::<T>::put(config.clone());
+
             Self::deposit_event(Event::<T>::DecayRateUpdated {
-                new_decay_rate: decay_rate,
+                config,
             });
 
             Ok(().into())
