@@ -411,9 +411,57 @@ pub mod pallet {
         pub(crate) fn readjusted_config() -> InflationConfiguration {
             let config = ActiveInflationConfig::<T>::get();
             let max_emission = CycleMaxEmission::<T>::get();
+            let max_emission = if max_emission.is_zero() {
+                log::warn!("CycleMaxEmission not initialized, deriving from current config");
+                Self::derive_max_emission_from_config(&config)
+            } else {
+                max_emission
+            };
 
             // Calculate new inflation configuration using the original max_emission
             Self::new_config(config.recalculation_era, max_emission)
+        }
+
+        pub(crate) fn derive_max_emission_from_config(config: &InflationConfiguration) -> Balance {
+            // 1. Simple type conversion.
+            let blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle());
+            let build_and_earn_eras_per_cycle =
+                Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle());
+            let periods_per_cycle = Balance::from(T::CycleConfiguration::periods_per_cycle());
+
+            // 2. Calculate reward pool amounts per cycle from the existing inflation configuration.
+            let collator_reward_pool = config
+                .collator_reward_per_block
+                .saturating_mul(blocks_per_cycle);
+
+            let treasury_reward_pool = config
+                .treasury_reward_per_block
+                .saturating_mul(blocks_per_cycle);
+
+            let dapp_reward_pool = config
+                .dapp_reward_pool_per_era
+                .saturating_mul(build_and_earn_eras_per_cycle);
+
+            let base_staker_reward_pool = config
+                .base_staker_reward_pool_per_era
+                .saturating_mul(build_and_earn_eras_per_cycle);
+            let adjustable_staker_reward_pool = config
+                .adjustable_staker_reward_pool_per_era
+                .saturating_mul(build_and_earn_eras_per_cycle);
+
+            let bonus_reward_pool = config
+                .bonus_reward_pool_per_period
+                .saturating_mul(periods_per_cycle);
+
+            // 3. Sum up all values to get the old `max_emission` value.
+            let max_emission = collator_reward_pool
+                .saturating_add(treasury_reward_pool)
+                .saturating_add(dapp_reward_pool)
+                .saturating_add(base_staker_reward_pool)
+                .saturating_add(adjustable_staker_reward_pool)
+                .saturating_add(bonus_reward_pool);
+
+            max_emission
         }
 
         // Calculate new inflation configuration, based on the provided `max_emission`.

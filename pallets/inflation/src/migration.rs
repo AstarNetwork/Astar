@@ -76,9 +76,23 @@ mod v2 {
                 },
             );
 
-            if result.is_err() {
-                log::error!("Failed to translate ActiveInflationConfig from previous V1 type to current V2 type. Check InflationConfigurationV1 decoding.");
-                return T::DbWeight::get().reads_writes(1, 0);
+            match result {
+                Ok(maybe_config) => {
+                    if let Some(config) = maybe_config {
+                        let previous_max_emission =
+                            Pallet::<T>::derive_max_emission_from_config(&config);
+                        CycleMaxEmission::<T>::put(previous_max_emission);
+                    } else {
+                        log::error!(
+                            "Migration failed: No ActiveInflationConfig found during migration."
+                        );
+                        return T::DbWeight::get().reads_writes(1, 0);
+                    }
+                }
+                Err(_) => {
+                    log::error!("Failed to translate ActiveInflationConfig from previous V1 type to current V2 type. Check InflationConfigurationV1 decoding.");
+                    return T::DbWeight::get().reads_writes(1, 0);
+                }
             }
 
             // Add the decay rate to the inflation params
@@ -102,10 +116,10 @@ mod v2 {
 
             if result.is_err() {
                 log::error!("Failed to translate InflationParams from previous V1 type to current V2 type. Check InflationParametersV1 decoding.");
-                return T::DbWeight::get().reads_writes(2, 1);
+                return T::DbWeight::get().reads_writes(2, 2);
             }
 
-            T::DbWeight::get().reads_writes(2, 2)
+            T::DbWeight::get().reads_writes(2, 3)
         }
 
         #[cfg(feature = "try-runtime")]
@@ -224,6 +238,12 @@ mod v2 {
             assert_eq!(
                 expected_decay_rate, new_config.decay_rate,
                 "pallet-inflation::migration::v2: No correct decay rate in config"
+            );
+
+            // Verify CycleMaxEmission init
+            assert!(
+                CycleMaxEmission::<T>::get() > 0,
+                "CycleMaxEmission should be initialized to a value greater than zero"
             );
 
             // Verify storage version has been updated
