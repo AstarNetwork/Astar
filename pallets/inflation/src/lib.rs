@@ -147,13 +147,6 @@ pub mod pallet {
     pub(crate) type CreditOf<T> =
         Credit<<T as frame_system::Config>::AccountId, <T as Config>::Currency>;
 
-    pub struct DecayFactorOnEmpty;
-    impl Get<Perquintill> for DecayFactorOnEmpty {
-        fn get() -> Perquintill {
-            Perquintill::one()
-        }
-    }
-
     #[pallet::config]
     pub trait Config: frame_system::Config {
         type Currency: Balanced<Self::AccountId, Balance = Balance>;
@@ -205,12 +198,10 @@ pub mod pallet {
     #[pallet::whitelist_storage]
     pub type DoRecalculation<T: Config> = StorageValue<_, EraNumber, OptionQuery>;
 
-    /// Compounded decay since the start of the current cycle.
-    /// Multiplied into rewards when they are actually paid.
-    /// Reset to `Perquintill::one()` at the start of each cycle.
+    /// Max emission for the current cycle, calculated at the beginning of the cycle.
+    /// This is used to readjust the inflation configuration without being affected by the per-block decay.
     #[pallet::storage]
-    #[pallet::whitelist_storage]
-    pub type DecayFactor<T: Config> = StorageValue<_, Perquintill, ValueQuery, DecayFactorOnEmpty>;
+    pub type CycleMaxEmission<T: Config> = StorageValue<_, Balance, ValueQuery>;
 
     #[pallet::genesis_config]
     #[derive(DefaultNoBound)]
@@ -230,7 +221,6 @@ pub mod pallet {
             let config = Pallet::<T>::recalculate_inflation(starting_era);
 
             ActiveInflationConfig::<T>::put(config);
-            DecayFactor::<T>::put(Perquintill::one());
             InflationParams::<T>::put(self.params);
         }
     }
@@ -238,22 +228,11 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_now: BlockNumberFor<T>) -> Weight {
-            let mut weight = T::DbWeight::get().reads(2);
-
-            let config = ActiveInflationConfig::<T>::get();
-            let mut decay_factor = DecayFactor::<T>::get();
-
-            if config.decay_rate != Perquintill::one() {
-                decay_factor = decay_factor * config.decay_rate;
-                DecayFactor::<T>::put(decay_factor);
-                weight = weight.saturating_add(T::DbWeight::get().writes(1));
-            }
-
-            Self::payout_block_rewards(&config, decay_factor);
+            let decay_payout_weight = Self::decay_and_payout_block_rewards();
 
             // Benchmarks won't account for the whitelisted storage access so this needs to be added manually.
             // DoRecalculation - 1 DB read
-            weight
+            decay_payout_weight
                 .saturating_add(<T as frame_system::Config>::DbWeight::get().reads(1))
         }
 
@@ -267,8 +246,6 @@ pub mod pallet {
             if let Some(next_era) = DoRecalculation::<T>::get() {
                 let config = Self::recalculate_inflation(next_era);
                 ActiveInflationConfig::<T>::put(config.clone());
-                // reset decay factor
-                DecayFactor::<T>::put(Perquintill::one());
                 DoRecalculation::<T>::kill();
 
                 Self::deposit_event(Event::<T>::NewInflationConfiguration { config });
@@ -324,10 +301,8 @@ pub mod pallet {
             ensure_root(origin)?;
 
             let config = Self::recalculate_inflation(next_era);
-            ActiveInflationConfig::<T>::put(config.clone());
 
-            // reset decay factor
-            DecayFactor::<T>::put(Perquintill::one());
+            ActiveInflationConfig::<T>::put(config.clone());
 
             Self::deposit_event(Event::<T>::ForcedInflationRecalculation { config });
 
@@ -348,9 +323,6 @@ pub mod pallet {
 
             let config = Self::readjusted_config();
             ActiveInflationConfig::<T>::put(config.clone());
-
-            // reset decay factor
-            DecayFactor::<T>::put(Perquintill::one());
 
             Self::deposit_event(Event::<T>::ForcedInflationRecalculation { config });
 
@@ -383,18 +355,34 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        /// Payout block rewards to the beneficiaries applying the decay factor.
-        ///
-        /// Return the total amount issued.
-        fn payout_block_rewards(config: &InflationConfiguration, decay_factor: Perquintill) {
-            let collator_rewards = decay_factor * config.collator_reward_per_block;
-            let treasury_rewards = decay_factor * config.treasury_reward_per_block;
+        /// Apply per-block decay and payout block rewards.
+        pub(crate) fn decay_and_payout_block_rewards() -> Weight {
+            let mut config = ActiveInflationConfig::<T>::get();
+            let mut weight = T::DbWeight::get().reads(1);
 
-            let collator_amount = T::Currency::issue(collator_rewards);
-            let treasury_amount = T::Currency::issue(treasury_rewards);
+            let decay_rate = config.decay_rate;
+            if decay_rate != Perquintill::one() {
+                config.collator_reward_per_block = decay_rate * config.collator_reward_per_block;
+                config.treasury_reward_per_block = decay_rate * config.treasury_reward_per_block;
+                config.dapp_reward_pool_per_era = decay_rate * config.dapp_reward_pool_per_era;
+                config.base_staker_reward_pool_per_era =
+                    decay_rate * config.base_staker_reward_pool_per_era;
+                config.adjustable_staker_reward_pool_per_era =
+                    decay_rate * config.adjustable_staker_reward_pool_per_era;
+                config.bonus_reward_pool_per_period =
+                    decay_rate * config.bonus_reward_pool_per_period;
+
+                ActiveInflationConfig::<T>::put(&config);
+                weight = T::DbWeight::get().reads_writes(1, 1);
+            }
+
+            let collator_amount = T::Currency::issue(config.collator_reward_per_block);
+            let treasury_amount = T::Currency::issue(config.treasury_reward_per_block);
 
             T::PayoutPerBlock::collators(collator_amount);
             T::PayoutPerBlock::treasury(treasury_amount);
+
+            weight
         }
 
         /// Recalculates the inflation based on the current total issuance & inflation parameters.
@@ -405,6 +393,7 @@ pub mod pallet {
             let params = InflationParams::<T>::get();
             let total_issuance = T::Currency::total_issuance();
             let max_emission = params.max_inflation_rate * total_issuance;
+            CycleMaxEmission::<T>::put(max_emission);
 
             let recalculation_era =
                 next_era.saturating_add(T::CycleConfiguration::eras_per_cycle());
@@ -420,48 +409,10 @@ pub mod pallet {
         ///
         /// This call should be used in case inflation parameters have changed during the cycle, and the configuration should be adjusted now.
         pub(crate) fn readjusted_config() -> InflationConfiguration {
-            // 1. First calculate the params needed to derive the `max_emission` value used to calculate the current inflation config.
             let config = ActiveInflationConfig::<T>::get();
+            let max_emission = CycleMaxEmission::<T>::get();
 
-            // Simple type conversion.
-            let blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle());
-            let build_and_earn_eras_per_cycle =
-                Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle());
-            let periods_per_cycle = Balance::from(T::CycleConfiguration::periods_per_cycle());
-
-            // 2. Calculate reward pool amounts per cycle from the existing inflation configuration.
-            let collator_reward_pool = config
-                .collator_reward_per_block
-                .saturating_mul(blocks_per_cycle);
-
-            let treasury_reward_pool = config
-                .treasury_reward_per_block
-                .saturating_mul(blocks_per_cycle);
-
-            let dapp_reward_pool = config
-                .dapp_reward_pool_per_era
-                .saturating_mul(build_and_earn_eras_per_cycle);
-
-            let base_staker_reward_pool = config
-                .base_staker_reward_pool_per_era
-                .saturating_mul(build_and_earn_eras_per_cycle);
-            let adjustable_staker_reward_pool = config
-                .adjustable_staker_reward_pool_per_era
-                .saturating_mul(build_and_earn_eras_per_cycle);
-
-            let bonus_reward_pool = config
-                .bonus_reward_pool_per_period
-                .saturating_mul(periods_per_cycle);
-
-            // 3. Sum up all values to get the old `max_emission` value.
-            let max_emission = collator_reward_pool
-                .saturating_add(treasury_reward_pool)
-                .saturating_add(dapp_reward_pool)
-                .saturating_add(base_staker_reward_pool)
-                .saturating_add(adjustable_staker_reward_pool)
-                .saturating_add(bonus_reward_pool);
-
-            // 4. Calculate new inflation configuration
+            // Calculate new inflation configuration using the original max_emission
             Self::new_config(config.recalculation_era, max_emission)
         }
 
@@ -555,7 +506,6 @@ pub mod pallet {
     impl<T: Config> StakingRewardHandler<T::AccountId> for Pallet<T> {
         fn staker_and_dapp_reward_pools(total_value_staked: Balance) -> (Balance, Balance) {
             let config = ActiveInflationConfig::<T>::get();
-            let decay_factor = DecayFactor::<T>::get();
             let total_issuance = T::Currency::total_issuance();
 
             // First calculate the adjustable part of the staker reward pool, according to formula:
@@ -565,18 +515,15 @@ pub mod pallet {
             let adjustment_factor = staked_ratio / config.ideal_staking_rate;
 
             let adjustable_part = adjustment_factor * config.adjustable_staker_reward_pool_per_era;
-            let staker_reward_pool = decay_factor * config
+            let staker_reward_pool = config
                 .base_staker_reward_pool_per_era
                 .saturating_add(adjustable_part);
-            let dapp_reward_pool = decay_factor * config.dapp_reward_pool_per_era;
 
-                (staker_reward_pool, dapp_reward_pool)
+            (staker_reward_pool, config.dapp_reward_pool_per_era)
         }
 
         fn bonus_reward_pool() -> Balance {
-            let config = ActiveInflationConfig::<T>::get();
-            let decay_factor = DecayFactor::<T>::get();
-            decay_factor * config.bonus_reward_pool_per_period
+            ActiveInflationConfig::<T>::get().bonus_reward_pool_per_period
         }
 
         fn payout_reward(account: &T::AccountId, reward: Balance) -> Result<(), ()> {

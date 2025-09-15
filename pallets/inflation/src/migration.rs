@@ -105,9 +105,7 @@ mod v2 {
                 return T::DbWeight::get().reads_writes(2, 1);
             }
 
-            DecayFactor::<T>::put(Perquintill::one());
-
-            T::DbWeight::get().reads_writes(2, 3)
+            T::DbWeight::get().reads_writes(2, 2)
         }
 
         #[cfg(feature = "try-runtime")]
@@ -227,9 +225,6 @@ mod v2 {
                 expected_decay_rate, new_config.decay_rate,
                 "pallet-inflation::migration::v2: No correct decay rate in config"
             );
-
-            // Verify DecayFactor init
-            assert_eq!(DecayFactor::<T>::get(), Perquintill::one());
 
             // Verify storage version has been updated
             ensure!(

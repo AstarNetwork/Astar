@@ -83,7 +83,6 @@ fn force_inflation_recalculation_work() {
             RuntimeOrigin::root(),
             next_era,
         ));
-        assert_eq!(DecayFactor::<Test>::get(), Perquintill::one(), "Decay Factor should be reset");
 
         let new_config = ActiveInflationConfig::<Test>::get();
         assert_ne!(
@@ -130,7 +129,6 @@ fn force_readjust_config_works() {
 
         // Force readjust config
         assert_ok!(Inflation::force_readjust_config(RuntimeOrigin::root()));
-        assert_eq!(DecayFactor::<Test>::get(), Perquintill::one(), "Decay Factor should be reset");
         let new_config = ActiveInflationConfig::<Test>::get();
         assert_ne!(new_config, old_config, "Config should change.");
         System::assert_last_event(
@@ -302,6 +300,11 @@ fn inflation_recalculation_works() {
         // Calculate new config and check max emission update
         let new_config = Inflation::recalculate_inflation(at_recalculation);
         let current_max_emission = params.max_inflation_rate * current_issuance;
+        let max_emission = CycleMaxEmission::<Test>::get();
+        assert_eq!(
+            current_max_emission, max_emission,
+            "CycleMaxEmission should be updated"
+        );
 
         // Verify basics are ok
         assert_eq!(
@@ -316,7 +319,7 @@ fn inflation_recalculation_works() {
         );
         assert_eq!(
             new_config.collator_reward_per_block,
-            params.collators_part * current_max_emission
+            params.collators_part * max_emission
                 / Balance::from(<Test as Config>::CycleConfiguration::blocks_per_cycle()),
         );
 
@@ -327,7 +330,7 @@ fn inflation_recalculation_works() {
         );
         assert_eq!(
             new_config.treasury_reward_per_block,
-            params.treasury_part * current_max_emission
+            params.treasury_part * max_emission
                 / Balance::from(<Test as Config>::CycleConfiguration::blocks_per_cycle()),
         );
 
@@ -338,7 +341,7 @@ fn inflation_recalculation_works() {
         );
         assert_eq!(
             new_config.dapp_reward_pool_per_era,
-            params.dapps_part * current_max_emission
+            params.dapps_part * max_emission
                 / Balance::from(
                     <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle()
                 ),
@@ -351,7 +354,7 @@ fn inflation_recalculation_works() {
         );
         assert_eq!(
             new_config.base_staker_reward_pool_per_era,
-            params.base_stakers_part * current_max_emission
+            params.base_stakers_part * max_emission
                 / Balance::from(
                     <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle()
                 ),
@@ -362,7 +365,7 @@ fn inflation_recalculation_works() {
         );
         assert_eq!(
             new_config.adjustable_staker_reward_pool_per_era,
-            params.adjustable_stakers_part * current_max_emission
+            params.adjustable_stakers_part * max_emission
                 / Balance::from(
                     <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle()
                 ),
@@ -375,7 +378,7 @@ fn inflation_recalculation_works() {
         );
         assert_eq!(
             new_config.bonus_reward_pool_per_period,
-            params.bonus_part * current_max_emission
+            params.bonus_part * max_emission
                 / Balance::from(<Test as Config>::CycleConfiguration::periods_per_cycle()),
         );
     })
@@ -509,7 +512,7 @@ fn test_genesis_build() {
         // Prep actions
         ActiveInflationConfig::<Test>::kill();
         InflationParams::<Test>::kill();
-        DecayFactor::<Test>::kill();
+        CycleMaxEmission::<Test>::kill();
 
         // Execute genesis build
         <pallet::GenesisConfig<Test> as BuildGenesisConfig>::build(&genesis_config);
@@ -517,12 +520,12 @@ fn test_genesis_build() {
         // Verify state is as expected
         assert_eq!(InflationParams::<Test>::get(), genesis_config.params);
         assert!(ActiveInflationConfig::<Test>::get().recalculation_era > 0);
-        assert_eq!(DecayFactor::<Test>::get(), Perquintill::one());
+        assert!(CycleMaxEmission::<Test>::get() > 0);
     })
 }
 
 #[test]
-fn on_initialize_decay_and_payout_works() {
+fn decay_and_payout_works() {
     ExternalityBuilder::build().execute_with(|| {
         // no decay
         ActiveInflationConfig::<Test>::mutate(|config| {
@@ -531,29 +534,24 @@ fn on_initialize_decay_and_payout_works() {
             config.treasury_reward_per_block = 5;
         });
 
-        let issuance_before = Balances::total_issuance();
-        Inflation::on_initialize(1);
-        let issuance_after = Balances::total_issuance();
-        let paid_out = issuance_after - issuance_before;
-        assert_eq!(paid_out, 10 + 5, "Full payout expected");
-
-        // 50% decay
-        let decay_rate = Perquintill::from_percent(50);
-        ActiveInflationConfig::<Test>::mutate(|config| {
-            config.decay_rate = decay_rate;
-        });
-
-        let issuance_before_decay = Balances::total_issuance();
-        Inflation::on_initialize(2);
-        let issuance_after_decay = Balances::total_issuance();
-        let paid_out = issuance_after_decay - issuance_before_decay;
-        assert_eq!(paid_out, 7, "Decayed payout expected"); // (10 + 5) * 0.5 = 7
+        Inflation::decay_and_payout_block_rewards();
 
         // Config unchanged
         let cfg = ActiveInflationConfig::<Test>::get();
-        assert_eq!(cfg.decay_rate, decay_rate);
         assert_eq!(cfg.collator_reward_per_block, 10);
         assert_eq!(cfg.treasury_reward_per_block, 5);
+
+        // decay applies
+        ActiveInflationConfig::<Test>::mutate(|config| {
+            config.decay_rate = Perquintill::from_percent(50);
+        });
+
+        Inflation::decay_and_payout_block_rewards();
+
+        // Config decayed
+        let cfg = ActiveInflationConfig::<Test>::get();
+        assert_eq!(cfg.collator_reward_per_block, 5);
+        assert_eq!(cfg.treasury_reward_per_block, 2);
     });
 }
 
@@ -579,10 +577,6 @@ fn set_decay_rate_works() {
 #[test]
 fn force_readjust_config_with_decay_works() {
     ExternalityBuilder::build().execute_with(|| {
-        let params = InflationParams::<Test>::get();
-        let init_total_issuance = Balances::total_issuance();
-        let original_max_emission = params.max_inflation_rate * init_total_issuance;
-
         // Prerequisite: Set decay and run a few blocks to decay the config
         let decay_rate = Perquintill::from_percent(99);
         ActiveInflationConfig::<Test>::mutate(|config| {
@@ -592,8 +586,17 @@ fn force_readjust_config_with_decay_works() {
             Inflation::on_initialize(1);
         }
 
+        let original_max_emission = CycleMaxEmission::<Test>::get();
+
+        // Change params + force readjust
+        let mut new_params = InflationParams::<Test>::get();
+        new_params.decay_rate = Perquintill::one();
+        assert!(new_params.is_valid());
+        assert_ok!(Inflation::force_set_inflation_params(
+            RuntimeOrigin::root(),
+            new_params
+        ));
         assert_ok!(Inflation::force_readjust_config(RuntimeOrigin::root()));
-        assert_eq!(DecayFactor::<Test>::get(), Perquintill::one(), "Decay Factor should be reset");
 
         let new_config = ActiveInflationConfig::<Test>::get();
         // New config is based on original max emission
@@ -616,9 +619,11 @@ fn force_readjust_config_with_decay_works() {
             + new_config.bonus_reward_pool_per_period
                 * Balance::from(<Test as Config>::CycleConfiguration::periods_per_cycle());
 
-        lenient_balance_assert_eq!(
+        assert_close(
             original_max_emission,
-            new_max_emission_from_config
+            new_max_emission_from_config,
+            300,
+            "Max emission changes too much",
         );
     })
 }
@@ -626,40 +631,70 @@ fn force_readjust_config_with_decay_works() {
 #[test]
 fn decay_calculation_rewards_works() {
     ExternalityBuilder::build().execute_with(|| {
-        let initial_issuance = Balances::total_issuance();
         let decay_rate = Perquintill::from_percent(90); // 10% decay per block
         ActiveInflationConfig::<Test>::mutate(|config| {
             config.decay_rate = decay_rate;
-            config.collator_reward_per_block = 100;
-            config.treasury_reward_per_block = 50;
         });
 
-        let blocks_to_run = 5;
-        let mut expected_factor = Perquintill::one();
-        let mut total_expected_payout = 0;
-        let base_rewards = 100 + 50;
+        let initial_config = ActiveInflationConfig::<Test>::get();
 
-        for block in 1..=blocks_to_run {
-            Inflation::on_initialize(block);
-            expected_factor = expected_factor.saturating_mul(decay_rate);
-            total_expected_payout += expected_factor * base_rewards;
+        let blocks_to_run = 5;
+        for _ in 0..blocks_to_run {
+            Inflation::on_initialize(1);
         }
 
-        let actual_factor = DecayFactor::<Test>::get();
-        assert_eq!(
-            actual_factor, expected_factor,
-            "Decay factor should match compounded decay rate",
-        );
-        let issuance = Balances::total_issuance();
-        lenient_balance_assert_eq!(
-            issuance,
-            initial_issuance + total_expected_payout
-        );
+        let final_config = ActiveInflationConfig::<Test>::get();
+        let expected_factor = decay_rate.saturating_pow(blocks_to_run);
 
-        // Config unchanged
-        let cfg = ActiveInflationConfig::<Test>::get();
-        assert_eq!(cfg.decay_rate, decay_rate);
-        assert_eq!(cfg.collator_reward_per_block, 100);
-        assert_eq!(cfg.treasury_reward_per_block, 50);
-    });
+        let expected_collator = expected_factor * initial_config.collator_reward_per_block;
+        let expected_treasury = expected_factor * initial_config.treasury_reward_per_block;
+        let expected_dapp = expected_factor * initial_config.dapp_reward_pool_per_era;
+        let expected_base_staker = expected_factor * initial_config.base_staker_reward_pool_per_era;
+        let expected_adjustable_staker =
+            expected_factor * initial_config.adjustable_staker_reward_pool_per_era;
+        let expected_bonus = expected_factor * initial_config.bonus_reward_pool_per_period;
+
+        assert_close(
+            final_config.collator_reward_per_block,
+            expected_collator,
+            10,
+            "Collator reward decay calculation incorrect",
+        );
+        assert_close(
+            final_config.collator_reward_per_block,
+            expected_collator,
+            10,
+            "Collator reward decay calculation incorrect",
+        );
+        assert_close(
+            final_config.treasury_reward_per_block,
+            expected_treasury,
+            10,
+            "Treasury reward decay calculation incorrect",
+        );
+        assert_close(
+            final_config.dapp_reward_pool_per_era,
+            expected_dapp,
+            10,
+            "dApp reward decay calculation incorrect",
+        );
+        assert_close(
+            final_config.base_staker_reward_pool_per_era,
+            expected_base_staker,
+            10,
+            "Base staker reward decay calculation incorrect",
+        );
+        assert_close(
+            final_config.adjustable_staker_reward_pool_per_era,
+            expected_adjustable_staker,
+            10,
+            "Adjustable staker reward decay calculation incorrect",
+        );
+        assert_close(
+            final_config.bonus_reward_pool_per_period,
+            expected_bonus,
+            10,
+            "Bonus reward decay calculation incorrect",
+        );
+    })
 }
