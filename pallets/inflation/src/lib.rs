@@ -347,9 +347,7 @@ pub mod pallet {
             let config = Self::readjusted_config();
             ActiveInflationConfig::<T>::put(config.clone());
 
-            Self::deposit_event(Event::<T>::DecayRateUpdated {
-                config,
-            });
+            Self::deposit_event(Event::<T>::DecayRateUpdated { config });
 
             Ok(().into())
         }
