@@ -534,7 +534,8 @@ fn decay_and_payout_works() {
             config.treasury_reward_per_block = 5;
         });
 
-        Inflation::decay_and_payout_block_rewards();
+        let (config, _) = Inflation::decay_config();
+        Inflation::payout_block_rewards(&config);
 
         // Config unchanged
         let cfg = ActiveInflationConfig::<Test>::get();
@@ -546,7 +547,8 @@ fn decay_and_payout_works() {
             config.decay_rate = Perquintill::from_percent(50);
         });
 
-        Inflation::decay_and_payout_block_rewards();
+        let (config, _) = Inflation::decay_config();
+        Inflation::payout_block_rewards(&config);
 
         // Config decayed
         let cfg = ActiveInflationConfig::<Test>::get();

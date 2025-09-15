@@ -228,12 +228,12 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_now: BlockNumberFor<T>) -> Weight {
-            let decay_payout_weight = Self::decay_and_payout_block_rewards();
+            let (config, weight) = Self::decay_config();
+            Self::payout_block_rewards(&config);
 
             // Benchmarks won't account for the whitelisted storage access so this needs to be added manually.
             // DoRecalculation - 1 DB read
-            decay_payout_weight
-                .saturating_add(<T as frame_system::Config>::DbWeight::get().reads(1))
+            weight.saturating_add(<T as frame_system::Config>::DbWeight::get().reads(1))
         }
 
         fn on_finalize(_now: BlockNumberFor<T>) {
@@ -354,10 +354,20 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        /// Apply per-block decay and payout block rewards.
-        pub(crate) fn decay_and_payout_block_rewards() -> Weight {
+        /// Payout block rewards to the beneficiaries using the provided inflation config.
+        pub(crate) fn payout_block_rewards(config: &InflationConfiguration) {
+            let collator_amount = T::Currency::issue(config.collator_reward_per_block);
+            let treasury_amount = T::Currency::issue(config.treasury_reward_per_block);
+
+            T::PayoutPerBlock::collators(collator_amount);
+            T::PayoutPerBlock::treasury(treasury_amount);
+        }
+
+        /// Apply decay to the inflation config.
+        /// Returns the updated configuration and the weight consumed.
+        pub(crate) fn decay_config() -> (InflationConfiguration, Weight) {
             let mut config = ActiveInflationConfig::<T>::get();
-            let mut weight = T::DbWeight::get().reads(1);
+            let weight = T::DbWeight::get().reads(1);
 
             let decay_rate = config.decay_rate;
             if decay_rate != Perquintill::one() {
@@ -372,16 +382,10 @@ pub mod pallet {
                     decay_rate * config.bonus_reward_pool_per_period;
 
                 ActiveInflationConfig::<T>::put(&config);
-                weight = T::DbWeight::get().reads_writes(1, 1);
+                (config, T::DbWeight::get().reads_writes(1, 1))
+            } else {
+                (config, weight)
             }
-
-            let collator_amount = T::Currency::issue(config.collator_reward_per_block);
-            let treasury_amount = T::Currency::issue(config.treasury_reward_per_block);
-
-            T::PayoutPerBlock::collators(collator_amount);
-            T::PayoutPerBlock::treasury(treasury_amount);
-
-            weight
         }
 
         /// Recalculates the inflation based on the current total issuance & inflation parameters.
@@ -421,6 +425,7 @@ pub mod pallet {
             Self::new_config(config.recalculation_era, max_emission)
         }
 
+        /// This function derives the `max_emission` value used to calculate the provided inflation config.
         pub(crate) fn derive_max_emission_from_config(config: &InflationConfiguration) -> Balance {
             // 1. Simple type conversion.
             let blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle());
