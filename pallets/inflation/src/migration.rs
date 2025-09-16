@@ -48,10 +48,12 @@ mod v2 {
         InflationParameters as InflationParametersV1,
     };
 
-    pub struct VersionMigrateV1ToV2<T, DecayRate, DecayFactor>(PhantomData<(T, DecayRate, DecayFactor)>);
+    pub struct VersionMigrateV1ToV2<T, DecayRate, DecayFactor>(
+        PhantomData<(T, DecayRate, DecayFactor)>,
+    );
 
-    impl<T: Config, DecayRate: Get<Perquintill>, DecayFactor: Get<Perquintill>> UncheckedOnRuntimeUpgrade
-        for VersionMigrateV1ToV2<T, DecayRate, DecayFactor>
+    impl<T: Config, DecayRate: Get<Perquintill>, DecayFactor: Get<Perquintill>>
+        UncheckedOnRuntimeUpgrade for VersionMigrateV1ToV2<T, DecayRate, DecayFactor>
     {
         fn on_runtime_upgrade() -> Weight {
             let decay_rate = DecayRate::get();
@@ -96,7 +98,7 @@ mod v2 {
                         bonus_reward_pool_per_period: old_config.bonus_reward_pool_per_period,
                         ideal_staking_rate: old_config.ideal_staking_rate,
                         decay_rate,
-                        decay_factor
+                        decay_factor,
                     }),
                     _ => None,
                 },

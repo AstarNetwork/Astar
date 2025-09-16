@@ -288,7 +288,11 @@ fn inflation_recalculation_works() {
             new_config.recalculation_era,
             now + <Test as Config>::CycleConfiguration::eras_per_cycle()
         );
-        assert_eq!(new_config.decay_factor, Perquintill::one(), "Default decay factor expected.");
+        assert_eq!(
+            new_config.decay_factor,
+            Perquintill::one(),
+            "Default decay factor expected."
+        );
 
         // Verify collator rewards are as expected
         assert!(
@@ -550,7 +554,10 @@ fn on_initialize_decay_and_payout_works() {
 fn set_decay_factor_works() {
     ExternalityBuilder::build().execute_with(|| {
         // Sanity Check
-        assert_eq!(ActiveInflationConfig::<Test>::get().decay_factor, Perquintill::one());
+        assert_eq!(
+            ActiveInflationConfig::<Test>::get().decay_factor,
+            Perquintill::one()
+        );
 
         assert_noop!(
             Inflation::force_set_decay_factor(RuntimeOrigin::signed(1), Perquintill::one()),
@@ -562,8 +569,16 @@ fn set_decay_factor_works() {
             RuntimeOrigin::root(),
             new_decay_factor
         ));
-        System::assert_last_event(Event::DecayFactorUpdated { decay_factor: new_decay_factor }.into());
-        assert_eq!(ActiveInflationConfig::<Test>::get().decay_factor, new_decay_factor);
+        System::assert_last_event(
+            Event::DecayFactorUpdated {
+                decay_factor: new_decay_factor,
+            }
+            .into(),
+        );
+        assert_eq!(
+            ActiveInflationConfig::<Test>::get().decay_factor,
+            new_decay_factor
+        );
     })
 }
 
@@ -595,26 +610,23 @@ fn force_readjust_config_with_decay_works() {
         let new_max_emission_from_config = new_config.collator_reward_per_block
             * Balance::from(<Test as Config>::CycleConfiguration::blocks_per_cycle())
             + new_config.treasury_reward_per_block
-            * Balance::from(<Test as Config>::CycleConfiguration::blocks_per_cycle())
+                * Balance::from(<Test as Config>::CycleConfiguration::blocks_per_cycle())
             + new_config.dapp_reward_pool_per_era
-            * Balance::from(
-            <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle(),
-        )
+                * Balance::from(
+                    <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle(),
+                )
             + new_config.base_staker_reward_pool_per_era
-            * Balance::from(
-            <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle(),
-        )
+                * Balance::from(
+                    <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle(),
+                )
             + new_config.adjustable_staker_reward_pool_per_era
-            * Balance::from(
-            <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle(),
-        )
+                * Balance::from(
+                    <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle(),
+                )
             + new_config.bonus_reward_pool_per_period
-            * Balance::from(<Test as Config>::CycleConfiguration::periods_per_cycle());
+                * Balance::from(<Test as Config>::CycleConfiguration::periods_per_cycle());
 
-        lenient_balance_assert_eq!(
-            original_max_emission,
-            new_max_emission_from_config
-        );
+        lenient_balance_assert_eq!(original_max_emission, new_max_emission_from_config);
     })
 }
 
@@ -665,8 +677,14 @@ fn force_update_decay_rate_and_reset_factor_works() {
 
         // Check updates
         let cfg_after = ActiveInflationConfig::<Test>::get();
-        assert_eq!(cfg_after.decay_rate, new_decay_rate, "Decay rate should be reset to default");
-        assert_eq!(cfg_after.decay_factor, new_decay_factor, "Decay factor should be updated");
+        assert_eq!(
+            cfg_after.decay_rate, new_decay_rate,
+            "Decay rate should be reset to default"
+        );
+        assert_eq!(
+            cfg_after.decay_factor, new_decay_factor,
+            "Decay factor should be updated"
+        );
 
         let issuance_before = Balances::total_issuance();
         Inflation::on_initialize(1);
@@ -675,4 +693,3 @@ fn force_update_decay_rate_and_reset_factor_works() {
         lenient_balance_assert_eq!(issuance_now, issuance_before + total_expected_payout);
     });
 }
-
