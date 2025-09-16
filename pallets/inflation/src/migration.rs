@@ -56,6 +56,8 @@ mod v2 {
         fn on_runtime_upgrade() -> Weight {
             let decay_rate = DecayRate::get();
             let decay_factor = DecayFactor::get();
+            log::warn!("Decay Rate: {:?}", decay_rate);
+            log::warn!("Decay Factor: {:?}", decay_factor);
 
             // Add the _decay_rate_ to the inflation params
             let result =
@@ -112,6 +114,7 @@ mod v2 {
 
         #[cfg(feature = "try-runtime")]
         fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
+            log::warn!("pre_upgrade start");
             let old_config = v1::ActiveInflationConfig::<T>::get().ok_or_else(|| {
                 TryRuntimeError::Other(
                     "pallet-inflation::migration::v2: No old config found for ActiveInflationConfig",
@@ -128,6 +131,7 @@ mod v2 {
 
         #[cfg(feature = "try-runtime")]
         fn post_upgrade(data: Vec<u8>) -> Result<(), TryRuntimeError> {
+            log::warn!("post_upgrade start");
             // Decode the old values
             let (old_config, old_params): (InflationConfigurationV1, InflationParametersV1) =
                 Decode::decode(&mut &data[..]).map_err(|_| {
@@ -241,6 +245,7 @@ mod v2 {
                 "pallet-inflation::migration::v2: Wrong storage version."
             );
 
+            log::warn!("post_upgrade OK");
             Ok(())
         }
     }
