@@ -32,10 +32,10 @@ pub mod versioned_migrations {
 
     /// Migration V1 to V2 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
     /// the migration is only performed when on-chain version is 1.
-    pub type V1ToV2<T, DecayRate> = frame_support::migrations::VersionedMigration<
+    pub type V1ToV2<T, DecayRate, DecayFactor> = frame_support::migrations::VersionedMigration<
         1,
         2,
-        v2::VersionMigrateV1ToV2<T, DecayRate>,
+        v2::VersionMigrateV1ToV2<T, DecayRate, DecayFactor>,
         Pallet<T>,
         <T as frame_system::Config>::DbWeight,
     >;
@@ -48,54 +48,16 @@ mod v2 {
         InflationParameters as InflationParametersV1,
     };
 
-    pub struct VersionMigrateV1ToV2<T, DecayRate>(PhantomData<(T, DecayRate)>);
+    pub struct VersionMigrateV1ToV2<T, DecayRate, DecayFactor>(PhantomData<(T, DecayRate, DecayFactor)>);
 
-    impl<T: Config, DecayRate: Get<Perquintill>> UncheckedOnRuntimeUpgrade
-        for VersionMigrateV1ToV2<T, DecayRate>
+    impl<T: Config, DecayRate: Get<Perquintill>, DecayFactor: Get<Perquintill>> UncheckedOnRuntimeUpgrade
+        for VersionMigrateV1ToV2<T, DecayRate, DecayFactor>
     {
         fn on_runtime_upgrade() -> Weight {
             let decay_rate = DecayRate::get();
+            let decay_factor = DecayFactor::get();
 
-            // Add the decay rate to the active config
-            let result = ActiveInflationConfig::<T>::translate::<InflationConfigurationV1, _>(
-                |maybe_old_config| match maybe_old_config {
-                    Some(old_config) => Some(InflationConfiguration {
-                        recalculation_era: old_config.recalculation_era,
-                        issuance_safety_cap: old_config.issuance_safety_cap,
-                        collator_reward_per_block: old_config.collator_reward_per_block,
-                        treasury_reward_per_block: old_config.treasury_reward_per_block,
-                        dapp_reward_pool_per_era: old_config.dapp_reward_pool_per_era,
-                        base_staker_reward_pool_per_era: old_config.base_staker_reward_pool_per_era,
-                        adjustable_staker_reward_pool_per_era: old_config
-                            .adjustable_staker_reward_pool_per_era,
-                        bonus_reward_pool_per_period: old_config.bonus_reward_pool_per_period,
-                        ideal_staking_rate: old_config.ideal_staking_rate,
-                        decay_rate,
-                    }),
-                    _ => None,
-                },
-            );
-
-            match result {
-                Ok(maybe_config) => {
-                    if let Some(config) = maybe_config {
-                        let previous_max_emission =
-                            Pallet::<T>::derive_max_emission_from_config(&config);
-                        CycleMaxEmission::<T>::put(previous_max_emission);
-                    } else {
-                        log::error!(
-                            "Migration failed: No ActiveInflationConfig found during migration."
-                        );
-                        return T::DbWeight::get().reads_writes(1, 0);
-                    }
-                }
-                Err(_) => {
-                    log::error!("Failed to translate ActiveInflationConfig from previous V1 type to current V2 type. Check InflationConfigurationV1 decoding.");
-                    return T::DbWeight::get().reads_writes(1, 0);
-                }
-            }
-
-            // Add the decay rate to the inflation params
+            // Add the _decay_rate_ to the inflation params
             let result =
                 InflationParams::<T>::translate::<InflationParametersV1, _>(|maybe_old_params| {
                     match maybe_old_params {
@@ -116,10 +78,36 @@ mod v2 {
 
             if result.is_err() {
                 log::error!("Failed to translate InflationParams from previous V1 type to current V2 type. Check InflationParametersV1 decoding.");
-                return T::DbWeight::get().reads_writes(2, 2);
+                return T::DbWeight::get().reads_writes(1, 0);
             }
 
-            T::DbWeight::get().reads_writes(2, 3)
+            // Add the _decay_rate_ and _decay_factor_ to the active config
+            let result = ActiveInflationConfig::<T>::translate::<InflationConfigurationV1, _>(
+                |maybe_old_config| match maybe_old_config {
+                    Some(old_config) => Some(InflationConfiguration {
+                        recalculation_era: old_config.recalculation_era,
+                        issuance_safety_cap: old_config.issuance_safety_cap,
+                        collator_reward_per_block: old_config.collator_reward_per_block,
+                        treasury_reward_per_block: old_config.treasury_reward_per_block,
+                        dapp_reward_pool_per_era: old_config.dapp_reward_pool_per_era,
+                        base_staker_reward_pool_per_era: old_config.base_staker_reward_pool_per_era,
+                        adjustable_staker_reward_pool_per_era: old_config
+                            .adjustable_staker_reward_pool_per_era,
+                        bonus_reward_pool_per_period: old_config.bonus_reward_pool_per_period,
+                        ideal_staking_rate: old_config.ideal_staking_rate,
+                        decay_rate,
+                        decay_factor
+                    }),
+                    _ => None,
+                },
+            );
+
+            if result.is_err() {
+                log::error!("Failed to translate InflationConfiguration from previous V1 type to current V2 type. Check InflationConfigurationV1 decoding.");
+                return T::DbWeight::get().reads_writes(2, 1);
+            }
+
+            T::DbWeight::get().reads_writes(2, 2)
         }
 
         #[cfg(feature = "try-runtime")]
@@ -229,7 +217,7 @@ mod v2 {
                 "pallet-inflation::migration::v2: Ideal staking rate has changed in params"
             );
 
-            // Verify correct decay rate is applied
+            // Verify correct decay rate is initialized
             let expected_decay_rate = DecayRate::get();
             assert_eq!(
                 expected_decay_rate, new_params.decay_rate,
@@ -240,10 +228,11 @@ mod v2 {
                 "pallet-inflation::migration::v2: No correct decay rate in config"
             );
 
-            // Verify CycleMaxEmission init
-            assert!(
-                CycleMaxEmission::<T>::get() > 0,
-                "CycleMaxEmission should be initialized to a value greater than zero"
+            // Verify correct decay factor is initialized
+            let expected_decay_factor = DecayFactor::get();
+            assert_eq!(
+                expected_decay_factor, new_config.decay_factor,
+                "pallet-inflation::migration::v2: No correct decay factor in config"
             );
 
             // Verify storage version has been updated

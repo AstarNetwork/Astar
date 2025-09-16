@@ -61,6 +61,7 @@ fn initial_config<T: Config>() {
         bonus_reward_pool_per_period: 123987 * UNIT,
         ideal_staking_rate: Perquintill::from_percent(50),
         decay_rate: Perquintill::one(),
+        decay_factor: Perquintill::one(),
     };
 
     InflationParams::<T>::put(params);
@@ -116,15 +117,14 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn force_set_decay_rate() {
+    fn force_set_decay_factor() {
         initial_config::<T>();
-        let new_decay_rate = Perquintill::zero();
+        let decay_factor = Perquintill::zero();
 
         #[extrinsic_call]
-        _(RawOrigin::Root, new_decay_rate);
+        _(RawOrigin::Root, decay_factor);
 
-        let config = ActiveInflationConfig::<T>::get();
-        assert_last_event::<T>(Event::<T>::DecayRateUpdated { config }.into());
+        assert_last_event::<T>(Event::<T>::DecayFactorUpdated { decay_factor }.into());
     }
 
     #[benchmark]

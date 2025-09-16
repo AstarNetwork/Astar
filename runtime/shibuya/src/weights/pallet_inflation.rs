@@ -87,7 +87,7 @@ impl<T: frame_system::Config> pallet_inflation::WeightInfo for SubstrateWeight<T
 	}
 	/// Storage: `Inflation::InflationParams` (r:1 w:1)
 	/// Proof: `Inflation::InflationParams` (`max_values`: Some(1), `max_size`: Some(72), added: 567, mode: `MaxEncodedLen`)
-	fn force_set_decay_rate() -> Weight {
+	fn force_set_decay_factor() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `49`
 		//  Estimated: `1557`

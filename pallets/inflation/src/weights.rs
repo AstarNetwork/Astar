@@ -51,7 +51,7 @@ pub trait WeightInfo {
 	fn force_set_inflation_params() -> Weight;
 	fn force_inflation_recalculation() -> Weight;
 	fn force_readjust_config() -> Weight;
-	fn force_set_decay_rate() -> Weight;
+	fn force_set_decay_factor() -> Weight;
 	fn recalculation() -> Weight;
 	fn hooks_without_recalculation() -> Weight;
 }
@@ -91,7 +91,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Inflation::InflationParams` (r:1 w:1)
 	/// Proof: `Inflation::InflationParams` (`max_values`: Some(1), `max_size`: Some(72), added: 567, mode: `MaxEncodedLen`)
-	fn force_set_decay_rate() -> Weight {
+	fn force_set_decay_factor() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `49`
 		//  Estimated: `1557`
@@ -158,7 +158,7 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Inflation::InflationParams` (r:1 w:1)
 	/// Proof: `Inflation::InflationParams` (`max_values`: Some(1), `max_size`: Some(72), added: 567, mode: `MaxEncodedLen`)
-	fn force_set_decay_rate() -> Weight {
+	fn force_set_decay_factor() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `49`
 		//  Estimated: `1557`

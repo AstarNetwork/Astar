@@ -1750,11 +1750,12 @@ pub type Migrations = (Unreleased, Permanent);
 
 parameter_types! {
     pub const DecayRate: Perquintill = Perquintill::one();
+    pub const DecayFactor: Perquintill = Perquintill::one();
 }
 
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased =
-    (pallet_inflation::migration::versioned_migrations::V1ToV2<Runtime, DecayRate>,);
+    (pallet_inflation::migration::versioned_migrations::V1ToV2<Runtime, DecayRate, DecayFactor>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
