@@ -85,14 +85,6 @@ impl<T: frame_system::Config> pallet_inflation::WeightInfo for SubstrateWeight<T
 			.saturating_add(Weight::from_parts(0, 1557))
 			.saturating_add(T::DbWeight::get().reads(1))
 	}
-	fn force_set_decay_factor() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 8_743_000 picoseconds.
-		Weight::from_parts(8_932_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
-	}
 	/// Storage: `Inflation::InflationParams` (r:1 w:0)
 	/// Proof: `Inflation::InflationParams` (`max_values`: Some(1), `max_size`: Some(72), added: 567, mode: `MaxEncodedLen`)
 	fn recalculation() -> Weight {

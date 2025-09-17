@@ -117,17 +117,6 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn force_set_decay_factor() {
-        initial_config::<T>();
-        let decay_factor = Perquintill::zero();
-
-        #[extrinsic_call]
-        _(RawOrigin::Root, decay_factor);
-
-        assert_last_event::<T>(Event::<T>::DecayFactorUpdated { decay_factor }.into());
-    }
-
-    #[benchmark]
     fn recalculation() {
         initial_config::<T>();
 

@@ -341,26 +341,6 @@ pub mod pallet {
 
             Ok(().into())
         }
-
-        /// Used to force-set the decay factor for reward payouts.
-        ///
-        /// Must be called by `root` origin.
-        #[pallet::call_index(3)]
-        #[pallet::weight(T::WeightInfo::force_set_decay_factor())]
-        pub fn force_set_decay_factor(
-            origin: OriginFor<T>,
-            decay_factor: Perquintill,
-        ) -> DispatchResult {
-            ensure_root(origin)?;
-
-            ActiveInflationConfig::<T>::mutate(|config| {
-                config.decay_factor = decay_factor;
-            });
-
-            Self::deposit_event(Event::<T>::DecayFactorUpdated { decay_factor });
-
-            Ok(().into())
-        }
     }
 
     impl<T: Config> Pallet<T> {

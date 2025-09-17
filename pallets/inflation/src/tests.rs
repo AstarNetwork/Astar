@@ -546,38 +546,6 @@ fn on_initialize_decay_and_payout_works() {
     });
 }
 
-#[test]
-fn set_decay_factor_works() {
-    ExternalityBuilder::build().execute_with(|| {
-        // Sanity Check
-        assert_eq!(
-            ActiveInflationConfig::<Test>::get().decay_factor,
-            Perquintill::one()
-        );
-
-        assert_noop!(
-            Inflation::force_set_decay_factor(RuntimeOrigin::signed(1), Perquintill::one()),
-            BadOrigin
-        );
-
-        let new_decay_factor = Perquintill::from_percent(98);
-        assert_ok!(Inflation::force_set_decay_factor(
-            RuntimeOrigin::root(),
-            new_decay_factor
-        ));
-        System::assert_last_event(
-            Event::DecayFactorUpdated {
-                decay_factor: new_decay_factor,
-            }
-            .into(),
-        );
-        assert_eq!(
-            ActiveInflationConfig::<Test>::get().decay_factor,
-            new_decay_factor
-        );
-    })
-}
-
 // Test that the recalculation uses the original max_emission, not the decayed values
 #[test]
 fn force_readjust_config_with_decay_works() {
@@ -631,41 +599,32 @@ fn force_update_decay_rate_and_reset_factor_works() {
     ExternalityBuilder::build().execute_with(|| {
         // 1. Initial setup with 90% decay rate
         let initial_decay = Perquintill::from_percent(90);
+        let initial_factor = Perquintill::one();
         ActiveInflationConfig::<Test>::mutate(|config| {
+            config.decay_factor = Perquintill::one();
             config.decay_rate = initial_decay;
             config.collator_reward_per_block = 100;
             config.treasury_reward_per_block = 50;
         });
 
         let base_rewards = 100 + 50;
-        let mut expected_factor = Perquintill::one();
-
-        // Run 10 blocks with 90% decay
-        for block in 1..=10 {
-            Inflation::on_initialize(block);
-            expected_factor = expected_factor.saturating_mul(initial_decay);
-        }
+        Inflation::on_initialize(1);
 
         let cfg = ActiveInflationConfig::<Test>::get();
+        let expected_factor = initial_factor.saturating_mul(initial_decay);
         assert_eq!(cfg.decay_rate, initial_decay);
         assert_eq!(cfg.decay_factor, expected_factor);
 
         // 2. Root forced changes
         // Force-set inflation params to remove decay rate = 100%
         let new_decay_rate = Perquintill::one();
+        let params = InflationParams::<Test>::get();
         assert_ok!(Inflation::force_set_inflation_params(
             RuntimeOrigin::root(),
             InflationParameters {
                 decay_rate: new_decay_rate,
-                ..Default::default()
+                ..params
             }
-        ));
-
-        // Update decay factor manually to 50%
-        let new_decay_factor = Perquintill::from_percent(50);
-        assert_ok!(Inflation::force_set_decay_factor(
-            RuntimeOrigin::root(),
-            new_decay_factor
         ));
 
         // Force readjust config
@@ -677,15 +636,18 @@ fn force_update_decay_rate_and_reset_factor_works() {
             cfg_after.decay_rate, new_decay_rate,
             "Decay rate should be reset to default"
         );
-        assert_eq!(
-            cfg_after.decay_factor, new_decay_factor,
-            "Decay factor should be updated"
-        );
+
+        // Prepare same base rewards
+        ActiveInflationConfig::<Test>::mutate(|config| {
+            config.collator_reward_per_block = 100;
+            config.treasury_reward_per_block = 50;
+        });
 
         let issuance_before = Balances::total_issuance();
         Inflation::on_initialize(1);
-        let total_expected_payout = new_decay_factor.mul_floor(base_rewards);
         let issuance_now = Balances::total_issuance();
-        lenient_balance_assert_eq!(issuance_now, issuance_before + total_expected_payout);
+        let paid_out = issuance_now - issuance_before;
+        let expected_paid_out = expected_factor * base_rewards; // decay factor is preserved
+        lenient_balance_assert_eq!(paid_out, expected_paid_out);
     });
 }
