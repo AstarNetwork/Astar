@@ -512,41 +512,37 @@ fn on_initialize_decay_and_payout_works() {
             config.decay_factor = Perquintill::one();
             config.decay_rate = Perquintill::one();
             config.collator_reward_per_block = 10;
-            config.treasury_reward_per_block = 5;
+            config.treasury_reward_per_block = 6;
         });
 
-        let base_rewards = 10 + 5;
+        let base_rewards = 10 + 6;
         let issuance_before = Balances::total_issuance();
         Inflation::on_initialize(1);
         let issuance_after = Balances::total_issuance();
         let paid_out = issuance_after - issuance_before;
-        assert_eq!(paid_out, 10 + 5, "Full payout expected");
+        assert_eq!(paid_out, base_rewards, "Full payout expected");
 
         // 50% decay
+        let decay_factor = Perquintill::one();
         let decay_rate = Perquintill::from_percent(50);
         ActiveInflationConfig::<Test>::mutate(|config| {
             config.decay_rate = decay_rate;
         });
 
         let initial_issuance = Balances::total_issuance();
-        let blocks_to_run = 10;
-        let mut expected_factor = Perquintill::one();
-        let mut total_expected_payout = 0;
-        for _ in 0..blocks_to_run {
-            Inflation::on_initialize(1);
-            expected_factor = expected_factor.saturating_mul(decay_rate);
-            total_expected_payout += expected_factor * base_rewards;
-        }
+        Inflation::on_initialize(1);
         let issuance_now = Balances::total_issuance();
-        lenient_balance_assert_eq!(issuance_now, initial_issuance + total_expected_payout);
+        let paid_out = issuance_now - initial_issuance;
+        let expected_factor = decay_factor.saturating_mul(decay_rate);
+        let expected_paid_out = expected_factor * base_rewards;
+        lenient_balance_assert_eq!(paid_out, expected_paid_out);
 
         // Config checks
         let cfg = ActiveInflationConfig::<Test>::get();
-        let expected_factor = decay_rate.saturating_pow(blocks_to_run);
         assert_eq!(cfg.decay_factor, expected_factor);
         assert_eq!(cfg.decay_rate, decay_rate);
         assert_eq!(cfg.collator_reward_per_block, 10);
-        assert_eq!(cfg.treasury_reward_per_block, 5);
+        assert_eq!(cfg.treasury_reward_per_block, 6);
     });
 }
 

@@ -42,7 +42,7 @@ fn initial_config<T: Config>() {
         adjustable_stakers_part: Perquintill::from_percent(35),
         bonus_part: Perquintill::from_percent(12),
         ideal_staking_rate: Perquintill::from_percent(50),
-        decay_rate: Perquintill::one(),
+        decay_rate: Perquintill::from_percent(99),
     };
     assert!(params.is_valid());
 
@@ -60,7 +60,7 @@ fn initial_config<T: Config>() {
         adjustable_staker_reward_pool_per_era: 99999 * UNIT,
         bonus_reward_pool_per_period: 123987 * UNIT,
         ideal_staking_rate: Perquintill::from_percent(50),
-        decay_rate: Perquintill::one(),
+        decay_rate: Perquintill::from_percent(99),
         decay_factor: Perquintill::one(),
     };
 
