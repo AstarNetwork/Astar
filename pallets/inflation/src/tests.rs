@@ -280,7 +280,8 @@ fn inflation_recalculation_works() {
         let now = System::block_number();
 
         // Calculate new config
-        let new_config = Inflation::recalculate_inflation(now);
+        let decay_factor = Perquintill::one();
+        let new_config = Inflation::recalculate_inflation(now, decay_factor);
         let max_emission = params.max_inflation_rate * total_issuance;
 
         // Verify basics are ok
@@ -289,8 +290,7 @@ fn inflation_recalculation_works() {
             now + <Test as Config>::CycleConfiguration::eras_per_cycle()
         );
         assert_eq!(
-            new_config.decay_factor,
-            Perquintill::one(),
+            new_config.decay_factor, decay_factor,
             "Default decay factor expected."
         );
 

@@ -136,7 +136,7 @@ impl ExternalityBuilder {
         ext.execute_with(|| {
             // Set initial pallet inflation values
             InflationParams::<Test>::put(INIT_PARAMS);
-            let config = Inflation::recalculate_inflation(1);
+            let config = Inflation::recalculate_inflation(1, Perquintill::one());
             ActiveInflationConfig::<Test>::put(config);
 
             System::set_block_number(1);

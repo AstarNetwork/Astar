@@ -213,7 +213,8 @@ pub mod pallet {
             assert!(self.params.is_valid());
 
             let starting_era = 1;
-            let config = Pallet::<T>::recalculate_inflation(starting_era);
+            let starting_decay_factor = Perquintill::one();
+            let config = Pallet::<T>::recalculate_inflation(starting_era, starting_decay_factor);
 
             ActiveInflationConfig::<T>::put(config);
             InflationParams::<T>::put(self.params);
@@ -249,15 +250,12 @@ pub mod pallet {
             //
             // This should be done as late as possible, to ensure all operations that modify issuance are done.
             if let Some(next_era) = DoRecalculation::<T>::get() {
-                let current_config = ActiveInflationConfig::<T>::get();
-                let mut new_config = Self::recalculate_inflation(next_era);
-                // preserve the current decay factor
-                new_config.decay_factor = current_config.decay_factor;
-
-                ActiveInflationConfig::<T>::put(new_config.clone());
+                let decay_factor = ActiveInflationConfig::<T>::get().decay_factor;
+                let config = Self::recalculate_inflation(next_era, decay_factor);
+                ActiveInflationConfig::<T>::put(config.clone());
                 DoRecalculation::<T>::kill();
 
-                Self::deposit_event(Event::<T>::NewInflationConfiguration { config: new_config });
+                Self::deposit_event(Event::<T>::NewInflationConfiguration { config });
             }
 
             // NOTE: weight of the `on_finalize` logic with recalculation has to be covered by the observer notify call.
@@ -309,13 +307,11 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            let current_config = ActiveInflationConfig::<T>::get();
-            let mut new_config = Self::recalculate_inflation(next_era);
-            // preserve the current decay factor
-            new_config.decay_factor = current_config.decay_factor;
-            ActiveInflationConfig::<T>::put(new_config.clone());
+            let decay_factor = ActiveInflationConfig::<T>::get().decay_factor;
+            let config = Self::recalculate_inflation(next_era, decay_factor);
+            ActiveInflationConfig::<T>::put(config.clone());
 
-            Self::deposit_event(Event::<T>::ForcedInflationRecalculation { config: new_config });
+            Self::deposit_event(Event::<T>::ForcedInflationRecalculation { config });
 
             Ok(().into())
         }
@@ -369,8 +365,6 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         /// Payout block rewards to the beneficiaries applying the decay factor.
-        ///
-        /// Return the total amount issued.
         fn payout_block_rewards(config: &InflationConfiguration) {
             let collator_rewards = config.decay_factor * config.collator_reward_per_block;
             let treasury_rewards = config.decay_factor * config.treasury_reward_per_block;
@@ -384,8 +378,11 @@ pub mod pallet {
 
         /// Recalculates the inflation based on the current total issuance & inflation parameters.
         ///
-        /// Returns the new inflation configuration with default (no) decay factor.
-        pub(crate) fn recalculate_inflation(next_era: EraNumber) -> InflationConfiguration {
+        /// Returns the new inflation configuration.
+        pub(crate) fn recalculate_inflation(
+            next_era: EraNumber,
+            decay_factor: Perquintill,
+        ) -> InflationConfiguration {
             // Calculate max emission based on the current total issuance.
             let params = InflationParams::<T>::get();
             let total_issuance = T::Currency::total_issuance();
@@ -394,7 +391,7 @@ pub mod pallet {
             let recalculation_era =
                 next_era.saturating_add(T::CycleConfiguration::eras_per_cycle());
 
-            Self::new_config(recalculation_era, max_emission)
+            Self::new_config(recalculation_era, max_emission, decay_factor)
         }
 
         /// Re-adjust the existing inflation configuration using the current inflation parameters.
@@ -447,15 +444,14 @@ pub mod pallet {
                 .saturating_add(bonus_reward_pool);
 
             // 4. Calculate new inflation configuration
-            let mut new_config = Self::new_config(config.recalculation_era, max_emission);
-            new_config.decay_factor = config.decay_factor;
-            new_config
+            Self::new_config(config.recalculation_era, max_emission, config.decay_factor)
         }
 
         // Calculate new inflation configuration, based on the provided `max_emission`.
         fn new_config(
             recalculation_era: EraNumber,
             max_emission: Balance,
+            decay_factor: Perquintill,
         ) -> InflationConfiguration {
             let params = InflationParams::<T>::get();
 
@@ -517,7 +513,7 @@ pub mod pallet {
                 bonus_reward_pool_per_period,
                 ideal_staking_rate: params.ideal_staking_rate,
                 decay_rate: params.decay_rate,
-                decay_factor: Perquintill::one(),
+                decay_factor,
             };
             new_inflation_config.sanity_check();
 
