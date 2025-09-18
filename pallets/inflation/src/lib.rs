@@ -173,8 +173,6 @@ pub mod pallet {
         ForcedInflationRecalculation { config: InflationConfiguration },
         /// New inflation configuration has been set.
         NewInflationConfiguration { config: InflationConfiguration },
-        /// Inflation decay factor has been updated.
-        DecayFactorUpdated { decay_factor: Perquintill },
     }
 
     #[pallet::error]
@@ -713,6 +711,12 @@ impl Default for InflationParameters {
             adjustable_stakers_part: Perquintill::from_percent(35),
             bonus_part: Perquintill::from_percent(12),
             ideal_staking_rate: Perquintill::from_percent(50),
+
+            // Use non-default decay rate when benchmarking to measure decay calculation
+            #[cfg(feature = "runtime-benchmarks")]
+            decay_rate: Perquintill::from_percent(99),
+
+            #[cfg(not(feature = "runtime-benchmarks"))]
             decay_rate: Perquintill::one(),
         }
     }
