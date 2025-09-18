@@ -147,7 +147,9 @@ mod benchmarks {
             Pallet::<T>::on_finalize(block);
         }
 
-        assert_eq!(ActiveInflationConfig::<T>::get(), init_config);
+        let mut expected_config = init_config.clone();
+        expected_config.decay_factor = init_config.decay_factor * init_config.decay_rate;
+        assert_eq!(ActiveInflationConfig::<T>::get(), expected_config);
 
         // The 'sane' assumption is that at least something will be issued for treasury & collators
         assert!(T::Currency::total_issuance() > init_issuance);
