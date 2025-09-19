@@ -42,6 +42,7 @@ pub const INIT_PARAMS: InflationParameters = InflationParameters {
     adjustable_stakers_part: Perquintill::from_percent(35),
     bonus_part: Perquintill::from_percent(12),
     ideal_staking_rate: Perquintill::from_percent(50),
+    decay_rate: Perquintill::one(),
 };
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
@@ -135,7 +136,7 @@ impl ExternalityBuilder {
         ext.execute_with(|| {
             // Set initial pallet inflation values
             InflationParams::<Test>::put(INIT_PARAMS);
-            let config = Inflation::recalculate_inflation(1);
+            let config = Inflation::recalculate_inflation(1, Perquintill::one());
             ActiveInflationConfig::<Test>::put(config);
 
             System::set_block_number(1);
@@ -162,6 +163,29 @@ macro_rules! lenient_balance_assert_eq {
             ratio >= threshold,
             "Ratio of {:?} indicates a significant difference between old and new balances (expected >= {:?})",
             ratio, threshold,
+        );
+    }};
+}
+
+#[macro_export]
+macro_rules! lenient_perquintill_assert_eq {
+    ($x:expr, $y:expr) => {{
+        use sp_runtime::Permill;
+
+        let x_num: u128 = $x.deconstruct().into(); // Perquintill → u128 (0..=1e18)
+        let y_num: u128 = $y.deconstruct().into();
+
+        let ratio = if x_num > y_num {
+            Permill::from_rational(y_num, x_num)
+        } else {
+            Permill::from_rational(x_num, y_num)
+        };
+
+        let threshold = Permill::from_rational(999_u32, 1000); // ≥ 99.9%
+        assert!(
+            ratio >= threshold,
+            "Ratio of {:?} indicates a significant difference between {:?} and {:?} (expected >= {:?})",
+            ratio, $x, $y, threshold,
         );
     }};
 }

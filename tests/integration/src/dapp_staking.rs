@@ -19,6 +19,7 @@
 #![cfg(test)]
 
 use crate::setup::*;
+use sp_runtime::Perquintill;
 
 use pallet_collator_selection::{CandidateInfo, Candidates};
 use pallet_dapp_staking::*;
@@ -121,6 +122,43 @@ fn collator_selection_candidacy_not_possible_for_dapp_staking_participant() {
         assert_noop!(
             CollatorSelection::register_as_candidate(RuntimeOrigin::signed(ALICE.clone())),
             pallet_collator_selection::Error::<Runtime>::NotAllowedCandidate
+        );
+    });
+}
+
+#[test]
+fn no_inflation_rewards_with_zero_decay() {
+    new_test_ext().execute_with(|| {
+        let mut config = pallet_inflation::ActiveInflationConfig::<Runtime>::get();
+        config.decay_rate = Perquintill::zero();
+        pallet_inflation::ActiveInflationConfig::<Runtime>::put(config.clone());
+
+        let issuance_before = Balances::total_issuance();
+
+        // Advance eras on a block by block basis until subperiod is Voting again for bonus reward payouts
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+        assert_eq!(
+            ActiveProtocolState::<Runtime>::get().subperiod(),
+            Subperiod::BuildAndEarn,
+            "Sanity check."
+        );
+        while ActiveProtocolState::<Runtime>::get().subperiod() != Subperiod::Voting {
+            assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+            run_for_blocks(1);
+        }
+
+        let decay_factor = pallet_inflation::ActiveInflationConfig::<Runtime>::get().decay_factor;
+        assert_eq!(
+            decay_factor,
+            Perquintill::zero(),
+            "Decay factor must be zero"
+        );
+
+        let issuance_after = Balances::total_issuance();
+        assert_eq!(
+            issuance_before, issuance_after,
+            "No rewards should be minted"
         );
     });
 }
