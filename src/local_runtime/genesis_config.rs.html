@@ -182,6 +182,7 @@
 <a href="#182" id="182">182</a>
 <a href="#183" id="183">183</a>
 <a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -331,6 +332,7 @@
                 adjustable_stakers_part: Perquintill::from_percent(<span class="number">35</span>),
                 bonus_part: Perquintill::from_percent(<span class="number">12</span>),
                 ideal_staking_rate: Perquintill::from_percent(<span class="number">50</span>),
+                decay_rate: Perquintill::one(),
             },
             ..Default::default()
         },

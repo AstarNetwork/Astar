@@ -694,6 +694,42 @@
 <a href="#694" id="694">694</a>
 <a href="#695" id="695">695</a>
 <a href="#696" id="696">696</a>
+<a href="#697" id="697">697</a>
+<a href="#698" id="698">698</a>
+<a href="#699" id="699">699</a>
+<a href="#700" id="700">700</a>
+<a href="#701" id="701">701</a>
+<a href="#702" id="702">702</a>
+<a href="#703" id="703">703</a>
+<a href="#704" id="704">704</a>
+<a href="#705" id="705">705</a>
+<a href="#706" id="706">706</a>
+<a href="#707" id="707">707</a>
+<a href="#708" id="708">708</a>
+<a href="#709" id="709">709</a>
+<a href="#710" id="710">710</a>
+<a href="#711" id="711">711</a>
+<a href="#712" id="712">712</a>
+<a href="#713" id="713">713</a>
+<a href="#714" id="714">714</a>
+<a href="#715" id="715">715</a>
+<a href="#716" id="716">716</a>
+<a href="#717" id="717">717</a>
+<a href="#718" id="718">718</a>
+<a href="#719" id="719">719</a>
+<a href="#720" id="720">720</a>
+<a href="#721" id="721">721</a>
+<a href="#722" id="722">722</a>
+<a href="#723" id="723">723</a>
+<a href="#724" id="724">724</a>
+<a href="#725" id="725">725</a>
+<a href="#726" id="726">726</a>
+<a href="#727" id="727">727</a>
+<a href="#728" id="728">728</a>
+<a href="#729" id="729">729</a>
+<a href="#730" id="730">730</a>
+<a href="#731" id="731">731</a>
+<a href="#732" id="732">732</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -833,7 +869,7 @@
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
     <span class="doccomment">/// The current storage version.
-    </span><span class="kw">pub const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">1</span>);
+    </span><span class="kw">pub const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">2</span>);
 
     <span class="attr">#[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -907,7 +943,8 @@
             <span class="macro">assert!</span>(<span class="self">self</span>.params.is_valid());
 
             <span class="kw">let </span>starting_era = <span class="number">1</span>;
-            <span class="kw">let </span>config = Pallet::&lt;T&gt;::recalculate_inflation(starting_era);
+            <span class="kw">let </span>starting_decay_factor = Perquintill::one();
+            <span class="kw">let </span>config = Pallet::&lt;T&gt;::recalculate_inflation(starting_era, starting_decay_factor);
 
             ActiveInflationConfig::&lt;T&gt;::put(config);
             InflationParams::&lt;T&gt;::put(<span class="self">self</span>.params);
@@ -917,13 +954,22 @@
     <span class="attr">#[pallet::hooks]
     </span><span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
         <span class="kw">fn </span>on_initialize(_now: BlockNumberFor&lt;T&gt;) -&gt; Weight {
-            <span class="self">Self</span>::payout_block_rewards();
+            <span class="kw">let </span><span class="kw-2">mut </span>weight = T::DbWeight::get().reads(<span class="number">1</span>);
+            <span class="kw">let </span><span class="kw-2">mut </span>config = ActiveInflationConfig::&lt;T&gt;::get();
+
+            <span class="kw">if </span>config.decay_rate != Perquintill::one() {
+                config.decay_factor = config.decay_factor * config.decay_rate;
+                ActiveInflationConfig::&lt;T&gt;::put(config);
+                weight = weight.saturating_add(T::DbWeight::get().writes(<span class="number">1</span>));
+            }
+
+            <span class="self">Self</span>::payout_block_rewards(<span class="kw-2">&amp;</span>config);
 
             <span class="comment">// Benchmarks won't account for the whitelisted storage access so this needs to be added manually.
-            //
-            // ActiveInflationConfig - 1 DB read
             // DoRecalculation - 1 DB read
-            </span>&lt;T <span class="kw">as </span>frame_system::Config&gt;::DbWeight::get().reads(<span class="number">2</span>)
+            </span>weight = weight.saturating_add(&lt;T <span class="kw">as </span>frame_system::Config&gt;::DbWeight::get().reads(<span class="number">1</span>));
+
+            weight
         }
 
         <span class="kw">fn </span>on_finalize(_now: BlockNumberFor&lt;T&gt;) {
@@ -934,7 +980,8 @@
             //
             // This should be done as late as possible, to ensure all operations that modify issuance are done.
             </span><span class="kw">if let </span><span class="prelude-val">Some</span>(next_era) = DoRecalculation::&lt;T&gt;::get() {
-                <span class="kw">let </span>config = <span class="self">Self</span>::recalculate_inflation(next_era);
+                <span class="kw">let </span>decay_factor = ActiveInflationConfig::&lt;T&gt;::get().decay_factor;
+                <span class="kw">let </span>config = <span class="self">Self</span>::recalculate_inflation(next_era, decay_factor);
                 ActiveInflationConfig::&lt;T&gt;::put(config.clone());
                 DoRecalculation::&lt;T&gt;::kill();
 
@@ -990,8 +1037,8 @@
         ) -&gt; DispatchResult {
             ensure_root(origin)<span class="question-mark">?</span>;
 
-            <span class="kw">let </span>config = <span class="self">Self</span>::recalculate_inflation(next_era);
-
+            <span class="kw">let </span>decay_factor = ActiveInflationConfig::&lt;T&gt;::get().decay_factor;
+            <span class="kw">let </span>config = <span class="self">Self</span>::recalculate_inflation(next_era, decay_factor);
             ActiveInflationConfig::&lt;T&gt;::put(config.clone());
 
             <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::ForcedInflationRecalculation { config });
@@ -1027,25 +1074,25 @@
     }
 
     <span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-        <span class="doccomment">/// Payout block rewards to the beneficiaries.
-        ///
-        /// Return the total amount issued.
-        </span><span class="kw">fn </span>payout_block_rewards() -&gt; Balance {
-            <span class="kw">let </span>config = ActiveInflationConfig::&lt;T&gt;::get();
+        <span class="doccomment">/// Payout block rewards to the beneficiaries applying the decay factor.
+        </span><span class="kw">fn </span>payout_block_rewards(config: <span class="kw-2">&amp;</span>InflationConfiguration) {
+            <span class="kw">let </span>collator_rewards = config.decay_factor * config.collator_reward_per_block;
+            <span class="kw">let </span>treasury_rewards = config.decay_factor * config.treasury_reward_per_block;
 
-            <span class="kw">let </span>collator_amount = T::Currency::issue(config.collator_reward_per_block);
-            <span class="kw">let </span>treasury_amount = T::Currency::issue(config.treasury_reward_per_block);
+            <span class="kw">let </span>collator_amount = T::Currency::issue(collator_rewards);
+            <span class="kw">let </span>treasury_amount = T::Currency::issue(treasury_rewards);
 
             T::PayoutPerBlock::collators(collator_amount);
             T::PayoutPerBlock::treasury(treasury_amount);
-
-            config.collator_reward_per_block + config.treasury_reward_per_block
         }
 
         <span class="doccomment">/// Recalculates the inflation based on the current total issuance &amp; inflation parameters.
         ///
         /// Returns the new inflation configuration.
-        </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>recalculate_inflation(next_era: EraNumber) -&gt; InflationConfiguration {
+        </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>recalculate_inflation(
+            next_era: EraNumber,
+            decay_factor: Perquintill,
+        ) -&gt; InflationConfiguration {
             <span class="comment">// Calculate max emission based on the current total issuance.
             </span><span class="kw">let </span>params = InflationParams::&lt;T&gt;::get();
             <span class="kw">let </span>total_issuance = T::Currency::total_issuance();
@@ -1054,7 +1101,7 @@
             <span class="kw">let </span>recalculation_era =
                 next_era.saturating_add(T::CycleConfiguration::eras_per_cycle());
 
-            <span class="self">Self</span>::new_config(recalculation_era, max_emission)
+            <span class="self">Self</span>::new_config(recalculation_era, max_emission, decay_factor)
         }
 
         <span class="doccomment">/// Re-adjust the existing inflation configuration using the current inflation parameters.
@@ -1107,13 +1154,14 @@
                 .saturating_add(bonus_reward_pool);
 
             <span class="comment">// 4. Calculate new inflation configuration
-            </span><span class="self">Self</span>::new_config(config.recalculation_era, max_emission)
+            </span><span class="self">Self</span>::new_config(config.recalculation_era, max_emission, config.decay_factor)
         }
 
         <span class="comment">// Calculate new inflation configuration, based on the provided `max_emission`.
         </span><span class="kw">fn </span>new_config(
             recalculation_era: EraNumber,
             max_emission: Balance,
+            decay_factor: Perquintill,
         ) -&gt; InflationConfiguration {
             <span class="kw">let </span>params = InflationParams::&lt;T&gt;::get();
 
@@ -1174,6 +1222,8 @@
                 adjustable_staker_reward_pool_per_era,
                 bonus_reward_pool_per_period,
                 ideal_staking_rate: params.ideal_staking_rate,
+                decay_rate: params.decay_rate,
+                decay_factor,
             };
             new_inflation_config.sanity_check();
 
@@ -1208,15 +1258,18 @@
             <span class="kw">let </span>adjustment_factor = staked_ratio / config.ideal_staking_rate;
 
             <span class="kw">let </span>adjustable_part = adjustment_factor * config.adjustable_staker_reward_pool_per_era;
-            <span class="kw">let </span>staker_reward_pool = config
-                .base_staker_reward_pool_per_era
-                .saturating_add(adjustable_part);
+            <span class="kw">let </span>staker_reward_pool = config.decay_factor
+                * config
+                    .base_staker_reward_pool_per_era
+                    .saturating_add(adjustable_part);
+            <span class="kw">let </span>dapp_reward_pool = config.decay_factor * config.dapp_reward_pool_per_era;
 
-            (staker_reward_pool, config.dapp_reward_pool_per_era)
+            (staker_reward_pool, dapp_reward_pool)
         }
 
         <span class="kw">fn </span>bonus_reward_pool() -&gt; Balance {
-            ActiveInflationConfig::&lt;T&gt;::get().bonus_reward_pool_per_period
+            <span class="kw">let </span>config = ActiveInflationConfig::&lt;T&gt;::get();
+            config.decay_factor * config.bonus_reward_pool_per_period
         }
 
         <span class="kw">fn </span>payout_reward(account: <span class="kw-2">&amp;</span>T::AccountId, reward: Balance) -&gt; <span class="prelude-ty">Result</span>&lt;(), ()&gt; {
@@ -1267,6 +1320,14 @@
     /// Used to derive exact amount of adjustable staker rewards.
     </span><span class="attr">#[codec(compact)]
     </span><span class="kw">pub </span>ideal_staking_rate: Perquintill,
+    <span class="doccomment">/// Per-block decay rate applied to the decay factor.
+    /// A value of `Perquintill::one()` means no decay.
+    </span><span class="attr">#[codec(compact)]
+    </span><span class="kw">pub </span>decay_rate: Perquintill,
+    <span class="doccomment">/// Compounded decay multiplied into rewards when they are actually paid.
+    /// A value of `Perquintill::one()` means no decay.
+    </span><span class="attr">#[codec(compact)]
+    </span><span class="kw">pub </span>decay_factor: Perquintill,
 }
 
 <span class="kw">impl </span>InflationConfiguration {
@@ -1339,6 +1400,10 @@
     /// Used to derive exact amount of adjustable staker rewards.
     </span><span class="attr">#[codec(compact)]
     </span><span class="kw">pub </span>ideal_staking_rate: Perquintill,
+    <span class="doccomment">/// Per-block decay rate applied to all reward pools and per-block rewards.
+    /// A value of `Perquintill::one()` means no decay.
+    </span><span class="attr">#[codec(compact)]
+    </span><span class="kw">pub </span>decay_rate: Perquintill,
 }
 
 <span class="kw">impl </span>InflationParameters {
@@ -1378,6 +1443,13 @@
             adjustable_stakers_part: Perquintill::from_percent(<span class="number">35</span>),
             bonus_part: Perquintill::from_percent(<span class="number">12</span>),
             ideal_staking_rate: Perquintill::from_percent(<span class="number">50</span>),
+
+            <span class="comment">// Use non-default decay rate when benchmarking to measure decay calculation
+            </span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+            </span>decay_rate: Perquintill::from_percent(<span class="number">99</span>),
+
+            <span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
+            </span>decay_rate: Perquintill::one(),
         }
     }
 }

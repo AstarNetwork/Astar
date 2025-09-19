@@ -2828,6 +2828,12 @@
 <a href="#2828" id="2828">2828</a>
 <a href="#2829" id="2829">2829</a>
 <a href="#2830" id="2830">2830</a>
+<a href="#2831" id="2831">2831</a>
+<a href="#2832" id="2832">2832</a>
+<a href="#2833" id="2833">2833</a>
+<a href="#2834" id="2834">2834</a>
+<a href="#2835" id="2835">2835</a>
+<a href="#2836" id="2836">2836</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -4556,8 +4562,14 @@
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
+<span class="macro">parameter_types!</span> {
+    <span class="kw">pub const </span>DecayRate: Perquintill = Perquintill::one();
+    <span class="kw">pub const </span>DecayFactor: Perquintill = Perquintill::one();
+}
+
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = ();
+</span><span class="kw">pub type </span>Unreleased =
+    (pallet_inflation::migration::versioned_migrations::V1ToV2&lt;Runtime, DecayRate, DecayFactor&gt;,);
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);

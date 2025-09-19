@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["AdjustBlockRewardMigration"]};
+window.SIDEBAR_ITEMS = {"mod":["versioned_migrations"]};
