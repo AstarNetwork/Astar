@@ -21,6 +21,7 @@
 use super::*;
 use crate::Pallet as XcAssetConfig;
 
+use crate::types::MigrationStep;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
 use sp_std::boxed::Box;
@@ -94,6 +95,13 @@ benchmarks! {
         assert!(!AssetLocationUnitsPerSecond::<T>::contains_key(&asset_location.into_versioned()));
     }
 
+    update_migration_step {
+        let migration_step = MigrationStep::Ongoing;
+
+    }: _(RawOrigin::Root, migration_step)
+    verify {
+        assert_eq!(AssetHubMigrationStep::<T>::get(), migration_step);
+    }
 }
 
 #[cfg(test)]

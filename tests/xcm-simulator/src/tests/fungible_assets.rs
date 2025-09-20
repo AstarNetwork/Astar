@@ -17,7 +17,9 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::mocks::{parachain, relay_chain, *};
-use frame_support::{assert_ok, weights::Weight};
+use frame_support::{assert_noop, assert_ok, weights::Weight};
+use orml_xtokens::Error;
+use pallet_xc_asset_config::types::MigrationStep;
 use xcm::prelude::*;
 use xcm_simulator::TestExt;
 
@@ -1075,4 +1077,286 @@ fn transfer_relay_token_reserve_from_para_c_to_para_a() {
             to_para_a_amount - four_instructions_execution_cost
         );
     });
+}
+
+#[test]
+fn transfer_relay_token_reserve_from_para_a_to_para_b() {
+    MockNet::reset();
+
+    let source_location = (Parent,);
+    let relay_asset_id = 123_u128;
+    let alice = AccountId32 {
+        network: None,
+        id: ALICE.into(),
+    };
+
+    // Register relay asset in ParaA
+    ParaA::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location,
+            parent_account_id(),
+            Some(true),
+            Some(123),
+            Some(0)
+        ));
+    });
+
+    // register relay asset in ParaB
+    ParaB::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location,
+            parent_account_id(),
+            Some(true),
+            Some(123),
+            Some(0)
+        ));
+    });
+
+    // Send some of relay native asset to parachain A.
+    let withdraw_amount = 54321;
+    Relay::execute_with(|| {
+        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
+            relay_chain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parachain(1).into()),
+            Box::new(alice.into_location().into_versioned()),
+            Box::new((Here, withdraw_amount).into()),
+            0,
+            Unlimited,
+        ));
+    });
+
+    // Now set migration to Ongoing
+    ParaA::execute_with(|| {
+        assert_ok!(ParachainXcAssetConfig::update_migration_step(
+            parachain::RuntimeOrigin::root(),
+            MigrationStep::Ongoing
+        ));
+    });
+
+    // Send relay asset from Para A to Para B should fail
+    ParaA::execute_with(|| {
+        assert_noop!(
+            ParachainXtokens::transfer(
+                parachain::RuntimeOrigin::signed(ALICE.into()),
+                relay_asset_id,
+                withdraw_amount,
+                Box::new((Parent, Parachain(2), alice).into()),
+                Unlimited,
+            ),
+            Error::<parachain::Runtime>::AssetHasNoReserve
+        );
+    });
+
+    // Para A balances should not have been subtracted
+    ParaA::execute_with(|| {
+        assert_eq!(
+            parachain::Assets::balance(relay_asset_id, ALICE),
+            withdraw_amount
+        );
+    });
+
+    // Para B balances should not have been added
+    ParaB::execute_with(|| {
+        assert_eq!(parachain::Assets::balance(relay_asset_id, ALICE), 0);
+    });
+}
+
+#[test]
+fn transfer_relay_token_reserve_from_para_a_to_para_b_should_use_asset_hub_as_reserve() {
+    MockNet::reset();
+
+    let source_location = (Parent,);
+    let relay_asset_id = 123_u128;
+    let alice = AccountId32 {
+        network: None,
+        id: ALICE.into(),
+    };
+
+    // Register relay asset in ParaA
+    ParaA::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location,
+            parent_account_id(),
+            Some(true),
+            Some(123),
+            Some(0)
+        ));
+    });
+
+    // Register relay asset in ParaB
+    ParaB::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location,
+            parent_account_id(),
+            Some(true),
+            Some(123),
+            Some(0)
+        ));
+    });
+
+    // Register relay asset in ParaC
+    ParaC::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location,
+            parent_account_id(),
+            Some(true),
+            Some(123),
+            Some(0)
+        ));
+    });
+
+    // Next step is to fund the Sovereign account of ParaA in ParaC
+    // Send relay to Para C and then from Para C to Para A
+    // Or it will error with `FailedToTransactAsset("Funds are unavailable")`
+    let withdraw_amount = 50_000;
+    Relay::execute_with(|| {
+        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
+            relay_chain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parachain(1000).into()),
+            Box::new(alice.into_location().into_versioned()),
+            Box::new((Here, withdraw_amount).into()),
+            0,
+            Unlimited,
+        ));
+    });
+
+    ParaC::execute_with(|| {
+        let asset = Asset {
+            id: AssetId(Location::new(1, Here)),
+            fun: Fungible(withdraw_amount),
+        };
+        let beneficiary = Location::new(0, [alice.into()]);
+        let dest = Location::new(1, [Parachain(1)]);
+
+        let message = Xcm(vec![TransferReserveAsset {
+            assets: asset.clone().into(),
+            dest,
+            xcm: Xcm(vec![
+                BuyExecution {
+                    fees: asset,
+                    weight_limit: Unlimited,
+                },
+                DepositAsset {
+                    assets: Wild(AllCounted(1)),
+                    beneficiary,
+                },
+            ]),
+        }]);
+
+        assert_ok!(ParachainPalletXcm::execute(
+            parachain::RuntimeOrigin::signed(ALICE),
+            Box::new(VersionedXcm::from(message)),
+            Weight::from_parts(u64::MAX, 0),
+        ));
+    });
+
+    // Now set migration to Finished
+    ParaA::execute_with(|| {
+        assert_ok!(ParachainXcAssetConfig::update_migration_step(
+            parachain::RuntimeOrigin::root(),
+            MigrationStep::Finished
+        ));
+    });
+
+    // send relay asset from Para A to Para B should work
+    ParaA::execute_with(|| {
+        assert_ok!(ParachainXtokens::transfer(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            relay_asset_id,
+            withdraw_amount,
+            Box::new((Parent, Parachain(2), alice).into()),
+            Unlimited,
+        ));
+    });
+
+    // Para C Sovereign account should holds the relay chain tokens in para B sibling account
+    ParaC::execute_with(|| {
+        assert_eq!(
+            ParachainAssets::balance(relay_asset_id, &sibling_para_account_id(2)),
+            withdraw_amount
+        );
+    });
+
+    // Ensure ParaB sibling account in relay balance is 0
+    Relay::execute_with(|| {
+        assert_eq!(
+            ParachainAssets::balance(relay_asset_id, &child_para_account_id(2)),
+            0
+        );
+    });
+}
+
+#[test]
+fn relay_as_reserve_is_deactivate_during_and_after_migration() {
+    MockNet::reset();
+
+    let source_location = (Parent,);
+    let relay_asset_id = 123_u128;
+    let alice = AccountId32 {
+        network: None,
+        id: ALICE.into(),
+    };
+
+    // On parachain A create an asset which represents a derivative of relay native asset.
+    ParaA::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location,
+            parent_account_id(),
+            Some(true),
+            Some(123),
+            Some(0)
+        ));
+    });
+
+    // Transfer relay tokens to Para A during migration
+    ParaA::execute_with(|| {
+        assert_ok!(ParachainXcAssetConfig::update_migration_step(
+            parachain::RuntimeOrigin::root(),
+            MigrationStep::Ongoing
+        ));
+    });
+    let withdraw_amount = 50_000;
+    Relay::execute_with(|| {
+        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
+            relay_chain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parachain(1).into()),
+            Box::new(alice.into_location().into_versioned()),
+            Box::new((Here, withdraw_amount).into()),
+            0,
+            Unlimited,
+        ));
+    });
+
+    // Transfer relay tokens to Para A after migration
+    ParaA::execute_with(|| {
+        assert_ok!(ParachainXcAssetConfig::update_migration_step(
+            parachain::RuntimeOrigin::root(),
+            MigrationStep::Finished
+        ));
+    });
+    Relay::execute_with(|| {
+        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
+            relay_chain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parachain(1).into()),
+            Box::new(alice.into_location().into_versioned()),
+            Box::new((Here, withdraw_amount).into()),
+            0,
+            Unlimited,
+        ));
+    });
+
+    // Ensure Alice never got any tokens
+    ParaA::execute_with(|| assert_eq!(parachain::Assets::balance(relay_asset_id, ALICE), 0))
 }
