@@ -25,6 +25,7 @@ use frame_support::{
     traits::{Currency, OnInitialize},
 };
 use pallet_balances::Error as BalancesError;
+use sp_runtime::testing::UintAuthorityId;
 use sp_runtime::{traits::BadOrigin, BuildStorage};
 
 fn register_candidate_helper(who: u64) {
@@ -291,7 +292,15 @@ fn cannot_apply_for_candidacy_if_already_candidate() {
 fn cannot_apply_for_candidacy_if_poor() {
     new_test_ext().execute_with(|| {
         assert_eq!(Balances::free_balance(&3), 100);
-        assert_eq!(Balances::free_balance(&33), 0);
+        Balances::make_free_balance_be(&33, ExistentialDeposit::get());
+
+        assert_ok!(Session::set_keys(
+            RuntimeOrigin::signed(33),
+            MockSessionKeys {
+                aura: UintAuthorityId(33)
+            },
+            vec![]
+        ));
 
         // works
         register_candidate_helper(3);
@@ -401,6 +410,7 @@ fn approve_application_at_candidate_limit() {
 fn approve_checks_validator_keys() {
     new_test_ext().execute_with(|| {
         initialize_to_block(1);
+        Balances::make_free_balance_be(&10, 10000);
         // apply successfully
         assert_ok!(CollatorSelection::apply_for_candidacy(
             RuntimeOrigin::signed(3)
@@ -408,7 +418,7 @@ fn approve_checks_validator_keys() {
 
         // purge keys
         assert_ok!(Session::purge_keys(RuntimeOrigin::signed(3)));
-        initialize_to_block(110);
+        initialize_to_block(11);
 
         assert_noop!(
             CollatorSelection::approve_application(RuntimeOrigin::signed(RootAccount::get()), 3),
@@ -517,6 +527,8 @@ fn candidacy_application_and_approval_after_unbonding() {
 #[test]
 fn reject_application_works() {
     new_test_ext().execute_with(|| {
+        initialize_to_block(1);
+
         assert_ok!(CollatorSelection::apply_for_candidacy(
             RuntimeOrigin::signed(3)
         ));
