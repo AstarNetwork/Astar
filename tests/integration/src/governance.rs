@@ -16,7 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{propose_vote_and_close, setup::*};
+pub use crate::propose_vote_and_close;
+use crate::setup::*;
 
 use frame_support::{
     dispatch::GetDispatchInfo,

@@ -15,10 +15,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate as collator_selection;
+use crate::{self as collator_selection, PendingApplications};
 use crate::{
-    mock::*, CandidacyBond, CandidateInfo, Candidates, DesiredCandidates, Error, Invulnerables,
-    LastAuthoredBlock, NonCandidates, SlashDestination,
+    mock::*, CandidacyBond, CandidateInfo, Candidates, DesiredCandidates, Error, Event,
+    Invulnerables, LastAuthoredBlock, NonCandidates, SlashDestination,
 };
 use frame_support::{
     assert_noop, assert_ok,
@@ -31,10 +31,15 @@ fn register_candidate_helper(who: u64) {
     assert_ok!(CollatorSelection::apply_for_candidacy(
         RuntimeOrigin::signed(who)
     ));
+    // applicaiton exists
+    assert!(PendingApplications::<Test>::contains_key(who));
+
     assert_ok!(CollatorSelection::approve_application(
         RuntimeOrigin::signed(RootAccount::get()),
         who
     ));
+    // applicaiton should not exist anymore
+    assert!(!PendingApplications::<Test>::contains_key(who));
 }
 
 #[test]
@@ -224,6 +229,20 @@ fn cannot_unregister_or_kick_candidate_if_too_few() {
 }
 
 #[test]
+fn cannot_apply_for_candidacy_twice() {
+    new_test_ext().execute_with(|| {
+        assert_ok!(CollatorSelection::apply_for_candidacy(
+            RuntimeOrigin::signed(3)
+        ));
+
+        assert_noop!(
+            CollatorSelection::apply_for_candidacy(RuntimeOrigin::signed(3)),
+            Error::<Test>::PendingApplicationExists
+        );
+    });
+}
+
+#[test]
 fn cannot_apply_for_candidacy_if_invulnerable() {
     new_test_ext().execute_with(|| {
         assert_eq!(Invulnerables::<Test>::get(), vec![1, 2]);
@@ -319,6 +338,86 @@ fn candidacy_application_and_approval_works() {
 }
 
 #[test]
+fn cannot_approve_non_existent_application() {
+    new_test_ext().execute_with(|| {
+        assert_noop!(
+            CollatorSelection::approve_application(RuntimeOrigin::signed(RootAccount::get()), 3),
+            Error::<Test>::NoApplicationFound
+        );
+    });
+}
+
+#[test]
+fn cannot_approve_with_bad_origin() {
+    new_test_ext().execute_with(|| {
+        assert_ok!(CollatorSelection::apply_for_candidacy(
+            RuntimeOrigin::signed(3)
+        ));
+
+        assert_noop!(
+            CollatorSelection::approve_application(RuntimeOrigin::signed(1), 3),
+            sp_runtime::DispatchError::BadOrigin
+        );
+    });
+}
+
+#[test]
+fn approve_application_at_candidate_limit() {
+    new_test_ext().execute_with(|| {
+        // set desired candidates to 1
+        DesiredCandidates::<Test>::put(1);
+
+        // take two endowed, non-invulnerables accounts.
+        assert_eq!(Balances::free_balance(&3), 100);
+        assert_eq!(Balances::free_balance(&4), 100);
+
+        // apply for candidacy
+        assert_ok!(CollatorSelection::apply_for_candidacy(
+            RuntimeOrigin::signed(3)
+        ));
+        assert_ok!(CollatorSelection::apply_for_candidacy(
+            RuntimeOrigin::signed(4)
+        ));
+
+        // approve first - should work
+        assert_ok!(CollatorSelection::approve_application(
+            RuntimeOrigin::signed(RootAccount::get()),
+            3
+        ));
+
+        // approve second - should fail due to limit
+        assert_noop!(
+            CollatorSelection::approve_application(RuntimeOrigin::signed(RootAccount::get()), 4),
+            Error::<Test>::TooManyCandidates
+        );
+
+        assert_eq!(Candidates::<Test>::get().len(), 1);
+        // application should still exist
+        assert!(PendingApplications::<Test>::contains_key(4));
+    });
+}
+
+#[test]
+fn approve_checks_validator_keys() {
+    new_test_ext().execute_with(|| {
+        initialize_to_block(1);
+        // apply successfully
+        assert_ok!(CollatorSelection::apply_for_candidacy(
+            RuntimeOrigin::signed(3)
+        ));
+
+        // purge keys
+        assert_ok!(Session::purge_keys(RuntimeOrigin::signed(3)));
+        initialize_to_block(110);
+
+        assert_noop!(
+            CollatorSelection::approve_application(RuntimeOrigin::signed(RootAccount::get()), 3),
+            Error::<Test>::ValidatorNotRegistered
+        );
+    });
+}
+
+#[test]
 fn leave_intent() {
     new_test_ext().execute_with(|| {
         // register a candidate.
@@ -351,7 +450,7 @@ fn withdraw_unbond() {
     new_test_ext().execute_with(|| {
         // register a candidate.
         register_candidate_helper(3);
-        // register too so can leave above min candidates
+        // register another so can leave above min candidates
         register_candidate_helper(5);
         assert_ok!(CollatorSelection::leave_intent(RuntimeOrigin::signed(3)));
 
@@ -385,7 +484,7 @@ fn candidacy_application_and_approval_after_unbonding() {
     new_test_ext().execute_with(|| {
         // register a candidate.
         register_candidate_helper(3);
-        // register too so can leave above min candidates
+        // register another so can leave above min candidates
         register_candidate_helper(5);
         assert_eq!(Balances::free_balance(3), 90);
         assert_eq!(Balances::reserved_balance(3), 10);
@@ -413,6 +512,132 @@ fn candidacy_application_and_approval_after_unbonding() {
         assert_eq!(Balances::free_balance(3), 90);
         assert_eq!(Balances::reserved_balance(3), 10);
     })
+}
+
+#[test]
+fn reject_application_works() {
+    new_test_ext().execute_with(|| {
+        assert_ok!(CollatorSelection::apply_for_candidacy(
+            RuntimeOrigin::signed(3)
+        ));
+        assert_eq!(Balances::free_balance(3), 90);
+        assert_eq!(Balances::reserved_balance(3), 10);
+
+        // cannot reject with bad origin
+        assert_noop!(
+            CollatorSelection::reject_application(RuntimeOrigin::signed(1), 3),
+            BadOrigin
+        );
+
+        assert_ok!(CollatorSelection::reject_application(
+            RuntimeOrigin::signed(RootAccount::get()),
+            3
+        ));
+
+        assert_eq!(PendingApplications::<Test>::get(3), None);
+        assert_eq!(Balances::free_balance(3), 100);
+        assert_eq!(Balances::reserved_balance(3), 0);
+
+        // Check event
+        System::assert_last_event(RuntimeEvent::CollatorSelection(
+            crate::Event::CandidacyApplicationRejected(3),
+        ));
+    });
+}
+
+#[test]
+fn withdraw_application_works() {
+    new_test_ext().execute_with(|| {
+        initialize_to_block(1);
+
+        // apply first
+        assert_ok!(CollatorSelection::apply_for_candidacy(
+            RuntimeOrigin::signed(3)
+        ));
+        assert_eq!(Balances::free_balance(3), 90);
+        assert_eq!(Balances::reserved_balance(3), 10);
+
+        // cannot withdraw non-existent application
+        assert_noop!(
+            CollatorSelection::withdraw_application(RuntimeOrigin::signed(4)),
+            Error::<Test>::NoApplicationFound
+        );
+
+        // withdraw
+        assert_ok!(CollatorSelection::withdraw_application(
+            RuntimeOrigin::signed(3)
+        ));
+
+        assert_eq!(PendingApplications::<Test>::get(3), None);
+        assert_eq!(Balances::free_balance(3), 100);
+        assert_eq!(Balances::reserved_balance(3), 0);
+
+        // check event
+        System::assert_last_event(RuntimeEvent::CollatorSelection(
+            Event::CandidacyApplicationWithdrawn(3),
+        ));
+    });
+}
+
+#[test]
+fn kick_candidate_works() {
+    new_test_ext().execute_with(|| {
+        initialize_to_block(1);
+        DesiredCandidates::<Test>::put(3);
+        // minimum 1 candidate
+        assert_eq!(<Test as crate::Config>::MinCandidates::get(), 1);
+
+        register_candidate_helper(3);
+        register_candidate_helper(4);
+        register_candidate_helper(5);
+
+        assert_eq!(Candidates::<Test>::get().len(), 3);
+        assert_eq!(Balances::reserved_balance(3), 10);
+        assert_eq!(Balances::reserved_balance(4), 10);
+        assert_eq!(Balances::reserved_balance(5), 10);
+
+        // cannot kick with bad origin
+        assert_noop!(
+            CollatorSelection::kick_candidate(RuntimeOrigin::signed(1), 3),
+            BadOrigin
+        );
+        // cannot kick non-candidate
+        assert_noop!(
+            CollatorSelection::kick_candidate(RuntimeOrigin::signed(RootAccount::get()), 7),
+            Error::<Test>::NotCandidate
+        );
+
+        // kick 3
+        assert_ok!(CollatorSelection::kick_candidate(
+            RuntimeOrigin::signed(RootAccount::get()),
+            3
+        ));
+        // kick 4
+        assert_ok!(CollatorSelection::kick_candidate(
+            RuntimeOrigin::signed(RootAccount::get()),
+            4
+        ));
+        // try to kick 5, cannot kick if too few candidates
+        assert_noop!(
+            CollatorSelection::kick_candidate(RuntimeOrigin::signed(RootAccount::get()), 5),
+            Error::<Test>::TooFewCandidates
+        );
+
+        // Should be kicked and slashed immediately
+        assert_eq!(Candidates::<Test>::get().len(), 1);
+        assert_eq!(NonCandidates::<Test>::iter_keys().count(), 0);
+        // slashed 10% of 10 bond
+        assert_eq!(Balances::free_balance(4), 99);
+        assert_eq!(Balances::reserved_balance(4), 0);
+        // slashed 10% of 10 bond
+        assert_eq!(Balances::free_balance(3), 99);
+        assert_eq!(Balances::reserved_balance(3), 0);
+
+        // Check event
+        System::assert_last_event(RuntimeEvent::CollatorSelection(
+            crate::Event::CandidateKickedByCouncil(4),
+        ));
+    });
 }
 
 #[test]
@@ -687,5 +912,15 @@ fn set_slash_destination() {
             None,
         ));
         assert_eq!(SlashDestination::<Test>::get(), None);
+    });
+}
+
+#[test]
+fn deprecated_register_as_candidate_always_fails() {
+    new_test_ext().execute_with(|| {
+        assert_noop!(
+            CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)),
+            Error::<Test>::Permission
+        );
     });
 }

@@ -23,8 +23,8 @@ pub use frame_support::{
     traits::{OnFinalize, OnIdle, OnInitialize},
     weights::{Weight, WeightToFee as WeightToFeeT},
 };
-use parity_scale_codec::Encode;
-pub use sp_core::{sr25519, Get, H160};
+use parity_scale_codec::{Decode, Encode};
+pub use sp_core::{sr25519, Get, Pair, H160};
 pub use sp_runtime::{AccountId32, Digest, DigestItem, MultiAddress};
 
 use cumulus_primitives_core::{relay_chain::HeadData, PersistedValidationData};
@@ -110,7 +110,6 @@ pub use pallet_dapp_staking as DappStakingCall;
 pub use pallet_proxy::Event as ProxyEvent;
 pub use pallet_session::Call as SessionCall;
 pub use pallet_utility::{Call as UtilityCall, Event as UtilityEvent};
-use parity_scale_codec::Decode;
 use sp_runtime::traits::BlockNumberProvider;
 
 pub struct ExtBuilder {
@@ -145,6 +144,39 @@ impl ExtBuilder {
                 authorities: vec![GenesisAccount::<sr25519::Public>::from_seed("Alice")
                     .pub_key()
                     .into()],
+            },
+            &mut t,
+        )
+        .unwrap();
+
+        <pallet_session::GenesisConfig<Runtime> as BuildStorage>::assimilate_storage(
+            &pallet_session::GenesisConfig::<Runtime> {
+                keys: [ALICE, BOB, CAT]
+                    .iter()
+                    .map(|i| {
+                        (
+                            i.clone(),
+                            i.clone(),
+                            SessionKeys {
+                                aura: sr25519::Pair::from_seed_slice(i.encode().as_slice())
+                                    .unwrap()
+                                    .public()
+                                    .into(),
+                            },
+                        )
+                    })
+                    .collect::<_>(),
+                ..Default::default()
+            },
+            &mut t,
+        )
+        .unwrap();
+
+        <pallet_collator_selection::GenesisConfig<Runtime> as BuildStorage>::assimilate_storage(
+            &pallet_collator_selection::GenesisConfig::<Runtime> {
+                candidacy_bond: 100 * UNIT,
+                desired_candidates: 2,
+                ..Default::default()
             },
             &mut t,
         )

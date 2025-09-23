@@ -119,7 +119,7 @@ fn collator_selection_candidacy_not_possible_for_dapp_staking_participant() {
             1_000_000,
         ));
         assert_noop!(
-            CollatorSelection::register_as_candidate(RuntimeOrigin::signed(ALICE.clone())),
+            CollatorSelection::apply_for_candidacy(RuntimeOrigin::signed(ALICE.clone())),
             pallet_collator_selection::Error::<Runtime>::NotAllowedCandidate
         );
     });

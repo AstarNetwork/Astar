@@ -622,7 +622,6 @@ pub mod pallet {
 
             Self::is_validator_registered(&who)?;
 
-            // First authored block is current block plus kick threshold to handle session delay
             let incoming = CandidateInfo {
                 who: who.clone(),
                 deposit,
@@ -632,6 +631,7 @@ pub mod pallet {
                 candidates.push(incoming);
                 <LastAuthoredBlock<T>>::insert(
                     &who,
+                    // first authored block is current block plus kick threshold to handle session delay
                     frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
                 );
                 candidates.len()
