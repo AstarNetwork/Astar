@@ -112,7 +112,10 @@ pub mod pallet {
     };
     use frame_system::{pallet_prelude::*, Config as SystemConfig};
     use pallet_session::SessionManager;
-    use sp_runtime::{traits::Convert, Perbill};
+    use sp_runtime::{
+        traits::{BadOrigin, Convert},
+        Perbill,
+    };
     use sp_staking::SessionIndex;
     use sp_std::prelude::*;
 
@@ -308,10 +311,8 @@ pub mod pallet {
         CandidacyApplicationSubmitted(T::AccountId, BalanceOf<T>),
         /// A candidacy application was approved.
         CandidacyApplicationApproved(T::AccountId, BalanceOf<T>),
-        /// A candidacy application was withdrawn.
-        CandidacyApplicationWithdrawn(T::AccountId),
-        /// A candidacy application was rejected.
-        CandidacyApplicationRejected(T::AccountId),
+        /// A candidacy application was closed.
+        CandidacyApplicationClosed(T::AccountId),
         /// A candidate was kicked by council.
         CandidateKickedByCouncil(T::AccountId),
     }
@@ -580,21 +581,24 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Withdraw a pending candidacy application and unreserve the bond.
+        /// Close a pending candidacy application and unreserve the bond.
         ///
-        /// Can only be called by the account that submitted the application.
-        /// Only works for pending applications that have not been processed yet.
+        /// Can only be called by the account that submitted the application or
+        /// by governance.
         #[pallet::call_index(10)]
-        #[pallet::weight(T::WeightInfo::withdraw_bond())]
-        pub fn withdraw_application(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
+        #[pallet::weight(T::WeightInfo::reject_application())]
+        pub fn close_application(
+            origin: OriginFor<T>,
+            who: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            Self::ensure_governance_or_caller(origin, &who)?;
 
             let deposit =
                 PendingApplications::<T>::take(&who).ok_or(Error::<T>::NoApplicationFound)?;
 
             T::Currency::unreserve(&who, deposit);
 
-            Self::deposit_event(Event::CandidacyApplicationWithdrawn(who));
+            Self::deposit_event(Event::CandidacyApplicationClosed(who));
             Ok(().into())
         }
 
@@ -641,28 +645,6 @@ pub mod pallet {
             Ok(Some(T::WeightInfo::approve_application(current_count as u32)).into())
         }
 
-        /// Reject a pending candidacy application and unreserve the bond.
-        ///
-        /// This will remove the application from pending status and unreserve the
-        /// applicant's bond, effectively denying their candidacy request.
-        #[pallet::call_index(12)]
-        #[pallet::weight(T::WeightInfo::reject_application())]
-        pub fn reject_application(
-            origin: OriginFor<T>,
-            who: T::AccountId,
-        ) -> DispatchResultWithPostInfo {
-            T::GovernanceOrigin::ensure_origin(origin)?;
-
-            let deposit =
-                PendingApplications::<T>::take(&who).ok_or(Error::<T>::NoApplicationFound)?;
-
-            // Unreserve the bond
-            T::Currency::unreserve(&who, deposit);
-
-            Self::deposit_event(Event::CandidacyApplicationRejected(who));
-            Ok(().into())
-        }
-
         /// Forcibly remove a candidate from the active set.
         ///
         /// This will immediately remove the candidate from the candidates list and
@@ -671,7 +653,7 @@ pub mod pallet {
         ///
         /// This call will fail if removing the candidate would bring the total
         /// number of candidates below the minimum threshold.
-        #[pallet::call_index(13)]
+        #[pallet::call_index(12)]
         #[pallet::weight(T::WeightInfo::kick_candidate(T::MaxInvulnerables::get()))]
         pub fn kick_candidate(
             origin: OriginFor<T>,
@@ -694,6 +676,17 @@ pub mod pallet {
         /// Get a unique, inaccessible account id from the `PotId`.
         pub fn account_id() -> T::AccountId {
             T::PotId::get().into_account_truncating()
+        }
+
+        fn ensure_governance_or_caller(
+            origin: T::RuntimeOrigin,
+            who: &T::AccountId,
+        ) -> DispatchResult {
+            if T::GovernanceOrigin::ensure_origin(origin.clone()).is_err() {
+                let caller = ensure_signed(origin.clone())?;
+                ensure!(&caller == who, BadOrigin);
+            }
+            Ok(())
         }
 
         /// Checks if the account has a registered validator key.

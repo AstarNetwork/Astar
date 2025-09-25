@@ -525,68 +525,46 @@ fn candidacy_application_and_approval_after_unbonding() {
 }
 
 #[test]
-fn reject_application_works() {
+fn close_application_works() {
     new_test_ext().execute_with(|| {
         initialize_to_block(1);
 
         assert_ok!(CollatorSelection::apply_for_candidacy(
             RuntimeOrigin::signed(3)
         ));
-        assert_eq!(Balances::free_balance(3), 90);
-        assert_eq!(Balances::reserved_balance(3), 10);
+        assert_ok!(CollatorSelection::apply_for_candidacy(
+            RuntimeOrigin::signed(4)
+        ));
+        assert_eq!(Balances::free_balance(4), 90);
+        assert_eq!(Balances::reserved_balance(4), 10);
 
-        // cannot reject with bad origin
+        // cannot close someone else's application
         assert_noop!(
-            CollatorSelection::reject_application(RuntimeOrigin::signed(1), 3),
+            CollatorSelection::close_application(RuntimeOrigin::signed(1), 3),
             BadOrigin
         );
 
-        assert_ok!(CollatorSelection::reject_application(
-            RuntimeOrigin::signed(RootAccount::get()),
+        // should be able close own application
+        assert_ok!(CollatorSelection::close_application(
+            RuntimeOrigin::signed(3),
             3
         ));
 
+        // governance origin should be able close an application
+        assert_ok!(CollatorSelection::close_application(
+            RuntimeOrigin::signed(RootAccount::get()),
+            4
+        ));
+
         assert_eq!(PendingApplications::<Test>::get(3), None);
         assert_eq!(Balances::free_balance(3), 100);
+        assert_eq!(Balances::free_balance(4), 100);
         assert_eq!(Balances::reserved_balance(3), 0);
+        assert_eq!(Balances::reserved_balance(4), 0);
 
         // Check event
         System::assert_last_event(RuntimeEvent::CollatorSelection(
-            crate::Event::CandidacyApplicationRejected(3),
-        ));
-    });
-}
-
-#[test]
-fn withdraw_application_works() {
-    new_test_ext().execute_with(|| {
-        initialize_to_block(1);
-
-        // apply first
-        assert_ok!(CollatorSelection::apply_for_candidacy(
-            RuntimeOrigin::signed(3)
-        ));
-        assert_eq!(Balances::free_balance(3), 90);
-        assert_eq!(Balances::reserved_balance(3), 10);
-
-        // cannot withdraw non-existent application
-        assert_noop!(
-            CollatorSelection::withdraw_application(RuntimeOrigin::signed(4)),
-            Error::<Test>::NoApplicationFound
-        );
-
-        // withdraw
-        assert_ok!(CollatorSelection::withdraw_application(
-            RuntimeOrigin::signed(3)
-        ));
-
-        assert_eq!(PendingApplications::<Test>::get(3), None);
-        assert_eq!(Balances::free_balance(3), 100);
-        assert_eq!(Balances::reserved_balance(3), 0);
-
-        // check event
-        System::assert_last_event(RuntimeEvent::CollatorSelection(
-            Event::CandidacyApplicationWithdrawn(3),
+            crate::Event::CandidacyApplicationClosed(4),
         ));
     });
 }

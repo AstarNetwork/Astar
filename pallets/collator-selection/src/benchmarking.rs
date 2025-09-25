@@ -215,7 +215,8 @@ benchmarks! {
         assert_last_event::<T>(Event::CandidacyApplicationSubmitted(caller, bond / 2u32.into()).into());
     }
 
-    withdraw_application {
+    // worst case is when called by signed origin
+    close_application {
         <CandidacyBond<T>>::put(T::Currency::minimum_balance());
 
         let caller: T::AccountId = whitelisted_caller();
@@ -232,9 +233,9 @@ benchmarks! {
             RawOrigin::Signed(caller.clone()).into(),
         ).unwrap();
 
-    }: _(RawOrigin::Signed(caller.clone()))
+    }: _(RawOrigin::Signed(caller.clone()), caller.clone())
     verify {
-        assert_last_event::<T>(Event::CandidacyApplicationWithdrawn(caller).into());
+        assert_last_event::<T>(Event::CandidacyApplicationClosed(caller).into());
     }
 
     // worse case is when we have all the max-candidate slots filled except one, and we fill that
@@ -268,31 +269,6 @@ benchmarks! {
     }
     verify {
         assert_last_event::<T>(Event::CandidateAdded(caller, bond / 2u32.into()).into());
-    }
-
-    reject_application {
-        <CandidacyBond<T>>::put(T::Currency::minimum_balance());
-
-        let origin = T::GovernanceOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
-        let caller: T::AccountId = whitelisted_caller();
-        let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
-        T::Currency::make_free_balance_be(&caller, bond);
-
-        <session::Pallet<T>>::set_keys(
-            RawOrigin::Signed(caller.clone()).into(),
-            keys::<T>(1),
-            Vec::new()
-        ).unwrap();
-
-        <CollatorSelection<T>>::apply_for_candidacy(
-            RawOrigin::Signed(caller.clone()).into(),
-        ).unwrap();
-
-    }: {
-        assert_ok!(<CollatorSelection<T>>::reject_application(origin, caller.clone()));
-    }
-    verify {
-        assert_last_event::<T>(Event::CandidacyApplicationRejected(caller).into());
     }
 
     // worse case is the last candidate kicking.
