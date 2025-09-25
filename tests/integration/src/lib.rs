@@ -55,3 +55,6 @@ mod xcm_api;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod fees;
+
+#[cfg(any(feature = "shibuya", feature = "astar"))]
+mod collator_selection;
