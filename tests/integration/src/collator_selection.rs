@@ -26,7 +26,7 @@ use parity_scale_codec::Encode;
 use sp_runtime::traits::{BlakeTwo256, Dispatchable, Hash};
 
 #[test]
-fn council_can_approve_and_reject_collator_applications() {
+fn council_can_approve_and_close_collator_applications() {
     new_test_ext().execute_with(|| {
         let good_candidate = &CAT;
         let bad_candidate = &BOB;
@@ -58,7 +58,7 @@ fn council_can_approve_and_reject_collator_applications() {
 
         // 4. council rejects bad candidate
         let reject_call =
-            RuntimeCall::CollatorSelection(pallet_collator_selection::Call::reject_application {
+            RuntimeCall::CollatorSelection(pallet_collator_selection::Call::close_application {
                 who: bad_candidate.clone(),
             });
         propose_vote_and_close!(Council, reject_call, 1);
