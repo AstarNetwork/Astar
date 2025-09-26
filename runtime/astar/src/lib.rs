@@ -1009,6 +1009,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
     type ManagerOrigin = EnsureRoot<AccountId>;
+    type AssetHubMigrationUpdater = EnsureRootOrTwoThirdsTechnicalCommittee;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 

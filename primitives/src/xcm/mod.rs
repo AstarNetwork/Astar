@@ -48,6 +48,7 @@ use xcm_executor::traits::{MatchesFungibles, Properties, ShouldExecute, WeightTr
 // ORML imports
 use orml_traits::location::{RelativeReserveProvider, Reserve};
 
+use pallet_xc_asset_config::types::MigrationStep;
 use pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 
 #[cfg(test)]
@@ -200,23 +201,25 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> Drop for FixedRateOfForeignAsset<T
 /// Basically, we trust any cross-chain asset from any location to act as a reserve since
 /// in order to support the xc-asset, we need to first register it in the `XcAssetConfig` pallet.
 ///
-pub struct ReserveAssetFilter;
-impl ContainsPair<Asset, Location> for ReserveAssetFilter {
+pub struct ReserveAssetFilter<T>(PhantomData<T>);
+impl<MigrationGetter> ContainsPair<Asset, Location> for ReserveAssetFilter<MigrationGetter>
+where
+    MigrationGetter: Get<MigrationStep>,
+{
     fn contains(asset: &Asset, origin: &Location) -> bool {
-        // We assume that relay chain and sibling parachain assets are trusted reserves for their assets
-        let AssetId(location) = &asset.id;
-        let reserve_location = match (location.parents, location.first_interior()) {
-            // sibling parachain
-            (1, Some(Parachain(id))) => Some(Location::new(1, [Parachain(*id)])),
-            // relay chain
-            (1, _) => Some(Location::parent()),
-            _ => None,
-        };
+        // This call cost 1 db read. We don't take it into account because it is only temporary
+        // and will be removed after Shiden/Astar AH migration
+        let asset_hub_migration_step = MigrationGetter::get();
+        // We only accept relay chain as reserve for KSM/DOT before the migration
+        let allow_relay = matches!(asset_hub_migration_step, MigrationStep::NotStarted);
 
-        if let Some(ref reserve) = reserve_location {
-            origin == reserve
-        } else {
-            false
+        let AssetId(location) = &asset.id;
+        match (location.parents, location.first_interior()) {
+            // sibling parachain reserve
+            (1, Some(Parachain(id))) => origin == &Location::new(1, [Parachain(*id)]),
+            // relay chain reserve only before migration starts
+            (1, _) if allow_relay => origin == &Location::parent(),
+            _ => false,
         }
     }
 }
@@ -238,11 +241,10 @@ impl ContainsPair<Asset, Location> for DotFromAssetHub {
             )
     }
 }
-
 /// All locations we trust as reserves for particular assets.
-pub type Reserves = (
+pub type Reserves<T> = (
     // Trusted reserves and DOT from relay
-    ReserveAssetFilter,
+    ReserveAssetFilter<T>,
     // DOT from Asset Hub
     DotFromAssetHub,
 );
@@ -306,18 +308,34 @@ impl Convert<AccountId, Location> for AccountIdToMultiLocation {
 
 /// `Asset` reserve location provider. It's based on `RelativeReserveProvider` and in
 /// addition will convert self absolute location to relative location.
-pub struct AbsoluteAndRelativeReserveProvider<AbsoluteLocation>(PhantomData<AbsoluteLocation>);
-impl<AbsoluteLocation: Get<Location>> Reserve
-    for AbsoluteAndRelativeReserveProvider<AbsoluteLocation>
+pub struct AbsoluteAndRelativeReserveProvider<MigrationGetter, AbsoluteLocation>(
+    PhantomData<(MigrationGetter, AbsoluteLocation)>,
+);
+impl<MigrationGetter: Get<MigrationStep>, AbsoluteLocation: Get<Location>> Reserve
+    for AbsoluteAndRelativeReserveProvider<MigrationGetter, AbsoluteLocation>
 {
     fn reserve(asset: &Asset) -> Option<Location> {
-        RelativeReserveProvider::reserve(asset).map(|reserve_location| {
-            if reserve_location == AbsoluteLocation::get() {
-                Location::here()
-            } else {
-                reserve_location
+        // This call cost 1 db read. We don't take it into account because it is only temporary
+        // and will be removed after Shiden/Astar AH migration
+        let asset_hub_migration_step = MigrationGetter::get();
+        let reserve_location = RelativeReserveProvider::reserve(asset)?;
+
+        if reserve_location == AbsoluteLocation::get() {
+            return Some(Location::here());
+        }
+
+        let is_relay_token = reserve_location.parents == 1
+            && !matches!(reserve_location.first_interior(), Some(Parachain(_)));
+
+        match (is_relay_token, asset_hub_migration_step) {
+            // KSM/DOT token is not allowed to be transferred to sibling parachain as it will use relay as reserve during migration
+            (true, MigrationStep::Ongoing) => None,
+            // KSM/DOT reserve is Asset Hub when migration is finished
+            (true, MigrationStep::Finished) => {
+                Some(Location::new(1, [Parachain(ASSET_HUB_PARA_ID)]))
             }
-        })
+            _ => Some(reserve_location),
+        }
     }
 }
 
