@@ -2864,6 +2864,8 @@
 <a href="#2864" id="2864">2864</a>
 <a href="#2865" id="2865">2865</a>
 <a href="#2866" id="2866">2866</a>
+<a href="#2867" id="2867">2867</a>
+<a href="#2868" id="2868">2868</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -4032,6 +4034,8 @@
     <span class="kw">type </span>AssetId = AssetId;
     <span class="comment">// Good enough for testnet since we lack pallet-assets hooks for now
     </span><span class="kw">type </span>ManagerOrigin = EnsureRoot&lt;AccountId&gt;;
+    <span class="comment">// Good enough for testnet since it will only be relevant for shiden and astar
+    </span><span class="kw">type </span>AssetHubMigrationUpdater = EnsureRoot&lt;AccountId&gt;;
     <span class="kw">type </span>WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight&lt;<span class="self">Self</span>&gt;;
 }
 

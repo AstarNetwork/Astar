@@ -382,6 +382,24 @@
 <a href="#382" id="382">382</a>
 <a href="#383" id="383">383</a>
 <a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
+<a href="#386" id="386">386</a>
+<a href="#387" id="387">387</a>
+<a href="#388" id="388">388</a>
+<a href="#389" id="389">389</a>
+<a href="#390" id="390">390</a>
+<a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a>
+<a href="#394" id="394">394</a>
+<a href="#395" id="395">395</a>
+<a href="#396" id="396">396</a>
+<a href="#397" id="397">397</a>
+<a href="#398" id="398">398</a>
+<a href="#399" id="399">399</a>
+<a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
+<a href="#402" id="402">402</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -432,6 +450,7 @@
 <span class="comment">// ORML imports
 </span><span class="kw">use </span>orml_traits::location::{RelativeReserveProvider, Reserve};
 
+<span class="kw">use </span>pallet_xc_asset_config::types::MigrationStep;
 <span class="kw">use </span>pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 
 <span class="attr">#[cfg(test)]
@@ -584,24 +603,26 @@
 /// Basically, we trust any cross-chain asset from any location to act as a reserve since
 /// in order to support the xc-asset, we need to first register it in the `XcAssetConfig` pallet.
 ///
-</span><span class="kw">pub struct </span>ReserveAssetFilter;
-<span class="kw">impl </span>ContainsPair&lt;Asset, Location&gt; <span class="kw">for </span>ReserveAssetFilter {
+</span><span class="kw">pub struct </span>ReserveAssetFilter&lt;T&gt;(PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;MigrationGetter&gt; ContainsPair&lt;Asset, Location&gt; <span class="kw">for </span>ReserveAssetFilter&lt;MigrationGetter&gt;
+<span class="kw">where
+    </span>MigrationGetter: Get&lt;MigrationStep&gt;,
+{
     <span class="kw">fn </span>contains(asset: <span class="kw-2">&amp;</span>Asset, origin: <span class="kw-2">&amp;</span>Location) -&gt; bool {
-        <span class="comment">// We assume that relay chain and sibling parachain assets are trusted reserves for their assets
-        </span><span class="kw">let </span>AssetId(location) = <span class="kw-2">&amp;</span>asset.id;
-        <span class="kw">let </span>reserve_location = <span class="kw">match </span>(location.parents, location.first_interior()) {
-            <span class="comment">// sibling parachain
-            </span>(<span class="number">1</span>, <span class="prelude-val">Some</span>(Parachain(id))) =&gt; <span class="prelude-val">Some</span>(Location::new(<span class="number">1</span>, [Parachain(<span class="kw-2">*</span>id)])),
-            <span class="comment">// relay chain
-            </span>(<span class="number">1</span>, <span class="kw">_</span>) =&gt; <span class="prelude-val">Some</span>(Location::parent()),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
-        };
+        <span class="comment">// This call cost 1 db read. We don't take it into account because it is only temporary
+        // and will be removed after Shiden/Astar AH migration
+        </span><span class="kw">let </span>asset_hub_migration_step = MigrationGetter::get();
+        <span class="comment">// We only accept relay chain as reserve for KSM/DOT before the migration
+        </span><span class="kw">let </span>allow_relay = <span class="macro">matches!</span>(asset_hub_migration_step, MigrationStep::NotStarted);
 
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref </span>reserve) = reserve_location {
-            origin == reserve
-        } <span class="kw">else </span>{
-            <span class="bool-val">false
-        </span>}
+        <span class="kw">let </span>AssetId(location) = <span class="kw-2">&amp;</span>asset.id;
+        <span class="kw">match </span>(location.parents, location.first_interior()) {
+            <span class="comment">// sibling parachain reserve
+            </span>(<span class="number">1</span>, <span class="prelude-val">Some</span>(Parachain(id))) =&gt; origin == <span class="kw-2">&amp;</span>Location::new(<span class="number">1</span>, [Parachain(<span class="kw-2">*</span>id)]),
+            <span class="comment">// relay chain reserve only before migration starts
+            </span>(<span class="number">1</span>, <span class="kw">_</span>) <span class="kw">if </span>allow_relay =&gt; origin == <span class="kw-2">&amp;</span>Location::parent(),
+            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+        }
     }
 }
 
@@ -622,11 +643,10 @@
             )
     }
 }
-
 <span class="doccomment">/// All locations we trust as reserves for particular assets.
-</span><span class="kw">pub type </span>Reserves = (
+</span><span class="kw">pub type </span>Reserves&lt;T&gt; = (
     <span class="comment">// Trusted reserves and DOT from relay
-    </span>ReserveAssetFilter,
+    </span>ReserveAssetFilter&lt;T&gt;,
     <span class="comment">// DOT from Asset Hub
     </span>DotFromAssetHub,
 );
@@ -690,18 +710,34 @@
 
 <span class="doccomment">/// `Asset` reserve location provider. It's based on `RelativeReserveProvider` and in
 /// addition will convert self absolute location to relative location.
-</span><span class="kw">pub struct </span>AbsoluteAndRelativeReserveProvider&lt;AbsoluteLocation&gt;(PhantomData&lt;AbsoluteLocation&gt;);
-<span class="kw">impl</span>&lt;AbsoluteLocation: Get&lt;Location&gt;&gt; Reserve
-    <span class="kw">for </span>AbsoluteAndRelativeReserveProvider&lt;AbsoluteLocation&gt;
+</span><span class="kw">pub struct </span>AbsoluteAndRelativeReserveProvider&lt;MigrationGetter, AbsoluteLocation&gt;(
+    PhantomData&lt;(MigrationGetter, AbsoluteLocation)&gt;,
+);
+<span class="kw">impl</span>&lt;MigrationGetter: Get&lt;MigrationStep&gt;, AbsoluteLocation: Get&lt;Location&gt;&gt; Reserve
+    <span class="kw">for </span>AbsoluteAndRelativeReserveProvider&lt;MigrationGetter, AbsoluteLocation&gt;
 {
     <span class="kw">fn </span>reserve(asset: <span class="kw-2">&amp;</span>Asset) -&gt; <span class="prelude-ty">Option</span>&lt;Location&gt; {
-        RelativeReserveProvider::reserve(asset).map(|reserve_location| {
-            <span class="kw">if </span>reserve_location == AbsoluteLocation::get() {
-                Location::here()
-            } <span class="kw">else </span>{
-                reserve_location
+        <span class="comment">// This call cost 1 db read. We don't take it into account because it is only temporary
+        // and will be removed after Shiden/Astar AH migration
+        </span><span class="kw">let </span>asset_hub_migration_step = MigrationGetter::get();
+        <span class="kw">let </span>reserve_location = RelativeReserveProvider::reserve(asset)<span class="question-mark">?</span>;
+
+        <span class="kw">if </span>reserve_location == AbsoluteLocation::get() {
+            <span class="kw">return </span><span class="prelude-val">Some</span>(Location::here());
+        }
+
+        <span class="kw">let </span>is_relay_token = reserve_location.parents == <span class="number">1
+            </span>&amp;&amp; !<span class="macro">matches!</span>(reserve_location.first_interior(), <span class="prelude-val">Some</span>(Parachain(<span class="kw">_</span>)));
+
+        <span class="kw">match </span>(is_relay_token, asset_hub_migration_step) {
+            <span class="comment">// KSM/DOT token is not allowed to be transferred to sibling parachain as it will use relay as reserve during migration
+            </span>(<span class="bool-val">true</span>, MigrationStep::Ongoing) =&gt; <span class="prelude-val">None</span>,
+            <span class="comment">// KSM/DOT reserve is Asset Hub when migration is finished
+            </span>(<span class="bool-val">true</span>, MigrationStep::Finished) =&gt; {
+                <span class="prelude-val">Some</span>(Location::new(<span class="number">1</span>, [Parachain(ASSET_HUB_PARA_ID)]))
             }
-        })
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Some</span>(reserve_location),
+        }
     }
 }
 

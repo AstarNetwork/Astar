@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["AssetIdToLocation","AssetLocationToId","AssetLocationUnitsPerSecond"]};
+window.SIDEBAR_ITEMS = {"struct":["AssetHubMigrationStep","AssetIdToLocation","AssetLocationToId","AssetLocationUnitsPerSecond"]};
