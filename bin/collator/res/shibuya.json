@@ -17,8 +17,8 @@
     "tokenDecimals": 18,
     "tokenSymbol": "SBY"
   },
-  "relayChain": "tokyo",
-  "paraId": 1000,
+  "relayChain": "paseo",
+  "paraId": 2000,
   "consensusEngine": null,
   "codeSubstitutes": {},
   "badBlocks": [
