@@ -17,8 +17,8 @@
 
 use crate::{self as collator_selection, PendingApplications};
 use crate::{
-    mock::*, CandidacyBond, CandidateInfo, Candidates, DesiredCandidates, Error, Event,
-    Invulnerables, LastAuthoredBlock, NonCandidates, SlashDestination,
+    mock::*, CandidacyBond, CandidateInfo, Candidates, DesiredCandidates, Error, Invulnerables,
+    LastAuthoredBlock, NonCandidates, SlashDestination,
 };
 use frame_support::{
     assert_noop, assert_ok,

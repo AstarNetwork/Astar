@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{governance::propose_vote_and_close, setup::*};
+use crate::{propose_referendum_and_pass, propose_vote_and_close, setup::*};
 
 use frame_support::{assert_ok, dispatch::GetDispatchInfo};
 use pallet_collator_selection::{
@@ -25,66 +25,158 @@ use pallet_collator_selection::{
 use parity_scale_codec::Encode;
 use sp_runtime::traits::{BlakeTwo256, Dispatchable, Hash};
 
+fn test_approve_and_close_with<F>(mut execute_privileged: F)
+where
+    F: FnMut(RuntimeCall),
+{
+    let good_candidate = &CAT;
+    let bad_candidate = &BOB;
+    let bond = CandidacyBond::<Runtime>::get();
+
+    // 1. both candidates apply for candidacy
+    assert_ok!(RuntimeCall::CollatorSelection(
+        pallet_collator_selection::Call::apply_for_candidacy {}
+    )
+    .dispatch(RuntimeOrigin::signed(good_candidate.clone())));
+
+    assert_ok!(RuntimeCall::CollatorSelection(
+        pallet_collator_selection::Call::apply_for_candidacy {}
+    )
+    .dispatch(RuntimeOrigin::signed(bad_candidate.clone())));
+
+    // 2. verify both applications are pending
+    assert!(PendingApplications::<Runtime>::contains_key(good_candidate));
+    assert!(PendingApplications::<Runtime>::contains_key(bad_candidate));
+    assert_eq!(Balances::reserved_balance(good_candidate), bond);
+    assert_eq!(Balances::reserved_balance(bad_candidate), bond);
+
+    // 3. council approves good candidate
+    execute_privileged(RuntimeCall::CollatorSelection(
+        pallet_collator_selection::Call::approve_application {
+            who: good_candidate.clone(),
+        },
+    ));
+    // 4. council rejects bad candidate
+    execute_privileged(RuntimeCall::CollatorSelection(
+        pallet_collator_selection::Call::close_application {
+            who: bad_candidate.clone(),
+        },
+    ));
+
+    // 5. verify final state, no pending applications remain
+    assert_eq!(PendingApplications::<Runtime>::iter().count(), 0);
+    // only good candidate should be in candidates list
+    let candidates = Candidates::<Runtime>::get();
+    assert_eq!(candidates.len(), 1);
+    assert_eq!(candidates[0].who, *good_candidate);
+    // good candidate still reserved, bad application refunded
+    assert_eq!(Balances::reserved_balance(good_candidate), bond);
+    assert_eq!(Balances::reserved_balance(bad_candidate), 0);
+}
+
+fn test_kick_with<F>(mut execute_privileged: F)
+where
+    F: FnMut(RuntimeCall),
+{
+    let bond = CandidacyBond::<Runtime>::get();
+    let min_candidates = MinCandidates::get() as usize;
+
+    // 1. set desired candidates
+    DesiredCandidates::<Runtime>::put((min_candidates + 1) as u32);
+    // 2. mutate state to add min candidates
+    Candidates::<Runtime>::put(
+        (0..MinCandidates::get())
+            .map(|i| {
+                let i: u8 = i.try_into().unwrap();
+                CandidateInfo {
+                    who: AccountId32::new([i + 10_u8; 32]),
+                    deposit: bond,
+                }
+            })
+            .collect::<Vec<_>>(),
+    );
+
+    // 3. register candidate, BOB
+    assert_ok!(RuntimeCall::CollatorSelection(
+        pallet_collator_selection::Call::apply_for_candidacy {}
+    )
+    .dispatch(RuntimeOrigin::signed(BOB)));
+
+    execute_privileged(RuntimeCall::CollatorSelection(
+        pallet_collator_selection::Call::approve_application { who: BOB },
+    ));
+    assert_eq!(Candidates::<Runtime>::get().len(), min_candidates + 1);
+
+    // 4. kick BOB
+    execute_privileged(RuntimeCall::CollatorSelection(
+        pallet_collator_selection::Call::kick_candidate { who: BOB },
+    ));
+
+    // 5. verify final state
+    assert_eq!(Candidates::<Runtime>::get().len(), min_candidates);
+    assert_eq!(Balances::reserved_balance(BOB), 0);
+    assert_eq!(
+        Balances::free_balance(BOB),
+        INITIAL_AMOUNT - (SlashRatio::get() * bond)
+    );
+}
+
 #[test]
 fn council_can_approve_and_close_collator_applications() {
     new_test_ext().execute_with(|| {
-        let good_candidate = &CAT;
-        let bad_candidate = &BOB;
-        let bond = CandidacyBond::<Runtime>::get();
+        let mut proposal_index =
+            pallet_collective::ProposalCount::<Runtime, MainCouncilCollectiveInst>::get();
 
-        // 1. both candidates apply for candidacy
-        assert_ok!(RuntimeCall::CollatorSelection(
-            pallet_collator_selection::Call::apply_for_candidacy {}
-        )
-        .dispatch(RuntimeOrigin::signed(good_candidate.clone())));
+        test_approve_and_close_with(|call| {
+            propose_vote_and_close!(Council, call, proposal_index);
+            proposal_index += 1;
+        });
+    });
+}
 
-        assert_ok!(RuntimeCall::CollatorSelection(
-            pallet_collator_selection::Call::apply_for_candidacy {}
-        )
-        .dispatch(RuntimeOrigin::signed(bad_candidate.clone())));
-
-        // 2. verify both applications are pending
-        assert!(PendingApplications::<Runtime>::contains_key(good_candidate));
-        assert!(PendingApplications::<Runtime>::contains_key(bad_candidate));
-        assert_eq!(Balances::reserved_balance(good_candidate), bond);
-        assert_eq!(Balances::reserved_balance(bad_candidate), bond);
-
-        // 3. council approves good candidate
-        let approve_call =
-            RuntimeCall::CollatorSelection(pallet_collator_selection::Call::approve_application {
-                who: good_candidate.clone(),
-            });
-        propose_vote_and_close!(Council, approve_call, 0);
-
-        // 4. council rejects bad candidate
-        let reject_call =
-            RuntimeCall::CollatorSelection(pallet_collator_selection::Call::close_application {
-                who: bad_candidate.clone(),
-            });
-        propose_vote_and_close!(Council, reject_call, 1);
-
-        // 5. verify final state, no pending applications remain
-        assert_eq!(PendingApplications::<Runtime>::iter().count(), 0);
-
-        // only good candidate is in candidates list
-        let candidates = Candidates::<Runtime>::get();
-        assert_eq!(candidates.len(), 1);
-        assert_eq!(candidates[0].who, *good_candidate);
-
-        // Bond states: good candidate still reserved, bad candidate refunded
-        assert_eq!(Balances::reserved_balance(good_candidate), bond);
-        assert_eq!(Balances::reserved_balance(bad_candidate), 0);
+#[test]
+fn referendum_can_approve_and_close_collator_applications() {
+    new_test_ext().execute_with(|| {
+        test_approve_and_close_with(|call| {
+            propose_referendum_and_pass!(call);
+        });
     });
 }
 
 #[test]
 fn council_can_kick_candidates() {
     new_test_ext().execute_with(|| {
-        let bond = CandidacyBond::<Runtime>::get();
+        let mut proposal_index =
+            pallet_collective::ProposalCount::<Runtime, MainCouncilCollectiveInst>::get();
 
-        // 1. set desrired candidates to 1 & mutate state to add some candidates
-        // so we can kick from them later
-        DesiredCandidates::<Runtime>::put(6u32);
+        test_kick_with(|call| {
+            propose_vote_and_close!(Council, call, proposal_index);
+            proposal_index += 1;
+        });
+    });
+}
+
+#[test]
+fn referendum_can_kick_candidates() {
+    new_test_ext().execute_with(|| {
+        test_kick_with(|call| {
+            propose_referendum_and_pass!(call);
+        });
+    });
+}
+
+#[test]
+fn referendum_can_force_leave_candidates() {
+    new_test_ext().execute_with(|| {
+        run_for_blocks(1);
+
+        let session = pallet_session::CurrentIndex::<Runtime>::get();
+        let bond = CandidacyBond::<Runtime>::get();
+        let min_candidates = MinCandidates::get() as usize;
+
+        // 1. set desired candidates
+        DesiredCandidates::<Runtime>::put((min_candidates + 1) as u32);
+        // 2. mutate state to add min candidates
         Candidates::<Runtime>::put(
             (0..MinCandidates::get())
                 .map(|i| {
@@ -97,52 +189,37 @@ fn council_can_kick_candidates() {
                 .collect::<Vec<_>>(),
         );
 
-        // 2. register two candidates, BOB and CAT
-        //
-        // 2.1 both candidates apply for candidacy
+        // 3. register candidate, BOB
         assert_ok!(RuntimeCall::CollatorSelection(
             pallet_collator_selection::Call::apply_for_candidacy {}
         )
         .dispatch(RuntimeOrigin::signed(BOB)));
+
+        propose_referendum_and_pass!(RuntimeCall::CollatorSelection(
+            pallet_collator_selection::Call::approve_application { who: BOB },
+        ));
+        assert_eq!(Candidates::<Runtime>::get().len(), min_candidates + 1);
+
+        // 4. BOB forced to leave via referendum
+        propose_referendum_and_pass!(RuntimeCall::Utility(pallet_utility::Call::dispatch_as {
+            as_origin: Box::new(frame_system::RawOrigin::Signed(BOB).into()),
+            call: Box::new(RuntimeCall::CollatorSelection(
+                pallet_collator_selection::Call::leave_intent {}
+            )),
+        }));
+
+        // 5. verify final state
+        assert_eq!(Candidates::<Runtime>::get().len(), min_candidates);
+
+        // 6. can withdraw bond after session change as usual
+        // run_for_block is slow to execute, so manually bump session index
+        pallet_session::CurrentIndex::<Runtime>::put(session + 1);
         assert_ok!(RuntimeCall::CollatorSelection(
-            pallet_collator_selection::Call::apply_for_candidacy {}
+            pallet_collator_selection::Call::withdraw_bond {}
         )
-        .dispatch(RuntimeOrigin::signed(CAT)));
+        .dispatch(RuntimeOrigin::signed(BOB)));
 
-        // 2.2. approves candidate
-        propose_vote_and_close!(
-            Council,
-            RuntimeCall::CollatorSelection(pallet_collator_selection::Call::approve_application {
-                who: BOB,
-            }),
-            0
-        );
-        propose_vote_and_close!(
-            Council,
-            RuntimeCall::CollatorSelection(pallet_collator_selection::Call::approve_application {
-                who: CAT,
-            }),
-            1
-        );
-
-        // 3. verify we have two candidates
-        assert_eq!(Candidates::<Runtime>::get().len(), 6);
-
-        // 4. kick BOB
-        propose_vote_and_close!(
-            Council,
-            RuntimeCall::CollatorSelection(pallet_collator_selection::Call::kick_candidate {
-                who: BOB
-            }),
-            2
-        );
-
-        // 5. verify final state, only CAT remains
-        assert_eq!(Candidates::<Runtime>::get().len(), 5);
         assert_eq!(Balances::reserved_balance(BOB), 0);
-        assert_eq!(
-            Balances::free_balance(BOB),
-            INITIAL_AMOUNT - (SlashRatio::get() * bond)
-        );
+        assert_eq!(Balances::free_balance(BOB), INITIAL_AMOUNT);
     });
 }

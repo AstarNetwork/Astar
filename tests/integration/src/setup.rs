@@ -34,7 +34,8 @@ use sp_consensus_aura::{Slot, SlotDuration, AURA_ENGINE_ID};
 
 #[cfg(any(feature = "shibuya", feature = "astar"))]
 pub use astar_primitives::governance::{
-    CommunityCouncilMembershipInst, MainCouncilMembershipInst, TechnicalCommitteeMembershipInst,
+    CommunityCouncilMembershipInst, MainCouncilCollectiveInst, MainCouncilMembershipInst,
+    TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
 };
 pub use astar_primitives::{
     genesis::GenesisAccount, governance::OracleMembershipInst, oracle::Price, BlockNumber,
