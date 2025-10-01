@@ -289,7 +289,7 @@ benchmarks! {
         );
     }
     verify {
-        assert_last_event::<T>(Event::CandidateKickedByCouncil(leaving).into());
+        assert_last_event::<T>(Event::CandidateKicked(leaving).into());
     }
 
     // worse case is the last candidate leaving.

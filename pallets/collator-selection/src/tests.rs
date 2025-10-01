@@ -625,7 +625,7 @@ fn kick_candidate_works() {
 
         // Check event
         System::assert_last_event(RuntimeEvent::CollatorSelection(
-            crate::Event::CandidateKickedByCouncil(4),
+            crate::Event::CandidateKicked(4),
         ));
     });
 }

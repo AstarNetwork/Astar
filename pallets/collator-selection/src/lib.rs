@@ -30,9 +30,9 @@
 //! As of this version, collator candidacy requires governance approval:
 //! 1. Accounts must first apply via `apply_for_candidacy` (reserves bond)
 //! 2. Governance reviews and either approves via `approve_application` (directly adds to candidates)
-//!    or rejects via `reject_application` (unreserves bond)
-//! 3. Governance can force-remove candidates via `kick_candidate`
-//! 4. Users can withdraw pending applications via `withdraw_application` (only before processing)
+//!    or rejects via `close_application` (unreserves bond)
+//! 3. Governance can force-remove candidates with slashing via `kick_candidate`
+//! 4. Users can withdraw pending applications via `close_application` (only before processing)
 //!
 //! The old `register_as_candidate` extrinsic is deprecated and will fail with a Permission error.
 //!
@@ -46,7 +46,7 @@
 //! ## Governance Origins
 //!
 //! The pallet uses two configurable origins for governance actions:
-//! - `GovernanceOrigin`: Can approve/reject candidacy applications
+//! - `GovernanceOrigin`: Can approve/close candidacy applications
 //! - `ForceRemovalOrigin`: Can forcibly remove active candidates
 //!
 //! ## Implementation
@@ -313,8 +313,8 @@ pub mod pallet {
         CandidacyApplicationApproved(T::AccountId, BalanceOf<T>),
         /// A candidacy application was closed.
         CandidacyApplicationClosed(T::AccountId),
-        /// A candidate was kicked by council.
-        CandidateKickedByCouncil(T::AccountId),
+        /// A candidate was kicked.
+        CandidateKicked(T::AccountId),
     }
 
     // Errors inform users that something went wrong.
@@ -415,7 +415,7 @@ pub mod pallet {
         }
 
         /// Register this account as a collator candidate. The account must (a) already have
-        /// candidacy application approved and (b) already have registered session keys.
+        /// registered session keys and (b) be able to reserve the `CandidacyBond`.
         ///
         /// **DEPRECATED**: This extrinsic is deprecated and will be removed in a future version.
         /// Applications are now automatically processed when approved via `accept_application`.
@@ -584,9 +584,9 @@ pub mod pallet {
         /// Close a pending candidacy application and unreserve the bond.
         ///
         /// Can only be called by the account that submitted the application or
-        /// by governance.
+        /// by governance origin.
         #[pallet::call_index(10)]
-        #[pallet::weight(T::WeightInfo::reject_application())]
+        #[pallet::weight(T::WeightInfo::close_application())]
         pub fn close_application(
             origin: OriginFor<T>,
             who: T::AccountId,
@@ -648,8 +648,7 @@ pub mod pallet {
         /// Forcibly remove a candidate from the active set.
         ///
         /// This will immediately remove the candidate from the candidates list and
-        /// start the un-bonding process for their deposit. The candidate will also
-        /// be slashed according to the configured slash ratio.
+        /// unbond their deposit after slashing it accordigly to `SlashRatio`.
         ///
         /// This call will fail if removing the candidate would bring the total
         /// number of candidates below the minimum threshold.
@@ -667,7 +666,7 @@ pub mod pallet {
             let current_count = Self::try_remove_candidate(&who)?;
             Self::slash_non_candidate(&who);
 
-            Self::deposit_event(Event::CandidateKickedByCouncil(who));
+            Self::deposit_event(Event::CandidateKicked(who));
             Ok(Some(T::WeightInfo::kick_candidate(current_count as u32)).into())
         }
     }
