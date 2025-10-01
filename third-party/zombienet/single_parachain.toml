@@ -33,7 +33,7 @@ name = "dave"
 validator = true
 
 [[parachains]]
-id = 1000
+id = 2000
 # Replace this with whichever chain you need to run, e.g. `astar-dev` if you need Astar
 chain = "shibuya-dev"
 cumulus_based = true
