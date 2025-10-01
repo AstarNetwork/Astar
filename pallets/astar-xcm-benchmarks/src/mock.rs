@@ -29,6 +29,7 @@ use frame_support::{
 use frame_system::{EnsureRoot, EnsureSigned};
 
 use core::marker::PhantomData;
+use pallet_xc_asset_config::types::MigrationStep;
 use sp_core::{ConstU64, Get};
 use sp_runtime::traits::IdentityLookup;
 use xcm::latest::prelude::*;
@@ -184,13 +185,20 @@ parameter_types! {
     pub const UnitWeightCost: u64 = 10;
 }
 
+pub struct MigrationStepGetter;
+impl Get<MigrationStep> for MigrationStepGetter {
+    fn get() -> MigrationStep {
+        MigrationStep::NotStarted
+    }
+}
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = DevNull;
     type AssetTransactor = AssetTransactor;
     type OriginConverter = ();
-    type IsReserve = Reserves;
+    type IsReserve = Reserves<MigrationStepGetter>;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = AllowUnpaidExecutionFrom<Everything>;

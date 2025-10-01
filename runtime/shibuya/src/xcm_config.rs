@@ -33,7 +33,7 @@ use sp_runtime::traits::{Convert, MaybeEquivalence};
 
 // Polkadot imports
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
-use frame_support::traits::TransformOrigin;
+use frame_support::traits::{Get, TransformOrigin};
 use parachains_common::message_queue::ParaIdToSibling;
 use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use xcm::{latest::prelude::*, v5::ROCOCO_GENESIS_HASH};
@@ -54,8 +54,9 @@ use orml_xcm_support::DisabledParachainFee;
 // Astar imports
 use astar_primitives::xcm::{
     AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, AllowTopLevelPaidExecutionFrom,
-    FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler, MAX_ASSETS,
+    FixedRateOfForeignAsset, Reserves, XcmFungibleFeeHandler, MAX_ASSETS,
 };
+use pallet_xc_asset_config::types::MigrationStep;
 
 parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::ByGenesis(ROCOCO_GENESIS_HASH));
@@ -177,13 +178,20 @@ pub type ShibuyaXcmFungibleFeeHandler = XcmFungibleFeeHandler<
 pub type Weigher =
     WeightInfoBounds<weights::xcm::XcmWeight<Runtime, RuntimeCall>, RuntimeCall, MaxInstructions>;
 
+pub struct MigrationStepGetter;
+impl Get<MigrationStep> for MigrationStepGetter {
+    fn get() -> MigrationStep {
+        pallet_xc_asset_config::AssetHubMigrationStep::<Runtime>::get()
+    }
+}
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = ReserveAssetFilter;
+    type IsReserve = Reserves<MigrationStepGetter>;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
@@ -309,7 +317,8 @@ impl orml_xtokens::Config for Runtime {
     // Default impl. Refer to `orml-xtokens` docs for more details.
     type MinXcmFee = DisabledParachainFee;
     type LocationsFilter = Everything;
-    type ReserveProvider = AbsoluteAndRelativeReserveProvider<ShibuyaLocationAbsolute>;
+    type ReserveProvider =
+        AbsoluteAndRelativeReserveProvider<MigrationStepGetter, ShibuyaLocationAbsolute>;
     type RateLimiter = ();
     type RateLimiterId = ();
 }

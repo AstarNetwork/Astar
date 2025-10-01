@@ -60,6 +60,7 @@ use orml_xcm_support::DisabledParachainFee;
 
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
+use astar_primitives::xcm::ASSET_HUB_PARA_ID;
 use astar_primitives::{
     dapp_staking::{AccountCheck, CycleConfiguration, SmartContract, StakingRewardHandler},
     oracle::PriceProvider,
@@ -68,6 +69,7 @@ use astar_primitives::{
         Reserves, XcmFungibleFeeHandler,
     },
 };
+use pallet_xc_asset_config::types::MigrationStep;
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
@@ -307,6 +309,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
     type ManagerOrigin = EnsureRoot<AccountId>;
+    type AssetHubMigrationUpdater = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Runtime>;
 }
 
@@ -436,13 +439,20 @@ pub type ShidenXcmFungibleFeeHandler = XcmFungibleFeeHandler<
 
 pub type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 
+pub struct MigrationStepGetter;
+impl Get<MigrationStep> for MigrationStepGetter {
+    fn get() -> MigrationStep {
+        pallet_xc_asset_config::AssetHubMigrationStep::<Runtime>::get()
+    }
+}
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = Reserves;
+    type IsReserve = Reserves<MigrationStepGetter>;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
@@ -541,18 +551,32 @@ impl Convert<AssetId, Option<Location>> for AssetIdConvert {
 
 /// `Asset` reserve location provider. It's based on `RelativeReserveProvider` and in
 /// addition will convert self absolute location to relative location.
-pub struct AbsoluteAndRelativeReserveProvider<AbsoluteLocation>(PhantomData<AbsoluteLocation>);
-impl<AbsoluteLocation: Get<Location>> Reserve
-    for AbsoluteAndRelativeReserveProvider<AbsoluteLocation>
+pub struct AbsoluteAndRelativeReserveProvider<MigrationGetter, AbsoluteLocation>(
+    PhantomData<(MigrationGetter, AbsoluteLocation)>,
+);
+impl<MigrationGetter: Get<MigrationStep>, AbsoluteLocation: Get<Location>> Reserve
+    for AbsoluteAndRelativeReserveProvider<MigrationGetter, AbsoluteLocation>
 {
     fn reserve(asset: &Asset) -> Option<Location> {
-        RelativeReserveProvider::reserve(asset).map(|reserve_location| {
-            if reserve_location == AbsoluteLocation::get() {
-                Location::here()
-            } else {
-                reserve_location
+        let asset_hub_migration_step = MigrationGetter::get();
+        let reserve_location = RelativeReserveProvider::reserve(asset)?;
+
+        if reserve_location == AbsoluteLocation::get() {
+            return Some(Location::here());
+        }
+
+        let is_relay_token = reserve_location.parents == 1
+            && !matches!(reserve_location.first_interior(), Some(Parachain(_)));
+
+        match (is_relay_token, asset_hub_migration_step) {
+            // KSM/DOT token is not allowed to be transferred to sibling parachain as it will use relay as reserve during migration
+            (true, MigrationStep::Ongoing) => None,
+            // KSM/DOT reserve is Asset Hub when migration is finished
+            (true, MigrationStep::Finished) => {
+                Some(Location::new(1, [Parachain(ASSET_HUB_PARA_ID)]))
             }
-        })
+            _ => Some(reserve_location),
+        }
     }
 }
 
@@ -571,7 +595,8 @@ impl orml_xtokens::Config for Runtime {
     // Default impl. Refer to `orml-xtokens` docs for more details.
     type MinXcmFee = DisabledParachainFee;
     type LocationsFilter = Everything;
-    type ReserveProvider = AbsoluteAndRelativeReserveProvider<ShidenLocationAbsolute>;
+    type ReserveProvider =
+        AbsoluteAndRelativeReserveProvider<MigrationStepGetter, ShidenLocationAbsolute>;
     type RateLimiter = ();
     type RateLimiterId = ();
 }

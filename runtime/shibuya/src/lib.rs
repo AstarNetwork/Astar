@@ -211,7 +211,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("shibuya"),
     impl_name: Cow::Borrowed("shibuya"),
     authoring_version: 1,
-    spec_version: 1700,
+    spec_version: 1800,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -1168,6 +1168,8 @@ impl pallet_xc_asset_config::Config for Runtime {
     type AssetId = AssetId;
     // Good enough for testnet since we lack pallet-assets hooks for now
     type ManagerOrigin = EnsureRoot<AccountId>;
+    // Good enough for testnet since it will only be relevant for shiden and astar
+    type AssetHubMigrationUpdater = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
@@ -1750,8 +1752,14 @@ pub type Executive = frame_executive::Executive<
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
+parameter_types! {
+    pub const DecayRate: Perquintill = Perquintill::one();
+    pub const DecayFactor: Perquintill = Perquintill::one();
+}
+
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased =
+    (pallet_inflation::migration::versioned_migrations::V1ToV2<Runtime, DecayRate, DecayFactor>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);

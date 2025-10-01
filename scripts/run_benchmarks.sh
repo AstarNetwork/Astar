@@ -136,19 +136,22 @@ for chain in ${chains//,/ }; do
         --heap-pages=4096
       )
 
-      # Run benchmarks & generate the weight file as JSON.
-      OUTPUT=$(
-        "${BASE_COMMAND[@]}" --json-file="$JSON_WEIGHT_FILE" 2>&1
-      )
-      if [ $? -ne 0 ]; then
-        echo "$OUTPUT" >> "$ERR_FILE"
-        echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
-        continue
-      fi
+      # TODO: Uncomment and reuse output once benchmark command is updated to correctly calculate PoV
+      # using JSON file as the input. At the moment of updating this script, it doesn't work properly.
+      # Once it's fixed, return the '--json-input' to the commands below.
+      #
+      # # Run benchmarks & generate the weight file as JSON.
+      # OUTPUT=$(
+      #   "${BASE_COMMAND[@]}" --json-file="$JSON_WEIGHT_FILE" 2>&1
+      # )
+      # if [ $? -ne 0 ]; then
+      #   echo "$OUTPUT" >> "$ERR_FILE"
+      #   echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
+      #   continue
+      # fi
 
       OUTPUT=$(
         "${BASE_COMMAND[@]}" \
-          --json-input="$JSON_WEIGHT_FILE" \
           --output="$PALLET_WEIGHT_FILE" \
           --template=./scripts/templates/pallet-weight-template.hbs 2>&1
       )
@@ -159,7 +162,6 @@ for chain in ${chains//,/ }; do
 
       OUTPUT=$(
         "${BASE_COMMAND[@]}" \
-          --json-input="$JSON_WEIGHT_FILE" \
           --output="$RUNTIME_WEIGHT_FILE" \
           --template=./scripts/templates/runtime-weight-template.hbs 2>&1
       )

@@ -147,6 +147,7 @@ pub fn default_config() -> serde_json::Value {
                 adjustable_stakers_part: Perquintill::from_percent(35),
                 bonus_part: Perquintill::from_percent(12),
                 ideal_staking_rate: Perquintill::from_percent(50),
+                decay_rate: Perquintill::one(),
             },
             ..Default::default()
         },
