@@ -36,7 +36,7 @@ pub fn get_chain_spec() -> AstarChainSpec {
         wasm_binary_unwrap(),
         Extensions {
             bad_blocks: Default::default(),
-            relay_chain: "tokyo".into(),
+            relay_chain: "paseo".into(),
             para_id: ASTAR_ID,
         },
     )
