@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 /// Shibuya parachain Id used in production.
-pub const SHIBUYA_ID: u32 = 1000;
+pub const SHIBUYA_ID: u32 = 2000;
 /// Astar parachain Id used in production.
 pub const ASTAR_ID: u32 = 2006;
 /// Shiden parachain Id used in production.

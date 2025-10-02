@@ -180,16 +180,7 @@ impl SubstrateCli for RelayChainCli {
     }
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-        if id == "tokyo" {
-            Ok(Box::new(
-                polkadot_service::WestendChainSpec::from_json_bytes(
-                    &include_bytes!("../res/tokyo.raw.json")[..],
-                )
-                .unwrap(),
-            ))
-        } else {
-            polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
-        }
+        polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
     }
 }
 

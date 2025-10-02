@@ -24,7 +24,7 @@ chain = "rococo-local"
   validator = true
 
 [[parachains]]
-id = 1000
+id = 2000
 chain = "{{CHAIN}}"
 cumulus_based = true
 
