@@ -16,7 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{propose_vote_and_close, setup::*};
+use crate::setup::*;
+use crate::{prepare_referendum_for_execution, propose_vote_and_close};
 
 use frame_support::{
     dispatch::GetDispatchInfo,
@@ -227,49 +228,15 @@ fn simulate_chain_recovery() {
         let safe_mode_enter_call = RuntimeCall::SafeMode(pallet_safe_mode::Call::force_enter {});
         propose_vote_and_close!(TechnicalCommittee, safe_mode_enter_call, 0);
 
-        // 2. Now prepare a call that will "save" the chain.
+        // 2. Prepare the referendum that will "save" the chain.
         let transfer_amount = 1337;
-        let recovery_call = RuntimeCall::Balances(pallet_balances::Call::force_transfer {
-            source: BOB.clone().into(),
-            dest: ALICE.clone().into(),
-            value: transfer_amount,
-        });
-        let recovery_call_bounded = Preimage::bound(recovery_call).unwrap();
-
-        // 3. Use the council to prepare an external proposal
-        let external_propose_call =
-            RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority {
-                proposal: recovery_call_bounded.clone(),
-            });
-        propose_vote_and_close!(Council, external_propose_call, 0);
-
-        let next_external_proposal = pallet_democracy::NextExternal::<Runtime>::get().unwrap();
-        assert_eq!(
-            next_external_proposal.0, recovery_call_bounded,
-            "Call should have been put as the next external proposal."
-        );
-
-        // 4. Use tech committee to fast-track it
-        let (voting_period, delay) = (1, 1);
-        let fast_track_call = RuntimeCall::Democracy(pallet_democracy::Call::fast_track {
-            proposal_hash: next_external_proposal.0.hash(),
-            voting_period,
-            delay,
-        });
-        propose_vote_and_close!(TechnicalCommittee, fast_track_call, 1);
-
-        // 5. Vote for it, it must succeed
-        assert_ok!(RuntimeCall::Democracy(pallet_democracy::Call::vote {
-            ref_index: 0,
-            vote: AccountVote::Standard {
-                vote: Vote {
-                    aye: true,
-                    conviction: Conviction::Locked1x
-                },
-                balance: 1337
-            },
-        })
-        .dispatch(RuntimeOrigin::signed(ALICE.clone())));
+        let ref_index = prepare_referendum_for_execution!(RuntimeCall::Balances(
+            pallet_balances::Call::force_transfer {
+                source: BOB.clone().into(),
+                dest: ALICE.clone().into(),
+                value: transfer_amount,
+            }
+        ));
         let init_alice_balance = Balances::free_balance(&ALICE);
 
         // 6. Demonstrate it's possible to prevent votes using tx-pause.
@@ -279,7 +246,7 @@ fn simulate_chain_recovery() {
         propose_vote_and_close!(Council, tx_pause_proposal, 1);
         assert_noop!(
             RuntimeCall::Democracy(pallet_democracy::Call::vote {
-                ref_index: 0,
+                ref_index,
                 vote: AccountVote::Standard {
                     vote: Vote {
                         aye: true,
@@ -363,5 +330,71 @@ macro_rules! propose_vote_and_close {
             })
             .dispatch(RuntimeOrigin::signed(ALICE.clone())));
         }
+    }};
+}
+
+/// Macro to prepare a referendum for execution without completing it.
+///
+/// The referendum will be proposed by the main council, fast-tracked by the technical
+/// committee, and voted for by Alice with a standard conviction. The referendum index is
+/// returned so the caller can interact with it (e.g. pause voting) before it is executed.
+#[macro_export]
+macro_rules! prepare_referendum_for_execution {
+    ($call:expr) => {{
+        let call = $call.clone();
+        let bounded_call = <Preimage as frame_support::traits::StorePreimage>::bound(call.clone())
+            .expect("failed to bound preimage");
+
+        let proposal_hash = sp_runtime::traits::BlakeTwo256::hash_of(&call);
+
+        let council_index =
+            pallet_collective::ProposalCount::<Runtime, MainCouncilCollectiveInst>::get();
+        let external_propose_call =
+            RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority {
+                proposal: bounded_call.clone(),
+            });
+        propose_vote_and_close!(Council, external_propose_call, council_index);
+
+        let next_external = pallet_democracy::NextExternal::<Runtime>::get()
+            .expect("next external proposal not set");
+        assert_eq!(next_external.0, bounded_call);
+
+        let ref_index = pallet_democracy::ReferendumCount::<Runtime>::get();
+
+        let tech_committee_index =
+            pallet_collective::ProposalCount::<Runtime, TechnicalCommitteeCollectiveInst>::get();
+        let fast_track_call = RuntimeCall::Democracy(pallet_democracy::Call::fast_track {
+            proposal_hash,
+            voting_period: 1,
+            delay: 1,
+        });
+        propose_vote_and_close!(TechnicalCommittee, fast_track_call, tech_committee_index);
+
+        assert_ok!(RuntimeCall::Democracy(pallet_democracy::Call::vote {
+            ref_index,
+            vote: pallet_democracy::AccountVote::Standard {
+                vote: pallet_democracy::Vote {
+                    aye: true,
+                    conviction: pallet_democracy::Conviction::Locked1x,
+                },
+                balance: 1_337,
+            },
+        })
+        .dispatch(RuntimeOrigin::signed(ALICE.clone())));
+
+        ref_index
+    }};
+}
+
+/// Macro to propose a referendum, fast-track it and ensure it's executed successfully.
+///
+/// The referendum will be proposed by the main council, fast-tracked by the technical
+/// committee, voted for by Alice with a standard conviction, and blocks will advance to allow
+/// execution.
+#[macro_export]
+macro_rules! propose_referendum_and_pass {
+    ($call:expr) => {{
+        $crate::prepare_referendum_for_execution!($call);
+        $crate::setup::run_for_blocks(2);
     }};
 }
