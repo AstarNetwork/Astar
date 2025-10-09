@@ -93,10 +93,10 @@ use astar_primitives::{
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
         EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil,
-        EnsureRootOrTwoThirdsCommunityCouncil, EnsureRootOrTwoThirdsMainCouncil,
-        EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
-        MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
-        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+        EnsureRootOrThreeFourthMainCouncil, EnsureRootOrTwoThirdsCommunityCouncil,
+        EnsureRootOrTwoThirdsMainCouncil, EnsureRootOrTwoThirdsTechnicalCommittee,
+        MainCouncilCollectiveInst, MainCouncilMembershipInst, MainTreasuryInst,
+        OracleMembershipInst, TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -607,7 +607,7 @@ impl pallet_collator_selection::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type UpdateOrigin = EnsureRoot<AccountId>;
-    type ForceRemovalOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ForceRemovalOrigin = EnsureRootOrThreeFourthMainCouncil;
     type GovernanceOrigin = EnsureRootOrTwoThirdsMainCouncil;
     type PotId = PotId;
     type MaxCandidates = MaxCandidates;
