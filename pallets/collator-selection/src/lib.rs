@@ -532,8 +532,8 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Submit an application to become a collator candidate. The account must (a) already
-        /// have candidacy application approved and (b) already have registered session keys.
+        /// Submit an application to become a collator candidate. The account must already have
+        /// registered session keys.
         ///
         /// This call is not available to `Invulnerable` collators or exisiting candidates.
         #[pallet::call_index(9)]
