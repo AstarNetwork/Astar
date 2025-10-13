@@ -617,6 +617,11 @@ pub mod pallet {
             let deposit =
                 PendingApplications::<T>::take(&who).ok_or(Error::<T>::NoApplicationFound)?;
 
+            ensure!(
+                T::AccountCheck::allowed_candidacy(&who),
+                Error::<T>::NotAllowedCandidate
+            );
+
             // Check candidate limits
             let current_candidates = Candidates::<T>::decode_len().unwrap_or_default() as u32;
             ensure!(

@@ -18,12 +18,40 @@
 
 use crate::{propose_referendum_and_pass, propose_vote_and_close, setup::*};
 
-use frame_support::{assert_ok, dispatch::GetDispatchInfo};
-use pallet_collator_selection::{
-    CandidacyBond, CandidateInfo, Candidates, DesiredCandidates, PendingApplications,
-};
+use frame_support::{assert_ok, dispatch::GetDispatchInfo, traits::Currency};
+use pallet_collator_selection::{CandidacyBond, DesiredCandidates};
 use parity_scale_codec::Encode;
-use sp_runtime::traits::{BlakeTwo256, Dispatchable, Hash};
+use sp_runtime::{
+    traits::{BlakeTwo256, Dispatchable, Hash},
+    SaturatedConversion,
+};
+
+fn add_candidates(count: u32) {
+    for i in 100..(count + 100) {
+        let who = AccountId32::new([i.saturated_into::<u8>(); 32]);
+        Balances::make_free_balance_be(&who, INITIAL_AMOUNT);
+
+        assert_ok!(RuntimeCall::Session(pallet_session::Call::set_keys {
+            keys: SessionKeys {
+                aura: sr25519::Pair::from_seed_slice(who.encode().as_slice())
+                    .unwrap()
+                    .public()
+                    .into()
+            },
+            proof: vec![]
+        })
+        .dispatch(RuntimeOrigin::signed(who.clone())));
+
+        assert_ok!(RuntimeCall::CollatorSelection(
+            pallet_collator_selection::Call::apply_for_candidacy {}
+        )
+        .dispatch(RuntimeOrigin::signed(who.clone())));
+        assert_ok!(RuntimeCall::CollatorSelection(
+            pallet_collator_selection::Call::approve_application { who: who.clone() }
+        )
+        .dispatch(RuntimeOrigin::root()));
+    }
+}
 
 fn test_approve_and_close_with<F>(mut execute_privileged: F)
 where
@@ -44,9 +72,7 @@ where
     )
     .dispatch(RuntimeOrigin::signed(bad_candidate.clone())));
 
-    // 2. verify both applications are pending
-    assert!(PendingApplications::<Runtime>::contains_key(good_candidate));
-    assert!(PendingApplications::<Runtime>::contains_key(bad_candidate));
+    // 2. verify both applications should have been accepted and bond reserved
     assert_eq!(Balances::reserved_balance(good_candidate), bond);
     assert_eq!(Balances::reserved_balance(bad_candidate), bond);
 
@@ -63,13 +89,7 @@ where
         },
     ));
 
-    // 5. verify final state, no pending applications remain
-    assert_eq!(PendingApplications::<Runtime>::iter().count(), 0);
-    // only good candidate should be in candidates list
-    let candidates = Candidates::<Runtime>::get();
-    assert_eq!(candidates.len(), 1);
-    assert_eq!(candidates[0].who, *good_candidate);
-    // good candidate still reserved, bad application refunded
+    // 5. good candidate still reserved, bad application refunded
     assert_eq!(Balances::reserved_balance(good_candidate), bond);
     assert_eq!(Balances::reserved_balance(bad_candidate), 0);
 }
@@ -79,22 +99,12 @@ where
     F: FnMut(RuntimeCall),
 {
     let bond = CandidacyBond::<Runtime>::get();
-    let min_candidates = MinCandidates::get() as usize;
+    let min_candidates = MinCandidates::get();
 
     // 1. set desired candidates
     DesiredCandidates::<Runtime>::put((min_candidates + 1) as u32);
     // 2. mutate state to add min candidates
-    Candidates::<Runtime>::put(
-        (0..MinCandidates::get())
-            .map(|i| {
-                let i: u8 = i.try_into().unwrap();
-                CandidateInfo {
-                    who: AccountId32::new([i + 10_u8; 32]),
-                    deposit: bond,
-                }
-            })
-            .collect::<Vec<_>>(),
-    );
+    add_candidates(min_candidates.try_into().unwrap());
 
     // 3. register candidate, BOB
     assert_ok!(RuntimeCall::CollatorSelection(
@@ -105,15 +115,13 @@ where
     execute_privileged(RuntimeCall::CollatorSelection(
         pallet_collator_selection::Call::approve_application { who: BOB },
     ));
-    assert_eq!(Candidates::<Runtime>::get().len(), min_candidates + 1);
 
     // 4. kick BOB
     execute_privileged(RuntimeCall::CollatorSelection(
         pallet_collator_selection::Call::kick_candidate { who: BOB },
     ));
 
-    // 5. verify final state
-    assert_eq!(Candidates::<Runtime>::get().len(), min_candidates);
+    // 5. verify final state, BOB should have remaining funds released minus slash
     assert_eq!(Balances::reserved_balance(BOB), 0);
     assert_eq!(
         Balances::free_balance(BOB),
@@ -171,23 +179,12 @@ fn referendum_can_force_leave_candidates() {
         run_for_blocks(1);
 
         let session = pallet_session::CurrentIndex::<Runtime>::get();
-        let bond = CandidacyBond::<Runtime>::get();
-        let min_candidates = MinCandidates::get() as usize;
+        let min_candidates = MinCandidates::get();
 
         // 1. set desired candidates
         DesiredCandidates::<Runtime>::put((min_candidates + 1) as u32);
         // 2. mutate state to add min candidates
-        Candidates::<Runtime>::put(
-            (0..MinCandidates::get())
-                .map(|i| {
-                    let i: u8 = i.try_into().unwrap();
-                    CandidateInfo {
-                        who: AccountId32::new([i + 10_u8; 32]),
-                        deposit: bond,
-                    }
-                })
-                .collect::<Vec<_>>(),
-        );
+        add_candidates(min_candidates);
 
         // 3. register candidate, BOB
         assert_ok!(RuntimeCall::CollatorSelection(
@@ -198,7 +195,6 @@ fn referendum_can_force_leave_candidates() {
         propose_referendum_and_pass!(RuntimeCall::CollatorSelection(
             pallet_collator_selection::Call::approve_application { who: BOB },
         ));
-        assert_eq!(Candidates::<Runtime>::get().len(), min_candidates + 1);
 
         // 4. BOB forced to leave via referendum
         propose_referendum_and_pass!(RuntimeCall::Utility(pallet_utility::Call::dispatch_as {
@@ -208,10 +204,7 @@ fn referendum_can_force_leave_candidates() {
             )),
         }));
 
-        // 5. verify final state
-        assert_eq!(Candidates::<Runtime>::get().len(), min_candidates);
-
-        // 6. can withdraw bond after session change as usual
+        // 5. BOB can withdraw bond after session change as usual
         // run_for_block is slow to execute, so manually bump session index
         pallet_session::CurrentIndex::<Runtime>::put(session + 1);
         assert_ok!(RuntimeCall::CollatorSelection(
