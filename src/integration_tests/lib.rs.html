@@ -55,6 +55,9 @@
 <a href="#55" id="55">55</a>
 <a href="#56" id="56">56</a>
 <a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -112,4 +115,7 @@
 
 <span class="attr">#[cfg(any(feature = <span class="string">"shibuya"</span>, feature = <span class="string">"shiden"</span>, feature = <span class="string">"astar"</span>))]
 </span><span class="kw">mod </span>fees;
+
+<span class="attr">#[cfg(any(feature = <span class="string">"shibuya"</span>, feature = <span class="string">"astar"</span>))]
+</span><span class="kw">mod </span>collator_selection;
 </code></pre></div></section></main></body></html>

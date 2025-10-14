@@ -2835,6 +2835,8 @@
 <a href="#2835" id="2835">2835</a>
 <a href="#2836" id="2836">2836</a>
 <a href="#2837" id="2837">2837</a>
+<a href="#2838" id="2838">2838</a>
+<a href="#2839" id="2839">2839</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2930,10 +2932,10 @@
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
         EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil,
-        EnsureRootOrTwoThirdsCommunityCouncil, EnsureRootOrTwoThirdsMainCouncil,
-        EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
-        MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
-        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+        EnsureRootOrThreeFourthMainCouncil, EnsureRootOrTwoThirdsCommunityCouncil,
+        EnsureRootOrTwoThirdsMainCouncil, EnsureRootOrTwoThirdsTechnicalCommittee,
+        MainCouncilCollectiveInst, MainCouncilMembershipInst, MainTreasuryInst,
+        OracleMembershipInst, TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
@@ -3444,6 +3446,8 @@
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="kw">type </span>Currency = Balances;
     <span class="kw">type </span>UpdateOrigin = EnsureRoot&lt;AccountId&gt;;
+    <span class="kw">type </span>ForceRemovalOrigin = EnsureRootOrThreeFourthMainCouncil;
+    <span class="kw">type </span>GovernanceOrigin = EnsureRootOrTwoThirdsMainCouncil;
     <span class="kw">type </span>PotId = PotId;
     <span class="kw">type </span>MaxCandidates = MaxCandidates;
     <span class="kw">type </span>MinCandidates = MinCandidates;

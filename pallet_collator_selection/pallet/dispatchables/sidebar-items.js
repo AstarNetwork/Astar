@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["add_invulnerable","leave_intent","register_as_candidate","remove_invulnerable","set_candidacy_bond","set_desired_candidates","set_invulnerables","set_slash_destination","withdraw_bond"]};
+window.SIDEBAR_ITEMS = {"fn":["add_invulnerable","apply_for_candidacy","approve_application","close_application","kick_candidate","leave_intent","register_as_candidate","remove_invulnerable","set_candidacy_bond","set_desired_candidates","set_invulnerables","set_slash_destination","withdraw_bond"]};

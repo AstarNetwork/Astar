@@ -2866,6 +2866,9 @@
 <a href="#2866" id="2866">2866</a>
 <a href="#2867" id="2867">2867</a>
 <a href="#2868" id="2868">2868</a>
+<a href="#2869" id="2869">2869</a>
+<a href="#2870" id="2870">2870</a>
+<a href="#2871" id="2871">2871</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2958,7 +2961,8 @@
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
         EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrHalfCommunityCouncil,
         EnsureRootOrHalfMainCouncil, EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil,
-        EnsureRootOrHalfTechnicalCommittee, MainCouncilCollectiveInst, MainCouncilMembershipInst,
+        EnsureRootOrHalfTechnicalCommittee, EnsureRootOrThreeFourthMainCouncil,
+        EnsureRootOrTwoThirdsMainCouncil, MainCouncilCollectiveInst, MainCouncilMembershipInst,
         MainTreasuryInst, OracleMembershipInst, TechnicalCommitteeCollectiveInst,
         TechnicalCommitteeMembershipInst,
     },
@@ -3499,6 +3503,8 @@
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="kw">type </span>Currency = Balances;
     <span class="kw">type </span>UpdateOrigin = EnsureRoot&lt;AccountId&gt;;
+    <span class="kw">type </span>ForceRemovalOrigin = EnsureRootOrThreeFourthMainCouncil;
+    <span class="kw">type </span>GovernanceOrigin = EnsureRootOrTwoThirdsMainCouncil;
     <span class="kw">type </span>PotId = PotId;
     <span class="kw">type </span>MaxCandidates = MaxCandidates;
     <span class="kw">type </span>MinCandidates = MinCandidates;
