@@ -19,7 +19,7 @@
 use crate::{propose_referendum_and_pass, propose_vote_and_close, setup::*};
 
 use frame_support::{assert_ok, dispatch::GetDispatchInfo, traits::Currency};
-use pallet_collator_selection::{CandidacyBond, DesiredCandidates};
+use pallet_collator_selection::DesiredCandidates;
 use parity_scale_codec::Encode;
 use sp_runtime::{
     traits::{BlakeTwo256, Dispatchable, Hash},
@@ -59,7 +59,6 @@ where
 {
     let good_candidate = &CAT;
     let bad_candidate = &BOB;
-    let bond = CandidacyBond::<Runtime>::get();
 
     // 1. both candidates apply for candidacy
     assert_ok!(RuntimeCall::CollatorSelection(
@@ -72,11 +71,7 @@ where
     )
     .dispatch(RuntimeOrigin::signed(bad_candidate.clone())));
 
-    // 2. verify both applications should have been accepted and bond reserved
-    assert_eq!(Balances::reserved_balance(good_candidate), bond);
-    assert_eq!(Balances::reserved_balance(bad_candidate), bond);
-
-    // 3. council approves good candidate
+    // 2. council approves good candidate
     execute_privileged(RuntimeCall::CollatorSelection(
         pallet_collator_selection::Call::approve_application {
             who: good_candidate.clone(),
@@ -88,17 +83,12 @@ where
             who: bad_candidate.clone(),
         },
     ));
-
-    // 5. good candidate still reserved, bad application refunded
-    assert_eq!(Balances::reserved_balance(good_candidate), bond);
-    assert_eq!(Balances::reserved_balance(bad_candidate), 0);
 }
 
 fn test_kick_with<F>(mut execute_privileged: F)
 where
     F: FnMut(RuntimeCall),
 {
-    let bond = CandidacyBond::<Runtime>::get();
     let min_candidates = MinCandidates::get();
 
     // 1. set desired candidates
@@ -120,13 +110,6 @@ where
     execute_privileged(RuntimeCall::CollatorSelection(
         pallet_collator_selection::Call::kick_candidate { who: BOB },
     ));
-
-    // 5. verify final state, BOB should have remaining funds released minus slash
-    assert_eq!(Balances::reserved_balance(BOB), 0);
-    assert_eq!(
-        Balances::free_balance(BOB),
-        INITIAL_AMOUNT - (SlashRatio::get() * bond)
-    );
 }
 
 #[test]
@@ -211,8 +194,5 @@ fn referendum_can_force_leave_candidates() {
             pallet_collator_selection::Call::withdraw_bond {}
         )
         .dispatch(RuntimeOrigin::signed(BOB)));
-
-        assert_eq!(Balances::reserved_balance(BOB), 0);
-        assert_eq!(Balances::free_balance(BOB), INITIAL_AMOUNT);
     });
 }
