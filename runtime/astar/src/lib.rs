@@ -1735,7 +1735,8 @@ parameter_types! {
 }
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased =
+    (pallet_inflation::migration::versioned_migrations::V1ToV2<Runtime, DecayRate, DecayFactor>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
