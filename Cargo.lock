@@ -600,7 +600,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "18.0.0"
+version = "19.0.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -638,7 +638,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-chain-extension-assets",
- "pallet-collator-selection 3.3.2",
+ "pallet-collator-selection 4.0.0",
  "pallet-collective",
  "pallet-collective-proxy",
  "pallet-contracts",
@@ -6013,7 +6013,7 @@ dependencies = [
  "pallet-assets",
  "pallet-aura",
  "pallet-balances",
- "pallet-collator-selection 3.3.2",
+ "pallet-collator-selection 4.0.0",
  "pallet-collective",
  "pallet-collective-proxy",
  "pallet-contracts",
@@ -8986,7 +8986,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-collator-selection"
-version = "3.3.2"
+version = "4.0.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -15252,7 +15252,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "18.0.0"
+version = "19.0.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -15291,7 +15291,7 @@ dependencies = [
  "pallet-balances",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-unified-accounts",
- "pallet-collator-selection 3.3.2",
+ "pallet-collator-selection 4.0.0",
  "pallet-collective",
  "pallet-collective-proxy",
  "pallet-contracts",
@@ -15376,7 +15376,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "18.0.0"
+version = "19.0.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -15414,7 +15414,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-chain-extension-assets",
- "pallet-collator-selection 3.3.2",
+ "pallet-collator-selection 4.0.0",
  "pallet-contracts",
  "pallet-dapp-staking",
  "pallet-dynamic-evm-base-fee",
