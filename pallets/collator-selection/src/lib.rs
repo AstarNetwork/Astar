@@ -669,6 +669,8 @@ pub mod pallet {
                 Error::<T>::TooFewCandidates
             );
             let current_count = Self::try_remove_candidate(&who)?;
+            // slashed funds are released immediately, this is safe since it can only be
+            // called by force origin.
             Self::slash_non_candidate(&who);
 
             Self::deposit_event(Event::CandidateKicked(who));
@@ -715,6 +717,7 @@ pub mod pallet {
                         .ok_or(Error::<T>::NotCandidate)?;
 
                     let candidate = candidates.remove(index);
+                    // start un-bonding period, 1 session
                     let session_index = T::ValidatorSet::session_index().saturating_add(1);
                     <NonCandidates<T>>::insert(&who, (session_index, candidate.deposit));
                     Ok(candidates.len())
@@ -724,6 +727,9 @@ pub mod pallet {
         }
 
         /// Slash candidate deposit and return the rest of funds.
+        /// NOTE: The slashed bond is released immediately here without unbonding.
+        /// This is intentional as long as unbonding period is less than kick threshold,
+        /// this is safe. If this changes in the future, we need to revisit this logic.
         fn slash_non_candidate(who: &T::AccountId) {
             NonCandidates::<T>::mutate_exists(who, |maybe| {
                 if let Some((_index, deposit)) = maybe.take() {
