@@ -44,6 +44,11 @@ pub type EnsureRootOrTwoThirdsMainCouncil = EitherOfDiverse<
     pallet_collective::EnsureProportionAtLeast<AccountId, MainCouncilCollectiveInst, 2, 3>,
 >;
 
+pub type EnsureRootOrThreeFourthMainCouncil = EitherOfDiverse<
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, MainCouncilCollectiveInst, 3, 4>,
+>;
+
 pub type EnsureRootOrHalfMainCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, MainCouncilCollectiveInst, 1, 2>,

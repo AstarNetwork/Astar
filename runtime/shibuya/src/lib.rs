@@ -90,7 +90,8 @@ use astar_primitives::{
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
         EnsureRootOrFourFifthsCommunityCouncil, EnsureRootOrHalfCommunityCouncil,
         EnsureRootOrHalfMainCouncil, EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil,
-        EnsureRootOrHalfTechnicalCommittee, MainCouncilCollectiveInst, MainCouncilMembershipInst,
+        EnsureRootOrHalfTechnicalCommittee, EnsureRootOrThreeFourthMainCouncil,
+        EnsureRootOrTwoThirdsMainCouncil, MainCouncilCollectiveInst, MainCouncilMembershipInst,
         MainTreasuryInst, OracleMembershipInst, TechnicalCommitteeCollectiveInst,
         TechnicalCommitteeMembershipInst,
     },
@@ -631,6 +632,8 @@ impl pallet_collator_selection::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type UpdateOrigin = EnsureRoot<AccountId>;
+    type ForceRemovalOrigin = EnsureRootOrThreeFourthMainCouncil;
+    type GovernanceOrigin = EnsureRootOrTwoThirdsMainCouncil;
     type PotId = PotId;
     type MaxCandidates = MaxCandidates;
     type MinCandidates = MinCandidates;

@@ -104,7 +104,7 @@ fn lock_not_possible_for_collator_candidate_account() {
 
 // Not the ideal place for such test, can be moved later.
 #[test]
-fn collator_selection_candidacy_not_possible_for_dapp_staking_participant() {
+fn collator_selection_candidacy_application_not_possible_for_dapp_staking_participant() {
     new_test_ext().execute_with(|| {
         // Lock some amount with Alice
         let minimum_lock_amount =
@@ -120,7 +120,36 @@ fn collator_selection_candidacy_not_possible_for_dapp_staking_participant() {
             1_000_000,
         ));
         assert_noop!(
-            CollatorSelection::register_as_candidate(RuntimeOrigin::signed(ALICE.clone())),
+            CollatorSelection::apply_for_candidacy(RuntimeOrigin::signed(ALICE.clone())),
+            pallet_collator_selection::Error::<Runtime>::NotAllowedCandidate
+        );
+    });
+}
+
+#[test]
+fn collator_selection_candidacy_approval_not_possible_for_dapp_staking_participant() {
+    new_test_ext().execute_with(|| {
+        assert_ok!(CollatorSelection::set_desired_candidates(
+            RuntimeOrigin::root(),
+            1_000_000,
+        ));
+
+        // First apply for candidacy with Alice
+        assert_ok!(CollatorSelection::apply_for_candidacy(
+            RuntimeOrigin::signed(ALICE.clone())
+        ));
+
+        // Lock some amount with Alice
+        let minimum_lock_amount =
+            <Runtime as pallet_dapp_staking::Config>::MinimumLockedAmount::get();
+        assert_ok!(DappStaking::lock(
+            RuntimeOrigin::signed(ALICE.clone()),
+            minimum_lock_amount,
+        ));
+
+        // Ensure it's not possible to become a candidate for collator selection while having locked funds in dApp staking
+        assert_noop!(
+            CollatorSelection::approve_application(RuntimeOrigin::root(), ALICE.clone()),
             pallet_collator_selection::Error::<Runtime>::NotAllowedCandidate
         );
     });

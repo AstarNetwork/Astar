@@ -168,7 +168,11 @@ parameter_types! {
 pub struct IsRegistered;
 impl ValidatorRegistration<u64> for IsRegistered {
     fn is_registered(id: &u64) -> bool {
-        *id != 7u64
+        if *id == 7 {
+            false
+        } else {
+            Session::is_registered(id)
+        }
     }
 }
 
@@ -185,6 +189,8 @@ impl Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type UpdateOrigin = EnsureSignedBy<RootAccount, u64>;
+    type GovernanceOrigin = EnsureSignedBy<RootAccount, u64>;
+    type ForceRemovalOrigin = EnsureSignedBy<RootAccount, u64>;
     type PotId = PotId;
     type MaxCandidates = MaxCandidates;
     type MinCandidates = MinCandidates;
