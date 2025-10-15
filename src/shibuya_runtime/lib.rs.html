@@ -2868,7 +2868,6 @@
 <a href="#2868" id="2868">2868</a>
 <a href="#2869" id="2869">2869</a>
 <a href="#2870" id="2870">2870</a>
-<a href="#2871" id="2871">2871</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3083,7 +3082,7 @@
     spec_name: Cow::Borrowed(<span class="string">"shibuya"</span>),
     impl_name: Cow::Borrowed(<span class="string">"shibuya"</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">1800</span>,
+    spec_version: <span class="number">1900</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">3</span>,
@@ -3486,7 +3485,7 @@
 <span class="macro">parameter_types!</span> {
     <span class="kw">pub const </span>PotId: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b"PotStake"</span>);
     <span class="kw">pub const </span>MaxCandidates: u32 = <span class="number">148</span>;
-    <span class="kw">pub const </span>MinCandidates: u32 = <span class="number">5</span>;
+    <span class="kw">pub const </span>MinCandidates: u32 = <span class="number">1</span>;
     <span class="kw">pub const </span>MaxInvulnerables: u32 = <span class="number">48</span>;
     <span class="kw">pub const </span>SlashRatio: Perbill = Perbill::from_percent(<span class="number">1</span>);
     <span class="kw">pub const </span>KickThreshold: BlockNumber = <span class="number">2 </span>* HOURS; <span class="comment">// 2 SessionPeriod
@@ -4630,8 +4629,7 @@
 }
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased =
-    (pallet_inflation::migration::versioned_migrations::V1ToV2&lt;Runtime, DecayRate, DecayFactor&gt;,);
+</span><span class="kw">pub type </span>Unreleased = ();
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);
