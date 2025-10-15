@@ -212,7 +212,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("shibuya"),
     impl_name: Cow::Borrowed("shibuya"),
     authoring_version: 1,
-    spec_version: 1800,
+    spec_version: 1900,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -615,7 +615,7 @@ impl pallet_session::Config for Runtime {
 parameter_types! {
     pub const PotId: PalletId = PalletId(*b"PotStake");
     pub const MaxCandidates: u32 = 148;
-    pub const MinCandidates: u32 = 5;
+    pub const MinCandidates: u32 = 1;
     pub const MaxInvulnerables: u32 = 48;
     pub const SlashRatio: Perbill = Perbill::from_percent(1);
     pub const KickThreshold: BlockNumber = 2 * HOURS; // 2 SessionPeriod
@@ -1759,8 +1759,7 @@ parameter_types! {
 }
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased =
-    (pallet_inflation::migration::versioned_migrations::V1ToV2<Runtime, DecayRate, DecayFactor>,);
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
