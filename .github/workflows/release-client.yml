@@ -4,6 +4,10 @@ on:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
   workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   checks-and-tests:
     runs-on: [self-hosted, Linux, X64]
@@ -187,9 +191,6 @@ jobs:
   publish-release-draft:
     needs: [native-linux, native-macos, docker]
     runs-on: ubuntu-latest
-    outputs:
-      release_url: ${{ steps.create-release.outputs.html_url }}
-      upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -224,15 +225,15 @@ jobs:
             > ../../body.md
 
       - name: Create Release Draft
-        id: create-release
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: ${{ github.ref_name }}
-          body_path: body.md
-          draft: true
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --target "$GITHUB_SHA" \
+            --draft \
+            --title "${{ github.ref_name }}" \
+            --notes-file body.md
+
 
   upload-binaries:
     needs: publish-release-draft
@@ -263,14 +264,14 @@ jobs:
           tar zcvf astar-collator.tar.gz astar-collator
 
       - name: Upload binary artifact
-        uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-          asset_path: ${{ matrix.os }}-${{ matrix.arch }}-bin/astar-collator.tar.gz
-          asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
-          asset_content_type: application/gzip
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          asset_dir="${{ matrix.os }}-${{ matrix.arch }}-bin"
+          asset_name="astar-collator-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz"
+
+          mv "$asset_dir/astar-collator.tar.gz" "$asset_dir/$asset_name"
+          gh release upload "${{ github.ref_name }}" "$asset_dir/$asset_name"
 
   chain-sync-smoke:
     needs: native-linux

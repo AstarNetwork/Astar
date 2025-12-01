@@ -4,6 +4,10 @@ on:
     tags:
       - runtime-[0-9]+*
   workflow_dispatch:
+
+permissions:
+  contents: write
+
 env:
   SUBWASM_VERSION: 0.16.1
 jobs:
@@ -167,9 +171,6 @@ jobs:
   publish-release-draft:
     needs: [evm-tracing-runtimes, srtool]
     runs-on: ubuntu-latest
-    outputs:
-      release_url: ${{ steps.create-release.outputs.html_url }}
-      upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -231,15 +232,14 @@ jobs:
             > ../../body.md
 
       - name: Create Release Draft
-        id: create-release
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: ${{ github.ref_name }}
-          body_path: body.md
-          draft: true
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --target "$GITHUB_SHA" \
+            --draft \
+            --title "${{ github.ref_name }}" \
+            --notes-file body.md
 
   upload-runtimes:
     needs: publish-release-draft
@@ -269,44 +269,25 @@ jobs:
           echo "${{ matrix.chain }}=$(echo $runtime_version)" >> $GITHUB_OUTPUT
 
       - name: Upload ${{ matrix.chain }} Wasm
-        uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-          asset_path: ${{ matrix.chain }}_runtime.compact.compressed.wasm
-          asset_name: ${{ env.runtime }}.wasm
-          asset_content_type: application/wasm
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chain=${{ matrix.chain }}
+          runtime_version="${{ env.runtime }}"
 
-      - name: Upload ${{ matrix.chain }} Metadata
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-          asset_path: ${{ matrix.chain }}-metadata.json
-          asset_name: ${{ matrix.chain }}-metadata.json
-          asset_content_type: application/json
+          mv "${chain}_runtime.compact.compressed.wasm" "${runtime_version}.wasm"
+          gh release upload "${{ github.ref_name }}" "${runtime_version}.wasm"
 
-      - name: Upload ${{ matrix.chain }} Compressed Info
-        uses: actions/upload-release-asset@v1
+      - name: Upload ${{ matrix.chain }} Metadata and Info
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-          asset_path: ${{ matrix.chain }}-compressed-info.json
-          asset_name: ${{ matrix.chain }}-compressed-info.json
-          asset_content_type: application/json
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chain=${{ matrix.chain }}
 
-      - name: Upload ${{ matrix.chain }} Srtool Digest
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-          asset_path: ${{ matrix.chain }}-srtool-digest.json
-          asset_name: ${{ matrix.chain }}-srtool-digest.json
-          asset_content_type: application/json
+          gh release upload "${{ github.ref_name }}" \
+            "${chain}-metadata.json" \
+            "${chain}-compressed-info.json" \
+            "${chain}-srtool-digest.json"
 
     outputs:
       astar_runtime_version: ${{ steps.get-runtime-version.outputs.astar }}
@@ -347,11 +328,10 @@ jobs:
           tar zcvf evm-tracing-artifacts.tar.gz evm-tracing-artifacts
 
       - name: Upload evm tracing binary artifact
-        uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-          asset_path: evm-tracing-artifacts.tar.gz
-          asset_name: evm-tracing-artifacts-${{ github.ref_name }}.tar.gz
-          asset_content_type: application/gzip
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          asset_name="evm-tracing-artifacts-${{ github.ref_name }}.tar.gz"
+
+          mv evm-tracing-artifacts.tar.gz "$asset_name"
+          gh release upload "${{ github.ref_name }}" "$asset_name"
