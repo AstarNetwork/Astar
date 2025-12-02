@@ -4,11 +4,17 @@ on:
     tags:
       - runtime-[0-9]+*
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Tag name (format: runtime-0000)'
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 env:
+  RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.release_tag }}
   SUBWASM_VERSION: 0.16.1
 jobs:
   checks-and-tests:
@@ -26,7 +32,7 @@ jobs:
           df -h
 
       - name: Checkout the source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: true
 
@@ -52,7 +58,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Checkout the source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: true
 
@@ -95,7 +101,7 @@ jobs:
       matrix:
         chain: ["astar", "shiden", "shibuya"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -172,9 +178,16 @@ jobs:
     needs: [evm-tracing-runtimes, srtool]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      - name: Validate RELEASE_TAG
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^runtime-[0-9]+$ ]]; then
+            echo "Invalid tag format: $RELEASE_TAG"
+            exit 1
+          fi
 
       - name: Download astar runtime
         uses: actions/download-artifact@v4
@@ -195,7 +208,7 @@ jobs:
           path: runtime-artifacts
 
       - name: Use Node.js 20.x
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v6
         with:
           node-version: 20.x
 
@@ -226,7 +239,7 @@ jobs:
             --owner "${{ github.repository_owner }}" \
             --repo "$(basename ${{ github.repository }})" \
             --from "${{ steps.latest-release.outputs.latest_runtime_tag }}" \
-            --to "${{ github.ref_name }}" \
+            --to "$RELEASE_TAG" \
             --type runtime \
             --srtool-report-folder '../../runtime-artifacts/' \
             > ../../body.md
@@ -235,10 +248,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ github.ref_name }}" \
+          gh release create "$RELEASE_TAG" \
             --target "$GITHUB_SHA" \
             --draft \
-            --title "${{ github.ref_name }}" \
+            --title "$RELEASE_TAG" \
             --notes-file body.md
 
   upload-runtimes:
@@ -274,17 +287,15 @@ jobs:
         run: |
           chain=${{ matrix.chain }}
           runtime_version="${{ env.runtime }}"
-
           mv "${chain}_runtime.compact.compressed.wasm" "${runtime_version}.wasm"
-          gh release upload "${{ github.ref_name }}" "${runtime_version}.wasm"
+          gh release upload "$RELEASE_TAG" "${runtime_version}.wasm"
 
       - name: Upload ${{ matrix.chain }} Metadata and Info
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           chain=${{ matrix.chain }}
-
-          gh release upload "${{ github.ref_name }}" \
+          gh release upload "$RELEASE_TAG" \
             "${chain}-metadata.json" \
             "${chain}-compressed-info.json" \
             "${chain}-srtool-digest.json"
@@ -331,7 +342,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          asset_name="evm-tracing-artifacts-${{ github.ref_name }}.tar.gz"
-
+          asset_name="evm-tracing-artifacts-${RELEASE_TAG}.tar.gz"
           mv evm-tracing-artifacts.tar.gz "$asset_name"
-          gh release upload "${{ github.ref_name }}" "$asset_name"
+          gh release upload "$RELEASE_TAG" "$asset_name"
