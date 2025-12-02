@@ -235,7 +235,7 @@ jobs:
             --owner "${{ github.repository_owner }}" \
             --repo "$(basename ${{ github.repository }})" \
             --from "${{ steps.latest-release.outputs.latest_client_tag }}" \
-            --to "$RELEASE_TAG" \
+            --to "${{ github.ref_name }}" \
             --type client \
             > ../../body.md
 

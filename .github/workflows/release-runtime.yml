@@ -239,7 +239,7 @@ jobs:
             --owner "${{ github.repository_owner }}" \
             --repo "$(basename ${{ github.repository }})" \
             --from "${{ steps.latest-release.outputs.latest_runtime_tag }}" \
-            --to "$RELEASE_TAG" \
+            --to "${{ github.ref_name }}" \
             --type runtime \
             --srtool-report-folder '../../runtime-artifacts/' \
             > ../../body.md
