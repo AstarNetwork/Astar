@@ -19,6 +19,7 @@
 use super::*;
 use frame_support::{
     pallet_prelude::*,
+    migration::clear_storage_prefix,
     traits::{Get, UncheckedOnRuntimeUpgrade},
 };
 use sp_std::{marker::PhantomData, vec::Vec};
@@ -33,6 +34,15 @@ pub mod versioned {
         3,
         4,
         unchecked_migration::UncheckedMigrationXcmVersion<{ xcm::v5::VERSION }, T>,
+        Pallet<T>,
+        <T as frame_system::Config>::DbWeight,
+    >;
+
+    /// Migration storage V4 to V5 which removes `AssetHubMigrationStep`.
+    pub type V4ToV5<T> = frame_support::migrations::VersionedMigration<
+        4,
+        5,
+        unchecked_migration::UncheckedMigrationRemoveAssetHubStep<T>,
         Pallet<T>,
         <T as frame_system::Config>::DbWeight,
     >;
@@ -120,6 +130,22 @@ mod unchecked_migration {
 
             assert_eq!(old_count, count as u32);
             Ok(())
+        }
+    }
+
+    /// Migration that clears the old `AssetHubMigrationStep` storage key.
+    pub struct UncheckedMigrationRemoveAssetHubStep<T: Config>(PhantomData<T>);
+    impl<T: Config> UncheckedOnRuntimeUpgrade for UncheckedMigrationRemoveAssetHubStep<T> {
+        fn on_runtime_upgrade() -> Weight {
+            let pallet_prefix: &[u8] = b"XcAssetConfig";
+            let result =
+                clear_storage_prefix(pallet_prefix, b"AssetHubMigrationStep", &[], None, None);
+            log::info!(
+                "cleanup XcAssetConfig migration result: {:?}",
+                result.deconstruct()
+            );
+
+            T::DbWeight::get().writes(1)
         }
     }
 }
