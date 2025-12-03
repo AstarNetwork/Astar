@@ -261,6 +261,10 @@ jobs:
       matrix:
         chain: ["astar", "shiden", "shibuya"]
     steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
       - name: Download runtime
         uses: actions/download-artifact@v4
         with:

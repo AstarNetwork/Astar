@@ -262,6 +262,10 @@ jobs:
           - os: macOS
             arch: aarch64
     steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
       - name: Create download folder
         run: |
           mkdir -p ${{ matrix.os }}-${{ matrix.arch }}-bin
