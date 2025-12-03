@@ -1313,11 +1313,6 @@ pub type Executive = frame_executive::Executive<
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
-parameter_types! {
-    pub const DecayRate: Perquintill = Perquintill::one();
-    pub const DecayFactor: Perquintill = Perquintill::one();
-}
-
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased = (pallet_xc_asset_config::migrations::versioned::V4ToV5<Runtime>,);
 

@@ -19,7 +19,6 @@
 use super::*;
 use frame_support::{
     pallet_prelude::*,
-    migration::clear_storage_prefix,
     traits::{Get, UncheckedOnRuntimeUpgrade},
 };
 use sp_std::{marker::PhantomData, vec::Vec};
@@ -137,15 +136,53 @@ mod unchecked_migration {
     pub struct UncheckedMigrationRemoveAssetHubStep<T: Config>(PhantomData<T>);
     impl<T: Config> UncheckedOnRuntimeUpgrade for UncheckedMigrationRemoveAssetHubStep<T> {
         fn on_runtime_upgrade() -> Weight {
-            let pallet_prefix: &[u8] = b"XcAssetConfig";
-            let result =
-                clear_storage_prefix(pallet_prefix, b"AssetHubMigrationStep", &[], None, None);
+            use sp_core::hexdisplay::HexDisplay;
+
+            let key = frame_support::storage::storage_prefix(
+                <Pallet<T>>::name().as_bytes(),
+                b"AssetHubMigrationStep",
+            );
+            frame_support::storage::unhashed::kill(&key);
+
             log::info!(
-                "cleanup XcAssetConfig migration result: {:?}",
-                result.deconstruct()
+                "Deleted AssetHubMigrationStep key: 0x{}",
+                HexDisplay::from(&key)
             );
 
             T::DbWeight::get().writes(1)
+        }
+
+        #[cfg(feature = "try-runtime")]
+        fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::DispatchError> {
+            use sp_io::storage::exists;
+
+            let key = frame_support::storage::storage_prefix(
+                <Pallet<T>>::name().as_bytes(),
+                b"AssetHubMigrationStep",
+            );
+
+            // Ensure the value exists before migration.
+            assert!(
+                exists(&key),
+                "Expected AssetHubMigrationStep to exist before migration"
+            );
+
+            Ok(key.to_vec())
+        }
+
+        #[cfg(feature = "try-runtime")]
+        fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::DispatchError> {
+            use sp_io::storage::exists;
+
+            let key = state;
+
+            // Ensure the value was deleted.
+            assert!(
+                !exists(&key),
+                "AssetHubMigrationStep should be removed after migration"
+            );
+
+            Ok(())
         }
     }
 }
