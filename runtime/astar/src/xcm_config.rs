@@ -59,7 +59,6 @@ use astar_primitives::xcm::{
     FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
 };
 
-
 parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Polkadot);
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
@@ -244,8 +243,6 @@ pub type AstarXcmFungibleFeeHandler = XcmFungibleFeeHandler<
     Assets,
     TreasuryAccountId,
 >;
-
-
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {

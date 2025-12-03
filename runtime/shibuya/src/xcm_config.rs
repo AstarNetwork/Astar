@@ -57,7 +57,6 @@ use astar_primitives::xcm::{
     FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler, MAX_ASSETS,
 };
 
-
 parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::ByGenesis(ROCOCO_GENESIS_HASH));
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
@@ -177,8 +176,6 @@ pub type ShibuyaXcmFungibleFeeHandler = XcmFungibleFeeHandler<
 
 pub type Weigher =
     WeightInfoBounds<weights::xcm::XcmWeight<Runtime, RuntimeCall>, RuntimeCall, MaxInstructions>;
-
-
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {

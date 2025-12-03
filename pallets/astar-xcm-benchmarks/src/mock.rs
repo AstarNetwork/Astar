@@ -184,7 +184,6 @@ parameter_types! {
     pub const UnitWeightCost: u64 = 10;
 }
 
-
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;

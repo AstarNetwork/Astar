@@ -62,8 +62,9 @@ use astar_primitives::{
     dapp_staking::{AccountCheck, CycleConfiguration, SmartContract, StakingRewardHandler},
     oracle::PriceProvider,
     xcm::{
-        AbsoluteAndRelativeReserveProvider, AllowTopLevelPaidExecutionFrom, AssetLocationIdConverter, FixedRateOfForeignAsset,
-        ReserveAssetFilter, XcmFungibleFeeHandler,
+        AbsoluteAndRelativeReserveProvider, AllowTopLevelPaidExecutionFrom,
+        AssetLocationIdConverter, FixedRateOfForeignAsset, ReserveAssetFilter,
+        XcmFungibleFeeHandler,
     },
 };
 
@@ -433,7 +434,6 @@ pub type ShidenXcmFungibleFeeHandler = XcmFungibleFeeHandler<
 >;
 
 pub type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
-
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {

@@ -533,9 +533,7 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
 
     // Balances on Asset Hub should have been received
     ParaC::execute_with(|| {
-        assert!(
-            parachain::Assets::balance(relay_asset_id, ALICE) > asset_hub_alice_balance_before
-        );
+        assert!(parachain::Assets::balance(relay_asset_id, ALICE) > asset_hub_alice_balance_before);
     });
 }
 
