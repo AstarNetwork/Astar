@@ -4,17 +4,12 @@ on:
     tags:
       - runtime-[0-9]+*
   workflow_dispatch:
-    inputs:
-      release_tag:
-        description: 'Tag name (format: runtime-0000)'
-        required: true
-        type: string
 
 permissions:
   contents: write
 
 env:
-  RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.release_tag }}
+  RELEASE_TAG: ${{ github.ref_name }}
   SUBWASM_VERSION: 0.16.1
 jobs:
   checks-and-tests:
@@ -182,13 +177,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate RELEASE_TAG
-        run: |
-          if [[ ! "$RELEASE_TAG" =~ ^runtime-[0-9]+$ ]]; then
-            echo "Invalid tag format: $RELEASE_TAG"
-            exit 1
-          fi
-
       - name: Download astar runtime
         uses: actions/download-artifact@v4
         with:
@@ -313,6 +301,10 @@ jobs:
     needs: [publish-release-draft, upload-runtimes]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
       - name: Download evm tracing runtime
         uses: actions/download-artifact@v4
         with:

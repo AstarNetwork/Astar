@@ -4,17 +4,12 @@ on:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
   workflow_dispatch:
-    inputs:
-      release_tag:
-        description: 'Tag name (format: v0.0.0)'
-        required: true
-        type: string
 
 permissions:
   contents: write
 
 env:
-  RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.release_tag }}
+  RELEASE_TAG: ${{ github.ref_name }}
 jobs:
   checks-and-tests:
     runs-on: [self-hosted, Linux, X64]
@@ -203,13 +198,6 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-
-      - name: Validate RELEASE_TAG
-        run: |
-          if [[ ! "$RELEASE_TAG" =~ ^runtime-[0-9]+$ ]]; then
-            echo "Invalid tag format: $RELEASE_TAG"
-            exit 1
-          fi
 
       - name: Use Node.js 20.x
         uses: actions/setup-node@v6
