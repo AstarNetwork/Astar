@@ -81,6 +81,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
+pub mod migrations;
 
 #[cfg(test)]
 mod mock;
