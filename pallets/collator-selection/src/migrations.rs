@@ -17,10 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use frame_support::{
-    pallet_prelude::*,
-    traits::{OnRuntimeUpgrade},
-};
+use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade};
 use frame_system::pallet_prelude::BlockNumberFor;
 use sp_std::marker::PhantomData;
 
@@ -42,10 +39,7 @@ impl<T: Config> OnRuntimeUpgrade for LastAuthoredBlockCleanup<T> {
         // Snapshot active identifiers for faster membership checks
         let invulnerables = Invulnerables::<T>::get();
         let candidate_accounts: sp_std::collections::btree_set::BTreeSet<T::AccountId> =
-            Candidates::<T>::get()
-                .into_iter()
-                .map(|c| c.who)
-                .collect();
+            Candidates::<T>::get().into_iter().map(|c| c.who).collect();
 
         let mut removed = 0u64;
         let mut read = 0u64;
@@ -86,8 +80,9 @@ impl<T: Config> OnRuntimeUpgrade for LastAuthoredBlockCleanup<T> {
 
     #[cfg(feature = "try-runtime")]
     fn post_upgrade(data: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
-        let old_count: u64 = Decode::decode(&mut &data[..])
-            .map_err(|_| sp_runtime::TryRuntimeError::Other("Failed to decode pre-upgrade count"))?;
+        let old_count: u64 = Decode::decode(&mut &data[..]).map_err(|_| {
+            sp_runtime::TryRuntimeError::Other("Failed to decode pre-upgrade count")
+        })?;
 
         let new_count = LastAuthoredBlock::<T>::iter().count() as u64;
 
