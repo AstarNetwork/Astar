@@ -189,7 +189,7 @@ jobs:
           platforms: linux/amd64
           labels: ${{ steps.docker_meta.outputs.labels }}
           tags: ${{ steps.docker_meta.outputs.tags }}
-          push: false
+          push: true
 
   publish-release-draft:
     needs: [native-linux, native-macos, docker]
