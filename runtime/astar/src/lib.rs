@@ -193,7 +193,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("astar"),
     impl_name: Cow::Borrowed("astar"),
     authoring_version: 1,
-    spec_version: 1900,
+    spec_version: 2000,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -1001,12 +1001,6 @@ impl pallet_ethereum::Config for Runtime {
     type ExtraDataLength = ConstU32<30>;
 }
 
-impl pallet_sudo::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
-}
-
 impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
@@ -1535,7 +1529,6 @@ impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
             | RuntimeCall::ParachainSystem(_)
             | RuntimeCall::Council(_)
             | RuntimeCall::TechnicalCommittee(_)
-            | RuntimeCall::Sudo(_)
             | RuntimeCall::Democracy(
                 pallet_democracy::Call::external_propose_majority { .. }
                 | pallet_democracy::Call::external_propose_default { .. }
@@ -1570,7 +1563,6 @@ impl frame_support::traits::Contains<RuntimeCallNameOf<Runtime>> for TxPauseWhit
                 | b"ParachainSystem"
                 | b"Council"
                 | b"TechnicalCommittee"
-                | b"Sudo"
                 | b"TxPause"
                 | b"SafeMode"
         )
@@ -1671,7 +1663,6 @@ construct_runtime!(
         Preimage: pallet_preimage = 84,
 
         // Governance
-        Sudo: pallet_sudo = 99,
         CouncilMembership: pallet_membership::<Instance2> = 100,
         TechnicalCommitteeMembership: pallet_membership::<Instance3> = 101,
         CommunityCouncilMembership: pallet_membership::<Instance4> = 102,
@@ -1730,13 +1721,12 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 parameter_types! {
-    pub const DecayRate: Perquintill = Perquintill::one();
-    pub const DecayFactor: Perquintill = Perquintill::one();
+    pub const SudoPalletToRemoveStr: &'static str = "Sudo";
 }
 
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased =
-    (pallet_inflation::migration::versioned_migrations::V1ToV2<Runtime, DecayRate, DecayFactor>,);
+    (frame_support::migrations::RemovePallet<SudoPalletToRemoveStr, RocksDbWeight>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
