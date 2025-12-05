@@ -18,10 +18,7 @@
 
 use super::*;
 use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade};
-use sp_std::marker::PhantomData;
-
-#[cfg(feature = "try-runtime")]
-use sp_std::vec::Vec;
+use sp_std::{marker::PhantomData, vec::Vec};
 
 /// One-time migration that removes outdated LastAuthoredBlock entries.
 /// It keeps entries only for accounts that are currently:
