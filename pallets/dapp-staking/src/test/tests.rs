@@ -1322,12 +1322,19 @@ fn stake_fails_due_to_too_many_staked_contracts() {
             Error::<Test>::TooManyStakedContracts
         );
 
-        // Advance into next period, staking should work after stale entries are removed during the rewards claim
+        // Advance into next period, error should still happen
         advance_to_next_period();
         for _ in 0..required_number_of_reward_claims(account) {
             assert_claim_staker_rewards(account);
         }
-        assert_stake(account, &excess_smart_contract, 10);
+        assert_noop!(
+            DappStaking::stake(
+                RuntimeOrigin::signed(account),
+                excess_smart_contract.clone(),
+                10
+            ),
+            Error::<Test>::TooManyStakedContracts
+        );
     })
 }
 
