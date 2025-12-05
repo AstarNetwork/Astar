@@ -4511,53 +4511,53 @@ fn unstake_from_unregistered_use_correct_stake_amount() {
 
 // Tests a previous bug where the contract_stake_count kept increasing for the same contract entry
 // when a staker continued staking across periods.
-// This occurred because stale entries were not properly cleaned up when claiming staker rewards.
+// This occurred because the counter is not synced to only valid entries.
 #[test]
-fn restaking_across_periods_does_not_inflate_contract_count() {
+fn cleanup_expired_entries_reconciles_inflated_contract_count() {
     ExtBuilder::default().build_and_execute(|| {
-        let owner = 1;
         let staker = 2;
-        let smart_contract = MockSmartContract::wasm(1 as AccountId);
-        assert_register(owner, &smart_contract);
+        let inflating_contract = MockSmartContract::wasm(1 as AccountId);
+        let expired_contract = MockSmartContract::wasm(2 as AccountId);
+        assert_register(1, &inflating_contract);
+        assert_register(1, &expired_contract);
         assert_lock(staker, 1_000);
 
-        let stake_amount = 10;
+        // Period 1: stake both contracts during B&E so `expired_contract` has no bonus.
         advance_to_next_subperiod();
-        assert_ok!(DappStaking::stake(
-            RuntimeOrigin::signed(staker),
-            smart_contract.clone(),
-            stake_amount,
-        ));
+        assert_stake(staker, &inflating_contract, 10);
+        assert_stake(staker, &expired_contract, 5);
 
-        let mut ledger = Ledger::<Test>::get(&staker);
-        assert_eq!(ledger.contract_stake_count, 1);
+        // Move into the next period, claim everything so we can restake `inflating_contract`.
+        advance_to_next_period();
+        for _ in 0..required_number_of_reward_claims(staker) {
+            assert_claim_staker_rewards(staker);
+        }
+
+        // Period 2: restake only `inflating_contract` (this bumps the ledger counter again)
+        advance_to_next_subperiod();
+        assert_stake(staker, &inflating_contract, 10);
+
+        // At this point only two StakerInfo rows exist (inflating + expired), but the counter reflects 3.
+        let ledger = Ledger::<Test>::get(&staker);
+        assert_eq!(StakerInfo::<Test>::iter_prefix(&staker).count(), 2);
         assert_eq!(
-            StakerInfo::<Test>::iter_prefix(&staker).count(),
-            1,
-            "Only one staker entry should exist for the contract."
+            ledger.contract_stake_count, 3,
+            "Restaking before cleanup leaves the counter inflated."
         );
 
-        let max_contracts: u32 = <Test as Config>::MaxNumberOfStakedContracts::get();
+        // Running cleanup deletes the stale `expired_contract` entry and must resync the counter.
+        assert_ok!(DappStaking::cleanup_expired_entries(RuntimeOrigin::signed(
+            staker
+        )));
 
-        for _ in 2..=(max_contracts + 1) {
-            advance_to_next_period();
-            for _ in 0..required_number_of_reward_claims(staker) {
-                assert_claim_staker_rewards(staker);
-            }
-            advance_to_next_subperiod();
-            assert_ok!(DappStaking::stake(
-                RuntimeOrigin::signed(staker),
-                smart_contract.clone(),
-                stake_amount,
-            ));
-
-            ledger = Ledger::<Test>::get(&staker);
-            assert_eq!(ledger.contract_stake_count, 1);
-            assert_eq!(
-                StakerInfo::<Test>::iter_prefix(&staker).count(),
-                1,
-                "Only one staker entry should still exist for the contract."
-            );
-        }
+        let ledger = Ledger::<Test>::get(&staker);
+        assert_eq!(
+            ledger.contract_stake_count,
+            StakerInfo::<Test>::iter_prefix(&staker).count() as u32
+        );
+        assert_eq!(
+            ledger.contract_stake_count, 1,
+            "Cleanup must reconcile the ledger counter with the remaining StakerInfo rows."
+        );
     });
 }
