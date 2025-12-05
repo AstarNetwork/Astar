@@ -237,7 +237,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "$RELEASE_TAG" \
-            --target "$GITHUB_SHA" \
             --draft \
             --title "$RELEASE_TAG" \
             --notes-file body.md
