@@ -31,7 +31,7 @@ jobs:
 
     - name: Install Zepter
       #run: cargo install zepter -f --locked && zepter --version
-      run: cargo install zepter@1.78.2 # TODO: use latest version once we bump toolchain version
+      run: cargo install zepter@1.78.2 --locked # TODO: use latest version once we bump toolchain version
 
     - name: Check Rust features
       run: zepter run check
