@@ -1237,9 +1237,7 @@ pub mod pallet {
             // This is bounded by max allowed number of stake entries per account.
             let to_be_deleted: Vec<T::SmartContract> = StakerInfo::<T>::iter_prefix(&account)
                 .filter_map(|(smart_contract, stake_info)| {
-                    if stake_info.period_number() < current_period
-                        && !stake_info.is_bonus_eligible()
-                        || stake_info.period_number() < threshold_period
+                    if Self::is_expired_staker_entry(&stake_info, current_period, threshold_period)
                     {
                         Some(smart_contract)
                     } else {
@@ -1788,6 +1786,16 @@ pub mod pallet {
             current_period.saturating_sub(T::RewardRetentionInPeriods::get())
         }
 
+        /// Returns `true` when the staking entry can be removed, meaning it is past the claim window and with no claimable bonus reward.
+        fn is_expired_staker_entry(
+            info: &SingularStakingInfo,
+            current_period: PeriodNumber,
+            threshold_period: PeriodNumber,
+        ) -> bool {
+            (info.period_number() < current_period && !info.is_bonus_eligible())
+                || info.period_number() < threshold_period
+        }
+
         /// Unlocking period expressed in the number of blocks.
         pub fn unlocking_period() -> BlockNumber {
             T::CycleConfiguration::blocks_per_era().saturating_mul(T::UnlockingPeriod::get().into())
@@ -2283,12 +2291,12 @@ pub mod pallet {
                 .staked_period()
                 .ok_or(Error::<T>::NoClaimableRewards)?;
 
-            // Check if the rewards have expired
             let protocol_state = ActiveProtocolState::<T>::get();
-            ensure!(
-                staked_period >= Self::oldest_claimable_period(protocol_state.period_number()),
-                Error::<T>::RewardExpired
-            );
+            let current_period = protocol_state.period_number();
+            let threshold_period = Self::oldest_claimable_period(current_period);
+
+            // Check if the rewards have expired
+            ensure!(staked_period >= threshold_period, Error::<T>::RewardExpired);
 
             // Calculate the reward claim span
             let earliest_staked_era = ledger
@@ -2300,7 +2308,7 @@ pub mod pallet {
 
             // The last era for which we can theoretically claim rewards.
             // And indicator if we know the period's ending era.
-            let (last_period_era, period_end) = if staked_period == protocol_state.period_number() {
+            let (last_period_era, period_end) = if staked_period == current_period {
                 (protocol_state.era.saturating_sub(1), None)
             } else {
                 PeriodEnd::<T>::get(&staked_period)
@@ -2342,6 +2350,25 @@ pub mod pallet {
 
             T::StakingRewardHandler::payout_reward(&account, reward_sum)
                 .map_err(|_| Error::<T>::RewardPayoutFailed)?;
+
+            let stale_contracts: Vec<T::SmartContract> = StakerInfo::<T>::iter_prefix(&account)
+                .filter_map(|(smart_contract, stake_info)| {
+                    if Self::is_expired_staker_entry(&stake_info, current_period, threshold_period)
+                    {
+                        Some(smart_contract)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+
+            if !stale_contracts.is_empty() {
+                let removed: u32 = stale_contracts.len().unique_saturated_into();
+                for contract in stale_contracts {
+                    StakerInfo::<T>::remove(&account, &contract);
+                }
+                ledger.contract_stake_count.saturating_reduce(removed);
+            }
 
             Self::update_ledger(&account, ledger)?;
 

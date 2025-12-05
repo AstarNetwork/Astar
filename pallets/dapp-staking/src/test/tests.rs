@@ -1322,19 +1322,12 @@ fn stake_fails_due_to_too_many_staked_contracts() {
             Error::<Test>::TooManyStakedContracts
         );
 
-        // Advance into next period, error should still happen
+        // Advance into next period, staking should work after stale entries are removed during the rewards claim
         advance_to_next_period();
         for _ in 0..required_number_of_reward_claims(account) {
             assert_claim_staker_rewards(account);
         }
-        assert_noop!(
-            DappStaking::stake(
-                RuntimeOrigin::signed(account),
-                excess_smart_contract.clone(),
-                10
-            ),
-            Error::<Test>::TooManyStakedContracts
-        );
+        assert_stake(account, &excess_smart_contract, 10);
     })
 }
 
@@ -4514,4 +4507,57 @@ fn unstake_from_unregistered_use_correct_stake_amount() {
         assert_claim_staker_rewards(staker_1);
         assert_unstake_from_unregistered(staker_1, &smart_contract_1);
     })
+}
+
+// Tests a previous bug where the contract_stake_count kept increasing for the same contract entry
+// when a staker continued staking across periods.
+// This occurred because stale entries were not properly cleaned up when claiming staker rewards.
+#[test]
+fn restaking_across_periods_does_not_inflate_contract_count() {
+    ExtBuilder::default().build_and_execute(|| {
+        let owner = 1;
+        let staker = 2;
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(owner, &smart_contract);
+        assert_lock(staker, 1_000);
+
+        let stake_amount = 10;
+        advance_to_next_subperiod();
+        assert_ok!(DappStaking::stake(
+            RuntimeOrigin::signed(staker),
+            smart_contract.clone(),
+            stake_amount,
+        ));
+
+        let mut ledger = Ledger::<Test>::get(&staker);
+        assert_eq!(ledger.contract_stake_count, 1);
+        assert_eq!(
+            StakerInfo::<Test>::iter_prefix(&staker).count(),
+            1,
+            "Only one staker entry should exist for the contract."
+        );
+
+        let max_contracts: u32 = <Test as Config>::MaxNumberOfStakedContracts::get();
+
+        for _ in 2..=(max_contracts + 1) {
+            advance_to_next_period();
+            for _ in 0..required_number_of_reward_claims(staker) {
+                assert_claim_staker_rewards(staker);
+            }
+            advance_to_next_subperiod();
+            assert_ok!(DappStaking::stake(
+                RuntimeOrigin::signed(staker),
+                smart_contract.clone(),
+                stake_amount,
+            ));
+
+            ledger = Ledger::<Test>::get(&staker);
+            assert_eq!(ledger.contract_stake_count, 1);
+            assert_eq!(
+                StakerInfo::<Test>::iter_prefix(&staker).count(),
+                1,
+                "Only one staker entry should still exist for the contract."
+            );
+        }
+    });
 }
