@@ -4515,3 +4515,56 @@ fn unstake_from_unregistered_use_correct_stake_amount() {
         assert_unstake_from_unregistered(staker_1, &smart_contract_1);
     })
 }
+
+// Tests a previous bug where the contract_stake_count kept increasing for the same contract entry
+// when a staker continued staking across periods.
+// This occurred because the counter is not synced to only valid entries.
+#[test]
+fn cleanup_expired_entries_reconciles_inflated_contract_count() {
+    ExtBuilder::default().build_and_execute(|| {
+        let staker = 2;
+        let inflating_contract = MockSmartContract::wasm(1 as AccountId);
+        let expired_contract = MockSmartContract::wasm(2 as AccountId);
+        assert_register(1, &inflating_contract);
+        assert_register(1, &expired_contract);
+        assert_lock(staker, 1_000);
+
+        // Period 1: stake both contracts during B&E so `expired_contract` has no bonus.
+        advance_to_next_subperiod();
+        assert_stake(staker, &inflating_contract, 10);
+        assert_stake(staker, &expired_contract, 5);
+
+        // Move into the next period, claim everything so we can restake `inflating_contract`.
+        advance_to_next_period();
+        for _ in 0..required_number_of_reward_claims(staker) {
+            assert_claim_staker_rewards(staker);
+        }
+
+        // Period 2: restake only `inflating_contract` (this bumps the ledger counter again)
+        advance_to_next_subperiod();
+        assert_stake(staker, &inflating_contract, 10);
+
+        // At this point only two StakerInfo rows exist (inflating + expired), but the counter reflects 3.
+        let ledger = Ledger::<Test>::get(&staker);
+        assert_eq!(StakerInfo::<Test>::iter_prefix(&staker).count(), 2);
+        assert_eq!(
+            ledger.contract_stake_count, 3,
+            "Restaking before cleanup leaves the counter inflated."
+        );
+
+        // Running cleanup deletes the stale `expired_contract` entry and must resync the counter.
+        assert_ok!(DappStaking::cleanup_expired_entries(RuntimeOrigin::signed(
+            staker
+        )));
+
+        let ledger = Ledger::<Test>::get(&staker);
+        assert_eq!(
+            ledger.contract_stake_count,
+            StakerInfo::<Test>::iter_prefix(&staker).count() as u32
+        );
+        assert_eq!(
+            ledger.contract_stake_count, 1,
+            "Cleanup must reconcile the ledger counter with the remaining StakerInfo rows."
+        );
+    });
+}
