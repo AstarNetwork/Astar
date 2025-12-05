@@ -261,10 +261,7 @@
           }
         }
       },
-      "ethereum": {},
-      "sudo": {
-        "key": "5HKwvXrECqmkiiHtrSa1UFzvNrZHH6kMz1PD74vXeDGAzs3D"
-      }
+      "ethereum": {}
     }
   }
 }
