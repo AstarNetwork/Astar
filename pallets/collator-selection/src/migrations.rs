@@ -18,7 +18,6 @@
 
 use super::*;
 use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade};
-use frame_system::pallet_prelude::BlockNumberFor;
 use sp_std::marker::PhantomData;
 
 #[cfg(feature = "try-runtime")]
@@ -38,38 +37,42 @@ impl<T: Config> OnRuntimeUpgrade for LastAuthoredBlockCleanup<T> {
 
         // Snapshot active identifiers for faster membership checks
         let invulnerables = Invulnerables::<T>::get();
-        let candidate_accounts: sp_std::collections::btree_set::BTreeSet<T::AccountId> =
+        let candidates: sp_std::collections::btree_set::BTreeSet<T::AccountId> =
             Candidates::<T>::get().into_iter().map(|c| c.who).collect();
 
-        let mut removed = 0u64;
         let mut read = 0u64;
         let mut write = 0u64;
+        let mut stale = Vec::new();
 
-        // Use translate to selectively keep or drop keys
-        LastAuthoredBlock::<T>::translate::<BlockNumberFor<T>, _>(|account, old_value| {
+        // Sanity limit
+        const MAX_SCAN: u64 = 200;
+
+        for (account, _) in LastAuthoredBlock::<T>::iter() {
+            if read >= MAX_SCAN {
+                log::warn!("LastAuthoredBlockCleanup: scan limit {} reached.", MAX_SCAN);
+                break;
+            }
             read += 1;
 
-            let is_invulnerable = invulnerables.contains(&account);
-            let is_candidate = candidate_accounts.contains(&account);
-
-            if is_invulnerable || is_candidate {
-                // keep entry untouched
-                Some(old_value)
-            } else {
-                // remove this entry
-                removed += 1;
-                write += 1;
-                None
+            let keep = invulnerables.contains(&account) || candidates.contains(&account);
+            if !keep {
+                stale.push(account);
             }
-        });
+        }
+
+        for account in stale {
+            LastAuthoredBlock::<T>::remove(account);
+            write += 1;
+        }
 
         log::info!(
-            "LastAuthoredBlockCleanup completed: removed {} stale collator entries. Reads: {}. Writes: {}.",
-            removed, read, write
+            "LastAuthoredBlockCleanup completed: removed {} entries (reads {}, writes {}).",
+            write,
+            read,
+            write
         );
 
-        let db = <T as frame_system::Config>::DbWeight::get();
-        db.reads_writes(read, write)
+        <T as frame_system::Config>::DbWeight::get().reads_writes(read, write)
     }
 
     #[cfg(feature = "try-runtime")]
