@@ -1246,8 +1246,8 @@ pub mod pallet {
                 // Check if this entry should be kept
                 let should_keep = stake_period == current_period
                     || (stake_period >= threshold_period
-                    && stake_period < current_period
-                    && stake_info.is_bonus_eligible());
+                        && stake_period < current_period
+                        && stake_info.is_bonus_eligible());
 
                 if should_keep {
                     remaining = remaining.saturating_add(1);
