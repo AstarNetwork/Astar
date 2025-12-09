@@ -4,7 +4,12 @@ on:
     tags:
       - runtime-[0-9]+*
   workflow_dispatch:
+
+permissions:
+  contents: write
+
 env:
+  RELEASE_TAG: ${{ github.ref_name }}
   SUBWASM_VERSION: 0.16.1
 jobs:
   checks-and-tests:
@@ -22,7 +27,7 @@ jobs:
           df -h
 
       - name: Checkout the source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: true
 
@@ -48,7 +53,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Checkout the source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: true
 
@@ -91,7 +96,7 @@ jobs:
       matrix:
         chain: ["astar", "shiden", "shibuya"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -167,11 +172,8 @@ jobs:
   publish-release-draft:
     needs: [evm-tracing-runtimes, srtool]
     runs-on: ubuntu-latest
-    outputs:
-      release_url: ${{ steps.create-release.outputs.html_url }}
-      upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -194,7 +196,7 @@ jobs:
           path: runtime-artifacts
 
       - name: Use Node.js 20.x
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v6
         with:
           node-version: 20.x
 
@@ -231,15 +233,13 @@ jobs:
             > ../../body.md
 
       - name: Create Release Draft
-        id: create-release
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: ${{ github.ref_name }}
-          body_path: body.md
-          draft: true
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            --draft \
+            --title "$RELEASE_TAG" \
+            --notes-file body.md
 
   upload-runtimes:
     needs: publish-release-draft
@@ -248,6 +248,10 @@ jobs:
       matrix:
         chain: ["astar", "shiden", "shibuya"]
     steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
       - name: Download runtime
         uses: actions/download-artifact@v4
         with:
@@ -269,44 +273,23 @@ jobs:
           echo "${{ matrix.chain }}=$(echo $runtime_version)" >> $GITHUB_OUTPUT
 
       - name: Upload ${{ matrix.chain }} Wasm
-        uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-          asset_path: ${{ matrix.chain }}_runtime.compact.compressed.wasm
-          asset_name: ${{ env.runtime }}.wasm
-          asset_content_type: application/wasm
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chain=${{ matrix.chain }}
+          runtime_version="${{ env.runtime }}"
+          mv "${chain}_runtime.compact.compressed.wasm" "${runtime_version}.wasm"
+          gh release upload "$RELEASE_TAG" "${runtime_version}.wasm"
 
-      - name: Upload ${{ matrix.chain }} Metadata
-        uses: actions/upload-release-asset@v1
+      - name: Upload ${{ matrix.chain }} Metadata and Info
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-          asset_path: ${{ matrix.chain }}-metadata.json
-          asset_name: ${{ matrix.chain }}-metadata.json
-          asset_content_type: application/json
-
-      - name: Upload ${{ matrix.chain }} Compressed Info
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-          asset_path: ${{ matrix.chain }}-compressed-info.json
-          asset_name: ${{ matrix.chain }}-compressed-info.json
-          asset_content_type: application/json
-
-      - name: Upload ${{ matrix.chain }} Srtool Digest
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-          asset_path: ${{ matrix.chain }}-srtool-digest.json
-          asset_name: ${{ matrix.chain }}-srtool-digest.json
-          asset_content_type: application/json
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chain=${{ matrix.chain }}
+          gh release upload "$RELEASE_TAG" \
+            "${chain}-metadata.json" \
+            "${chain}-compressed-info.json" \
+            "${chain}-srtool-digest.json"
 
     outputs:
       astar_runtime_version: ${{ steps.get-runtime-version.outputs.astar }}
@@ -317,6 +300,10 @@ jobs:
     needs: [publish-release-draft, upload-runtimes]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
       - name: Download evm tracing runtime
         uses: actions/download-artifact@v4
         with:
@@ -347,11 +334,9 @@ jobs:
           tar zcvf evm-tracing-artifacts.tar.gz evm-tracing-artifacts
 
       - name: Upload evm tracing binary artifact
-        uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-          asset_path: evm-tracing-artifacts.tar.gz
-          asset_name: evm-tracing-artifacts-${{ github.ref_name }}.tar.gz
-          asset_content_type: application/gzip
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          asset_name="evm-tracing-artifacts-${RELEASE_TAG}.tar.gz"
+          mv evm-tracing-artifacts.tar.gz "$asset_name"
+          gh release upload "$RELEASE_TAG" "$asset_name"
