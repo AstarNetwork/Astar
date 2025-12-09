@@ -851,6 +851,7 @@
 <a href="#851" id="851">851</a>
 <a href="#852" id="852">852</a>
 <a href="#853" id="853">853</a>
+<a href="#854" id="854">854</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -934,6 +935,7 @@
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
+<span class="kw">pub mod </span>migrations;
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>mock;

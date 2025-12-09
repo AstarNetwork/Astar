@@ -22,7 +22,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["moonbeam_rpc_trace",["",[],["lib.rs"]]],\
 ["pallet_chain_extension_assets",["",[],["lib.rs"]]],\
 ["pallet_chain_extension_unified_accounts",["",[],["lib.rs"]]],\
-["pallet_collator_selection",["",[],["lib.rs","weights.rs"]]],\
+["pallet_collator_selection",["",[],["lib.rs","migrations.rs","weights.rs"]]],\
 ["pallet_collective_proxy",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_dapp_staking",["",[],["lib.rs","migration.rs","types.rs","weights.rs"]]],\
 ["pallet_dynamic_evm_base_fee",["",[],["lib.rs","weights.rs"]]],\
