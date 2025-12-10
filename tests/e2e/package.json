@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@acala-network/chopsticks-testing": "^1.0.1",
+    "reflect-metadata": "^0.2.2",
     "typescript": "5.6",
     "vitest": "^2.1"
   },

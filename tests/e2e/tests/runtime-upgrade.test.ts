@@ -17,10 +17,8 @@ describe('runtime upgrade', async () => {
 
   beforeAll(async () => {
     await dev.setStorage({
-      Sudo: {
-        Key: alice.address,
-      },
       System: {
+        AuthorizedUpgrade: null,
         Account: [[[alice.address], { providers: 1, data: { free: 1000n * 10n ** 18n } }]],
       },
     });
@@ -64,12 +62,20 @@ describe('runtime upgrade', async () => {
       `../../../target/release/wbuild/${runtime}-runtime/${runtime}_runtime.compact.compressed.wasm`
     );
     const code = readFileSync(codePath);
-    await api.tx.sudo
-      .sudoUncheckedWeight(
-        api.tx.system.setCode('0x' + code.toString('hex')),
-        {}
-      )
-      .signAndSend(alice);
+    const codeHash = api.registry.hash(code);
+
+    await dev.setStorage({
+      System: {
+        AuthorizedUpgrade: {
+          code_hash: codeHash,
+          check_version: true,
+        },
+      },
+    });
+
+    await api.tx.system
+        .applyAuthorizedUpgrade('0x' + code.toString('hex'))
+        .signAndSend(alice);
 
     // Do block production.
     await dev.newBlock({ count: 2 });
