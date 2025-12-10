@@ -1233,20 +1233,28 @@ pub mod pallet {
             let current_period = protocol_state.period_number();
             let threshold_period = Self::oldest_claimable_period(current_period);
 
-            // Find all entries which are from past periods & don't have claimable bonus rewards.
-            // This is bounded by max allowed number of stake entries per account.
-            let to_be_deleted: Vec<T::SmartContract> = StakerInfo::<T>::iter_prefix(&account)
-                .filter_map(|(smart_contract, stake_info)| {
-                    if stake_info.period_number() < current_period
-                        && !stake_info.is_bonus_eligible()
-                        || stake_info.period_number() < threshold_period
-                    {
-                        Some(smart_contract)
-                    } else {
-                        None
-                    }
-                })
-                .collect();
+            let mut remaining: u32 = 0;
+            let mut to_be_deleted: Vec<T::SmartContract> = Vec::new();
+
+            // Partition stake entries into remaining (valid) and to-be-deleted (expired).
+            // An entry is expired if it's from a past period without bonus eligibility,
+            // or older than the oldest claimable period regardless of bonus status.
+            // Bounded by max allowed number of stake entries per account.
+            for (smart_contract, stake_info) in StakerInfo::<T>::iter_prefix(&account) {
+                let stake_period = stake_info.period_number();
+
+                // Check if this entry should be kept
+                let should_keep = stake_period == current_period
+                    || (stake_period >= threshold_period
+                        && stake_period < current_period
+                        && stake_info.is_bonus_eligible());
+
+                if should_keep {
+                    remaining = remaining.saturating_add(1);
+                } else {
+                    to_be_deleted.push(smart_contract);
+                }
+            }
             let entries_to_delete = to_be_deleted.len();
 
             ensure!(!entries_to_delete.is_zero(), Error::<T>::NoExpiredEntries);
@@ -1258,9 +1266,7 @@ pub mod pallet {
 
             // Remove expired stake entries from the ledger.
             let mut ledger = Ledger::<T>::get(&account);
-            ledger
-                .contract_stake_count
-                .saturating_reduce(entries_to_delete.unique_saturated_into());
+            ledger.contract_stake_count = remaining;
             ledger.maybe_cleanup_expired(threshold_period); // Not necessary but we do it for the sake of consistency
             Self::update_ledger(&account, ledger)?;
 
