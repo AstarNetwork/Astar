@@ -68,7 +68,6 @@ impl pallet_xc_asset_config::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type AssetHubMigrationUpdater = frame_system::EnsureRoot<AccountId>;
     type WeightInfo = ();
 }
 
