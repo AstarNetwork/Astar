@@ -8,6 +8,7 @@ repository = "https://github.com/PureStake/moonbeam/"
 version = "0.1.0"
 
 [dependencies]
+environmental = { workspace = true }
 
 # Moonbeam
 evm-tracing-events = { workspace = true, features = ["evm-tracing"] }
@@ -45,4 +46,5 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	"sp-io/std",
+	"environmental/std",
 ]

@@ -32,7 +32,7 @@ pub const MAX_ETHEREUM_TX_INPUT_SIZE: u32 = 2u32.pow(16);
 pub type EthereumTxInput = BoundedVec<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>>;
 
 /// The checked Ethereum transaction. Only contracts `call` is support(no `create`).
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct CheckedEthereumTx {
     /// Gas limit.
     pub gas_limit: U256,

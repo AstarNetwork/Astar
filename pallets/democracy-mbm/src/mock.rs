@@ -98,6 +98,7 @@ impl pallet_scheduler::Config for Runtime {
     type WeightInfo = ();
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
     type Preimages = ();
+    type BlockNumberProvider = System;
 }
 
 impl pallet_democracy::Config for Runtime {
@@ -154,6 +155,7 @@ impl ExtBuilder {
                 (DAVE, 10000),
                 (YUKI, 10000),
             ],
+            ..Default::default()
         }
         .assimilate_storage(&mut t)
         .unwrap();

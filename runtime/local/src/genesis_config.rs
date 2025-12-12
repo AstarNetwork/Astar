@@ -70,7 +70,10 @@ pub fn default_config() -> serde_json::Value {
         sudo: SudoConfig {
             key: Some(alice.account_id()),
         },
-        balances: BalancesConfig { balances },
+        balances: BalancesConfig {
+            balances,
+            ..Default::default()
+        },
         vesting: VestingConfig { vesting: vec![] },
         aura: AuraConfig {
             authorities: vec![get_from_seed::<AuraId>("Alice")],

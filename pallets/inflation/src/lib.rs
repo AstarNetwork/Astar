@@ -555,7 +555,19 @@ pub mod pallet {
 
 /// Configuration of the inflation.
 /// Contains information about rewards, when inflation is recalculated, etc.
-#[derive(Encode, Decode, MaxEncodedLen, Default, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(
+    Encode,
+    Decode,
+    DecodeWithMemTracking,
+    MaxEncodedLen,
+    Default,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    TypeInfo,
+)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct InflationConfiguration {
     /// Era number at which the inflation configuration must be recalculated, based on the total issuance at that block.
@@ -630,6 +642,7 @@ impl InflationConfiguration {
 #[derive(
     Encode,
     Decode,
+    DecodeWithMemTracking,
     MaxEncodedLen,
     Copy,
     Clone,

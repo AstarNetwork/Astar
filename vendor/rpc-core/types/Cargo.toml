@@ -9,5 +9,4 @@ version = "0.1.0"
 
 [dependencies]
 ethereum-types = { workspace = true, features = ["std", "serialize"] }
-serde = { workspace = true, features = ["std"] }
-serde_json = { workspace = true }
+serde = { workspace = true, features = ["derive", "std"] }

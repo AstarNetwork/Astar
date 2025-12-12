@@ -140,6 +140,7 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
             (sibling_para_account_id(1), INITIAL_BALANCE),
             (sibling_para_account_id(2), INITIAL_BALANCE),
         ],
+        ..Default::default()
     }
     .assimilate_storage(&mut t)
     .unwrap();
@@ -168,6 +169,7 @@ pub fn relay_ext() -> sp_io::TestExternalities {
             (child_para_account_id(1), INITIAL_BALANCE),
             (child_para_account_id(2), INITIAL_BALANCE),
         ],
+        ..Default::default()
     }
     .assimilate_storage(&mut t)
     .unwrap();

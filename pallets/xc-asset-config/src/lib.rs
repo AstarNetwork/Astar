@@ -184,8 +184,6 @@ pub mod pallet {
             asset_location: VersionedLocation,
             asset_id: T::AssetId,
         },
-        /// Notify when the migration step is updated.
-        MigrationStepUpdated { new_migration_step: MigrationStep },
     }
 
     /// Mapping from an asset id to asset type.
@@ -355,23 +353,6 @@ pub mod pallet {
                 asset_id,
                 asset_location,
             });
-            Ok(())
-        }
-
-        #[pallet::call_index(5)]
-        #[pallet::weight(T::WeightInfo::update_migration_step())]
-        pub fn update_migration_step(
-            origin: OriginFor<T>,
-            migration_step: MigrationStep,
-        ) -> DispatchResult {
-            T::AssetHubMigrationUpdater::ensure_origin(origin)?;
-
-            AssetHubMigrationStep::<T>::put(&migration_step);
-
-            Self::deposit_event(Event::MigrationStepUpdated {
-                new_migration_step: migration_step,
-            });
-
             Ok(())
         }
     }

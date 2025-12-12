@@ -351,6 +351,7 @@ where
             filter_pool,
             max_stored_filters,
             max_past_logs,
+            1024, // max_block_range,
             block_data_cache,
         )
         .into_rpc(),

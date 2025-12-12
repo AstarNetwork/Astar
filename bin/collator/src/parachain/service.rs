@@ -59,7 +59,6 @@ use super::shell_upgrade::*;
 use crate::{
     evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig},
     rpc::tracing,
-    IdentifyChainNetworkBackend,
 };
 
 /// Parachain host functions
@@ -288,7 +287,7 @@ where
 
     let is_authority = parachain_config.role.is_authority();
     let import_queue_service = import_queue.service();
-    let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
+    let (network, system_rpc_tx, tx_handler_controller, sync_service) =
         cumulus_client_service::build_network(BuildNetworkParams {
             parachain_config: &parachain_config,
             net_config,
@@ -533,8 +532,6 @@ where
         )?;
     }
 
-    start_network.start_network();
-
     Ok((task_manager, client))
 }
 
@@ -668,6 +665,9 @@ fn start_aura_consensus(
         collator_service,
         authoring_duration: Duration::from_millis(2000),
         reinitialize: false,
+        // If necessary, AdditionalConfig CLI params could be extend to make it configurable.
+        // However, it will be removed once https://github.com/paritytech/polkadot-sdk/issues/6020 is fixed.
+        max_pov_percentage: None, // default is 85%
     };
 
     let fut = async move {
@@ -729,13 +729,7 @@ pub async fn start_node(
     para_id: ParaId,
     additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(TaskManager, Arc<FullClient>)> {
-    let default_backend = parachain_config.chain_spec.default_network_backend();
-    // If the network backend is unspecified, use the default for the given chain.
-    let network_backend = parachain_config
-        .network
-        .network_backend
-        .unwrap_or(default_backend);
-    match network_backend {
+    match parachain_config.network.network_backend {
         NetworkBackendType::Libp2p => {
             start_node_impl::<sc_network::NetworkWorker<_, _>>(
                 parachain_config,

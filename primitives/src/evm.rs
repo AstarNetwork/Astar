@@ -178,6 +178,10 @@ where
         pallet_evm::EVMFungibleAdapter::<F, FeeHandler>::withdraw_fee(who, fee)
     }
 
+    fn can_withdraw(who: &H160, amount: U256) -> Result<(), pallet_evm::Error<T>> {
+        pallet_evm::EVMFungibleAdapter::<F, FeeHandler>::can_withdraw(who, amount)
+    }
+
     fn correct_and_deposit_fee(
         who: &H160,
         corrected_fee: U256,

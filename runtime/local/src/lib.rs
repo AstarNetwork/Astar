@@ -25,6 +25,8 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 extern crate alloc;
+extern crate core;
+
 use alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec, vec::Vec};
 use core::marker::PhantomData;
 
@@ -54,7 +56,9 @@ use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, sr25519, ConstBool, OpaqueMetadata, H160, H256, U256};
+use sp_core::{
+    crypto::KeyTypeId, sr25519, ConstBool, DecodeWithMemTracking, OpaqueMetadata, H160, H256, U256,
+};
 use sp_runtime::{
     generic, impl_opaque_keys,
     traits::{
@@ -350,6 +354,7 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
+    type Holder = ();
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
@@ -640,6 +645,8 @@ impl pallet_evm::Config for Runtime {
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     // gas based storage limit not enabled
     type GasLimitStorageGrowthRatio = ConstU64<0>;
+    type CreateOriginFilter = ();
+    type CreateInnerOriginFilter = ();
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
@@ -672,6 +679,7 @@ impl pallet_scheduler::Config for Runtime {
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
     type Preimages = Preimage;
+    type BlockNumberProvider = System;
 }
 
 parameter_types! {
@@ -777,6 +785,7 @@ impl pallet_sudo::Config for Runtime {
     PartialOrd,
     Encode,
     Decode,
+    DecodeWithMemTracking,
     RuntimeDebug,
     MaxEncodedLen,
     scale_info::TypeInfo,
@@ -896,6 +905,7 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositBase = ConstU128<{ AST * 10 }>;
     // Acc Id + Hash + block number
     type AnnouncementDepositFactor = ConstU128<{ MILLIAST * 660 }>;
+    type BlockNumberProvider = System;
 }
 
 parameter_types! {

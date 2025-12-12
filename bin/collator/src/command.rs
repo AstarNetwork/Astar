@@ -72,18 +72,6 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
     }
 }
 
-/// A trait to identify the network backend based on the chain spec.
-pub trait IdentifyChainNetworkBackend {
-    /// Returns the default network backend.
-    fn default_network_backend(&self) -> sc_network::config::NetworkBackendType;
-}
-
-impl IdentifyChainNetworkBackend for Box<dyn ChainSpec> {
-    fn default_network_backend(&self) -> sc_network::config::NetworkBackendType {
-        sc_network::config::NetworkBackendType::Libp2p
-    }
-}
-
 fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
     Ok(match id {
         "dev" => Box::new(development_config()),

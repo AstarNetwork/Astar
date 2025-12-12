@@ -8,13 +8,13 @@ repository = "https://github.com/PureStake/moonbeam/"
 version = "0.1.0"
 
 [dependencies]
-ethereum = { workspace = true, features = ["with-scale"] }
+ethereum = { workspace = true, features = ["with-scale", "with-serde"] }
 ethereum-types = { workspace = true, features = ["std"] }
 futures = { workspace = true, features = ["compat"] }
 jsonrpsee = { workspace = true, features = ["macros", "server"] }
 moonbeam-client-evm-tracing = { workspace = true }
 moonbeam-rpc-core-types = { workspace = true }
-serde = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 
 fc-rpc-core = { workspace = true }

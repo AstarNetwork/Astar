@@ -119,4 +119,15 @@ impl<T: frame_system::Config> frame_system::ExtensionsWeightInfo for SubstrateWe
 		Weight::from_parts(3_479_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 	}
+	/// Storage: `System::ExtrinsicWeightReclaimed` (r:1 w:1)
+	/// Proof: `System::ExtrinsicWeightReclaimed` (`max_values`: Some(1), `max_size`: Some(16), added: 511, mode: `MaxEncodedLen`)
+	fn weight_reclaim() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `1501`
+		// Minimum execution time: 2_000_000 picoseconds.
+		Weight::from_parts(2_000_000, 1501)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
