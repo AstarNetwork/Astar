@@ -23,6 +23,8 @@
 #![recursion_limit = "512"]
 
 extern crate alloc;
+extern crate core;
+
 use alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec, vec::Vec};
 use core::marker::PhantomData;
 
@@ -55,7 +57,7 @@ use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
 use pallet_tx_pause::RuntimeCallNameOf;
-use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Compact, Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
 use sp_core::{sr25519, OpaqueMetadata, H160, H256, U256};
@@ -400,6 +402,7 @@ impl pallet_multisig::Config for Runtime {
     type DepositBase = DepositBase;
     type DepositFactor = DepositFactor;
     type MaxSignatories = ConstU32<100>;
+    type BlockNumberProvider = System;
     type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
 }
 
@@ -412,6 +415,7 @@ impl pallet_scheduler::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type PalletsOrigin = OriginCaller;
     type RuntimeCall = RuntimeCall;
+    type BlockNumberProvider = System;
     type MaximumWeight = MaximumSchedulerWeight;
     type ScheduleOrigin = EnsureRoot<AccountId>;
     type MaxScheduledPerBlock = ConstU32<50>;
@@ -609,6 +613,7 @@ impl pallet_session::Config for Runtime {
     type SessionManager = CollatorSelection;
     type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
     type Keys = SessionKeys;
+    type DisablingStrategy = ();
     type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
 }
 
@@ -711,6 +716,7 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
+    type Holder = ();
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
@@ -987,6 +993,8 @@ impl pallet_evm::Config for Runtime {
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     // gas based storage limit not enabled
     type GasLimitStorageGrowthRatio = ConstU64<0>;
+    type CreateOriginFilter = ();
+    type CreateInnerOriginFilter = ();
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
@@ -1030,6 +1038,7 @@ parameter_types! {
     PartialOrd,
     Encode,
     Decode,
+    DecodeWithMemTracking,
     RuntimeDebug,
     MaxEncodedLen,
     scale_info::TypeInfo,
@@ -1155,6 +1164,7 @@ impl pallet_proxy::Config for Runtime {
     // Additional storage item size of 33 bytes.
     type ProxyDepositFactor = ProxyDepositFactor;
     type MaxProxies = ConstU32<32>;
+    type BlockNumberProvider = System;
     type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
     type MaxPending = ConstU32<32>;
     type CallHasher = BlakeTwo256;

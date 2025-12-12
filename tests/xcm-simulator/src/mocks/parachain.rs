@@ -24,7 +24,7 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, Contains,
-        Everything, InstanceFilter, Nothing,
+        Disabled, Everything, InstanceFilter, Nothing,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -57,7 +57,7 @@ use xcm_builder::{
 
 use orml_traits::location::{RelativeReserveProvider, Reserve};
 use orml_xcm_support::DisabledParachainFee;
-
+use sp_core::DecodeWithMemTracking;
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use astar_primitives::xcm::ASSET_HUB_PARA_ID;
@@ -237,6 +237,7 @@ impl pallet_contracts::Config for Runtime {
     PartialOrd,
     Encode,
     Decode,
+    DecodeWithMemTracking,
     RuntimeDebug,
     MaxEncodedLen,
     scale_info::TypeInfo,
@@ -298,6 +299,7 @@ impl pallet_proxy::Config for Runtime {
     type CallHasher = sp_runtime::traits::BlakeTwo256;
     type AnnouncementDepositBase = ConstU128<100>;
     type AnnouncementDepositFactor = ConstU128<400>;
+    type BlockNumberProvider = System;
 }
 
 parameter_types! {
@@ -481,6 +483,7 @@ impl xcm_executor::Config for XcmConfig {
     type HrmpChannelAcceptedHandler = ();
     type HrmpChannelClosingHandler = ();
     type XcmRecorder = ();
+    type XcmEventEmitter = ();
 }
 
 impl mock_msg_queue::Config for Runtime {
@@ -515,6 +518,7 @@ impl pallet_xcm::Config for Runtime {
     type MaxRemoteLockConsumers = ConstU32<0>;
     type RemoteLockConsumerIdentifier = ();
     type AdminOrigin = EnsureRoot<AccountId>;
+    type AuthorizedAliasConsideration = Disabled;
 }
 
 /// Convert `AccountId` to `Location`.

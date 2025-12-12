@@ -223,6 +223,7 @@ impl xcm_executor::Config for XcmConfig {
     type HrmpChannelAcceptedHandler = ();
     type HrmpChannelClosingHandler = ();
     type XcmRecorder = ();
+    type XcmEventEmitter = ();
 }
 
 impl pallet_xcm_benchmarks::Config for Test {

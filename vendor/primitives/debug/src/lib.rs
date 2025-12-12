@@ -32,16 +32,16 @@ sp_api::decl_runtime_apis! {
     // to be used overridden.
     #[api_version(6)]
     pub trait DebugRuntimeApi {
-        #[changed_in(5)]
-        fn trace_transaction(
-            extrinsics: Vec<Block::Extrinsic>,
-            transaction: &Transaction,
-        ) -> Result<(), sp_runtime::DispatchError>;
-
         #[changed_in(4)]
         fn trace_transaction(
             extrinsics: Vec<Block::Extrinsic>,
             transaction: &LegacyTransaction,
+        ) -> Result<(), sp_runtime::DispatchError>;
+
+        #[changed_in(5)]
+        fn trace_transaction(
+            extrinsics: Vec<Block::Extrinsic>,
+            transaction: &Transaction,
         ) -> Result<(), sp_runtime::DispatchError>;
 
         fn trace_transaction(

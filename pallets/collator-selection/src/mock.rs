@@ -149,6 +149,7 @@ impl pallet_session::Config for Test {
     type SessionManager = CollatorSelection;
     type SessionHandler = TestSessionHandler;
     type Keys = MockSessionKeys;
+    type DisablingStrategy = ();
     type WeightInfo = ();
 }
 
@@ -234,9 +235,12 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         keys,
         ..Default::default()
     };
-    pallet_balances::GenesisConfig::<Test> { balances }
-        .assimilate_storage(&mut t)
-        .unwrap();
+    pallet_balances::GenesisConfig::<Test> {
+        balances,
+        ..Default::default()
+    }
+    .assimilate_storage(&mut t)
+    .unwrap();
     // collator selection must be initialized before session.
     collator_selection.assimilate_storage(&mut t).unwrap();
     session.assimilate_storage(&mut t).unwrap();

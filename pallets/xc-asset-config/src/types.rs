@@ -18,7 +18,18 @@
 
 use frame_support::pallet_prelude::{Decode, Encode, MaxEncodedLen, TypeInfo};
 
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(
+    Encode,
+    Decode,
+    MaxEncodedLen,
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    TypeInfo,
+    parity_scale_codec::DecodeWithMemTracking,
+)]
 pub enum MigrationStep {
     NotStarted,
     Ongoing,

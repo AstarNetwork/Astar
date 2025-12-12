@@ -23,6 +23,8 @@
 #![recursion_limit = "256"]
 
 extern crate alloc;
+extern crate core;
+
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
 extern crate frame_benchmarking;
@@ -56,7 +58,7 @@ use pallet_identity::legacy::IdentityInfo;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
-use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Compact, Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
 use sp_core::{sr25519, OpaqueMetadata, H160, H256, U256};
@@ -391,6 +393,7 @@ impl pallet_multisig::Config for Runtime {
     type DepositBase = DepositBase;
     type DepositFactor = DepositFactor;
     type MaxSignatories = ConstU32<100>;
+    type BlockNumberProvider = System;
     type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
 }
 
@@ -563,6 +566,7 @@ impl pallet_session::Config for Runtime {
     type SessionManager = CollatorSelection;
     type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
     type Keys = SessionKeys;
+    type DisablingStrategy = ();
     type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
 }
 
@@ -684,6 +688,7 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
+    type Holder = ();
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
@@ -950,6 +955,8 @@ impl pallet_evm::Config for Runtime {
     // gas based storage limit not enabled
     type GasLimitStorageGrowthRatio = ConstU64<0>;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
+    type CreateOriginFilter = ();
+    type CreateInnerOriginFilter = ();
 }
 
 parameter_types! {
@@ -989,6 +996,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     PartialOrd,
     Encode,
     Decode,
+    DecodeWithMemTracking,
     RuntimeDebug,
     MaxEncodedLen,
     scale_info::TypeInfo,
@@ -1104,6 +1112,7 @@ impl pallet_proxy::Config for Runtime {
     type ProxyDepositBase = ProxyDepositBase;
     type ProxyDepositFactor = ProxyDepositFactor;
     type MaxProxies = MaxProxies;
+    type BlockNumberProvider = System;
     type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
     type MaxPending = MaxPending;
     type CallHasher = BlakeTwo256;

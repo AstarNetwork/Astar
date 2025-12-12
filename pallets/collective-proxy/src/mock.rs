@@ -104,9 +104,12 @@ impl ExtBuilder {
             .collect();
         balances.push((COMMUNITY_ACCOUNT, 1000));
 
-        pallet_balances::GenesisConfig::<Test> { balances: balances }
-            .assimilate_storage(&mut storage)
-            .ok();
+        pallet_balances::GenesisConfig::<Test> {
+            balances: balances,
+            ..Default::default()
+        }
+        .assimilate_storage(&mut storage)
+        .ok();
 
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| {

@@ -33,7 +33,7 @@ use sp_runtime::traits::{Convert, MaybeEquivalence};
 
 // Polkadot imports
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
-use frame_support::traits::{Get, TransformOrigin};
+use frame_support::traits::{Disabled, Get, TransformOrigin};
 use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -292,6 +292,7 @@ impl xcm_executor::Config for XcmConfig {
     type HrmpChannelAcceptedHandler = ();
     type HrmpChannelClosingHandler = ();
     type XcmRecorder = PolkadotXcm;
+    type XcmEventEmitter = PolkadotXcm;
 }
 
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.
@@ -335,6 +336,7 @@ impl pallet_xcm::Config for Runtime {
     type MaxRemoteLockConsumers = ConstU32<0>;
     type RemoteLockConsumerIdentifier = ();
     type AdminOrigin = EnsureRoot<AccountId>;
+    type AuthorizedAliasConsideration = Disabled;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

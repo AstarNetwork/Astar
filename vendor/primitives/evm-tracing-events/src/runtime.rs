@@ -1,4 +1,4 @@
-// Copyright 2019-2022 PureStake Inc.
+// Copyright 2019-2025 PureStake Inc.
 // This file is part of Moonbeam.
 
 // Moonbeam is free software: you can redistribute it and/or modify
@@ -225,6 +225,9 @@ pub fn opcodes_string(opcode: Opcode) -> Vec<u8> {
         Opcode(89) => "MSize",
         Opcode(90) => "Gas",
         Opcode(91) => "JumpDest",
+        Opcode(92) => "TLoad",
+        Opcode(93) => "TStore",
+        Opcode(94) => "MCopy",
         Opcode(96) => "Push1",
         Opcode(97) => "Push2",
         Opcode(98) => "Push3",

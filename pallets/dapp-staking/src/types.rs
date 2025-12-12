@@ -145,7 +145,18 @@ pub enum AccountLedgerError {
 }
 
 /// Distinct subperiods in dApp staking protocol.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(
+    Encode,
+    Decode,
+    DecodeWithMemTracking,
+    MaxEncodedLen,
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    TypeInfo,
+)]
 pub enum Subperiod {
     /// Subperiod during which the focus is on voting. No rewards are earned during this subperiod.
     Voting,
@@ -199,7 +210,18 @@ pub struct PeriodEndInfo {
 }
 
 /// Force types to speed up the next era, and even period.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(
+    Encode,
+    Decode,
+    DecodeWithMemTracking,
+    MaxEncodedLen,
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    TypeInfo,
+)]
 pub enum ForcingType {
     /// Force the next era to start.
     Era,
@@ -1615,6 +1637,7 @@ where
 #[derive(
     Encode,
     Decode,
+    DecodeWithMemTracking,
     MaxEncodedLen,
     Copy,
     Clone,
@@ -1659,6 +1682,7 @@ impl TierThreshold {
 #[derive(
     Encode,
     Decode,
+    DecodeWithMemTracking,
     MaxEncodedLen,
     RuntimeDebugNoBound,
     PartialEqNoBound,

@@ -151,6 +151,8 @@ impl pallet_evm::Config for Test {
     type GasLimitPovSizeRatio = ConstU64<4>;
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     type GasLimitStorageGrowthRatio = ConstU64<0>;
+    type CreateOriginFilter = ();
+    type CreateInnerOriginFilter = ();
 }
 
 #[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
