@@ -2370,6 +2370,7 @@ pub mod pallet {
                 let removed = Self::cleanup_staker_info_entries(
                     &account,
                     &mut updated_ledger,
+                    current_period,
                     threshold_period,
                 );
 
@@ -2461,21 +2462,14 @@ pub mod pallet {
         fn cleanup_staker_info_entries(
             account: &T::AccountId,
             ledger: &mut AccountLedgerFor<T>,
+            current_period: PeriodNumber,
             threshold_period: PeriodNumber,
         ) -> u32 {
-            let staked_period = ledger.staked_period();
             let to_remove: Vec<T::SmartContract> = StakerInfo::<T>::iter_prefix(account)
                 .filter_map(|(contract, stake_info)| {
                     let period = stake_info.period_number();
-
-                    let expired = if period < threshold_period {
-                        true
-                    } else if let Some(staked_period) = staked_period {
-                        period < staked_period && !stake_info.is_bonus_eligible()
-                    } else {
-                        // No active/future stake
-                        true
-                    };
+                    let expired = period < threshold_period
+                        || (period < current_period && !stake_info.is_bonus_eligible());
 
                     expired.then_some(contract)
                 })
