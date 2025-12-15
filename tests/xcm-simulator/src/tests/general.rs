@@ -155,8 +155,8 @@ fn error_when_not_paying_enough() {
         ));
     });
 
-    // Register relay asset in ParaC (Asset Hub)
-    ParaC::execute_with(|| {
+    // Register relay asset in ParaAssetHub (Asset Hub)
+    ParaAssetHub::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             source_id,
@@ -171,7 +171,7 @@ fn error_when_not_paying_enough() {
     // Fund Alice on Asset Hub with only 99 tokens
     // We know buy_execution on ParaA will cost 4 * 25 = 100, so 99 is not enough
     let insufficient_amount = 99;
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         assert_ok!(pallet_assets::Pallet::<parachain::Runtime>::mint(
             parachain::RuntimeOrigin::signed(parent_account_id()),
             source_id.into(),
@@ -181,7 +181,7 @@ fn error_when_not_paying_enough() {
     });
 
     // Transfer from Asset Hub to ParaA - should fail on ParaA due to insufficient fees
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         let asset = Asset {
             id: AssetId(Location::new(1, Here)),
             fun: Fungible(insufficient_amount),

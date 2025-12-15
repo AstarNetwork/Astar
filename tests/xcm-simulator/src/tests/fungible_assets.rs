@@ -437,8 +437,8 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
         ));
     });
 
-    // Register relay asset in ParaC (Asset Hub)
-    ParaC::execute_with(|| {
+    // Register relay asset
+    ParaAssetHub::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             relay_asset_id,
@@ -450,9 +450,9 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
         ));
     });
 
-    // Fund Alice on Asset Hub (ParaC)
+    // Fund Alice on Asset Hub
     let withdraw_amount = 567;
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         assert_ok!(pallet_assets::Pallet::<parachain::Runtime>::mint(
             parachain::RuntimeOrigin::signed(parent_account_id()),
             relay_asset_id.into(),
@@ -461,8 +461,8 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
         ));
     });
 
-    // Transfer from Asset Hub (ParaC) to ParaA
-    ParaC::execute_with(|| {
+    // Transfer from Asset Hub to ParaA
+    ParaAssetHub::execute_with(|| {
         let asset = Asset {
             id: AssetId(Location::new(1, Here)),
             fun: Fungible(withdraw_amount),
@@ -506,12 +506,12 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
     });
 
     //
-    // Send the relay assets back to ParaC (Asset Hub)
+    // Send the relay assets back
     //
 
     // Lets gather the balance before sending back money
     let mut asset_hub_alice_balance_before = 0;
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         asset_hub_alice_balance_before = parachain::Assets::balance(relay_asset_id, ALICE);
     });
 
@@ -532,7 +532,7 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
     });
 
     // Balances on Asset Hub should have been received
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         assert!(parachain::Assets::balance(relay_asset_id, ALICE) > asset_hub_alice_balance_before);
     });
 }
@@ -592,8 +592,8 @@ fn send_relay_asset_to_para_b_with_extra_native() {
         ));
     });
 
-    // Register relay asset in ParaC (Asset Hub)
-    ParaC::execute_with(|| {
+    // Register relay asset
+    ParaAssetHub::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             relay_asset_id,
@@ -605,9 +605,9 @@ fn send_relay_asset_to_para_b_with_extra_native() {
         ));
     });
 
-    // Fund Alice on ParaC (Asset Hub) with relay tokens
+    // Fund Alice on Asset Hub with relay tokens
     let withdraw_amount = 54321;
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         assert_ok!(pallet_assets::Pallet::<parachain::Runtime>::mint(
             parachain::RuntimeOrigin::signed(parent_account_id()),
             relay_asset_id.into(),
@@ -616,8 +616,8 @@ fn send_relay_asset_to_para_b_with_extra_native() {
         ));
     });
 
-    // Transfer relay tokens from Asset Hub (ParaC) to ParaA
-    ParaC::execute_with(|| {
+    // Transfer relay tokens from Asset Hub to ParaA
+    ParaAssetHub::execute_with(|| {
         let asset = Asset {
             id: AssetId(Location::new(1, Here)),
             fun: Fungible(withdraw_amount),
@@ -720,8 +720,8 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
         ));
     });
 
-    // Register relay asset in ParaC (Asset Hub)
-    ParaC::execute_with(|| {
+    // Register relay asset
+    ParaAssetHub::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             relay_asset_id,
@@ -733,9 +733,9 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
         ));
     });
 
-    // Fund fresh_account on ParaC (Asset Hub)
+    // Fund fresh_account
     let withdraw_amount = 123;
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         assert_ok!(pallet_assets::Pallet::<parachain::Runtime>::mint(
             parachain::RuntimeOrigin::signed(parent_account_id()),
             relay_asset_id.into(),
@@ -745,7 +745,7 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
     });
 
     // Transfer from Asset Hub to ParaA for fresh_account
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         let asset = Asset {
             id: AssetId(Location::new(1, Here)),
             fun: Fungible(withdraw_amount),
@@ -792,8 +792,8 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
         ));
     });
 
-    // Fund fresh_account again on ParaC
-    ParaC::execute_with(|| {
+    // Fund fresh_account again
+    ParaAssetHub::execute_with(|| {
         assert_ok!(pallet_assets::Pallet::<parachain::Runtime>::mint(
             parachain::RuntimeOrigin::signed(parent_account_id()),
             relay_asset_id.into(),
@@ -803,7 +803,7 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
     });
 
     // Re-send tokens from Asset Hub to ParaA
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         let asset = Asset {
             id: AssetId(Location::new(1, Here)),
             fun: Fungible(withdraw_amount),
@@ -869,8 +869,8 @@ fn receive_assets_with_sufficients_true_allows_non_funded_account_to_receive_ass
         ));
     });
 
-    // Register relay asset in ParaC (Asset Hub)
-    ParaC::execute_with(|| {
+    // Register relay asset
+    ParaAssetHub::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             relay_asset_id,
@@ -882,9 +882,9 @@ fn receive_assets_with_sufficients_true_allows_non_funded_account_to_receive_ass
         ));
     });
 
-    // Fund fresh_account on ParaC (Asset Hub)
+    // Fund fresh_account
     let withdraw_amount = 123;
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         assert_ok!(pallet_assets::Pallet::<parachain::Runtime>::mint(
             parachain::RuntimeOrigin::signed(parent_account_id()),
             relay_asset_id.into(),
@@ -894,7 +894,7 @@ fn receive_assets_with_sufficients_true_allows_non_funded_account_to_receive_ass
     });
 
     // Transfer from Asset Hub to ParaA for fresh_account
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         let asset = Asset {
             id: AssetId(Location::new(1, Here)),
             fun: Fungible(withdraw_amount),
@@ -1020,7 +1020,7 @@ fn transfer_relay_token_reserve_from_para_c_to_para_a() {
 
     // Build the XCM message and send it
     let to_para_a_amount = 10_000_000_000_000u128;
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         let dest = Location::new(1, [Parachain(1)]);
         let beneficiary = Location::new(0, [alice.into()]);
 
@@ -1100,8 +1100,8 @@ fn transfer_relay_token_reserve_from_para_a_to_para_b_should_use_asset_hub_as_re
         ));
     });
 
-    // Register relay asset in ParaC
-    ParaC::execute_with(|| {
+    // Register relay asset
+    ParaAssetHub::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             relay_asset_id,
@@ -1113,10 +1113,10 @@ fn transfer_relay_token_reserve_from_para_a_to_para_b_should_use_asset_hub_as_re
         ));
     });
 
-    // Fund Sovereign account of ParaA on ParaC (Asset Hub) by minting relay token derivatives directly
+    // Fund Sovereign account of ParaA on Asset Hub by minting relay token derivatives directly
     // This simulates relay tokens being deposited on Asset Hub
     let withdraw_amount = 50_000;
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         assert_ok!(pallet_assets::Pallet::<parachain::Runtime>::mint(
             parachain::RuntimeOrigin::signed(parent_account_id()),
             relay_asset_id.into(),
@@ -1125,7 +1125,7 @@ fn transfer_relay_token_reserve_from_para_a_to_para_b_should_use_asset_hub_as_re
         ));
     });
 
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         let asset = Asset {
             id: AssetId(Location::new(1, Here)),
             fun: Fungible(withdraw_amount),
@@ -1167,7 +1167,7 @@ fn transfer_relay_token_reserve_from_para_a_to_para_b_should_use_asset_hub_as_re
     });
 
     // Para C Sovereign account should holds the relay chain tokens in para B sibling account
-    ParaC::execute_with(|| {
+    ParaAssetHub::execute_with(|| {
         assert_eq!(
             ParachainAssets::balance(relay_asset_id, &sibling_para_account_id(2)),
             withdraw_amount

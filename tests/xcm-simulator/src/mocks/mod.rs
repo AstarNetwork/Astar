@@ -51,7 +51,7 @@ decl_test_parachain! {
 }
 
 decl_test_parachain! {
-    pub struct ParaC {
+    pub struct ParaAssetHub {
         Runtime = parachain::Runtime,
         XcmpMessageHandler = parachain::MsgQueue,
         DmpMessageHandler = parachain::MsgQueue,
@@ -77,7 +77,7 @@ decl_test_network! {
         parachains = vec![
             (1, ParaA),
             (2, ParaB),
-            (1000, ParaC),
+            (1000, ParaAssetHub),
         ],
     }
 }
