@@ -1670,20 +1670,21 @@ pub mod pallet {
             // 2.
             // Update `StakerInfo` storage with the new stake amount on the specified contract.
             //
-            // There are two distinct scenarios:
+            // There are three distinct scenarios:
             // 1. Existing entry matches the current period number - just update it.
-            // 2. Entry doesn't exist or it's for an older period - create a new one.
+            // 2. Existing entry is expired/orphaned - replace it.
+            // 3. Entry doesn't exist or it's for an older period - create a new one.
             //
             // This is ok since we only use this storage entry to keep track of how much each staker
             // has staked on each contract in the current period. We only ever need the latest information.
             // This is because `AccountLedger` is the one keeping information about how much was staked when.
-            let (mut new_staking_info, is_new_entry) =
+            let (mut new_staking_info, is_new_entry, replacing_old_entry) =
                 match StakerInfo::<T>::get(&account, &smart_contract) {
                     // Entry with matching period exists
                     Some(staking_info)
                         if staking_info.period_number() == protocol_state.period_number() =>
                     {
-                        (staking_info, false)
+                        (staking_info, false, false)
                     }
                     // Entry exists but period doesn't match. Bonus reward might still be claimable.
                     Some(staking_info)
@@ -1692,8 +1693,18 @@ pub mod pallet {
                     {
                         return Err(Error::<T>::UnclaimedRewards.into());
                     }
-                    // No valid entry exists
-                    _ => (
+                    // Entry exists but is expired/orphaned - we're replacing it, not adding new
+                    Some(_old_entry) => {
+                        // Remove the old orphaned entry explicitly
+                        StakerInfo::<T>::remove(&account, &smart_contract);
+                        (
+                            SingularStakingInfo::new(protocol_state.period_number(), bonus_status),
+                            true, // is_new_entry (for storage write)
+                            true, // replacing_old_entry (don't increment counter)
+                        )
+                    }
+                    // No entry exists at all - truly new
+                    None => (
                         SingularStakingInfo::new(
                             protocol_state.period_number(),
                             // Important to account for the remaining bonus moves since it's possible to retain the bonus
@@ -1701,6 +1712,7 @@ pub mod pallet {
                             bonus_status,
                         ),
                         true,
+                        false,
                     ),
                 };
 
@@ -1710,7 +1722,8 @@ pub mod pallet {
                 Error::<T>::InsufficientStakeAmount
             );
 
-            if is_new_entry {
+            // Only increment if we're truly adding a new contract, not replacing an orphaned entry
+            if is_new_entry && !replacing_old_entry {
                 ledger.contract_stake_count.saturating_inc();
                 ensure!(
                     ledger.contract_stake_count <= T::MaxNumberOfStakedContracts::get(),
@@ -2291,10 +2304,9 @@ pub mod pallet {
 
             // Check if the rewards have expired
             let protocol_state = ActiveProtocolState::<T>::get();
-            ensure!(
-                staked_period >= Self::oldest_claimable_period(protocol_state.period_number()),
-                Error::<T>::RewardExpired
-            );
+            let current_period = protocol_state.period_number();
+            let threshold_period = Self::oldest_claimable_period(current_period);
+            ensure!(staked_period >= threshold_period, Error::<T>::RewardExpired);
 
             // Calculate the reward claim span
             let earliest_staked_era = ledger
@@ -2325,6 +2337,8 @@ pub mod pallet {
                         AccountLedgerError::NothingToClaim => Error::<T>::NoClaimableRewards,
                         _ => Error::<T>::InternalClaimStakerError,
                     })?;
+            // Check if ledger stakes were cleared (period ended)
+            let ledger_was_cleared = ledger.staked.is_empty() && ledger.staked_future.is_none();
 
             // Calculate rewards
             let mut rewards: Vec<_> = Vec::new();
@@ -2350,6 +2364,19 @@ pub mod pallet {
                 .map_err(|_| Error::<T>::RewardPayoutFailed)?;
 
             Self::update_ledger(&account, ledger)?;
+
+            if ledger_was_cleared {
+                let mut updated_ledger = Ledger::<T>::get(&account);
+                let removed = Self::cleanup_staker_info_entries(
+                    &account,
+                    &mut updated_ledger,
+                    threshold_period,
+                );
+
+                if removed > 0 {
+                    Self::update_ledger(&account, updated_ledger)?;
+                }
+            }
 
             rewards.into_iter().for_each(|(era, reward)| {
                 Self::deposit_event(Event::<T>::Reward {
@@ -2425,6 +2452,44 @@ pub mod pallet {
             });
 
             Ok(())
+        }
+
+        /// Remove StakerInfo entries that belong to expired/claimed periods
+        /// and decrement the contract_stake_count accordingly.
+        ///
+        /// Returns the number of entries removed.
+        fn cleanup_staker_info_entries(
+            account: &T::AccountId,
+            ledger: &mut AccountLedgerFor<T>,
+            threshold_period: PeriodNumber,
+        ) -> u32 {
+            let staked_period = ledger.staked_period();
+            let to_remove: Vec<T::SmartContract> = StakerInfo::<T>::iter_prefix(account)
+                .filter_map(|(contract, stake_info)| {
+                    let period = stake_info.period_number();
+
+                    let expired = if period < threshold_period {
+                        true
+                    } else if let Some(staked_period) = staked_period {
+                        period < staked_period && !stake_info.is_bonus_eligible()
+                    } else {
+                        // No active/future stake
+                        true
+                    };
+
+                    expired.then_some(contract)
+                })
+                .collect();
+
+            let removed = to_remove.len() as u32;
+
+            for contract in to_remove {
+                StakerInfo::<T>::remove(account, &contract);
+            }
+
+            ledger.contract_stake_count = ledger.contract_stake_count.saturating_sub(removed);
+
+            removed
         }
 
         /// Internal function to transition the dApp staking protocol maintenance mode.
