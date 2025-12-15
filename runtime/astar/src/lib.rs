@@ -1001,6 +1001,13 @@ impl pallet_ethereum::Config for Runtime {
     type ExtraDataLength = ConstU32<30>;
 }
 
+#[cfg(feature = "astar-sudo")]
+impl pallet_sudo::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
+}
+
 impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
@@ -1546,6 +1553,8 @@ impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
             | RuntimeCall::Utility(_)
             | RuntimeCall::TxPause(_)
             | RuntimeCall::SafeMode(_) => true,
+            #[cfg(feature = "astar-sudo")]
+            RuntimeCall::Sudo(_) => true,
             _ => false,
         }
     }
@@ -1556,16 +1565,15 @@ pub struct TxPauseWhitelistedCalls;
 impl frame_support::traits::Contains<RuntimeCallNameOf<Runtime>> for TxPauseWhitelistedCalls {
     fn contains(full_name: &RuntimeCallNameOf<Runtime>) -> bool {
         let pallet_name = full_name.0.as_slice();
-        matches!(
-            pallet_name,
-            b"System"
-                | b"Timestamp"
-                | b"ParachainSystem"
-                | b"Council"
-                | b"TechnicalCommittee"
-                | b"TxPause"
-                | b"SafeMode"
-        )
+
+        pallet_name == b"System"
+            || pallet_name == b"Timestamp"
+            || pallet_name == b"ParachainSystem"
+            || pallet_name == b"Council"
+            || pallet_name == b"TechnicalCommittee"
+            || pallet_name == b"TxPause"
+            || pallet_name == b"SafeMode"
+            || cfg!(feature = "astar-sudo") && pallet_name == b"Sudo"
     }
 }
 
@@ -1612,72 +1620,89 @@ impl pallet_tx_pause::Config for Runtime {
     type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>;
 }
 
-construct_runtime!(
-    pub struct Runtime
-    {
-        System: frame_system = 10,
-        Utility: pallet_utility = 11,
-        Identity: pallet_identity = 12,
-        Timestamp: pallet_timestamp = 13,
-        Multisig: pallet_multisig = 14,
-        Proxy: pallet_proxy = 15,
-        Scheduler: pallet_scheduler = 17,
+/// Macro to construct the Astar runtime with optional Sudo pallet.
+macro_rules! construct_astar_runtime {
+    ($($common:tt)*) => {
+        #[cfg(feature = "astar-sudo")]
+        construct_runtime!(
+            pub struct Runtime {
+                $($common)*
+                Sudo: pallet_sudo = 99,
+            }
+        );
 
-        ParachainSystem: cumulus_pallet_parachain_system = 20,
-        ParachainInfo: parachain_info = 21,
+        #[cfg(not(feature = "astar-sudo"))]
+        construct_runtime!(
+            pub struct Runtime {
+                $($common)*
+            }
+        );
+    };
+}
 
-        TransactionPayment: pallet_transaction_payment = 30,
-        Balances: pallet_balances = 31,
-        Vesting: pallet_vesting = 32,
-        // Inflation needs to execute `on_initialize` as soon as possible, and `on_finalize` as late as possible.
-        // However, we need to execute Balance genesis before Inflation genesis, otherwise we'll have zero issuance when Inflation
-        // logic is executed.
-        // TODO: Address this later. It would be best if Inflation was first pallet.
-        Inflation: pallet_inflation = 33,
-        DappStaking: pallet_dapp_staking = 34,
-        Assets: pallet_assets = 36,
-        PriceAggregator: pallet_price_aggregator = 37,
-        Oracle: orml_oracle = 38,
-        OracleMembership: pallet_membership::<Instance1> = 39,
+construct_astar_runtime!(
+    System: frame_system = 10,
+    Utility: pallet_utility = 11,
+    Identity: pallet_identity = 12,
+    Timestamp: pallet_timestamp = 13,
+    Multisig: pallet_multisig = 14,
+    Proxy: pallet_proxy = 15,
+    Scheduler: pallet_scheduler = 17,
 
-        Authorship: pallet_authorship = 40,
-        CollatorSelection: pallet_collator_selection = 41,
-        Session: pallet_session = 42,
-        Aura: pallet_aura = 43,
-        AuraExt: cumulus_pallet_aura_ext = 44,
+    ParachainSystem: cumulus_pallet_parachain_system = 20,
+    ParachainInfo: parachain_info = 21,
 
-        XcmpQueue: cumulus_pallet_xcmp_queue = 50,
-        PolkadotXcm: pallet_xcm = 51,
-        CumulusXcm: cumulus_pallet_xcm = 52,
-        // skip 53 - cumulus_pallet_dmp_queue previously
-        XcAssetConfig: pallet_xc_asset_config = 54,
-        XTokens: orml_xtokens = 55,
-        MessageQueue: pallet_message_queue = 56,
+    TransactionPayment: pallet_transaction_payment = 30,
+    Balances: pallet_balances = 31,
+    Vesting: pallet_vesting = 32,
+    // Inflation needs to execute `on_initialize` as soon as possible, and `on_finalize` as late as possible.
+    // However, we need to execute Balance genesis before Inflation genesis, otherwise we'll have zero issuance when Inflation
+    // logic is executed.
+    // TODO: Address this later. It would be best if Inflation was first pallet.
+    Inflation: pallet_inflation = 33,
+    DappStaking: pallet_dapp_staking = 34,
+    Assets: pallet_assets = 36,
+    PriceAggregator: pallet_price_aggregator = 37,
+    Oracle: orml_oracle = 38,
+    OracleMembership: pallet_membership::<Instance1> = 39,
 
-        EVM: pallet_evm = 60,
-        Ethereum: pallet_ethereum = 61,
-        DynamicEvmBaseFee: pallet_dynamic_evm_base_fee = 63,
+    Authorship: pallet_authorship = 40,
+    CollatorSelection: pallet_collator_selection = 41,
+    Session: pallet_session = 42,
+    Aura: pallet_aura = 43,
+    AuraExt: cumulus_pallet_aura_ext = 44,
 
-        Contracts: pallet_contracts = 70,
+    XcmpQueue: cumulus_pallet_xcmp_queue = 50,
+    PolkadotXcm: pallet_xcm = 51,
+    CumulusXcm: cumulus_pallet_xcm = 52,
+    // skip 53 - cumulus_pallet_dmp_queue previously
+    XcAssetConfig: pallet_xc_asset_config = 54,
+    XTokens: orml_xtokens = 55,
+    MessageQueue: pallet_message_queue = 56,
 
-        Preimage: pallet_preimage = 84,
+    EVM: pallet_evm = 60,
+    Ethereum: pallet_ethereum = 61,
+    DynamicEvmBaseFee: pallet_dynamic_evm_base_fee = 63,
 
-        // Governance
-        CouncilMembership: pallet_membership::<Instance2> = 100,
-        TechnicalCommitteeMembership: pallet_membership::<Instance3> = 101,
-        CommunityCouncilMembership: pallet_membership::<Instance4> = 102,
-        Council: pallet_collective::<Instance2> = 103,
-        TechnicalCommittee: pallet_collective::<Instance3> = 104,
-        CommunityCouncil: pallet_collective::<Instance4> = 105,
-        Democracy: pallet_democracy = 106,
-        Treasury: pallet_treasury::<Instance1> = 107,
-        CommunityTreasury: pallet_treasury::<Instance2> = 108,
-        CollectiveProxy: pallet_collective_proxy = 109,
-        SafeMode: pallet_safe_mode = 110,
-        TxPause: pallet_tx_pause = 111,
+    Contracts: pallet_contracts = 70,
 
-        MultiBlockMigrations: pallet_migrations = 120,
-    }
+    Preimage: pallet_preimage = 84,
+
+    // Governance
+    CouncilMembership: pallet_membership::<Instance2> = 100,
+    TechnicalCommitteeMembership: pallet_membership::<Instance3> = 101,
+    CommunityCouncilMembership: pallet_membership::<Instance4> = 102,
+    Council: pallet_collective::<Instance2> = 103,
+    TechnicalCommittee: pallet_collective::<Instance3> = 104,
+    CommunityCouncil: pallet_collective::<Instance4> = 105,
+    Democracy: pallet_democracy = 106,
+    Treasury: pallet_treasury::<Instance1> = 107,
+    CommunityTreasury: pallet_treasury::<Instance2> = 108,
+    CollectiveProxy: pallet_collective_proxy = 109,
+    SafeMode: pallet_safe_mode = 110,
+    TxPause: pallet_tx_pause = 111,
+
+    MultiBlockMigrations: pallet_migrations = 120,
 );
 
 /// Block type as expected by this runtime.
@@ -2337,7 +2362,7 @@ impl_runtime_apis! {
             if asset_id.0 == xcm_config::AstarLocation::get() {
                 Ok(XcmWeightToFee::weight_to_fee(&weight))
             }
-            // for foreign assets with “units per second” configurations
+            // for foreign assets with "units per second" configurations
             else {
                 let versioned_location = VersionedLocation::V5(asset_id.0);
 
