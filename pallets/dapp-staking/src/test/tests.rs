@@ -4574,3 +4574,95 @@ fn restake_replaces_old_entry_without_inflating_counter() {
         );
     });
 }
+
+// Tests cleanup partitioning and ledger counter alignment with one real stake and injected historical entries.
+#[test]
+fn cleanup_expired_entries_correctly_with_ledger_counter_reconciliation() {
+    ExtBuilder::default().build_and_execute(|| {
+        let account: AccountId = 1;
+
+        // setup
+        let retained_periods: u32 = <Test as Config>::RewardRetentionInPeriods::get();
+        assert_eq!(retained_periods, 2, "sanity check");
+
+        // Advance protocol to period 3
+        advance_to_next_period();
+        advance_to_next_period();
+
+        let protocol_state = ActiveProtocolState::<Test>::get();
+        let current_period = protocol_state.period_number();
+        let threshold_period = DappStaking::oldest_claimable_period(current_period);
+
+        // Sanity checks for the test assumptions
+        assert_eq!(current_period, 3);
+        assert_eq!(threshold_period, 1);
+
+        // Valid current-period stake (keep after cleanup)
+        let keep_current = MockSmartContract::wasm(10 as AccountId);
+        assert_register(1, &keep_current);
+        assert_lock(account, 1_000);
+
+        advance_to_next_subperiod(); // no bonus
+        assert_stake(account, &keep_current, 10);
+
+        // Injected contracts (impossible via extrinsics)
+        let keep_bonus = MockSmartContract::wasm(11 as AccountId);
+        let delete_no_bonus = MockSmartContract::wasm(12 as AccountId);
+        let delete_too_old = MockSmartContract::wasm(13 as AccountId);
+
+        // 1. Past but claimable + bonus eligible (keep after cleanup)
+        StakerInfo::<Test>::insert(
+            &account,
+            &keep_bonus,
+            SingularStakingInfo::new(current_period - 1, 1),
+        );
+
+        // 2. Past but claimable + NOT bonus eligible (delete after cleanup)
+        StakerInfo::<Test>::insert(
+            &account,
+            &delete_no_bonus,
+            SingularStakingInfo::new(current_period - 1, 0),
+        );
+
+        // 3. Older than oldest claimable period → (delete after cleanup)
+        StakerInfo::<Test>::insert(
+            &account,
+            &delete_too_old,
+            SingularStakingInfo::new(threshold_period - 1, 1),
+        );
+
+        // Inflate the ledger counter
+        Ledger::<Test>::mutate(&account, |ledger| {
+            ledger.contract_stake_count = 10;
+        });
+
+        assert_ok!(DappStaking::cleanup_expired_entries(RuntimeOrigin::signed(
+            account
+        )));
+
+        // ---- assert remaining entries ----
+        assert!(StakerInfo::<Test>::contains_key(&account, &keep_current));
+        assert!(StakerInfo::<Test>::contains_key(&account, &keep_bonus));
+
+        // ---- assert deleted entries ----
+        assert!(!StakerInfo::<Test>::contains_key(
+            &account,
+            &delete_no_bonus
+        ));
+        assert!(!StakerInfo::<Test>::contains_key(&account, &delete_too_old));
+
+        // ---- assert counter reconciliation ----
+        let ledger = Ledger::<Test>::get(&account);
+        let actual_entries = StakerInfo::<Test>::iter_prefix(&account).count() as u32;
+
+        assert_eq!(
+            ledger.contract_stake_count, actual_entries,
+            "contract_stake_count must be equal to remaining entries"
+        );
+
+        assert_eq!(
+            actual_entries, 2,
+            "only current-period and bonus-eligible past entries should remain"
+        );
+    });
+}
