@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Call","Error","Event"],"mod":["dispatchables","storage_types"],"struct":["Pallet"],"trait":["Config","ExecutionPaymentRate","XcAssetLocation"],"type":["AssetHubMigrationStep","AssetIdToLocation","AssetLocationToId","AssetLocationUnitsPerSecond","Module"]};
+window.SIDEBAR_ITEMS = {"enum":["Call","Error","Event"],"mod":["dispatchables","storage_types"],"struct":["Pallet"],"trait":["Config","ExecutionPaymentRate","XcAssetLocation"],"type":["AssetIdToLocation","AssetLocationToId","AssetLocationUnitsPerSecond","Module"]};

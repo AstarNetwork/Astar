@@ -313,15 +313,6 @@
 <a href="#313" id="313">313</a>
 <a href="#314" id="314">314</a>
 <a href="#315" id="315">315</a>
-<a href="#316" id="316">316</a>
-<a href="#317" id="317">317</a>
-<a href="#318" id="318">318</a>
-<a href="#319" id="319">319</a>
-<a href="#320" id="320">320</a>
-<a href="#321" id="321">321</a>
-<a href="#322" id="322">322</a>
-<a href="#323" id="323">323</a>
-<a href="#324" id="324">324</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -357,7 +348,7 @@
 
 <span class="comment">// Polkadot imports
 </span><span class="kw">use </span>cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
-<span class="kw">use </span>frame_support::traits::{Get, TransformOrigin};
+<span class="kw">use </span>frame_support::traits::TransformOrigin;
 <span class="kw">use </span>parachains_common::message_queue::ParaIdToSibling;
 <span class="kw">use </span>polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 <span class="kw">use </span>xcm::{latest::prelude::<span class="kw-2">*</span>, v5::ROCOCO_GENESIS_HASH};
@@ -378,9 +369,8 @@
 <span class="comment">// Astar imports
 </span><span class="kw">use </span>astar_primitives::xcm::{
     AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, AllowTopLevelPaidExecutionFrom,
-    FixedRateOfForeignAsset, Reserves, XcmFungibleFeeHandler, MAX_ASSETS,
+    FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler, MAX_ASSETS,
 };
-<span class="kw">use </span>pallet_xc_asset_config::types::MigrationStep;
 
 <span class="macro">parameter_types!</span> {
     <span class="kw">pub </span>RelayNetwork: <span class="prelude-ty">Option</span>&lt;NetworkId&gt; = <span class="prelude-val">Some</span>(NetworkId::ByGenesis(ROCOCO_GENESIS_HASH));
@@ -502,20 +492,13 @@
 <span class="kw">pub type </span>Weigher =
     WeightInfoBounds&lt;weights::xcm::XcmWeight&lt;Runtime, RuntimeCall&gt;, RuntimeCall, MaxInstructions&gt;;
 
-<span class="kw">pub struct </span>MigrationStepGetter;
-<span class="kw">impl </span>Get&lt;MigrationStep&gt; <span class="kw">for </span>MigrationStepGetter {
-    <span class="kw">fn </span>get() -&gt; MigrationStep {
-        pallet_xc_asset_config::AssetHubMigrationStep::&lt;Runtime&gt;::get()
-    }
-}
-
 <span class="kw">pub struct </span>XcmConfig;
 <span class="kw">impl </span>xcm_executor::Config <span class="kw">for </span>XcmConfig {
     <span class="kw">type </span>RuntimeCall = RuntimeCall;
     <span class="kw">type </span>XcmSender = XcmRouter;
     <span class="kw">type </span>AssetTransactor = AssetTransactors;
     <span class="kw">type </span>OriginConverter = XcmOriginToTransactDispatchOrigin;
-    <span class="kw">type </span>IsReserve = Reserves&lt;MigrationStepGetter&gt;;
+    <span class="kw">type </span>IsReserve = ReserveAssetFilter;
     <span class="kw">type </span>IsTeleporter = ();
     <span class="kw">type </span>UniversalLocation = UniversalLocation;
     <span class="kw">type </span>Barrier = XcmBarrier;
@@ -641,8 +624,7 @@
     <span class="comment">// Default impl. Refer to `orml-xtokens` docs for more details.
     </span><span class="kw">type </span>MinXcmFee = DisabledParachainFee;
     <span class="kw">type </span>LocationsFilter = Everything;
-    <span class="kw">type </span>ReserveProvider =
-        AbsoluteAndRelativeReserveProvider&lt;MigrationStepGetter, ShibuyaLocationAbsolute&gt;;
+    <span class="kw">type </span>ReserveProvider = AbsoluteAndRelativeReserveProvider&lt;ShibuyaLocationAbsolute&gt;;
     <span class="kw">type </span>RateLimiter = ();
     <span class="kw">type </span>RateLimiterId = ();
 }

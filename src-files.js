@@ -22,7 +22,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["moonbeam_rpc_trace",["",[],["lib.rs"]]],\
 ["pallet_chain_extension_assets",["",[],["lib.rs"]]],\
 ["pallet_chain_extension_unified_accounts",["",[],["lib.rs"]]],\
-["pallet_collator_selection",["",[],["lib.rs","weights.rs"]]],\
+["pallet_collator_selection",["",[],["lib.rs","migrations.rs","weights.rs"]]],\
 ["pallet_collective_proxy",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_dapp_staking",["",[],["lib.rs","migration.rs","types.rs","weights.rs"]]],\
 ["pallet_dynamic_evm_base_fee",["",[],["lib.rs","weights.rs"]]],\
@@ -39,7 +39,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["pallet_static_price_provider",["",[],["lib.rs"]]],\
 ["pallet_treasury",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_unified_accounts",["",[],["lib.rs","weights.rs"]]],\
-["pallet_xc_asset_config",["",[],["lib.rs","migrations.rs","types.rs","weights.rs"]]],\
+["pallet_xc_asset_config",["",[],["lib.rs","migrations.rs","weights.rs"]]],\
 ["shibuya_runtime",["",[["weights",[["xcm",[],["fungible.rs","generic.rs","mod.rs"]]],["block_weights.rs","extrinsic_weights.rs","frame_system_extensions.rs","mod.rs","orml_oracle.rs","pallet_assets.rs","pallet_balances.rs","pallet_dapp_staking.rs","pallet_inflation.rs","pallet_scheduler.rs","pallet_transaction_payment.rs","pallet_xcm.rs"]]],["chain_extensions.rs","genesis_config.rs","lib.rs","precompiles.rs","xcm_config.rs"]]],\
 ["shiden_runtime",["",[["weights",[["xcm",[],["fungible.rs","generic.rs","mod.rs"]]],["block_weights.rs","extrinsic_weights.rs","frame_system_extensions.rs","mod.rs","orml_oracle.rs","pallet_assets.rs","pallet_dapp_staking.rs","pallet_inflation.rs","pallet_transaction_payment.rs","pallet_xcm.rs"]]],["chain_extensions.rs","genesis_config.rs","lib.rs","precompiles.rs","xcm_config.rs"]]],\
 ["unified_accounts_chain_extension_types",["",[],["lib.rs"]]],\

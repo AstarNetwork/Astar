@@ -354,52 +354,6 @@
 <a href="#354" id="354">354</a>
 <a href="#355" id="355">355</a>
 <a href="#356" id="356">356</a>
-<a href="#357" id="357">357</a>
-<a href="#358" id="358">358</a>
-<a href="#359" id="359">359</a>
-<a href="#360" id="360">360</a>
-<a href="#361" id="361">361</a>
-<a href="#362" id="362">362</a>
-<a href="#363" id="363">363</a>
-<a href="#364" id="364">364</a>
-<a href="#365" id="365">365</a>
-<a href="#366" id="366">366</a>
-<a href="#367" id="367">367</a>
-<a href="#368" id="368">368</a>
-<a href="#369" id="369">369</a>
-<a href="#370" id="370">370</a>
-<a href="#371" id="371">371</a>
-<a href="#372" id="372">372</a>
-<a href="#373" id="373">373</a>
-<a href="#374" id="374">374</a>
-<a href="#375" id="375">375</a>
-<a href="#376" id="376">376</a>
-<a href="#377" id="377">377</a>
-<a href="#378" id="378">378</a>
-<a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a>
-<a href="#381" id="381">381</a>
-<a href="#382" id="382">382</a>
-<a href="#383" id="383">383</a>
-<a href="#384" id="384">384</a>
-<a href="#385" id="385">385</a>
-<a href="#386" id="386">386</a>
-<a href="#387" id="387">387</a>
-<a href="#388" id="388">388</a>
-<a href="#389" id="389">389</a>
-<a href="#390" id="390">390</a>
-<a href="#391" id="391">391</a>
-<a href="#392" id="392">392</a>
-<a href="#393" id="393">393</a>
-<a href="#394" id="394">394</a>
-<a href="#395" id="395">395</a>
-<a href="#396" id="396">396</a>
-<a href="#397" id="397">397</a>
-<a href="#398" id="398">398</a>
-<a href="#399" id="399">399</a>
-<a href="#400" id="400">400</a>
-<a href="#401" id="401">401</a>
-<a href="#402" id="402">402</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -450,7 +404,6 @@
 <span class="comment">// ORML imports
 </span><span class="kw">use </span>orml_traits::location::{RelativeReserveProvider, Reserve};
 
-<span class="kw">use </span>pallet_xc_asset_config::types::MigrationStep;
 <span class="kw">use </span>pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 
 <span class="attr">#[cfg(test)]
@@ -603,53 +556,19 @@
 /// Basically, we trust any cross-chain asset from any location to act as a reserve since
 /// in order to support the xc-asset, we need to first register it in the `XcAssetConfig` pallet.
 ///
-</span><span class="kw">pub struct </span>ReserveAssetFilter&lt;T&gt;(PhantomData&lt;T&gt;);
-<span class="kw">impl</span>&lt;MigrationGetter&gt; ContainsPair&lt;Asset, Location&gt; <span class="kw">for </span>ReserveAssetFilter&lt;MigrationGetter&gt;
-<span class="kw">where
-    </span>MigrationGetter: Get&lt;MigrationStep&gt;,
-{
+</span><span class="kw">pub struct </span>ReserveAssetFilter;
+<span class="kw">impl </span>ContainsPair&lt;Asset, Location&gt; <span class="kw">for </span>ReserveAssetFilter {
     <span class="kw">fn </span>contains(asset: <span class="kw-2">&amp;</span>Asset, origin: <span class="kw-2">&amp;</span>Location) -&gt; bool {
-        <span class="comment">// This call cost 1 db read. We don't take it into account because it is only temporary
-        // and will be removed after Shiden/Astar AH migration
-        </span><span class="kw">let </span>asset_hub_migration_step = MigrationGetter::get();
-        <span class="comment">// We only accept relay chain as reserve for KSM/DOT before the migration
-        </span><span class="kw">let </span>allow_relay = <span class="macro">matches!</span>(asset_hub_migration_step, MigrationStep::NotStarted);
-
         <span class="kw">let </span>AssetId(location) = <span class="kw-2">&amp;</span>asset.id;
         <span class="kw">match </span>(location.parents, location.first_interior()) {
             <span class="comment">// sibling parachain reserve
             </span>(<span class="number">1</span>, <span class="prelude-val">Some</span>(Parachain(id))) =&gt; origin == <span class="kw-2">&amp;</span>Location::new(<span class="number">1</span>, [Parachain(<span class="kw-2">*</span>id)]),
-            <span class="comment">// relay chain reserve only before migration starts
-            </span>(<span class="number">1</span>, <span class="kw">_</span>) <span class="kw">if </span>allow_relay =&gt; origin == <span class="kw-2">&amp;</span>Location::parent(),
+            <span class="comment">// relay token (DOT/KSM) - only Asset Hub is valid reserve now
+            </span>(<span class="number">1</span>, <span class="prelude-val">None</span>) =&gt; origin == <span class="kw-2">&amp;</span>Location::new(<span class="number">1</span>, [Parachain(ASSET_HUB_PARA_ID)]),
             <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
         }
     }
 }
-
-<span class="doccomment">/// Allow DOT from Asset Hub.
-</span><span class="kw">pub struct </span>DotFromAssetHub;
-<span class="kw">impl </span>ContainsPair&lt;Asset, Location&gt; <span class="kw">for </span>DotFromAssetHub {
-    <span class="kw">fn </span>contains(asset: <span class="kw-2">&amp;</span>Asset, origin: <span class="kw-2">&amp;</span>Location) -&gt; bool {
-        Location::new(<span class="number">1</span>, Parachain(ASSET_HUB_PARA_ID)) == <span class="kw-2">*</span>origin
-            &amp;&amp; <span class="macro">matches!</span>(
-                asset,
-                Asset {
-                    id: AssetId(Location {
-                        parents: <span class="number">1</span>,
-                        interior: Here
-                    }),
-                    fun: Fungible(<span class="kw">_</span>),
-                },
-            )
-    }
-}
-<span class="doccomment">/// All locations we trust as reserves for particular assets.
-</span><span class="kw">pub type </span>Reserves&lt;T&gt; = (
-    <span class="comment">// Trusted reserves and DOT from relay
-    </span>ReserveAssetFilter&lt;T&gt;,
-    <span class="comment">// DOT from Asset Hub
-    </span>DotFromAssetHub,
-);
 
 <span class="doccomment">/// Used to deposit XCM fees into a destination account.
 ///
@@ -710,34 +629,23 @@
 
 <span class="doccomment">/// `Asset` reserve location provider. It's based on `RelativeReserveProvider` and in
 /// addition will convert self absolute location to relative location.
-</span><span class="kw">pub struct </span>AbsoluteAndRelativeReserveProvider&lt;MigrationGetter, AbsoluteLocation&gt;(
-    PhantomData&lt;(MigrationGetter, AbsoluteLocation)&gt;,
-);
-<span class="kw">impl</span>&lt;MigrationGetter: Get&lt;MigrationStep&gt;, AbsoluteLocation: Get&lt;Location&gt;&gt; Reserve
-    <span class="kw">for </span>AbsoluteAndRelativeReserveProvider&lt;MigrationGetter, AbsoluteLocation&gt;
+</span><span class="kw">pub struct </span>AbsoluteAndRelativeReserveProvider&lt;AbsoluteLocation&gt;(PhantomData&lt;AbsoluteLocation&gt;);
+<span class="kw">impl</span>&lt;AbsoluteLocation: Get&lt;Location&gt;&gt; Reserve
+    <span class="kw">for </span>AbsoluteAndRelativeReserveProvider&lt;AbsoluteLocation&gt;
 {
     <span class="kw">fn </span>reserve(asset: <span class="kw-2">&amp;</span>Asset) -&gt; <span class="prelude-ty">Option</span>&lt;Location&gt; {
-        <span class="comment">// This call cost 1 db read. We don't take it into account because it is only temporary
-        // and will be removed after Shiden/Astar AH migration
-        </span><span class="kw">let </span>asset_hub_migration_step = MigrationGetter::get();
         <span class="kw">let </span>reserve_location = RelativeReserveProvider::reserve(asset)<span class="question-mark">?</span>;
 
         <span class="kw">if </span>reserve_location == AbsoluteLocation::get() {
             <span class="kw">return </span><span class="prelude-val">Some</span>(Location::here());
         }
 
-        <span class="kw">let </span>is_relay_token = reserve_location.parents == <span class="number">1
-            </span>&amp;&amp; !<span class="macro">matches!</span>(reserve_location.first_interior(), <span class="prelude-val">Some</span>(Parachain(<span class="kw">_</span>)));
-
-        <span class="kw">match </span>(is_relay_token, asset_hub_migration_step) {
-            <span class="comment">// KSM/DOT token is not allowed to be transferred to sibling parachain as it will use relay as reserve during migration
-            </span>(<span class="bool-val">true</span>, MigrationStep::Ongoing) =&gt; <span class="prelude-val">None</span>,
-            <span class="comment">// KSM/DOT reserve is Asset Hub when migration is finished
-            </span>(<span class="bool-val">true</span>, MigrationStep::Finished) =&gt; {
-                <span class="prelude-val">Some</span>(Location::new(<span class="number">1</span>, [Parachain(ASSET_HUB_PARA_ID)]))
-            }
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Some</span>(reserve_location),
+        <span class="kw">let </span>is_relay_token = reserve_location.contains_parents_only(<span class="number">1</span>);
+        <span class="kw">if </span>is_relay_token {
+            <span class="kw">return </span><span class="prelude-val">Some</span>(Location::new(<span class="number">1</span>, [Parachain(ASSET_HUB_PARA_ID)]));
         }
+
+        <span class="prelude-val">Some</span>(reserve_location)
     }
 }
 
