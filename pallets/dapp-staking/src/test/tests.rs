@@ -1299,6 +1299,9 @@ fn stake_fails_due_to_too_many_staked_contracts() {
         let account = 1;
         assert_lock(account, 100 as Balance * max_number_of_contracts as Balance);
 
+        // Advance to the build&earn subperiod to ensure staking without a bonus status.
+        advance_to_next_subperiod();
+
         // Register smart contracts up to the max allowed number
         for id in 1..=max_number_of_contracts {
             let smart_contract = MockSmartContract::Wasm(id.into());
@@ -4513,59 +4516,61 @@ fn unstake_from_unregistered_use_correct_stake_amount() {
     })
 }
 
-/// Test that restaking on the same contract after claiming (which cleaned entries)
-/// properly increments the counter only once.
+/// Test that restaking on the same contract after a period transition
+/// replaces the old StakerInfo entry without inflating contract_stake_count.
 #[test]
-fn restake_after_claim_cleans_up_entries_and_update_counter() {
+fn restake_replaces_old_entry_without_inflating_counter() {
     ExtBuilder::default().build_and_execute(|| {
         let staker = 2;
         let contract = MockSmartContract::wasm(1 as AccountId);
+
         assert_register(1, &contract);
         assert_lock(staker, 1_000);
 
-        // Period 1: stake during B&E for no bonus
+        // Period 1: initial stake
         advance_to_next_subperiod();
         assert_stake(staker, &contract, 100);
-        let initial_ledger = Ledger::<Test>::get(&staker);
-        assert_eq!(initial_ledger.contract_stake_count, 1);
+
+        let ledger_after_first_stake = Ledger::<Test>::get(&staker);
+        assert_eq!(ledger_after_first_stake.contract_stake_count, 1);
         assert_eq!(StakerInfo::<Test>::iter_prefix(&staker).count(), 1);
 
-        // Move to next period and claim all rewards
+        let original_entry =
+            StakerInfo::<Test>::get(&staker, &contract).expect("entry must exist");
+        let original_period = original_entry.period_number();
+
+        // Move to next period and claim rewards (ledger cleared, StakerInfo entry remains)
         advance_to_next_period();
         for _ in 0..required_number_of_reward_claims(staker) {
             assert_claim_staker_rewards(staker);
         }
 
-        // After claiming rewards for ended period, StakerInfo should be cleaned
-        // and contract_stake_count should be decremented
-        let ledger_after_claim = Ledger::<Test>::get(&staker);
+        // Entry still exists but is now orphaned
         assert_eq!(
             StakerInfo::<Test>::iter_prefix(&staker).count(),
-            0,
-            "StakerInfo entries should be cleaned after period end claim"
+            1,
+            "Old StakerInfo entry should still exist after claim"
         );
-        assert_eq!(
-            ledger_after_claim.contract_stake_count, 0,
-            "contract_stake_count should be decremented to 0"
-        );
-
-        // Tests a previous bug where the contract_stake_count kept increasing for the same contract entry
-        // when a staker continued staking across periods.
 
         // Period 2: restake same contract
         advance_to_next_subperiod();
         assert_stake(staker, &contract, 100);
 
-        // Counter should not be inflated
         let final_ledger = Ledger::<Test>::get(&staker);
         assert_eq!(
-            StakerInfo::<Test>::iter_prefix(&staker).count(),
-            1,
-            "Should have exactly 1 StakerInfo entry"
-        );
-        assert_eq!(
             final_ledger.contract_stake_count, 1,
-            "Counter should be 1, not inflated to 2"
+            "contract_stake_count must not inflate when replacing old entry"
+        );
+
+        let entries: Vec<_> = StakerInfo::<Test>::iter_prefix(&staker).collect();
+        assert_eq!(entries.len(), 1, "Should still have exactly one entry");
+
+        let (_, new_entry) = &entries[0];
+        assert_eq!(
+            new_entry.period_number(),
+            original_period + 1,
+            "Old entry should have been replaced with new period entry"
         );
     });
 }
+

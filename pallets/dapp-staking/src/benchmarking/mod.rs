@@ -469,32 +469,25 @@ mod benchmarks {
         // Prepare staker & register smart contract
         let staker: T::AccountId = whitelisted_caller();
         let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
 
         // Lock & stake some amount by the staker
         let amount = T::MinimumLockedAmount::get();
-        let max_contracts = T::MaxNumberOfStakedContracts::get();
-        let total_balance = amount.saturating_mul(max_contracts.into());
-        T::BenchmarkHelper::set_balance(&staker, total_balance);
-
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
-            total_balance,
+            amount,
         ));
-
-        // Register and stake MAX contracts
-        for i in 0..max_contracts {
-            let sc = T::BenchmarkHelper::get_smart_contract(i as u32 + 1);
-            assert_ok!(DappStaking::<T>::register(
-                RawOrigin::Root.into(),
-                owner.clone().into(),
-                sc.clone(),
-            ));
-            assert_ok!(DappStaking::<T>::stake(
-                RawOrigin::Signed(staker.clone()).into(),
-                sc,
-                amount,
-            ));
-        }
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            smart_contract.clone(),
+            amount
+        ));
 
         // Hacky era advancement to ensure we have the exact number of eras to claim, but are already in the next period.
         force_advance_to_era::<T>(max_claim_size_past_period::<T>() - 1);

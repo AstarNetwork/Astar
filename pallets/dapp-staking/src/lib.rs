@@ -2304,9 +2304,10 @@ pub mod pallet {
 
             // Check if the rewards have expired
             let protocol_state = ActiveProtocolState::<T>::get();
-            let current_period = protocol_state.period_number();
-            let threshold_period = Self::oldest_claimable_period(current_period);
-            ensure!(staked_period >= threshold_period, Error::<T>::RewardExpired);
+            ensure!(
+                staked_period >= Self::oldest_claimable_period(protocol_state.period_number()),
+                Error::<T>::RewardExpired
+            );
 
             // Calculate the reward claim span
             let earliest_staked_era = ledger
@@ -2337,8 +2338,6 @@ pub mod pallet {
                         AccountLedgerError::NothingToClaim => Error::<T>::NoClaimableRewards,
                         _ => Error::<T>::InternalClaimStakerError,
                     })?;
-            // Check if ledger stakes were cleared (period ended)
-            let ledger_was_cleared = ledger.staked.is_empty() && ledger.staked_future.is_none();
 
             // Calculate rewards
             let mut rewards: Vec<_> = Vec::new();
@@ -2364,20 +2363,6 @@ pub mod pallet {
                 .map_err(|_| Error::<T>::RewardPayoutFailed)?;
 
             Self::update_ledger(&account, ledger)?;
-
-            if ledger_was_cleared {
-                let mut updated_ledger = Ledger::<T>::get(&account);
-                let removed = Self::cleanup_staker_info_entries(
-                    &account,
-                    &mut updated_ledger,
-                    current_period,
-                    threshold_period,
-                );
-
-                if removed > 0 {
-                    Self::update_ledger(&account, updated_ledger)?;
-                }
-            }
 
             rewards.into_iter().for_each(|(era, reward)| {
                 Self::deposit_event(Event::<T>::Reward {
@@ -2453,37 +2438,6 @@ pub mod pallet {
             });
 
             Ok(())
-        }
-
-        /// Remove StakerInfo entries that belong to expired/claimed periods
-        /// and decrement the contract_stake_count accordingly.
-        ///
-        /// Returns the number of entries removed.
-        fn cleanup_staker_info_entries(
-            account: &T::AccountId,
-            ledger: &mut AccountLedgerFor<T>,
-            current_period: PeriodNumber,
-            threshold_period: PeriodNumber,
-        ) -> u32 {
-            let to_remove: Vec<T::SmartContract> = StakerInfo::<T>::iter_prefix(account)
-                .filter_map(|(contract, stake_info)| {
-                    let period = stake_info.period_number();
-                    let expired = period < threshold_period
-                        || (period < current_period && !stake_info.is_bonus_eligible());
-
-                    expired.then_some(contract)
-                })
-                .collect();
-
-            let removed = to_remove.len() as u32;
-
-            for contract in to_remove {
-                StakerInfo::<T>::remove(account, &contract);
-            }
-
-            ledger.contract_stake_count = ledger.contract_stake_count.saturating_sub(removed);
-
-            removed
         }
 
         /// Internal function to transition the dApp staking protocol maintenance mode.
