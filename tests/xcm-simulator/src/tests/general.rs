@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::mocks::{msg_queue::mock_msg_queue, parachain, relay_chain, *};
+use crate::mocks::{parachain, relay_chain, *};
 
 use frame_support::{assert_ok, weights::Weight};
 use parity_scale_codec::Encode;
@@ -135,12 +135,11 @@ fn error_when_not_paying_enough() {
 
     let source_location: Location = (Parent,).into();
     let source_id: parachain::AssetId = 123;
-
-    let dest: Location = Junction::AccountId32 {
+    let alice = AccountId32 {
         network: None,
         id: ALICE.into(),
-    }
-    .into();
+    };
+
     // This time we are gonna put a rather high number of units per second
     // Lets put (25 * 1e12) as units per second, later it will be divided by 1e12
     // to calculate cost
@@ -148,7 +147,7 @@ fn error_when_not_paying_enough() {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             source_id,
-            source_location,
+            source_location.clone(),
             parent_account_id(),
             Some(true),
             Some(1),
@@ -156,36 +155,69 @@ fn error_when_not_paying_enough() {
         ));
     });
 
-    // We are sending 99 tokens from relay.
-    // we know the buy_execution will spend 4 * 25 = 100
-    Relay::execute_with(|| {
-        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
-            relay_chain::RuntimeOrigin::signed(ALICE),
-            Box::new(Parachain(1).into()),
-            Box::new(VersionedLocation::V5(dest).clone().into()),
-            Box::new((Here, 99).into()),
-            0,
-            WeightLimit::Unlimited,
+    // Register relay asset in ParaAssetHub (Asset Hub)
+    ParaAssetHub::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            source_id,
+            source_location,
+            parent_account_id(),
+            Some(true),
+            Some(1),
+            Some(0) // free on Asset Hub side
+        ));
+    });
+
+    // Fund Alice on Asset Hub with only 99 tokens
+    // We know buy_execution on ParaA will cost 4 * 25 = 100, so 99 is not enough
+    let insufficient_amount = 99;
+    ParaAssetHub::execute_with(|| {
+        assert_ok!(pallet_assets::Pallet::<parachain::Runtime>::mint(
+            parachain::RuntimeOrigin::signed(parent_account_id()),
+            source_id.into(),
+            ALICE.into(),
+            insufficient_amount
+        ));
+    });
+
+    // Transfer from Asset Hub to ParaA - should fail on ParaA due to insufficient fees
+    ParaAssetHub::execute_with(|| {
+        let asset = Asset {
+            id: AssetId(Location::new(1, Here)),
+            fun: Fungible(insufficient_amount),
+        };
+        let beneficiary = Location::new(0, [alice.into()]);
+        let dest = Location::new(1, [Parachain(1)]);
+
+        let message = Xcm(vec![TransferReserveAsset {
+            assets: asset.clone().into(),
+            dest,
+            xcm: Xcm(vec![
+                BuyExecution {
+                    fees: asset,
+                    weight_limit: Unlimited,
+                },
+                DepositAsset {
+                    assets: Wild(AllCounted(1)),
+                    beneficiary,
+                },
+            ]),
+        }]);
+
+        assert_ok!(ParachainPalletXcm::execute(
+            parachain::RuntimeOrigin::signed(ALICE),
+            Box::new(VersionedXcm::from(message)),
+            Weight::from_parts(u64::MAX, 0),
         ));
     });
 
     ParaA::execute_with(|| {
-        use parachain::{RuntimeEvent, System};
-
-        // check for xcm too expensive error
-        assert!(System::events().iter().any(|r| matches!(
-            r.event,
-            RuntimeEvent::MsgQueue(mock_msg_queue::Event::ExecutedDownward(
-                _,
-                Outcome::Incomplete {
-                    error: XcmError::TooExpensive,
-                    ..
-                }
-            ))
-        )));
-
-        // amount not received as it is not paying enough
-        assert_eq!(ParachainAssets::balance(source_id, &ALICE.into()), 0);
+        // Amount was NOT received because fees were insufficient
+        assert_eq!(
+            ParachainAssets::balance(source_id, &ALICE.into()),
+            0,
+            "Alice should not have received tokens due to insufficient fees"
+        );
     });
 }
 

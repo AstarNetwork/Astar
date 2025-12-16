@@ -51,7 +51,7 @@ decl_test_parachain! {
 }
 
 decl_test_parachain! {
-    pub struct ParaC {
+    pub struct ParaAssetHub {
         Runtime = parachain::Runtime,
         XcmpMessageHandler = parachain::MsgQueue,
         DmpMessageHandler = parachain::MsgQueue,
@@ -77,7 +77,7 @@ decl_test_network! {
         parachains = vec![
             (1, ParaA),
             (2, ParaB),
-            (1000, ParaC),
+            (1000, ParaAssetHub),
         ],
     }
 }
@@ -88,7 +88,6 @@ pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
 pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
 pub type ParachainBalances = pallet_balances::Pallet<parachain::Runtime>;
 pub type ParachainXtokens = orml_xtokens::Pallet<parachain::Runtime>;
-pub type ParachainXcAssetConfig = pallet_xc_asset_config::Pallet<parachain::Runtime>;
 
 pub fn parent_account_id() -> parachain::AccountId {
     let location = (Parent,);
