@@ -4516,8 +4516,10 @@ fn unstake_from_unregistered_use_correct_stake_amount() {
     })
 }
 
-/// Test that restaking on the same contract after a period transition
-/// replaces the old StakerInfo entry without inflating contract_stake_count.
+// Tests a previous bug where the contract_stake_count kept increasing for the same contract entry
+// when a staker continued staking across periods.
+// Now restaking on the same contract after a period transition
+// replaces the old StakerInfo entry without inflating contract_stake_count.
 #[test]
 fn restake_replaces_old_entry_without_inflating_counter() {
     ExtBuilder::default().build_and_execute(|| {
@@ -4535,8 +4537,7 @@ fn restake_replaces_old_entry_without_inflating_counter() {
         assert_eq!(ledger_after_first_stake.contract_stake_count, 1);
         assert_eq!(StakerInfo::<Test>::iter_prefix(&staker).count(), 1);
 
-        let original_entry =
-            StakerInfo::<Test>::get(&staker, &contract).expect("entry must exist");
+        let original_entry = StakerInfo::<Test>::get(&staker, &contract).expect("entry must exist");
         let original_period = original_entry.period_number();
 
         // Move to next period and claim rewards (ledger cleared, StakerInfo entry remains)
@@ -4573,4 +4574,3 @@ fn restake_replaces_old_entry_without_inflating_counter() {
         );
     });
 }
-
