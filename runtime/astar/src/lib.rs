@@ -1749,8 +1749,11 @@ parameter_types! {
 }
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased =
-    (pallet_xc_asset_config::migrations::versioned::V4ToV5<Runtime>, frame_support::migrations::RemovePallet<SudoPalletToRemoveStr, RocksDbWeight>,);
+pub type Unreleased = (
+    pallet_xc_asset_config::migrations::versioned::V4ToV5<Runtime>,
+    frame_support::migrations::RemovePallet<SudoPalletToRemoveStr, RocksDbWeight>,
+    pallet_collator_selection::migrations::LastAuthoredBlockCleanup<Runtime>,
+);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
