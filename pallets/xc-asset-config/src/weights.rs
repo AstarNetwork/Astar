@@ -1,4 +1,3 @@
-
 // This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -57,7 +56,6 @@ pub trait WeightInfo {
 	fn change_existing_asset_location() -> Weight;
 	fn remove_payment_asset() -> Weight;
 	fn remove_asset() -> Weight;
-	fn update_migration_step() -> Weight;
 }
 
 /// Weight functions for `pallet_xc_asset_config`.
@@ -134,17 +132,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
-	/// Storage: `XcAssetConfig::AssetHubMigrationStep` (r:0 w:1)
-	/// Proof: `XcAssetConfig::AssetHubMigrationStep` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	fn update_migration_step() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 6_837_000 picoseconds.
-		Weight::from_parts(7_033_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
 }
 // For backwards compatibility and tests
 impl WeightInfo for () {
@@ -207,15 +194,5 @@ impl WeightInfo for () {
 			.saturating_add(Weight::from_parts(0, 3593))
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
-	}
-
-	fn update_migration_step() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 7_033_000 picoseconds.
-		Weight::from_parts(7_033_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
-			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 }

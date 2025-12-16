@@ -16,7 +16,6 @@ serde = { workspace = true, optional = true }
 # Substrate
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-pallet-xc-asset-config = { workspace = true }
 parity-scale-codec = { workspace = true, optional = true, features = ["derive"] }
 scale-info = { workspace = true }
 sp-runtime = { workspace = true }
@@ -57,7 +56,6 @@ std = [
 	"scale-info/std",
 	"serde?/std",
 	"xcm-executor/std",
-	"pallet-xc-asset-config/std",
 ]
 
 try-runtime = [
@@ -65,7 +63,6 @@ try-runtime = [
 	"astar-primitives/try-runtime",
 	"frame-system/try-runtime",
 	"sp-runtime/try-runtime",
-	"pallet-xc-asset-config/try-runtime",
 ]
 
 runtime-benchmarks = [
@@ -79,5 +76,4 @@ runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
-	"pallet-xc-asset-config/runtime-benchmarks",
 ]
