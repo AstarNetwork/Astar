@@ -2738,6 +2738,25 @@
 <a href="#2738" id="2738">2738</a>
 <a href="#2739" id="2739">2739</a>
 <a href="#2740" id="2740">2740</a>
+<a href="#2741" id="2741">2741</a>
+<a href="#2742" id="2742">2742</a>
+<a href="#2743" id="2743">2743</a>
+<a href="#2744" id="2744">2744</a>
+<a href="#2745" id="2745">2745</a>
+<a href="#2746" id="2746">2746</a>
+<a href="#2747" id="2747">2747</a>
+<a href="#2748" id="2748">2748</a>
+<a href="#2749" id="2749">2749</a>
+<a href="#2750" id="2750">2750</a>
+<a href="#2751" id="2751">2751</a>
+<a href="#2752" id="2752">2752</a>
+<a href="#2753" id="2753">2753</a>
+<a href="#2754" id="2754">2754</a>
+<a href="#2755" id="2755">2755</a>
+<a href="#2756" id="2756">2756</a>
+<a href="#2757" id="2757">2757</a>
+<a href="#2758" id="2758">2758</a>
+<a href="#2759" id="2759">2759</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3973,20 +3992,28 @@
             <span class="kw">let </span>current_period = protocol_state.period_number();
             <span class="kw">let </span>threshold_period = <span class="self">Self</span>::oldest_claimable_period(current_period);
 
-            <span class="comment">// Find all entries which are from past periods &amp; don't have claimable bonus rewards.
-            // This is bounded by max allowed number of stake entries per account.
-            </span><span class="kw">let </span>to_be_deleted: Vec&lt;T::SmartContract&gt; = StakerInfo::&lt;T&gt;::iter_prefix(<span class="kw-2">&amp;</span>account)
-                .filter_map(|(smart_contract, stake_info)| {
-                    <span class="kw">if </span>stake_info.period_number() &lt; current_period
-                        &amp;&amp; !stake_info.is_bonus_eligible()
-                        || stake_info.period_number() &lt; threshold_period
-                    {
-                        <span class="prelude-val">Some</span>(smart_contract)
-                    } <span class="kw">else </span>{
-                        <span class="prelude-val">None
-                    </span>}
-                })
-                .collect();
+            <span class="kw">let </span><span class="kw-2">mut </span>remaining: u32 = <span class="number">0</span>;
+            <span class="kw">let </span><span class="kw-2">mut </span>to_be_deleted: Vec&lt;T::SmartContract&gt; = Vec::new();
+
+            <span class="comment">// Partition stake entries into remaining (valid) and to-be-deleted (expired).
+            // An entry is expired if it's from a past period without bonus eligibility,
+            // or older than the oldest claimable period regardless of bonus status.
+            // Bounded by max allowed number of stake entries per account.
+            </span><span class="kw">for </span>(smart_contract, stake_info) <span class="kw">in </span>StakerInfo::&lt;T&gt;::iter_prefix(<span class="kw-2">&amp;</span>account) {
+                <span class="kw">let </span>stake_period = stake_info.period_number();
+
+                <span class="comment">// Check if this entry should be kept
+                </span><span class="kw">let </span>should_keep = stake_period == current_period
+                    || (stake_period &gt;= threshold_period
+                        &amp;&amp; stake_period &lt; current_period
+                        &amp;&amp; stake_info.is_bonus_eligible());
+
+                <span class="kw">if </span>should_keep {
+                    remaining = remaining.saturating_add(<span class="number">1</span>);
+                } <span class="kw">else </span>{
+                    to_be_deleted.push(smart_contract);
+                }
+            }
             <span class="kw">let </span>entries_to_delete = to_be_deleted.len();
 
             <span class="macro">ensure!</span>(!entries_to_delete.is_zero(), Error::&lt;T&gt;::NoExpiredEntries);
@@ -3998,9 +4025,7 @@
 
             <span class="comment">// Remove expired stake entries from the ledger.
             </span><span class="kw">let </span><span class="kw-2">mut </span>ledger = Ledger::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account);
-            ledger
-                .contract_stake_count
-                .saturating_reduce(entries_to_delete.unique_saturated_into());
+            ledger.contract_stake_count = remaining;
             ledger.maybe_cleanup_expired(threshold_period); <span class="comment">// Not necessary but we do it for the sake of consistency
             </span><span class="self">Self</span>::update_ledger(<span class="kw-2">&amp;</span>account, ledger)<span class="question-mark">?</span>;
 
@@ -4404,20 +4429,21 @@
             <span class="comment">// 2.
             // Update `StakerInfo` storage with the new stake amount on the specified contract.
             //
-            // There are two distinct scenarios:
+            // There are three distinct scenarios:
             // 1. Existing entry matches the current period number - just update it.
-            // 2. Entry doesn't exist or it's for an older period - create a new one.
+            // 2. Existing entry is expired/orphaned - replace it.
+            // 3. Entry doesn't exist or it's for an older period - create a new one.
             //
             // This is ok since we only use this storage entry to keep track of how much each staker
             // has staked on each contract in the current period. We only ever need the latest information.
             // This is because `AccountLedger` is the one keeping information about how much was staked when.
-            </span><span class="kw">let </span>(<span class="kw-2">mut </span>new_staking_info, is_new_entry) =
+            </span><span class="kw">let </span>(<span class="kw-2">mut </span>new_staking_info, is_new_entry, replacing_old_entry) =
                 <span class="kw">match </span>StakerInfo::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>smart_contract) {
                     <span class="comment">// Entry with matching period exists
                     </span><span class="prelude-val">Some</span>(staking_info)
                         <span class="kw">if </span>staking_info.period_number() == protocol_state.period_number() =&gt;
                     {
-                        (staking_info, <span class="bool-val">false</span>)
+                        (staking_info, <span class="bool-val">false</span>, <span class="bool-val">false</span>)
                     }
                     <span class="comment">// Entry exists but period doesn't match. Bonus reward might still be claimable.
                     </span><span class="prelude-val">Some</span>(staking_info)
@@ -4426,8 +4452,18 @@
                     {
                         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::UnclaimedRewards.into());
                     }
-                    <span class="comment">// No valid entry exists
-                    </span><span class="kw">_ </span>=&gt; (
+                    <span class="comment">// Entry exists but is expired/orphaned - we're replacing it, not adding new
+                    </span><span class="prelude-val">Some</span>(_old_entry) =&gt; {
+                        <span class="comment">// Remove the old orphaned entry explicitly
+                        </span>StakerInfo::&lt;T&gt;::remove(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>smart_contract);
+                        (
+                            SingularStakingInfo::new(protocol_state.period_number(), bonus_status),
+                            <span class="bool-val">true</span>, <span class="comment">// is_new_entry (for storage write)
+                            </span><span class="bool-val">true</span>, <span class="comment">// replacing_old_entry (don't increment counter)
+                        </span>)
+                    }
+                    <span class="comment">// No entry exists at all - truly new
+                    </span><span class="prelude-val">None </span>=&gt; (
                         SingularStakingInfo::new(
                             protocol_state.period_number(),
                             <span class="comment">// Important to account for the remaining bonus moves since it's possible to retain the bonus
@@ -4435,6 +4471,7 @@
                             </span>bonus_status,
                         ),
                         <span class="bool-val">true</span>,
+                        <span class="bool-val">false</span>,
                     ),
                 };
 
@@ -4444,7 +4481,8 @@
                 Error::&lt;T&gt;::InsufficientStakeAmount
             );
 
-            <span class="kw">if </span>is_new_entry {
+            <span class="comment">// Only increment if we're truly adding a new contract, not replacing an orphaned entry
+            </span><span class="kw">if </span>is_new_entry &amp;&amp; !replacing_old_entry {
                 ledger.contract_stake_count.saturating_inc();
                 <span class="macro">ensure!</span>(
                     ledger.contract_stake_count &lt;= T::MaxNumberOfStakedContracts::get(),
