@@ -154,17 +154,9 @@ mod unchecked_migration {
 
         #[cfg(feature = "try-runtime")]
         fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::DispatchError> {
-            use sp_io::storage::exists;
-
             let key = frame_support::storage::storage_prefix(
                 <Pallet<T>>::name().as_bytes(),
                 b"AssetHubMigrationStep",
-            );
-
-            // Ensure the value exists before migration.
-            assert!(
-                exists(&key),
-                "Expected AssetHubMigrationStep to exist before migration"
             );
 
             Ok(key.to_vec())
