@@ -178,14 +178,6 @@
 <a href="#178" id="178">178</a>
 <a href="#179" id="179">179</a>
 <a href="#180" id="180">180</a>
-<a href="#181" id="181">181</a>
-<a href="#182" id="182">182</a>
-<a href="#183" id="183">183</a>
-<a href="#184" id="184">184</a>
-<a href="#185" id="185">185</a>
-<a href="#186" id="186">186</a>
-<a href="#187" id="187">187</a>
-<a href="#188" id="188">188</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -342,18 +334,10 @@
 
         <span class="attr">#[cfg(feature = <span class="string">"try-runtime"</span>)]
         </span><span class="kw">fn </span>pre_upgrade() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, sp_runtime::DispatchError&gt; {
-            <span class="kw">use </span>sp_io::storage::exists;
-
             <span class="kw">let </span>key = frame_support::storage::storage_prefix(
                 &lt;Pallet&lt;T&gt;&gt;::name().as_bytes(),
                 <span class="string">b"AssetHubMigrationStep"</span>,
             );
-
-            <span class="comment">// Ensure the value exists before migration.
-            </span><span class="macro">assert!</span>(
-                exists(<span class="kw-2">&amp;</span>key),
-                <span class="string">"Expected AssetHubMigrationStep to exist before migration"
-            </span>);
 
             <span class="prelude-val">Ok</span>(key.to_vec())
         }

@@ -2830,6 +2830,30 @@
 <a href="#2830" id="2830">2830</a>
 <a href="#2831" id="2831">2831</a>
 <a href="#2832" id="2832">2832</a>
+<a href="#2833" id="2833">2833</a>
+<a href="#2834" id="2834">2834</a>
+<a href="#2835" id="2835">2835</a>
+<a href="#2836" id="2836">2836</a>
+<a href="#2837" id="2837">2837</a>
+<a href="#2838" id="2838">2838</a>
+<a href="#2839" id="2839">2839</a>
+<a href="#2840" id="2840">2840</a>
+<a href="#2841" id="2841">2841</a>
+<a href="#2842" id="2842">2842</a>
+<a href="#2843" id="2843">2843</a>
+<a href="#2844" id="2844">2844</a>
+<a href="#2845" id="2845">2845</a>
+<a href="#2846" id="2846">2846</a>
+<a href="#2847" id="2847">2847</a>
+<a href="#2848" id="2848">2848</a>
+<a href="#2849" id="2849">2849</a>
+<a href="#2850" id="2850">2850</a>
+<a href="#2851" id="2851">2851</a>
+<a href="#2852" id="2852">2852</a>
+<a href="#2853" id="2853">2853</a>
+<a href="#2854" id="2854">2854</a>
+<a href="#2855" id="2855">2855</a>
+<a href="#2856" id="2856">2856</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3833,7 +3857,8 @@
     </span><span class="kw">type </span>ExtraDataLength = ConstU32&lt;<span class="number">30</span>&gt;;
 }
 
-<span class="kw">impl </span>pallet_sudo::Config <span class="kw">for </span>Runtime {
+<span class="attr">#[cfg(feature = <span class="string">"astar-sudo"</span>)]
+</span><span class="kw">impl </span>pallet_sudo::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="kw">type </span>RuntimeCall = RuntimeCall;
     <span class="kw">type </span>WeightInfo = pallet_sudo::weights::SubstrateWeight&lt;Runtime&gt;;
@@ -4366,7 +4391,6 @@
             | RuntimeCall::ParachainSystem(<span class="kw">_</span>)
             | RuntimeCall::Council(<span class="kw">_</span>)
             | RuntimeCall::TechnicalCommittee(<span class="kw">_</span>)
-            | RuntimeCall::Sudo(<span class="kw">_</span>)
             | RuntimeCall::Democracy(
                 pallet_democracy::Call::external_propose_majority { .. }
                 | pallet_democracy::Call::external_propose_default { .. }
@@ -4384,6 +4408,8 @@
             | RuntimeCall::Utility(<span class="kw">_</span>)
             | RuntimeCall::TxPause(<span class="kw">_</span>)
             | RuntimeCall::SafeMode(<span class="kw">_</span>) =&gt; <span class="bool-val">true</span>,
+            <span class="attr">#[cfg(feature = <span class="string">"astar-sudo"</span>)]
+            </span>RuntimeCall::Sudo(<span class="kw">_</span>) =&gt; <span class="bool-val">true</span>,
             <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
         }
     }
@@ -4394,18 +4420,16 @@
 <span class="kw">impl </span>frame_support::traits::Contains&lt;RuntimeCallNameOf&lt;Runtime&gt;&gt; <span class="kw">for </span>TxPauseWhitelistedCalls {
     <span class="kw">fn </span>contains(full_name: <span class="kw-2">&amp;</span>RuntimeCallNameOf&lt;Runtime&gt;) -&gt; bool {
         <span class="kw">let </span>pallet_name = full_name.<span class="number">0</span>.as_slice();
-        <span class="macro">matches!</span>(
-            pallet_name,
-            <span class="string">b"System"
-                </span>| <span class="string">b"Timestamp"
-                </span>| <span class="string">b"ParachainSystem"
-                </span>| <span class="string">b"Council"
-                </span>| <span class="string">b"TechnicalCommittee"
-                </span>| <span class="string">b"Sudo"
-                </span>| <span class="string">b"TxPause"
-                </span>| <span class="string">b"SafeMode"
-        </span>)
-    }
+
+        pallet_name == <span class="string">b"System"
+            </span>|| pallet_name == <span class="string">b"Timestamp"
+            </span>|| pallet_name == <span class="string">b"ParachainSystem"
+            </span>|| pallet_name == <span class="string">b"Council"
+            </span>|| pallet_name == <span class="string">b"TechnicalCommittee"
+            </span>|| pallet_name == <span class="string">b"TxPause"
+            </span>|| pallet_name == <span class="string">b"SafeMode"
+            </span>|| <span class="macro">cfg!</span>(feature = <span class="string">"astar-sudo"</span>) &amp;&amp; pallet_name == <span class="string">b"Sudo"
+    </span>}
 }
 
 <span class="macro">parameter_types!</span> {
@@ -4451,73 +4475,89 @@
     <span class="kw">type </span>WeightInfo = pallet_tx_pause::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="macro">construct_runtime!</span>(
-    <span class="kw">pub struct </span>Runtime
-    {
-        System: frame_system = <span class="number">10</span>,
-        Utility: pallet_utility = <span class="number">11</span>,
-        Identity: pallet_identity = <span class="number">12</span>,
-        Timestamp: pallet_timestamp = <span class="number">13</span>,
-        Multisig: pallet_multisig = <span class="number">14</span>,
-        Proxy: pallet_proxy = <span class="number">15</span>,
-        Scheduler: pallet_scheduler = <span class="number">17</span>,
+<span class="doccomment">/// Macro to construct the Astar runtime with optional Sudo pallet.
+</span><span class="macro">macro_rules!</span> construct_astar_runtime {
+    ($(<span class="macro-nonterminal">$common</span>:tt)<span class="kw-2">*</span>) =&gt; {
+        <span class="attr">#[cfg(feature = <span class="string">"astar-sudo"</span>)]
+        </span><span class="macro">construct_runtime!</span>(
+            <span class="kw">pub struct </span>Runtime {
+                $(<span class="macro-nonterminal">$common</span>)*
+                Sudo: pallet_sudo = <span class="number">99</span>,
+            }
+        );
 
-        ParachainSystem: cumulus_pallet_parachain_system = <span class="number">20</span>,
-        ParachainInfo: parachain_info = <span class="number">21</span>,
+        <span class="attr">#[cfg(not(feature = <span class="string">"astar-sudo"</span>))]
+        </span><span class="macro">construct_runtime!</span>(
+            <span class="kw">pub struct </span>Runtime {
+                $(<span class="macro-nonterminal">$common</span>)*
+            }
+        );
+    };
+}
 
-        TransactionPayment: pallet_transaction_payment = <span class="number">30</span>,
-        Balances: pallet_balances = <span class="number">31</span>,
-        Vesting: pallet_vesting = <span class="number">32</span>,
-        <span class="comment">// Inflation needs to execute `on_initialize` as soon as possible, and `on_finalize` as late as possible.
-        // However, we need to execute Balance genesis before Inflation genesis, otherwise we'll have zero issuance when Inflation
-        // logic is executed.
-        // TODO: Address this later. It would be best if Inflation was first pallet.
-        </span>Inflation: pallet_inflation = <span class="number">33</span>,
-        DappStaking: pallet_dapp_staking = <span class="number">34</span>,
-        Assets: pallet_assets = <span class="number">36</span>,
-        PriceAggregator: pallet_price_aggregator = <span class="number">37</span>,
-        Oracle: orml_oracle = <span class="number">38</span>,
-        OracleMembership: pallet_membership::&lt;Instance1&gt; = <span class="number">39</span>,
+<span class="macro">construct_astar_runtime!</span>(
+    System: frame_system = <span class="number">10</span>,
+    Utility: pallet_utility = <span class="number">11</span>,
+    Identity: pallet_identity = <span class="number">12</span>,
+    Timestamp: pallet_timestamp = <span class="number">13</span>,
+    Multisig: pallet_multisig = <span class="number">14</span>,
+    Proxy: pallet_proxy = <span class="number">15</span>,
+    Scheduler: pallet_scheduler = <span class="number">17</span>,
 
-        Authorship: pallet_authorship = <span class="number">40</span>,
-        CollatorSelection: pallet_collator_selection = <span class="number">41</span>,
-        Session: pallet_session = <span class="number">42</span>,
-        Aura: pallet_aura = <span class="number">43</span>,
-        AuraExt: cumulus_pallet_aura_ext = <span class="number">44</span>,
+    ParachainSystem: cumulus_pallet_parachain_system = <span class="number">20</span>,
+    ParachainInfo: parachain_info = <span class="number">21</span>,
 
-        XcmpQueue: cumulus_pallet_xcmp_queue = <span class="number">50</span>,
-        PolkadotXcm: pallet_xcm = <span class="number">51</span>,
-        CumulusXcm: cumulus_pallet_xcm = <span class="number">52</span>,
-        <span class="comment">// skip 53 - cumulus_pallet_dmp_queue previously
-        </span>XcAssetConfig: pallet_xc_asset_config = <span class="number">54</span>,
-        XTokens: orml_xtokens = <span class="number">55</span>,
-        MessageQueue: pallet_message_queue = <span class="number">56</span>,
+    TransactionPayment: pallet_transaction_payment = <span class="number">30</span>,
+    Balances: pallet_balances = <span class="number">31</span>,
+    Vesting: pallet_vesting = <span class="number">32</span>,
+    <span class="comment">// Inflation needs to execute `on_initialize` as soon as possible, and `on_finalize` as late as possible.
+    // However, we need to execute Balance genesis before Inflation genesis, otherwise we'll have zero issuance when Inflation
+    // logic is executed.
+    // TODO: Address this later. It would be best if Inflation was first pallet.
+    </span>Inflation: pallet_inflation = <span class="number">33</span>,
+    DappStaking: pallet_dapp_staking = <span class="number">34</span>,
+    Assets: pallet_assets = <span class="number">36</span>,
+    PriceAggregator: pallet_price_aggregator = <span class="number">37</span>,
+    Oracle: orml_oracle = <span class="number">38</span>,
+    OracleMembership: pallet_membership::&lt;Instance1&gt; = <span class="number">39</span>,
 
-        EVM: pallet_evm = <span class="number">60</span>,
-        Ethereum: pallet_ethereum = <span class="number">61</span>,
-        DynamicEvmBaseFee: pallet_dynamic_evm_base_fee = <span class="number">63</span>,
+    Authorship: pallet_authorship = <span class="number">40</span>,
+    CollatorSelection: pallet_collator_selection = <span class="number">41</span>,
+    Session: pallet_session = <span class="number">42</span>,
+    Aura: pallet_aura = <span class="number">43</span>,
+    AuraExt: cumulus_pallet_aura_ext = <span class="number">44</span>,
 
-        Contracts: pallet_contracts = <span class="number">70</span>,
+    XcmpQueue: cumulus_pallet_xcmp_queue = <span class="number">50</span>,
+    PolkadotXcm: pallet_xcm = <span class="number">51</span>,
+    CumulusXcm: cumulus_pallet_xcm = <span class="number">52</span>,
+    <span class="comment">// skip 53 - cumulus_pallet_dmp_queue previously
+    </span>XcAssetConfig: pallet_xc_asset_config = <span class="number">54</span>,
+    XTokens: orml_xtokens = <span class="number">55</span>,
+    MessageQueue: pallet_message_queue = <span class="number">56</span>,
 
-        Preimage: pallet_preimage = <span class="number">84</span>,
+    EVM: pallet_evm = <span class="number">60</span>,
+    Ethereum: pallet_ethereum = <span class="number">61</span>,
+    DynamicEvmBaseFee: pallet_dynamic_evm_base_fee = <span class="number">63</span>,
 
-        <span class="comment">// Governance
-        </span>Sudo: pallet_sudo = <span class="number">99</span>,
-        CouncilMembership: pallet_membership::&lt;Instance2&gt; = <span class="number">100</span>,
-        TechnicalCommitteeMembership: pallet_membership::&lt;Instance3&gt; = <span class="number">101</span>,
-        CommunityCouncilMembership: pallet_membership::&lt;Instance4&gt; = <span class="number">102</span>,
-        Council: pallet_collective::&lt;Instance2&gt; = <span class="number">103</span>,
-        TechnicalCommittee: pallet_collective::&lt;Instance3&gt; = <span class="number">104</span>,
-        CommunityCouncil: pallet_collective::&lt;Instance4&gt; = <span class="number">105</span>,
-        Democracy: pallet_democracy = <span class="number">106</span>,
-        Treasury: pallet_treasury::&lt;Instance1&gt; = <span class="number">107</span>,
-        CommunityTreasury: pallet_treasury::&lt;Instance2&gt; = <span class="number">108</span>,
-        CollectiveProxy: pallet_collective_proxy = <span class="number">109</span>,
-        SafeMode: pallet_safe_mode = <span class="number">110</span>,
-        TxPause: pallet_tx_pause = <span class="number">111</span>,
+    Contracts: pallet_contracts = <span class="number">70</span>,
 
-        MultiBlockMigrations: pallet_migrations = <span class="number">120</span>,
-    }
+    Preimage: pallet_preimage = <span class="number">84</span>,
+
+    <span class="comment">// Governance
+    </span>CouncilMembership: pallet_membership::&lt;Instance2&gt; = <span class="number">100</span>,
+    TechnicalCommitteeMembership: pallet_membership::&lt;Instance3&gt; = <span class="number">101</span>,
+    CommunityCouncilMembership: pallet_membership::&lt;Instance4&gt; = <span class="number">102</span>,
+    Council: pallet_collective::&lt;Instance2&gt; = <span class="number">103</span>,
+    TechnicalCommittee: pallet_collective::&lt;Instance3&gt; = <span class="number">104</span>,
+    CommunityCouncil: pallet_collective::&lt;Instance4&gt; = <span class="number">105</span>,
+    Democracy: pallet_democracy = <span class="number">106</span>,
+    Treasury: pallet_treasury::&lt;Instance1&gt; = <span class="number">107</span>,
+    CommunityTreasury: pallet_treasury::&lt;Instance2&gt; = <span class="number">108</span>,
+    CollectiveProxy: pallet_collective_proxy = <span class="number">109</span>,
+    SafeMode: pallet_safe_mode = <span class="number">110</span>,
+    TxPause: pallet_tx_pause = <span class="number">111</span>,
+
+    MultiBlockMigrations: pallet_migrations = <span class="number">120</span>,
 );
 
 <span class="doccomment">/// Block type as expected by this runtime.
@@ -4560,8 +4600,16 @@
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
+<span class="macro">parameter_types!</span> {
+    <span class="kw">pub const </span>SudoPalletToRemoveStr: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = <span class="string">"Sudo"</span>;
+}
+
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = (pallet_xc_asset_config::migrations::versioned::V4ToV5&lt;Runtime&gt;,);
+</span><span class="kw">pub type </span>Unreleased = (
+    pallet_xc_asset_config::migrations::versioned::V4ToV5&lt;Runtime&gt;,
+    frame_support::migrations::RemovePallet&lt;SudoPalletToRemoveStr, RocksDbWeight&gt;,
+    pallet_collator_selection::migrations::LastAuthoredBlockCleanup&lt;Runtime&gt;,
+);
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);

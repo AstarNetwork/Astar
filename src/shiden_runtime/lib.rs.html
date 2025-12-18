@@ -2421,6 +2421,9 @@
 <a href="#2421" id="2421">2421</a>
 <a href="#2422" id="2422">2422</a>
 <a href="#2423" id="2423">2423</a>
+<a href="#2424" id="2424">2424</a>
+<a href="#2425" id="2425">2425</a>
+<a href="#2426" id="2426">2426</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3737,7 +3740,10 @@
 </span><span class="kw">pub type </span>Migrations = (Unreleased, Permanent);
 
 <span class="doccomment">/// Unreleased migrations. Add new ones here:
-</span><span class="kw">pub type </span>Unreleased = (pallet_xc_asset_config::migrations::versioned::V4ToV5&lt;Runtime&gt;,);
+</span><span class="kw">pub type </span>Unreleased = (
+    pallet_xc_asset_config::migrations::versioned::V4ToV5&lt;Runtime&gt;,
+    pallet_collator_selection::migrations::LastAuthoredBlockCleanup&lt;Runtime&gt;,
+);
 
 <span class="doccomment">/// Migrations/checks that do not need to be versioned and can run on every upgrade.
 </span><span class="kw">pub type </span>Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,);

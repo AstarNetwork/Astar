@@ -201,6 +201,7 @@
 <a href="#201" id="201">201</a>
 <a href="#202" id="202">202</a>
 <a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -263,12 +264,13 @@
 
     <span class="kw">let </span>config = RuntimeGenesisConfig {
         system: Default::default(),
-        sudo: SudoConfig {
-            key: <span class="prelude-val">Some</span>(alice.account_id()),
-        },
         parachain_info: ParachainInfoConfig {
             parachain_id: para_id.into(),
             ..Default::default()
+        },
+        <span class="attr">#[cfg(feature = <span class="string">"astar-sudo"</span>)]
+        </span>sudo: SudoConfig {
+            key: <span class="prelude-val">Some</span>(alice.account_id()),
         },
         balances: BalancesConfig { balances },
         vesting: VestingConfig { vesting: <span class="macro">vec!</span>[] },
