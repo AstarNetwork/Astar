@@ -19,7 +19,7 @@
 //! A mock runtime for XCM benchmarking.
 
 use crate::{fungible, generic, *};
-use astar_primitives::xcm::Reserves;
+use astar_primitives::xcm::ReserveAssetFilter;
 use frame_benchmarking::BenchmarkError;
 use frame_support::{
     assert_ok, derive_impl, parameter_types,
@@ -29,7 +29,6 @@ use frame_support::{
 use frame_system::{EnsureRoot, EnsureSigned};
 
 use core::marker::PhantomData;
-use pallet_xc_asset_config::types::MigrationStep;
 use sp_core::{ConstU64, Get};
 use sp_runtime::traits::IdentityLookup;
 use xcm::latest::prelude::*;
@@ -185,20 +184,13 @@ parameter_types! {
     pub const UnitWeightCost: u64 = 10;
 }
 
-pub struct MigrationStepGetter;
-impl Get<MigrationStep> for MigrationStepGetter {
-    fn get() -> MigrationStep {
-        MigrationStep::NotStarted
-    }
-}
-
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = DevNull;
     type AssetTransactor = AssetTransactor;
     type OriginConverter = ();
-    type IsReserve = Reserves<MigrationStepGetter>;
+    type IsReserve = ReserveAssetFilter;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = AllowUnpaidExecutionFrom<Everything>;

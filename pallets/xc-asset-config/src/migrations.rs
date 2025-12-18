@@ -36,6 +36,15 @@ pub mod versioned {
         Pallet<T>,
         <T as frame_system::Config>::DbWeight,
     >;
+
+    /// Migration storage V4 to V5 which removes `AssetHubMigrationStep`.
+    pub type V4ToV5<T> = frame_support::migrations::VersionedMigration<
+        4,
+        5,
+        unchecked_migration::UncheckedMigrationRemoveAssetHubStep<T>,
+        Pallet<T>,
+        <T as frame_system::Config>::DbWeight,
+    >;
 }
 
 mod unchecked_migration {
@@ -119,6 +128,52 @@ mod unchecked_migration {
                 .len();
 
             assert_eq!(old_count, count as u32);
+            Ok(())
+        }
+    }
+
+    /// Migration that clears the old `AssetHubMigrationStep` storage key.
+    pub struct UncheckedMigrationRemoveAssetHubStep<T: Config>(PhantomData<T>);
+    impl<T: Config> UncheckedOnRuntimeUpgrade for UncheckedMigrationRemoveAssetHubStep<T> {
+        fn on_runtime_upgrade() -> Weight {
+            use sp_core::hexdisplay::HexDisplay;
+
+            let key = frame_support::storage::storage_prefix(
+                <Pallet<T>>::name().as_bytes(),
+                b"AssetHubMigrationStep",
+            );
+            frame_support::storage::unhashed::kill(&key);
+
+            log::info!(
+                "Deleted AssetHubMigrationStep key: 0x{}",
+                HexDisplay::from(&key)
+            );
+
+            T::DbWeight::get().writes(1)
+        }
+
+        #[cfg(feature = "try-runtime")]
+        fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::DispatchError> {
+            let key = frame_support::storage::storage_prefix(
+                <Pallet<T>>::name().as_bytes(),
+                b"AssetHubMigrationStep",
+            );
+
+            Ok(key.to_vec())
+        }
+
+        #[cfg(feature = "try-runtime")]
+        fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::DispatchError> {
+            use sp_io::storage::exists;
+
+            let key = state;
+
+            // Ensure the value was deleted.
+            assert!(
+                !exists(&key),
+                "AssetHubMigrationStep should be removed after migration"
+            );
+
             Ok(())
         }
     }

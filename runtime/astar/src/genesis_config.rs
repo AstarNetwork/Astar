@@ -60,6 +60,7 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
 
     let config = RuntimeGenesisConfig {
         system: Default::default(),
+        #[cfg(feature = "astar-sudo")]
         sudo: SudoConfig {
             key: Some(alice.account_id()),
         },

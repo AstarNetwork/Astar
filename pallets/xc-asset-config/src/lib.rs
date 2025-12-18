@@ -66,14 +66,11 @@ pub mod tests;
 
 pub mod migrations;
 
-pub mod types;
-
 pub mod weights;
 pub use weights::WeightInfo;
 
 #[pallet]
 pub mod pallet {
-    use crate::types::MigrationStep;
     use crate::weights::WeightInfo;
     use frame_support::{
         pallet_prelude::*, traits::EnsureOrigin, weights::constants::WEIGHT_REF_TIME_PER_SECOND,
@@ -83,7 +80,7 @@ pub mod pallet {
     use sp_std::boxed::Box;
     use xcm::{v5::Location, VersionedLocation};
 
-    const STORAGE_VERSION: StorageVersion = StorageVersion::new(4);
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(5);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -141,9 +138,6 @@ pub mod pallet {
         ///
         /// Should most likely be root.
         type ManagerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
-
-        /// The required origin for managing the asset-hub migration steps
-        type AssetHubMigrationUpdater: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
 
         type WeightInfo: WeightInfo;
     }
@@ -207,9 +201,6 @@ pub mod pallet {
     #[pallet::storage]
     pub type AssetLocationUnitsPerSecond<T: Config> =
         StorageMap<_, Twox64Concat, VersionedLocation, u128>;
-
-    #[pallet::storage]
-    pub type AssetHubMigrationStep<T: Config> = StorageValue<_, MigrationStep, ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
