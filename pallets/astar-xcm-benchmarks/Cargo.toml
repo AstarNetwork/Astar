@@ -76,4 +76,5 @@ runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
+	"xcm/runtime-benchmarks"
 ]

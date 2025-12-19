@@ -71,6 +71,7 @@ sp_api::decl_runtime_apis! {
             header: &Block::Header,
         ) -> Result<(), sp_runtime::DispatchError>;
 
+        #[allow(clippy::too_many_arguments)]
         fn trace_call(
             header: &Block::Header,
             from: H160,

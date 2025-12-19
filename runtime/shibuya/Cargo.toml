@@ -271,6 +271,7 @@ std = [
 	"xcm-executor/std",
 	"xcm-runtime-apis/std",
 	"xcm/std",
+	"ethereum/std"
 ]
 runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
@@ -332,6 +333,7 @@ runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",
 	"xcm-runtime-apis/runtime-benchmarks",
+	"xcm/runtime-benchmarks"
 ]
 try-runtime = [
 	"astar-primitives/try-runtime",
@@ -390,6 +392,7 @@ try-runtime = [
 	"parachain-info/try-runtime",
 	"polkadot-runtime-common/try-runtime",
 	"sp-runtime/try-runtime",
+	"parachains-common/try-runtime"
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

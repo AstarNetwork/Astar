@@ -196,6 +196,7 @@ std = [
 	"pallet-evm-precompile-assets-erc20/std",
 	"precompile-utils/std",
 	"scale-info/std",
+	"ethereum/std"
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

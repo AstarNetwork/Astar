@@ -595,7 +595,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
         Proposals::<T, I>::iter_keys().try_for_each(|proposal_index| -> DispatchResult {
             ensure!(
-				current_proposal_count as u32 > proposal_index,
+				current_proposal_count > proposal_index,
 				"`ProposalCount` should by strictly greater than any ProposalIndex used as a key for `Proposals`."
 			);
             Ok(())

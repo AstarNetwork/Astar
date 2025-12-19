@@ -79,6 +79,7 @@
 //! [this issue](https://github.com/paritytech/statemint/issues/21#issuecomment-810481073).
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::useless_conversion)]
 
 pub use pallet::*;
 pub mod migrations;
@@ -284,8 +285,8 @@ pub mod pallet {
                 "genesis desired_candidates are more than T::MaxCandidates",
             );
 
-            <DesiredCandidates<T>>::put(&self.desired_candidates);
-            <CandidacyBond<T>>::put(&self.candidacy_bond);
+            <DesiredCandidates<T>>::put(self.desired_candidates);
+            <CandidacyBond<T>>::put(self.candidacy_bond);
             <Invulnerables<T>>::put(&self.invulnerables);
         }
     }
@@ -394,7 +395,7 @@ pub mod pallet {
             if max > T::MaxCandidates::get() {
                 log::warn!("max > T::MaxCandidates; you might need to run benchmarks again");
             }
-            <DesiredCandidates<T>>::put(&max);
+            <DesiredCandidates<T>>::put(max);
             Self::deposit_event(Event::NewDesiredCandidates(max));
             Ok(().into())
         }
@@ -407,7 +408,7 @@ pub mod pallet {
             bond: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             T::UpdateOrigin::ensure_origin(origin)?;
-            <CandidacyBond<T>>::put(&bond);
+            <CandidacyBond<T>>::put(bond);
             Self::deposit_event(Event::NewCandidacyBond(bond));
             Ok(().into())
         }
@@ -717,7 +718,7 @@ pub mod pallet {
                     let candidate = candidates.remove(index);
                     // start un-bonding period, 1 session
                     let session_index = T::ValidatorSet::session_index().saturating_add(1);
-                    <NonCandidates<T>>::insert(&who, (session_index, candidate.deposit));
+                    <NonCandidates<T>>::insert(who, (session_index, candidate.deposit));
                     Ok(candidates.len())
                 })?;
             Self::deposit_event(Event::CandidateRemoved(who.clone()));

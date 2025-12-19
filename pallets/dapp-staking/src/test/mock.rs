@@ -203,6 +203,7 @@ ord_parameter_types! {
 }
 
 impl pallet_dapp_staking::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = MockSmartContract;
@@ -459,6 +460,6 @@ pub fn dapp_staking_events() -> Vec<crate::Event<Test>> {
     System::events()
         .into_iter()
         .map(|r| r.event)
-        .filter_map(|e| e.try_into().ok())
+        .filter_map(|e| <Test as Config>::RuntimeEvent::from(e).try_into().ok())
         .collect::<Vec<_>>()
 }

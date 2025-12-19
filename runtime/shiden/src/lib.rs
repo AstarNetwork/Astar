@@ -434,6 +434,7 @@ parameter_types! {
 }
 
 impl pallet_dapp_staking::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;

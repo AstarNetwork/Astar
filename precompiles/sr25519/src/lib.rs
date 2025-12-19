@@ -49,7 +49,7 @@ impl<Runtime: pallet_evm::Config> Sr25519Precompile<Runtime> {
         // Parse pub key
         let public = sr25519::Public::unchecked_from(public);
         // Parse signature
-        let signature = if let Ok(sig) = sr25519::Signature::from_slice(&signature.as_bytes()) {
+        let signature = if let Ok(sig) = sr25519::Signature::from_slice(signature.as_bytes()) {
             sig
         } else {
             // Return `false` if signature length is wrong
@@ -58,17 +58,14 @@ impl<Runtime: pallet_evm::Config> Sr25519Precompile<Runtime> {
 
         log::trace!(
             target: "sr25519-precompile",
-            "Verify signature {:?} for public {:?} and message {:?}",
-            signature, public, message,
+            "Verify signature {signature:?} for public {public:?} and message {message:?}",
         );
 
-        let is_confirmed =
-            sp_io::crypto::sr25519_verify(&signature, &message.as_bytes(), &public.into());
+        let is_confirmed = sp_io::crypto::sr25519_verify(&signature, message.as_bytes(), &public);
 
         log::trace!(
             target: "sr25519-precompile",
-            "Verified signature {:?} is {:?}",
-            signature, is_confirmed,
+            "Verified signature {signature:?} is {is_confirmed:?}",
         );
 
         Ok(is_confirmed)

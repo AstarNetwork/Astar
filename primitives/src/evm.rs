@@ -109,7 +109,7 @@ pub trait UnifiedAddressMapper<AccountId> {
 pub struct HashedDefaultMappings<H>(PhantomData<H>);
 impl<H: Hasher<Out = H256>> UnifiedAddressMapper<AccountId> for HashedDefaultMappings<H> {
     fn to_default_account_id(evm_address: &EvmAddress) -> AccountId {
-        HashedAddressMapping::<H>::into_account_id(evm_address.clone())
+        HashedAddressMapping::<H>::into_account_id(*evm_address)
     }
 
     fn to_default_h160(account_id: &AccountId) -> EvmAddress {

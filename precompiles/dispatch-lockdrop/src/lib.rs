@@ -80,12 +80,10 @@ where
     ) -> EvmResult<bool> {
         log::trace!(
             target: LOG_TARGET,
-            "raw arguments: call: {:?}, pubkey: {:?}",
-            call,
-            pubkey
+            "raw arguments: call: {call:?}, pubkey: {pubkey:?}",
         );
 
-        let caller: H160 = handle.context().caller.into();
+        let caller: H160 = handle.context().caller;
         let input: Vec<u8> = call.into();
 
         // Record a fixed amount of weight to ensure there is no free execution
@@ -96,7 +94,7 @@ where
         // Ensure that the caller matches the public key
         if caller != Self::get_evm_address_from_pubkey(pubkey.as_bytes()) {
             let message: &str = "caller does not match the public key";
-            log::trace!(target: LOG_TARGET, "{}", message);
+            log::trace!(target: LOG_TARGET, "{message}");
             return Err(revert(message));
         }
 
