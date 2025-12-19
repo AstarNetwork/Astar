@@ -43,7 +43,7 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
 use ethereum_types::U256;
-use fp_ethereum::{TransactionData, ValidatedTransaction};
+use fp_ethereum::{Transaction, TransactionData, ValidatedTransaction};
 use fp_evm::{
     CallInfo, CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, ExitReason,
     ExitSucceed, TransactionValidationError,
@@ -192,7 +192,9 @@ impl<T: Config> Pallet<T> {
     ) -> Result<(PostDispatchInfo, CallInfo), DispatchErrorWithPostInfo> {
         let chain_id = T::ChainId::get();
         let nonce = Nonce::<T>::get();
-        let tx = checked_tx.into_ethereum_tx(Nonce::<T>::get(), chain_id);
+        let tx: Transaction = checked_tx
+            .into_ethereum_tx(Nonce::<T>::get(), chain_id)
+            .into();
         let tx_data: TransactionData = (&tx).into();
 
         let (weight_limit, proof_size_base_cost) =

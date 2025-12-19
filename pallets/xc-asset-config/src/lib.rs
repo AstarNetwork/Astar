@@ -128,8 +128,6 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
         /// The Asset Id. This will be used to create the asset and to associate it with
         /// a AssetLocation
         type AssetId: Member + Parameter + Default + Copy + HasCompact + MaxEncodedLen;

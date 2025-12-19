@@ -72,7 +72,7 @@ use frame_support::{
     traits::{
         fungible::{Inspect as FungibleInspect, Mutate as FungibleMutate},
         tokens::{Fortitude::*, Precision::*, Preservation::*},
-        IsType, OnKilledAccount,
+        OnKilledAccount,
     },
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
@@ -108,8 +108,6 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// The overarching event type
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// The Currency for managing evm address assets
         type Currency: FungibleMutate<Self::AccountId, Balance = Balance>;
         /// Default address conversion

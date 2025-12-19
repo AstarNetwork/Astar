@@ -8,6 +8,7 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+ethereum = { workspace = true }
 log = { workspace = true, optional = true }
 num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }

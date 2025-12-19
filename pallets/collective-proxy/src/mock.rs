@@ -82,7 +82,6 @@ impl InstanceFilter<RuntimeCall> for MockCallFilter {
 }
 
 impl pallet_collective_proxy::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CollectiveProxy = EnsureSignedBy<CollectiveProxyManager, AccountId>;
     type ProxyAccountId = ProxyAccountId;

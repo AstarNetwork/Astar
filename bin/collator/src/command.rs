@@ -358,7 +358,7 @@ pub fn run() -> Result<()> {
                             let db = params.backend.expose_db();
                             let storage = params.backend.expose_storage();
 
-                            cmd.run(config, params.client, db, storage)
+                            cmd.run(config, params.client, db, storage, None)
                         })
                     } else {
                         runner.sync_run(|config| {
@@ -366,7 +366,7 @@ pub fn run() -> Result<()> {
                             let db = params.backend.expose_db();
                             let storage = params.backend.expose_storage();
 
-                            cmd.run(config, params.client, db, storage)
+                            cmd.run(config, params.client, db, storage, None)
                         })
                     }
                 }

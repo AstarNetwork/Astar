@@ -368,7 +368,6 @@ impl Convert<AssetId, Option<Location>> for AssetIdConvert {
 }
 
 impl orml_xtokens::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type CurrencyId = AssetId;
     type CurrencyIdConvert = AssetIdConvert;

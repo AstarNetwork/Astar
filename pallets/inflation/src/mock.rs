@@ -105,7 +105,6 @@ impl pallet_inflation::Config for Test {
     type Currency = Balances;
     type PayoutPerBlock = DummyPayoutPerBlock;
     type CycleConfiguration = DummyCycleConfiguration;
-    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 

@@ -29,6 +29,7 @@ use alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec, vec::Vec};
 use core::marker::PhantomData;
 
 use cumulus_primitives_core::AggregateMessageOrigin;
+use ethereum::AuthorizationList;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
@@ -245,7 +246,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 2 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2),
-    astar_primitives::MAX_POV_SIZE as u64,
+    polkadot_primitives::MAX_POV_SIZE as u64,
 );
 
 parameter_types! {
@@ -386,6 +387,8 @@ impl pallet_identity::Config for Runtime {
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
     type UsernameDeposit = UsernameDeposit;
     type UsernameGracePeriod = ConstU32<{ 7 * DAYS }>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 parameter_types! {
@@ -478,7 +481,6 @@ parameter_types! {
 }
 
 impl pallet_dapp_staking::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
@@ -542,7 +544,6 @@ impl pallet_inflation::Config for Runtime {
     type Currency = Balances;
     type PayoutPerBlock = InflationPayoutPerBlock;
     type CycleConfiguration = InflationCycleConfig;
-    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = weights::pallet_inflation::SubstrateWeight<Runtime>;
 }
 
@@ -573,6 +574,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ConsensusHook = ConsensusHook;
     type SelectCore = cumulus_pallet_parachain_system::DefaultCoreSelector<Runtime>;
     type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
+    type RelayParentOffset = ConstU32<0>;
 }
 
 type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
@@ -634,7 +636,6 @@ impl pallet_collator_selection::AccountCheck<AccountId> for CollatorSelectionAcc
 }
 
 impl pallet_collator_selection::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type UpdateOrigin = EnsureRoot<AccountId>;
     type ForceRemovalOrigin = EnsureRootOrThreeFourthMainCouncil;
@@ -909,7 +910,6 @@ impl Get<Multiplier> for AdjustmentFactorGetter {
 }
 
 impl pallet_dynamic_evm_base_fee::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
     type MinBaseFeePerGas = MinBaseFeePerGas;
     type MaxBaseFeePerGas = MaxBaseFeePerGas;
@@ -977,7 +977,6 @@ impl pallet_evm::Config for Runtime {
     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
     type AddressMapping = UnifiedAccounts;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
@@ -1005,7 +1004,6 @@ parameter_types! {
 }
 
 impl pallet_ethereum::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type StateRoot =
         pallet_ethereum::IntermediateStateRoot<<Self as frame_system::Config>::Version>;
     type PostLogContent = PostBlockAndTxnHashes;
@@ -1175,7 +1173,6 @@ impl pallet_proxy::Config for Runtime {
 }
 
 impl pallet_xc_asset_config::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
     // Good enough for testnet since we lack pallet-assets hooks for now
     type ManagerOrigin = EnsureRoot<AccountId>;
@@ -1215,7 +1212,6 @@ parameter_types! {
 }
 
 impl pallet_unified_accounts::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type DefaultMappings = HashedDefaultMappings<BlakeTwo256>;
     type ChainId = EVMChainId;
@@ -1231,7 +1227,6 @@ parameter_types! {
 }
 
 impl pallet_price_aggregator::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type MaxValuesPerBlock = ConstU32<8>;
     type ProcessBlockValues = pallet_price_aggregator::MedianBlockValue;
     type NativeCurrencyId = NativeCurrencyId;
@@ -1260,7 +1255,6 @@ parameter_types! {
 }
 
 impl orml_oracle::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type OnNewData = PriceAggregator;
     type CombineData = DummyCombineData<Runtime>;
     type Time = Timestamp;
@@ -1533,7 +1527,6 @@ impl InstanceFilter<RuntimeCall> for CommunityCouncilCallFilter {
 }
 
 impl pallet_collective_proxy::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CollectiveProxy = EnsureRootOrHalfCommunityCouncil;
     type ProxyAccountId = CommunityTreasuryAccountId;
@@ -2053,6 +2046,7 @@ impl_runtime_apis! {
             nonce: Option<U256>,
             estimate: bool,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
+            authorization_list: Option<AuthorizationList>,
         ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -2109,7 +2103,8 @@ impl_runtime_apis! {
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
                 nonce,
-                Vec::new(),
+                access_list.unwrap_or_default(),
+                authorization_list.unwrap_or_default(),
                 is_transactional,
                 validate,
                 weight_limit,
@@ -2131,6 +2126,7 @@ impl_runtime_apis! {
             nonce: Option<U256>,
             estimate: bool,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
+            authorization_list: Option<AuthorizationList>,
         ) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -2187,7 +2183,8 @@ impl_runtime_apis! {
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
                 nonce,
-                Vec::new(),
+                access_list.unwrap_or_default(),
+                authorization_list.unwrap_or_default(),
                 is_transactional,
                 validate,
                 weight_limit,
@@ -2448,7 +2445,7 @@ impl_runtime_apis! {
             Vec<frame_benchmarking::BenchmarkList>,
             Vec<frame_support::traits::StorageInfo>,
         ) {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
+            use frame_benchmarking::{baseline, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
             use pallet_xcm::benchmarking::Pallet as PalletXcmExtrinsicsBenchmark;
             pub use frame_system_benchmarking::{
@@ -2470,11 +2467,12 @@ impl_runtime_apis! {
             (list, storage_info)
         }
 
+        #[allow(non_local_definitions)]
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, alloc::string::String> {
             use alloc::boxed::Box;
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, BenchmarkError};
+            use frame_benchmarking::{baseline, BenchmarkBatch, BenchmarkError};
             pub use frame_system_benchmarking::{
                 extensions::Pallet as SystemExtensionsBench, Pallet as SystemBench
             };
@@ -2602,8 +2600,11 @@ impl_runtime_apis! {
                 fn alias_origin() -> Result<(Location, Location), BenchmarkError> {
                     Err(BenchmarkError::Skip)
                 }
-                fn fee_asset() -> Result<Asset, BenchmarkError> {
-                    Ok((AssetId(Here.into()), 1_000_000_000_000_000_000u128).into())
+                fn worst_case_for_trader() -> Result<(Asset, WeightLimit), BenchmarkError> {
+                    Ok((
+                        (AssetId(Here.into()), 1_000_000_000_000_000_000u128).into(),
+                        Limited(Weight::from_parts(5000, 5000)),
+                    ))
                 }
             }
 
@@ -2751,6 +2752,7 @@ impl_runtime_apis! {
             max_priority_fee_per_gas: Option<U256>,
             nonce: Option<U256>,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
+            authorization_list: Option<AuthorizationList>,
         ) -> Result<(), sp_runtime::DispatchError> {
             use moonbeam_evm_tracer::tracer::EvmTracer;
 
@@ -2808,6 +2810,7 @@ impl_runtime_apis! {
                     max_priority_fee_per_gas,
                     nonce,
                     access_list.unwrap_or_default(),
+                    authorization_list.unwrap_or_default(),
                     is_transactional,
                     validate,
                     weight_limit,

@@ -296,11 +296,13 @@ fn set_validation_data() {
             parent_head,
             relay_parent_number: RelaychainDataProvider::<Runtime>::current_block_number() + 1,
             relay_parent_storage_root,
-            max_pov_size: 5_000_000,
+            max_pov_size: polkadot_primitives::MAX_POV_SIZE,
         },
         relay_chain_state,
         downward_messages: Default::default(),
         horizontal_messages: Default::default(),
+        relay_parent_descendants: Default::default(),
+        collator_peer_id: Default::default(),
     };
 
     assert_ok!(ParachainSystem::set_validation_data(

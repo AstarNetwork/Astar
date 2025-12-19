@@ -9,6 +9,7 @@ repository.workspace = true
 
 [dependencies]
 # third-party dependencies
+ethereum = { workspace = true }
 hex-literal = { workspace = true }
 log = { workspace = true, optional = true }
 num_enum = { workspace = true }

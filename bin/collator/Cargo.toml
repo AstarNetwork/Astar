@@ -20,6 +20,7 @@ crate-type = ["cdylib", "rlib"]
 # third-party dependencies
 async-trait = { workspace = true }
 clap = { workspace = true }
+ethereum = { workspace = true }
 futures = { workspace = true }
 log = { workspace = true, features = ["std"] }
 parity-scale-codec = { workspace = true, features = ["std"] }

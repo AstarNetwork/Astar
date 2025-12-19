@@ -30,6 +30,7 @@ extern crate core;
 use alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec, vec::Vec};
 use core::marker::PhantomData;
 
+use ethereum::AuthorizationList;
 use frame_support::{
     construct_runtime, genesis_builder_helper, parameter_types,
     traits::{
@@ -431,7 +432,6 @@ impl Get<Multiplier> for AdjustmentFactorGetter {
 }
 
 impl pallet_dynamic_evm_base_fee::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
     type MinBaseFeePerGas = MinBaseFeePerGas;
     type MaxBaseFeePerGas = MaxBaseFeePerGas;
@@ -446,9 +446,7 @@ parameter_types! {
     pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
 }
 
-impl pallet_static_price_provider::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-}
+impl pallet_static_price_provider::Config for Runtime {}
 
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BenchmarkHelper<SC, ACC>(PhantomData<(SC, ACC)>);
@@ -472,7 +470,6 @@ parameter_types! {
 }
 
 impl pallet_dapp_staking::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
@@ -536,7 +533,6 @@ impl pallet_inflation::Config for Runtime {
     type Currency = Balances;
     type PayoutPerBlock = InflationPayoutPerBlock;
     type CycleConfiguration = InflationCycleConfig;
-    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_inflation::weights::SubstrateWeight<Runtime>;
 }
 
@@ -553,7 +549,6 @@ parameter_types! {
 }
 
 impl pallet_unified_accounts::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type DefaultMappings = HashedDefaultMappings<BlakeTwo256>;
     type ChainId = ChainId;
@@ -631,7 +626,6 @@ impl pallet_evm::Config for Runtime {
     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
     type AddressMapping = UnifiedAccounts;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
@@ -655,7 +649,6 @@ parameter_types! {
 }
 
 impl pallet_ethereum::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type StateRoot =
         pallet_ethereum::IntermediateStateRoot<<Self as frame_system::Config>::Version>;
     type PostLogContent = PostBlockAndTxnHashes;
@@ -1128,7 +1121,6 @@ impl InstanceFilter<RuntimeCall> for CommunityCouncilCallFilter {
 }
 
 impl pallet_collective_proxy::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CollectiveProxy = EnsureRootOrTwoThirdsCommunityCouncil;
     type ProxyAccountId = CommunityTreasuryAccountId;
@@ -1562,6 +1554,7 @@ impl_runtime_apis! {
             nonce: Option<U256>,
             estimate: bool,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
+            authorization_list: Option<AuthorizationList>,
         ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -1618,7 +1611,8 @@ impl_runtime_apis! {
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
                 nonce,
-                Vec::new(),
+                access_list.unwrap_or_default(),
+                authorization_list.unwrap_or_default(),
                 is_transactional,
                 validate,
                 weight_limit,
@@ -1640,6 +1634,7 @@ impl_runtime_apis! {
             nonce: Option<U256>,
             estimate: bool,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
+            authorization_list: Option<AuthorizationList>,
         ) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -1696,7 +1691,8 @@ impl_runtime_apis! {
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
                 nonce,
-                Vec::new(),
+                access_list.unwrap_or_default(),
+                authorization_list.unwrap_or_default(),
                 is_transactional,
                 validate,
                 weight_limit,
@@ -1887,7 +1883,7 @@ impl_runtime_apis! {
             Vec<frame_benchmarking::BenchmarkList>,
             Vec<frame_support::traits::StorageInfo>,
         ) {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
+            use frame_benchmarking::{baseline, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
             pub use frame_system_benchmarking::{
                 extensions::Pallet as SystemExtensionsBench, Pallet as SystemBench
@@ -1902,10 +1898,11 @@ impl_runtime_apis! {
             (list, storage_info)
         }
 
+        #[allow(non_local_definitions)]
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, alloc::string::String> {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
+            use frame_benchmarking::{baseline, BenchmarkBatch};
             pub use frame_system_benchmarking::{
                 extensions::Pallet as SystemExtensionsBench, Pallet as SystemBench
             };
@@ -2010,6 +2007,7 @@ impl_runtime_apis! {
             max_priority_fee_per_gas: Option<U256>,
             nonce: Option<U256>,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
+            authorization_list: Option<AuthorizationList>,
         ) -> Result<(), sp_runtime::DispatchError> {
             use moonbeam_evm_tracer::tracer::EvmTracer;
 
@@ -2067,6 +2065,7 @@ impl_runtime_apis! {
                     max_priority_fee_per_gas,
                     nonce,
                     access_list.unwrap_or_default(),
+                    authorization_list.unwrap_or_default(),
                     is_transactional,
                     validate,
                     weight_limit,

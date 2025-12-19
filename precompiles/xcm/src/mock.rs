@@ -339,7 +339,6 @@ impl pallet_evm::Config for Runtime {
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
     type AddressMapping = AccountId;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = TestPrecompileSet<Self>;
     type PrecompilesValue = PrecompilesValue;
@@ -506,7 +505,6 @@ impl pallet_xcm::Config for Runtime {
 }
 
 impl orml_xtokens::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type CurrencyId = AssetId;
     type CurrencyIdConvert = CurrencyIdToMultiLocation;

@@ -147,7 +147,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
-    astar_primitives::MAX_POV_SIZE as u64,
+    polkadot_primitives::MAX_POV_SIZE as u64,
 );
 
 parameter_types! {
@@ -305,7 +305,6 @@ parameter_types! {
 }
 
 impl pallet_xc_asset_config::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
     type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Runtime>;
@@ -476,7 +475,6 @@ impl xcm_executor::Config for XcmConfig {
 }
 
 impl mock_msg_queue::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
@@ -543,7 +541,6 @@ impl Convert<AssetId, Option<Location>> for AssetIdConvert {
 }
 
 impl orml_xtokens::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type CurrencyId = AssetId;
     type CurrencyIdConvert = AssetIdConvert;
@@ -637,7 +634,6 @@ parameter_types! {
 }
 
 impl pallet_dapp_staking::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = MockSmartContract;

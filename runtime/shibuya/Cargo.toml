@@ -18,6 +18,7 @@ serde_json = { workspace = true }
 smallvec = { workspace = true }
 
 # primitives
+ethereum = { workspace = true }
 fp-evm = { workspace = true }
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }

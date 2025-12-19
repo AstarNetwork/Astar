@@ -187,7 +187,6 @@ impl AccountCheck<u64> for DummyAccountCheck {
 }
 
 impl Config for Test {
-    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type UpdateOrigin = EnsureSignedBy<RootAccount, u64>;
     type GovernanceOrigin = EnsureSignedBy<RootAccount, u64>;

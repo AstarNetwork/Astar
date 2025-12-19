@@ -139,7 +139,6 @@ impl pallet_evm::Config for TestRuntime {
     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
     type AddressMapping = MockAddressMapping;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = ();
     type PrecompilesValue = ();
@@ -162,7 +161,6 @@ parameter_types! {
 }
 
 impl pallet_ethereum::Config for TestRuntime {
-    type RuntimeEvent = RuntimeEvent;
     type StateRoot =
         pallet_ethereum::IntermediateStateRoot<<TestRuntime as frame_system::Config>::Version>;
     type PostLogContent = PostBlockAndTxnHashes;
@@ -280,6 +278,7 @@ impl ExtBuilder {
                 U256::one(),
                 None,
                 Some(U256::zero()),
+                vec![],
                 vec![],
             ));
             System::assert_last_event(RuntimeEvent::Evm(pallet_evm::Event::Created {

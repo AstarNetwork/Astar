@@ -108,8 +108,6 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// Overarching event type
-        type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Default base fee per gas value. Used in genesis if no other value specified explicitly.
         type DefaultBaseFeePerGas: Get<U256>;
         /// Minimum value 'base fee per gas' can be adjusted to. This is a defensive measure to prevent the fee from being too low.

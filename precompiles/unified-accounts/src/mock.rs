@@ -183,7 +183,6 @@ impl pallet_evm::Config for TestRuntime {
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
     type AddressMapping = UnifiedAccounts;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = TestPrecompileSet<Self>;
     type PrecompilesValue = PrecompilesValue;
@@ -209,7 +208,6 @@ parameter_types! {
 }
 
 impl pallet_unified_accounts::Config for TestRuntime {
-    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type DefaultMappings = HashedDefaultMappings<BlakeTwo256>;
     type ChainId = ChainId;

@@ -136,7 +136,6 @@ impl pallet_evm::Config for Test {
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
     type AddressMapping = AddressMapper;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = DappStakingPrecompile<Test>;
     type PrecompilesValue = PrecompilesValue;

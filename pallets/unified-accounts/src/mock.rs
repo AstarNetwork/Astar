@@ -94,7 +94,6 @@ impl pallet_evm::Config for TestRuntime {
     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
     type AddressMapping = UnifiedAccounts;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = ();
     type PrecompilesValue = ();
@@ -117,7 +116,6 @@ parameter_types! {
 }
 
 impl pallet_ethereum::Config for TestRuntime {
-    type RuntimeEvent = RuntimeEvent;
     type StateRoot =
         pallet_ethereum::IntermediateStateRoot<<TestRuntime as frame_system::Config>::Version>;
     type PostLogContent = PostBlockAndTxnHashes;
@@ -129,7 +127,6 @@ parameter_types! {
 }
 
 impl pallet_unified_accounts::Config for TestRuntime {
-    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type DefaultMappings = HashedDefaultMappings<BlakeTwo256>;
     type ChainId = ChainId;
