@@ -52,7 +52,7 @@ jobs:
 
     - name: Run Tarpaulin
       run: |
-        cargo tarpaulin --features try-runtime,runtime-benchmarks
+        cargo tarpaulin --features runtime-benchmarks
 
     - name: Code Coverage Summary Report
       uses: irongut/CodeCoverageSummary@v1.2.0
