@@ -137,7 +137,7 @@ std = [
 	"xcm-executor/std",
 	"pallet-session/std",
 	"sp-consensus-aura/std",
-	"polkadot-primitives/std"
+	"polkadot-primitives/std",
 ]
 shibuya = ["shibuya-runtime"]
 shiden = ["shiden-runtime"]

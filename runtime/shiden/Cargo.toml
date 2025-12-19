@@ -246,7 +246,7 @@ std = [
 	"pallet-xcm-benchmarks?/std",
 	"precompile-utils/std",
 	"scale-info/std",
-	"ethereum/std"
+	"ethereum/std",
 ]
 runtime-benchmarks = [
 	"log",
@@ -299,7 +299,7 @@ runtime-benchmarks = [
 	"pallet-message-queue/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
 	"orml-oracle/runtime-benchmarks",
-	"xcm/runtime-benchmarks"
+	"xcm/runtime-benchmarks",
 ]
 try-runtime = [
 	"astar-primitives/try-runtime",
@@ -347,7 +347,7 @@ try-runtime = [
 	"pallet-chain-extension-assets/try-runtime",
 	"polkadot-runtime-common/try-runtime",
 	"sp-runtime/try-runtime",
-	"parachains-common/try-runtime"
+	"parachains-common/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",
