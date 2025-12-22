@@ -9,6 +9,9 @@ repository = "https://github.com/paritytech/polkadot-sdk.git"
 description = "FRAME pallet to manage treasury (polkadot v1.15.0)"
 readme = "README.md"
 
+[lints.clippy]
+all = "allow"
+
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
