@@ -23,6 +23,7 @@
 //! Proxies EVM messages to the host functions.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::new_without_default)]
 
 pub mod tracer {
     use ethereum_types::H256;

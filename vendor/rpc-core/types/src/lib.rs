@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
+#![allow(clippy::needless_borrow)]
+#![allow(clippy::from_str_radix_10)]
+#![allow(clippy::uninlined_format_args)]
+
 use ethereum_types::H256;
 use serde::{de::Error, Deserialize, Deserializer};
 

@@ -29,6 +29,9 @@
 //! This module provide mirror types and conversion into them from the original events.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::manual_map)]
+#![allow(clippy::uninlined_format_args)]
+
 extern crate alloc;
 
 pub mod evm;

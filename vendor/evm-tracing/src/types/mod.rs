@@ -16,6 +16,9 @@
 
 //! Runtime API allowing to debug/trace Ethereum
 
+#![allow(clippy::derivable_impls)]
+#![allow(clippy::large_enum_variant)]
+#![allow(clippy::uninlined_format_args)]
 extern crate alloc;
 
 use ethereum_types::{H160, H256};
