@@ -2046,16 +2046,29 @@ impl_runtime_apis! {
             impl xcm_builder::EnsureDelivery for TestDeliveryHelper {
                 fn ensure_successful_delivery(
                     origin_ref: &Location,
-                    _dest: &Location,
+                    dest: &Location,
                     _fee_reason: xcm_executor::traits::FeeReason,
                 ) -> (Option<xcm_executor::FeesMode>, Option<Assets>) {
                     use xcm_executor::traits::ConvertLocation;
-                    let account = xcm_config::LocationToAccountId::convert_location(origin_ref)
-                        .expect("Invalid location");
-                    // Give the existential deposit at least
-                    let balance = ExistentialDeposit::get();
-                    let _ = <Balances as frame_support::traits::Currency<_>>::
-                        make_free_balance_be(&account.into(), balance);
+
+                    // This sets up the necessary infrastructure (HostConfiguration) for sending XCM messages
+                    <xcm_config::XcmRouter as xcm::latest::SendXcm>::ensure_successful_delivery(
+                        Some(dest.clone())
+                    );
+
+                    // Open HRMP channel for sibling parachain destinations
+                    if let Some(Parachain(para_id)) = dest.interior().first() {
+                        ParachainSystem::open_outbound_hrmp_channel_for_benchmarks_or_tests(
+                            (*para_id).into()
+                        );
+                    }
+
+                    if let Some(account) = xcm_config::LocationToAccountId::convert_location(origin_ref) {
+                        // Give the account some balance to ensure delivery
+                        let balance = ExistentialDeposit::get() * 1000u128; // Give more than just ED
+                        let _ = <Balances as frame_support::traits::Currency<_>>::
+                            make_free_balance_be(&account.into(), balance);
+                    }
 
                     (None, None)
                 }
