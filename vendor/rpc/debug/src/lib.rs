@@ -13,13 +13,6 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
-#![allow(clippy::large_enum_variant)]
-#![allow(clippy::let_unit_value)]
-#![allow(clippy::needless_borrow)]
-#![allow(clippy::needless_return)]
-#![allow(clippy::single_component_path_imports)]
-#![allow(clippy::unnecessary_map_or)]
-#![allow(clippy::uninlined_format_args)]
 use futures::StreamExt;
 use jsonrpsee::core::{async_trait, RpcResult};
 pub use moonbeam_rpc_core_debug::{DebugServer, TraceCallParams, TraceParams};

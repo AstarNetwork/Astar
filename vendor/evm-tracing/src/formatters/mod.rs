@@ -14,13 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
-#![allow(clippy::redundant_field_names)]
-#![allow(clippy::iter_kv_map)]
-#![allow(clippy::into_iter_on_ref)]
-#![allow(clippy::needless_borrow)]
-#![allow(clippy::needless_return)]
-#![allow(clippy::uninlined_format_args)]
-
 pub mod blockscout;
 pub mod call_tracer;
 pub mod raw;
