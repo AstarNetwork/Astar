@@ -84,6 +84,8 @@ impl frame_system::Config for Runtime {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type AccountData = pallet_balances::AccountData<Balance>;
+    type BlockWeights = RuntimeBlockWeights;
+    type BlockLength = RuntimeBlockLength;
 }
 
 parameter_types! {
