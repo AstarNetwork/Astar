@@ -50,6 +50,34 @@ repository = "https://github.com/AstarNetwork/Astar"
 
 [workspace.lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(substrate_runtime)'] }
+suspicious_double_ref_op = { level = "allow", priority = 2 }
+
+[workspace.lints.clippy]
+all = { level = "allow", priority = 0 }
+correctness = { level = "deny", priority = 1 }
+complexity = { level = "deny", priority = 1 }
+bind_instead_of_map = { level = "allow", priority = 2 }              # styalistic
+borrowed-box = { level = "allow", priority = 2 }                     # Reasonable to fix this one
+clone_on_copy = { level = "allow", priority = 2 }
+default_constructed_unit_structs = { level = "allow", priority = 2 } # stylistic
+derivable_impls = { level = "allow", priority = 2 }                  # false positives
+eq_op = { level = "allow", priority = 2 }                            # In tests we test equality.
+erasing_op = { level = "allow", priority = 2 }                       # E.g. 0 * DOLLARS
+extra-unused-type-parameters = { level = "allow", priority = 2 }     # stylistic
+identity-op = { level = "allow", priority = 2 }                      # One case where we do 0 +
+if-same-then-else = { level = "allow", priority = 2 }
+needless_lifetimes = { level = "allow", priority = 2 }               # Backward compat?
+needless_option_as_deref = { level = "allow", priority = 2 }         # false positives
+nonminimal-bool = { level = "allow", priority = 2 }                  # maybe
+option-map-unit-fn = { level = "allow", priority = 2 }               # styalistic
+unit_arg = { level = "allow", priority = 2 }                         # styalistic.
+useless_conversion = { level = "allow", priority = 2 }               # Types may change
+stable_sort_primitive = { level = "allow", priority = 2 }            # prefer stable sort
+too-many-arguments = { level = "allow", priority = 2 }               # (Turning this on would lead to)
+type_complexity = { level = "allow", priority = 2 }                  # raison d'etre
+unnecessary_cast = { level = "allow", priority = 2 }                 # Types may change
+while_immutable_condition = { level = "allow", priority = 2 }        # false positives
+zero-prefixed-literal = { level = "allow", priority = 2 }            # 00_1000_000
 
 [workspace.dependencies]
 # General deps

@@ -9,6 +9,9 @@ edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
+[lints]
+workspace = true
+
 [[bin]]
 name = "astar-collator"
 path = "bin/main.rs"
