@@ -61,6 +61,7 @@ use crate::{
     rpc::tracing,
 };
 
+/// Parachain host functions
 #[cfg(feature = "runtime-benchmarks")]
 pub type HostFunctions = (
     frame_benchmarking::benchmarking::HostFunctions,
