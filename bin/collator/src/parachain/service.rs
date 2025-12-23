@@ -61,7 +61,15 @@ use crate::{
     rpc::tracing,
 };
 
+#[cfg(feature = "runtime-benchmarks")]
+pub type HostFunctions = (
+    frame_benchmarking::benchmarking::HostFunctions,
+    cumulus_client_service::ParachainHostFunctions,
+    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+);
+
 /// Parachain host functions
+#[cfg(not(feature = "runtime-benchmarks"))]
 pub type HostFunctions = (
     cumulus_client_service::ParachainHostFunctions,
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,

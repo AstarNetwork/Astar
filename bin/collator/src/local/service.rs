@@ -46,7 +46,15 @@ use astar_primitives::*;
 /// imported and generated.
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
+#[cfg(feature = "runtime-benchmarks")]
+pub type HostFunctions = (
+    frame_benchmarking::benchmarking::HostFunctions,
+    cumulus_client_service::ParachainHostFunctions,
+    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+);
+
 /// Parachain host functions
+#[cfg(not(feature = "runtime-benchmarks"))]
 pub type HostFunctions = (
     cumulus_client_service::ParachainHostFunctions,
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
