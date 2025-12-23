@@ -46,6 +46,7 @@ use astar_primitives::*;
 /// imported and generated.
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
+/// Parachain host functions
 #[cfg(feature = "runtime-benchmarks")]
 pub type HostFunctions = (
     frame_benchmarking::benchmarking::HostFunctions,
