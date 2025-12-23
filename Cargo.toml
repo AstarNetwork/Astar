@@ -220,9 +220,9 @@ pallet-safe-mode = { git = "https://github.com/paritytech/polkadot-sdk", branch 
 # EVM & Ethereum
 # (wasm)
 # To make it compatible with frontier
-evm = { git = "https://github.com/moonbeam-foundation/evm", branch = "moonbeam-polkadot-stable2506", default-features = false }
-evm-gasometer = { git = "https://github.com/moonbeam-foundation/evm", branch = "moonbeam-polkadot-stable2506", default-features = false }
-evm-runtime = { git = "https://github.com/moonbeam-foundation/evm", branch = "moonbeam-polkadot-stable2506", default-features = false }
+evm = { git = "https://github.com/rust-ethereum/evm", branch = "v0.x", default-features = false }
+evm-gasometer = { git = "https://github.com/rust-ethereum/evm", branch = "v0.x", default-features = false }
+evm-runtime = { git = "https://github.com/rust-ethereum/evm", branch = "v0.x", default-features = false }
 ethereum-types = { version = "0.15", default-features = false }
 ethereum = { version = "0.18.2", default-features = false }
 
