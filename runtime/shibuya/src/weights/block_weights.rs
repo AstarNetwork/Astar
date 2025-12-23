@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2025-07-21 (Y/M/D)
+//! DATE: 2025-12-19 (Y/M/D)
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
 //!
 //! SHORT-NAME: `block`, LONG-NAME: `BlockExecution`, RUNTIME: `shibuya`
@@ -32,6 +32,7 @@
 //   overhead
 //   --runtime=./target/release/wbuild/shibuya-runtime/shibuya_runtime.compact.compressed.wasm
 //   --repeat=50
+//   --header=./.github/license-check/headers/HEADER-GNUv3
 //   --weight-path=./benchmark-results/shibuya
 
 use sp_core::parameter_types;
@@ -42,17 +43,17 @@ parameter_types! {
     /// Calculated by multiplying the *Average* with `1.0` and adding `0`.
     ///
     /// Stats nanoseconds:
-    ///   Min, Max: 600_411, 838_503
-    ///   Average:  646_562
-    ///   Median:   641_761
-    ///   Std-Dev:  40019.67
+    ///   Min, Max: 742_999, 864_121
+    ///   Average:  799_587
+    ///   Median:   793_841
+    ///   Std-Dev:  28887.13
     ///
     /// Percentiles nanoseconds:
-    ///   99th: 838_503
-    ///   95th: 700_239
-    ///   75th: 658_742
+    ///   99th: 864_121
+    ///   95th: 860_342
+    ///   75th: 798_789
     pub const BlockExecutionWeight: Weight =
-        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(646_562), 5_772);
+        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(799_587), 6_631);
 }
 
 #[cfg(test)]

@@ -6,6 +6,9 @@ edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 log = { workspace = true }
 serde = { workspace = true, optional = true }
@@ -55,6 +58,7 @@ runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
+	"xcm/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-support/try-runtime",

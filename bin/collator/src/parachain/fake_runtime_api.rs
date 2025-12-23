@@ -22,6 +22,7 @@
 extern crate alloc;
 
 use astar_primitives::{AccountId, Balance, Block, Nonce};
+use ethereum::AuthorizationList;
 use frame_support::weights::Weight;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use sp_api::impl_runtime_apis;
@@ -176,6 +177,7 @@ impl_runtime_apis! {
             _nonce: Option<U256>,
             _estimate: bool,
             _access_list: Option<Vec<(H160, Vec<H256>)>>,
+            _authorization_list: Option<AuthorizationList>,
         ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
             unimplemented!()
         }
@@ -190,6 +192,7 @@ impl_runtime_apis! {
             _nonce: Option<U256>,
             _estimate: bool,
             _access_list: Option<Vec<(H160, Vec<H256>)>>,
+            _authorization_list: Option<AuthorizationList>,
         ) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
             unimplemented!()
         }
@@ -271,6 +274,7 @@ impl_runtime_apis! {
             _max_priority_fee_per_gas: Option<U256>,
             _nonce: Option<U256>,
             _access_list: Option<Vec<(H160, Vec<H256>)>>,
+            _authorization_list: Option<AuthorizationList>,
         ) -> Result<(), sp_runtime::DispatchError> {
             unimplemented!()
         }

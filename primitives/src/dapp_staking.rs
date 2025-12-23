@@ -22,7 +22,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 
 use frame_support::pallet_prelude::{RuntimeDebug, Weight};
 use sp_arithmetic::ArithmeticError;
-use sp_core::H160;
+use sp_core::{DecodeWithMemTracking, H160};
 use sp_runtime::{
     traits::{UniqueSaturatedInto, Zero},
     FixedPointNumber,
@@ -149,6 +149,7 @@ pub trait SmartContractHandle<AccountId> {
     Clone,
     Encode,
     Decode,
+    DecodeWithMemTracking,
     RuntimeDebug,
     MaxEncodedLen,
     Hash,

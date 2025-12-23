@@ -40,7 +40,7 @@ pub type BalanceOf<T> =
 
 const SEED: u32 = 0;
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+fn assert_last_event<T: Config>(generic_event: crate::Event<T>) {
     let events = frame_system::Pallet::<T>::events();
     let system_event: <T as frame_system::Config>::RuntimeEvent = generic_event.into();
     // compare to the last event record
@@ -121,7 +121,7 @@ benchmarks! {
         );
     }
     verify {
-        assert_last_event::<T>(Event::NewInvulnerables(new_invulnerables).into());
+        assert_last_event::<T>(Event::NewInvulnerables(new_invulnerables));
     }
 
     add_invulnerable {
@@ -173,7 +173,7 @@ benchmarks! {
         );
     }
     verify {
-        assert_last_event::<T>(Event::NewDesiredCandidates(max).into());
+        assert_last_event::<T>(Event::NewDesiredCandidates(max));
     }
 
     set_candidacy_bond {
@@ -185,7 +185,7 @@ benchmarks! {
         );
     }
     verify {
-        assert_last_event::<T>(Event::NewCandidacyBond(bond).into());
+        assert_last_event::<T>(Event::NewCandidacyBond(bond));
     }
 
     register_as_candidate {
@@ -212,7 +212,7 @@ benchmarks! {
 
     }: _(RawOrigin::Signed(caller.clone()))
     verify {
-        assert_last_event::<T>(Event::CandidacyApplicationSubmitted(caller, bond / 2u32.into()).into());
+        assert_last_event::<T>(Event::CandidacyApplicationSubmitted(caller, bond / 2u32.into()));
     }
 
     // worst case is when called by signed origin
@@ -235,7 +235,7 @@ benchmarks! {
 
     }: _(RawOrigin::Signed(caller.clone()), caller.clone())
     verify {
-        assert_last_event::<T>(Event::CandidacyApplicationClosed(caller).into());
+        assert_last_event::<T>(Event::CandidacyApplicationClosed(caller));
     }
 
     // worse case is when we have all the max-candidate slots filled except one, and we fill that
@@ -268,7 +268,7 @@ benchmarks! {
         assert_ok!(<CollatorSelection<T>>::approve_application(origin, caller.clone()));
     }
     verify {
-        assert_last_event::<T>(Event::CandidateAdded(caller, bond / 2u32.into()).into());
+        assert_last_event::<T>(Event::CandidateAdded(caller, bond / 2u32.into()));
     }
 
     // worse case is the last candidate kicking.
@@ -289,7 +289,7 @@ benchmarks! {
         );
     }
     verify {
-        assert_last_event::<T>(Event::CandidateKicked(leaving).into());
+        assert_last_event::<T>(Event::CandidateKicked(leaving));
     }
 
     // worse case is the last candidate leaving.
@@ -305,7 +305,7 @@ benchmarks! {
         whitelist_account!(leaving);
     }: _(RawOrigin::Signed(leaving.clone()))
     verify {
-        assert_last_event::<T>(Event::CandidateRemoved(leaving).into());
+        assert_last_event::<T>(Event::CandidateRemoved(leaving));
     }
 
     withdraw_bond {

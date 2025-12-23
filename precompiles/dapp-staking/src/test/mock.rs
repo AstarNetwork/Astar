@@ -136,7 +136,6 @@ impl pallet_evm::Config for Test {
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
     type AddressMapping = AddressMapper;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = DappStakingPrecompile<Test>;
     type PrecompilesValue = PrecompilesValue;
@@ -151,6 +150,8 @@ impl pallet_evm::Config for Test {
     type GasLimitPovSizeRatio = ConstU64<4>;
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     type GasLimitStorageGrowthRatio = ConstU64<0>;
+    type CreateOriginFilter = ();
+    type CreateInnerOriginFilter = ();
 }
 
 #[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
@@ -441,10 +442,6 @@ pub fn dapp_staking_events() -> Vec<pallet_dapp_staking::Event<Test>> {
     System::events()
         .into_iter()
         .map(|r| r.event)
-        .filter_map(|e| {
-            <Test as pallet_dapp_staking::Config>::RuntimeEvent::from(e)
-                .try_into()
-                .ok()
-        })
+        .filter_map(|e| e.try_into().ok())
         .collect::<Vec<_>>()
 }

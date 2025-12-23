@@ -34,7 +34,7 @@ benchmarks! {
 
     }: _(RawOrigin::Root, Box::new(asset_location.clone().into_versioned()), asset_id)
     verify {
-        assert_eq!(AssetIdToLocation::<T>::get(&asset_id), Some(asset_location.into_versioned()));
+        assert_eq!(AssetIdToLocation::<T>::get(asset_id), Some(asset_location.into_versioned()));
     }
 
     set_asset_units_per_second {
@@ -46,7 +46,7 @@ benchmarks! {
 
     }: _(RawOrigin::Root, Box::new(asset_location.clone().into_versioned()), units)
     verify {
-        assert_eq!(AssetLocationUnitsPerSecond::<T>::get(&asset_location.into_versioned()), Some(units));
+        assert_eq!(AssetLocationUnitsPerSecond::<T>::get(asset_location.into_versioned()), Some(units));
     }
 
     change_existing_asset_location {
@@ -61,9 +61,9 @@ benchmarks! {
 
     }: _(RawOrigin::Root, Box::new(new_asset_location.clone().into_versioned()), asset_id)
     verify {
-        assert!(!AssetLocationToId::<T>::contains_key(&asset_location.clone().into_versioned()));
-        assert_eq!(AssetLocationToId::<T>::get(&new_asset_location.clone().into_versioned()), Some(asset_id));
-        assert_eq!(AssetLocationUnitsPerSecond::<T>::get(&new_asset_location.into_versioned()), Some(units));
+        assert!(!AssetLocationToId::<T>::contains_key(asset_location.clone().into_versioned()));
+        assert_eq!(AssetLocationToId::<T>::get(new_asset_location.clone().into_versioned()), Some(asset_id));
+        assert_eq!(AssetLocationUnitsPerSecond::<T>::get(new_asset_location.into_versioned()), Some(units));
     }
 
     remove_payment_asset {
@@ -76,7 +76,7 @@ benchmarks! {
 
     }: _(RawOrigin::Root, Box::new(asset_location.clone().into_versioned()))
     verify {
-        assert!(!AssetLocationUnitsPerSecond::<T>::contains_key(&asset_location.into_versioned()));
+        assert!(!AssetLocationUnitsPerSecond::<T>::contains_key(asset_location.into_versioned()));
     }
 
     remove_asset {
@@ -89,9 +89,9 @@ benchmarks! {
 
     }: _(RawOrigin::Root, asset_id)
     verify {
-        assert!(!AssetLocationToId::<T>::contains_key(&asset_location.clone().into_versioned()));
+        assert!(!AssetLocationToId::<T>::contains_key(asset_location.clone().into_versioned()));
         assert!(!AssetIdToLocation::<T>::contains_key(asset_id));
-        assert!(!AssetLocationUnitsPerSecond::<T>::contains_key(&asset_location.into_versioned()));
+        assert!(!AssetLocationUnitsPerSecond::<T>::contains_key(asset_location.into_versioned()));
     }
 }
 

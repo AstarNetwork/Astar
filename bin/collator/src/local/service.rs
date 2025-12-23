@@ -47,6 +47,15 @@ use astar_primitives::*;
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
 /// Parachain host functions
+#[cfg(feature = "runtime-benchmarks")]
+pub type HostFunctions = (
+    frame_benchmarking::benchmarking::HostFunctions,
+    cumulus_client_service::ParachainHostFunctions,
+    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+);
+
+/// Parachain host functions
+#[cfg(not(feature = "runtime-benchmarks"))]
 pub type HostFunctions = (
     cumulus_client_service::ParachainHostFunctions,
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
@@ -246,7 +255,7 @@ where
         );
     net_config.add_notification_protocol(grandpa_protocol_config);
 
-    let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
+    let (network, system_rpc_tx, tx_handler_controller, sync_service) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &config,
             net_config,
@@ -590,6 +599,5 @@ where
         );
     }
 
-    network_starter.start_network();
     Ok(task_manager)
 }

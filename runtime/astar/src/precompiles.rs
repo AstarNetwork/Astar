@@ -18,7 +18,7 @@
 
 //! The Astar Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
-use crate::RuntimeCall;
+use crate::{Runtime, RuntimeCall};
 use astar_primitives::precompiles::DispatchFilterValidate;
 use frame_support::{parameter_types, traits::Contains};
 use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
@@ -109,7 +109,11 @@ pub type AstarPrecompilesSetAt<R, C> = (
     PrecompileAt<AddressU64<8>, Bn128Pairing, EthereumPrecompilesChecks>,
     PrecompileAt<AddressU64<9>, Blake2F, EthereumPrecompilesChecks>,
     // Non-Astar specific nor Ethereum precompiles :
-    PrecompileAt<AddressU64<1024>, Sha3FIPS256, (CallableByContract, CallableByPrecompile)>,
+    PrecompileAt<
+        AddressU64<1024>,
+        Sha3FIPS256<Runtime, ()>,
+        (CallableByContract, CallableByPrecompile),
+    >,
     PrecompileAt<
         AddressU64<1025>,
         Dispatch<R, DispatchFilterValidate<RuntimeCall, WhitelistedCalls>>,

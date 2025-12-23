@@ -82,7 +82,6 @@ impl InstanceFilter<RuntimeCall> for MockCallFilter {
 }
 
 impl pallet_collective_proxy::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CollectiveProxy = EnsureSignedBy<CollectiveProxyManager, AccountId>;
     type ProxyAccountId = ProxyAccountId;
@@ -104,9 +103,12 @@ impl ExtBuilder {
             .collect();
         balances.push((COMMUNITY_ACCOUNT, 1000));
 
-        pallet_balances::GenesisConfig::<Test> { balances: balances }
-            .assimilate_storage(&mut storage)
-            .ok();
+        pallet_balances::GenesisConfig::<Test> {
+            balances: balances,
+            ..Default::default()
+        }
+        .assimilate_storage(&mut storage)
+        .ok();
 
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| {

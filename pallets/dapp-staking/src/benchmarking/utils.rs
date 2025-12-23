@@ -121,7 +121,7 @@ pub(super) const NUMBER_OF_SLOTS: u32 = 100;
 pub(super) const SEED: u32 = 9000;
 
 /// Assert that the last event equals the provided one.
-pub(super) fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+pub(super) fn assert_last_event<T: Config>(generic_event: crate::Event<T>) {
     frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 

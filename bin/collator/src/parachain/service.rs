@@ -59,10 +59,18 @@ use super::shell_upgrade::*;
 use crate::{
     evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig},
     rpc::tracing,
-    IdentifyChainNetworkBackend,
 };
 
 /// Parachain host functions
+#[cfg(feature = "runtime-benchmarks")]
+pub type HostFunctions = (
+    frame_benchmarking::benchmarking::HostFunctions,
+    cumulus_client_service::ParachainHostFunctions,
+    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+);
+
+/// Parachain host functions
+#[cfg(not(feature = "runtime-benchmarks"))]
 pub type HostFunctions = (
     cumulus_client_service::ParachainHostFunctions,
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
@@ -202,7 +210,7 @@ async fn build_relay_chain_interface(
     Arc<(dyn RelayChainInterface + 'static)>,
     Option<CollatorPair>,
 )> {
-    if let cumulus_client_cli::RelayChainMode::ExternalRpc(rpc_target_urls) =
+    let result = if let cumulus_client_cli::RelayChainMode::ExternalRpc(rpc_target_urls) =
         collator_options.relay_chain_mode
     {
         build_minimal_relay_chain_node_with_rpc(
@@ -220,7 +228,11 @@ async fn build_relay_chain_interface(
             task_manager,
             hwbench,
         )
-    }
+    };
+
+    // Extract only the first two elements from the 4-tuple
+    result
+        .map(|(relay_chain_interface, collator_pair, _, _)| (relay_chain_interface, collator_pair))
 }
 
 #[derive(Clone)]
@@ -275,6 +287,13 @@ where
         prometheus_registry.clone(),
     );
 
+    let metrics = N::register_notification_metrics(
+        parachain_config
+            .prometheus_config
+            .as_ref()
+            .map(|cfg| &cfg.registry),
+    );
+
     let (relay_chain_interface, collator_key) = build_relay_chain_interface(
         polkadot_config,
         &parachain_config,
@@ -288,7 +307,7 @@ where
 
     let is_authority = parachain_config.role.is_authority();
     let import_queue_service = import_queue.service();
-    let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
+    let (network, system_rpc_tx, tx_handler_controller, sync_service) =
         cumulus_client_service::build_network(BuildNetworkParams {
             parachain_config: &parachain_config,
             net_config,
@@ -299,6 +318,7 @@ where
             import_queue,
             relay_chain_interface: relay_chain_interface.clone(),
             sybil_resistance_level: cumulus_client_service::CollatorSybilResistance::Resistant,
+            metrics,
         })
         .await?;
 
@@ -513,6 +533,7 @@ where
         } else {
             DARecoveryProfile::FullNode
         },
+        prometheus_registry: prometheus_registry.as_ref(),
     })?;
 
     if is_authority {
@@ -533,8 +554,6 @@ where
         )?;
     }
 
-    start_network.start_network();
-
     Ok((task_manager, client))
 }
 
@@ -553,35 +572,38 @@ pub fn build_import_queue(
 ) -> sc_consensus::DefaultImportQueue<Block> {
     let verifier_client = client.clone();
 
+    let create_inherent_data_providers = move |parent_hash, _| {
+        let cidp_client = verifier_client.clone();
+        async move {
+            let slot_duration =
+                cumulus_client_consensus_aura::slot_duration_at(&*cidp_client, parent_hash)?;
+            let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+
+            let slot =
+                sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                    *timestamp,
+                    slot_duration,
+                );
+
+            Ok((slot, timestamp))
+        }
+    };
+
     let aura_verifier = Box::new(cumulus_client_consensus_aura::build_verifier::<
         AuraPair,
         _,
         _,
         _,
     >(cumulus_client_consensus_aura::BuildVerifierParams {
-        client: verifier_client.clone(),
-        create_inherent_data_providers: move |parent_hash, _| {
-            let cidp_client = verifier_client.clone();
-            async move {
-                let slot_duration =
-                    cumulus_client_consensus_aura::slot_duration_at(&*cidp_client, parent_hash)?;
-                let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-                let slot =
-                            sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                                *timestamp,
-                                slot_duration,
-                            );
-
-                Ok((slot, timestamp))
-            }
-        },
+        client: client.clone(),
+        create_inherent_data_providers: create_inherent_data_providers.clone(),
         telemetry: telemetry_handle,
     }));
 
-    let relay_chain_verifier = Box::new(RelayChainVerifier::new(client.clone(), |_, _| async {
-        Ok(())
-    })) as Box<_>;
+    let relay_chain_verifier = Box::new(RelayChainVerifier::new(
+        client.clone(),
+        create_inherent_data_providers,
+    )) as Box<_>;
 
     let verifier = Verifier {
         client,
@@ -668,6 +690,9 @@ fn start_aura_consensus(
         collator_service,
         authoring_duration: Duration::from_millis(2000),
         reinitialize: false,
+        // If necessary, AdditionalConfig CLI params could be extend to make it configurable.
+        // However, it will be removed once https://github.com/paritytech/polkadot-sdk/issues/6020 is fixed.
+        max_pov_percentage: None, // default is 85%
     };
 
     let fut = async move {
@@ -729,13 +754,7 @@ pub async fn start_node(
     para_id: ParaId,
     additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(TaskManager, Arc<FullClient>)> {
-    let default_backend = parachain_config.chain_spec.default_network_backend();
-    // If the network backend is unspecified, use the default for the given chain.
-    let network_backend = parachain_config
-        .network
-        .network_backend
-        .unwrap_or(default_backend);
-    match network_backend {
+    match parachain_config.network.network_backend {
         NetworkBackendType::Libp2p => {
             start_node_impl::<sc_network::NetworkWorker<_, _>>(
                 parachain_config,

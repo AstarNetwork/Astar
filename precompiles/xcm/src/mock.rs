@@ -21,6 +21,7 @@
 use super::*;
 
 use fp_evm::{IsPrecompileResult, Precompile};
+use frame_support::traits::Disabled;
 use frame_support::{
     construct_runtime, derive_impl, parameter_types,
     traits::{AsEnsureOriginWithArg, ConstU64, Everything, Nothing},
@@ -35,7 +36,7 @@ use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
-use sp_core::{ConstU32, H160};
+use sp_core::{ConstU32, DecodeWithMemTracking, H160};
 use sp_runtime::{traits::IdentityLookup, BuildStorage};
 use sp_std::cell::RefCell;
 
@@ -82,6 +83,7 @@ pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
     Clone,
     Encode,
     Decode,
+    DecodeWithMemTracking,
     Debug,
     MaxEncodedLen,
     Serialize,
@@ -337,7 +339,6 @@ impl pallet_evm::Config for Runtime {
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
     type AddressMapping = AccountId;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = TestPrecompileSet<Self>;
     type PrecompilesValue = PrecompilesValue;
@@ -352,6 +353,8 @@ impl pallet_evm::Config for Runtime {
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     type GasLimitStorageGrowthRatio = ConstU64<0>;
     type Timestamp = Timestamp;
+    type CreateOriginFilter = ();
+    type CreateInnerOriginFilter = ();
 }
 
 parameter_types! {
@@ -421,6 +424,7 @@ impl xcm_executor::Config for XcmConfig {
     type HrmpChannelAcceptedHandler = ();
     type HrmpChannelClosingHandler = ();
     type XcmRecorder = ();
+    type XcmEventEmitter = ();
 }
 
 parameter_types! {
@@ -497,10 +501,10 @@ impl pallet_xcm::Config for Runtime {
     type RemoteLockConsumerIdentifier = ();
     type WeightInfo = pallet_xcm::TestWeightInfo;
     type AdminOrigin = frame_system::EnsureRoot<AccountId>;
+    type AuthorizedAliasConsideration = Disabled;
 }
 
 impl orml_xtokens::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type CurrencyId = AssetId;
     type CurrencyIdConvert = CurrencyIdToMultiLocation;

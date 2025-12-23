@@ -7,6 +7,9 @@ edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }

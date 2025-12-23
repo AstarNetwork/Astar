@@ -29,7 +29,18 @@ pub trait PriceProvider {
 pub type Price = FixedU128;
 pub type CurrencyAmount = FixedU128;
 
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(
+    Encode,
+    Decode,
+    DecodeWithMemTracking,
+    MaxEncodedLen,
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    TypeInfo,
+)]
 pub enum CurrencyId {
     ASTR,
     SDN,

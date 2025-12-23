@@ -7,15 +7,16 @@ license = "GPL-3.0-only"
 repository = "https://github.com/PureStake/moonbeam/"
 version = "0.1.0"
 
+[lints]
+workspace = true
+
 [dependencies]
-ethereum-types = { workspace = true }
 
 # Moonbeam
 evm-tracing-events = { workspace = true }
 
 # Substrate
 parity-scale-codec = { workspace = true }
-sp-externalities = { workspace = true }
 sp-runtime-interface = { workspace = true }
 sp-std = { workspace = true }
 
@@ -23,9 +24,7 @@ sp-std = { workspace = true }
 default = ["std"]
 std = [
 	"parity-scale-codec/std",
-	"ethereum-types/std",
 	"evm-tracing-events/std",
-	"sp-externalities/std",
 	"sp-runtime-interface/std",
 	"sp-std/std",
 ]

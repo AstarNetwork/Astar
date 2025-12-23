@@ -55,9 +55,6 @@ pub mod pallet {
     /// Configuration trait.
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// The overarching event type.
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
         /// The overarching call type.
         type RuntimeCall: Parameter
             + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>

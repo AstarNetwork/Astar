@@ -128,8 +128,6 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
         /// The Asset Id. This will be used to create the asset and to associate it with
         /// a AssetLocation
         type AssetId: Member + Parameter + Default + Copy + HasCompact + MaxEncodedLen;
@@ -152,6 +150,7 @@ pub mod pallet {
         MultiLocationNotSupported,
     }
 
+    #[allow(clippy::large_enum_variant)]
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -218,7 +217,7 @@ pub mod pallet {
 
             // Ensure such an assetId does not exist
             ensure!(
-                !AssetIdToLocation::<T>::contains_key(&asset_id),
+                !AssetIdToLocation::<T>::contains_key(asset_id),
                 Error::<T>::AssetAlreadyRegistered
             );
 
@@ -226,7 +225,7 @@ pub mod pallet {
                 .map_err(|_| Error::<T>::MultiLocationNotSupported)?;
             let asset_location = VersionedLocation::V5(v5_asset_loc);
 
-            AssetIdToLocation::<T>::insert(&asset_id, asset_location.clone());
+            AssetIdToLocation::<T>::insert(asset_id, asset_location.clone());
             AssetLocationToId::<T>::insert(&asset_location, asset_id);
 
             Self::deposit_event(Event::AssetRegistered {
@@ -281,10 +280,10 @@ pub mod pallet {
             let new_asset_location = VersionedLocation::V5(v5_asset_loc);
 
             let previous_asset_location =
-                AssetIdToLocation::<T>::get(&asset_id).ok_or(Error::<T>::AssetDoesNotExist)?;
+                AssetIdToLocation::<T>::get(asset_id).ok_or(Error::<T>::AssetDoesNotExist)?;
 
             // Insert new asset type info
-            AssetIdToLocation::<T>::insert(&asset_id, new_asset_location.clone());
+            AssetIdToLocation::<T>::insert(asset_id, new_asset_location.clone());
             AssetLocationToId::<T>::insert(&new_asset_location, asset_id);
 
             // Remove previous asset type info
@@ -334,9 +333,9 @@ pub mod pallet {
             T::ManagerOrigin::ensure_origin(origin)?;
 
             let asset_location =
-                AssetIdToLocation::<T>::get(&asset_id).ok_or(Error::<T>::AssetDoesNotExist)?;
+                AssetIdToLocation::<T>::get(asset_id).ok_or(Error::<T>::AssetDoesNotExist)?;
 
-            AssetIdToLocation::<T>::remove(&asset_id);
+            AssetIdToLocation::<T>::remove(asset_id);
             AssetLocationToId::<T>::remove(&asset_location);
             AssetLocationUnitsPerSecond::<T>::remove(&asset_location);
 

@@ -57,7 +57,10 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
             parachain_id: para_id.into(),
             ..Default::default()
         },
-        balances: BalancesConfig { balances },
+        balances: BalancesConfig {
+            balances,
+            ..Default::default()
+        },
         vesting: VestingConfig { vesting: vec![] },
         session: SessionConfig {
             keys: authorities

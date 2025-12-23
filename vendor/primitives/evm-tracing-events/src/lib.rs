@@ -1,4 +1,4 @@
-// Copyright 2019-2022 PureStake Inc.
+// Copyright 2019-2025 PureStake Inc.
 // This file is part of Moonbeam.
 
 // Moonbeam is free software: you can redistribute it and/or modify
@@ -41,7 +41,6 @@ pub use runtime::RuntimeEvent;
 
 use ethereum_types::{H160, U256};
 use parity_scale_codec::{Decode, Encode};
-use sp_runtime_interface::pass_by::PassByCodec;
 
 environmental::environmental!(listener: dyn Listener + 'static);
 
@@ -52,7 +51,7 @@ pub fn using<R, F: FnOnce() -> R>(l: &mut (dyn Listener + 'static), f: F) -> R {
 /// Allow to configure which data of the Step event
 /// we want to keep or discard. Not discarding the data requires cloning the data
 /// in the runtime which have a significant cost for each step.
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, Default, PassByCodec)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, Default)]
 pub struct StepEventFilter {
     pub enable_stack: bool,
     pub enable_memory: bool,

@@ -7,6 +7,9 @@ edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 frame-support = { workspace = true }
 frame-system = { workspace = true }
@@ -28,8 +31,8 @@ assert_matches = { workspace = true, optional = true }
 frame-benchmarking = { workspace = true, optional = true }
 
 [dev-dependencies]
-pallet-balances = { workspace = true }
-pallet-migrations = { workspace = true }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-migrations = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]

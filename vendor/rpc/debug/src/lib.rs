@@ -1,4 +1,4 @@
-// Copyright 2019-2022 PureStake Inc.
+// Copyright 2019-2025 PureStake Inc.
 // This file is part of Moonbeam.
 
 // Moonbeam is free software: you can redistribute it and/or modify
@@ -22,10 +22,15 @@ use tokio::{
     sync::{oneshot, Semaphore},
 };
 
+use ethereum;
 use ethereum_types::H256;
 use fc_rpc::{frontier_backend_client, internal_err};
 use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
+use moonbeam_client_evm_tracing::formatters::call_tracer::CallTracerInner;
+use moonbeam_client_evm_tracing::types::block;
+use moonbeam_client_evm_tracing::types::block::BlockTransactionTrace;
+use moonbeam_client_evm_tracing::types::single::TransactionTrace;
 use moonbeam_client_evm_tracing::{formatters::ResponseFormatter, types::single};
 use moonbeam_rpc_core_types::{RequestBlockId, RequestBlockTag};
 use moonbeam_rpc_primitives_debug::{DebugRuntimeApi, TracerInput};
@@ -36,10 +41,12 @@ use sp_block_builder::BlockBuilder;
 use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
 };
+use sp_core::H160;
 use sp_runtime::{
     generic::BlockId,
     traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto},
 };
+use std::collections::BTreeMap;
 use std::{future::Future, marker::PhantomData, sync::Arc};
 
 pub enum RequesterInput {
@@ -50,7 +57,7 @@ pub enum RequesterInput {
 
 pub enum Response {
     Single(single::TransactionTrace),
-    Block(Vec<single::TransactionTrace>),
+    Block(Vec<block::BlockTransactionTrace>),
 }
 
 pub type Responder = oneshot::Sender<RpcResult<Response>>;
@@ -102,7 +109,7 @@ impl DebugServer for Debug {
         &self,
         id: RequestBlockId,
         params: Option<TraceParams>,
-    ) -> RpcResult<Vec<single::TransactionTrace>> {
+    ) -> RpcResult<Vec<BlockTransactionTrace>> {
         let requester = self.requester.clone();
 
         let (tx, rx) = oneshot::channel();
@@ -179,7 +186,7 @@ where
         backend: Arc<BE>,
         frontier_backend: Arc<dyn fc_api::Backend<B> + Send + Sync>,
         permit_pool: Arc<Semaphore>,
-        storage_override: Arc<dyn StorageOverride<B>>,
+        overrides: Arc<dyn StorageOverride<B>>,
         raw_max_memory_usage: usize,
     ) -> (impl Future<Output = ()>, DebugRequester) {
         let (tx, mut rx): (DebugRequester, _) =
@@ -196,7 +203,7 @@ where
                         let backend = backend.clone();
                         let frontier_backend = frontier_backend.clone();
                         let permit_pool = permit_pool.clone();
-                        let storage_override = storage_override.clone();
+                        let overrides = overrides.clone();
 
                         tokio::task::spawn(async move {
                             let _ = response_tx.send(
@@ -209,7 +216,7 @@ where
                                             frontier_backend.clone(),
                                             transaction_hash,
                                             params,
-                                            storage_override.clone(),
+                                            overrides.clone(),
                                             raw_max_memory_usage,
                                         )
                                     })
@@ -264,7 +271,7 @@ where
                         let backend = backend.clone();
                         let frontier_backend = frontier_backend.clone();
                         let permit_pool = permit_pool.clone();
-                        let storage_override = storage_override.clone();
+                        let overrides = overrides.clone();
 
                         tokio::task::spawn(async move {
                             let _ = response_tx.send(
@@ -278,7 +285,7 @@ where
                                             frontier_backend.clone(),
                                             request_block_id,
                                             params,
-                                            storage_override.clone(),
+                                            overrides.clone(),
                                         )
                                     })
                                     .await
@@ -300,11 +307,18 @@ where
         (fut, tx)
     }
 
-    fn handle_params(params: Option<TraceParams>) -> RpcResult<(TracerInput, single::TraceType)> {
+    fn handle_params(
+        params: Option<TraceParams>,
+    ) -> RpcResult<(
+        TracerInput,
+        single::TraceType,
+        Option<single::TraceCallConfig>,
+    )> {
         // Set trace input and type
         match params {
             Some(TraceParams {
                 tracer: Some(tracer),
+                tracer_config,
                 ..
             }) => {
                 const BLOCKSCOUT_JS_CODE_HASH: [u8; 16] =
@@ -321,7 +335,7 @@ where
                         None
                     };
                 if let Some(tracer) = tracer {
-                    Ok((tracer, single::TraceType::CallList))
+                    Ok((tracer, single::TraceType::CallList, tracer_config))
                 } else {
                     return Err(internal_err(format!(
                         "javascript based tracing is not available (hash :{:?})",
@@ -336,6 +350,7 @@ where
                     disable_memory: params.disable_memory.unwrap_or(false),
                     disable_stack: params.disable_stack.unwrap_or(false),
                 },
+                params.tracer_config,
             )),
             _ => Ok((
                 TracerInput::None,
@@ -344,6 +359,7 @@ where
                     disable_memory: false,
                     disable_stack: false,
                 },
+                None,
             )),
         }
     }
@@ -354,14 +370,17 @@ where
         frontier_backend: Arc<dyn fc_api::Backend<B> + Send + Sync>,
         request_block_id: RequestBlockId,
         params: Option<TraceParams>,
-        storage_override: Arc<dyn StorageOverride<B>>,
+        overrides: Arc<dyn StorageOverride<B>>,
     ) -> RpcResult<Response> {
-        let (tracer_input, trace_type) = Self::handle_params(params)?;
+        let (tracer_input, trace_type, tracer_config) = Self::handle_params(params)?;
 
         let reference_id: BlockId<B> = match request_block_id {
             RequestBlockId::Number(n) => Ok(BlockId::Number(n.unique_saturated_into())),
             RequestBlockId::Tag(RequestBlockTag::Latest) => {
                 Ok(BlockId::Number(client.info().best_number))
+            }
+            RequestBlockId::Tag(RequestBlockTag::Finalized) => {
+                Ok(BlockId::Hash(client.info().finalized_hash))
             }
             RequestBlockId::Tag(RequestBlockTag::Earliest) => {
                 Ok(BlockId::Number(0u32.unique_saturated_into()))
@@ -382,7 +401,7 @@ where
             }
         }?;
 
-        // Get ApiRef. This handle allow to keep changes between txs in an internal buffer.
+        // Get ApiRef. This handle allows to keep changes between txs in an internal buffer.
         let api = client.runtime_api();
         // Get Blockchain backend
         let blockchain = backend.blockchain();
@@ -398,12 +417,36 @@ where
         // Get parent blockid.
         let parent_block_hash = *header.parent_hash();
 
-        let statuses = storage_override
+        let statuses = overrides
             .current_transaction_statuses(hash)
             .unwrap_or_default();
 
+        // Partial ethereum transaction data to check if a trace match an ethereum transaction
+        struct EthTxPartial {
+            transaction_hash: H256,
+            from: H160,
+            to: Option<H160>,
+        }
+
         // Known ethereum transaction hashes.
-        let eth_tx_hashes: Vec<_> = statuses.iter().map(|t| t.transaction_hash).collect();
+        let eth_transactions_by_index: BTreeMap<u32, EthTxPartial> = statuses
+            .iter()
+            .map(|status| {
+                (
+                    status.transaction_index,
+                    EthTxPartial {
+                        transaction_hash: status.transaction_hash,
+                        from: status.from,
+                        to: status.to,
+                    },
+                )
+            })
+            .collect();
+
+        let eth_tx_hashes: Vec<_> = eth_transactions_by_index
+            .values()
+            .map(|tx| tx.transaction_hash)
+            .collect();
 
         // If there are no ethereum transactions in the block return empty trace right away.
         if eth_tx_hashes.is_empty() {
@@ -433,11 +476,30 @@ where
                 // The block is initialized inside "trace_block"
                 api.trace_block(parent_block_hash, exts, eth_tx_hashes, &header)
             } else {
-                // Old "trace_block" api did not initialize block before applying transactions,
-                // so we need to do it here before calling "trace_block".
-                #[allow(deprecated)]
-                api.initialize_block_before_version_5(parent_block_hash, &header)
-                    .map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
+                // Get core runtime api version
+                let core_api_version = if let Ok(Some(api_version)) =
+                    api.api_version::<dyn Core<B>>(parent_block_hash)
+                {
+                    api_version
+                } else {
+                    return Err(internal_err(
+                        "Runtime api version call failed (core)".to_string(),
+                    ));
+                };
+
+                // Initialize block: calls the "on_initialize" hook on every pallet
+                // in AllPalletsWithSystem
+                // This was fine before pallet-message-queue because the XCM messages
+                // were processed by the "setValidationData" inherent call and not on an
+                // "on_initialize" hook, which runs before enabling XCM tracing
+                if core_api_version >= 5 {
+                    api.initialize_block(parent_block_hash, &header)
+                        .map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
+                } else {
+                    #[allow(deprecated)]
+                    api.initialize_block_before_version_5(parent_block_hash, &header)
+                        .map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
+                }
 
                 #[allow(deprecated)]
                 api.trace_block_before_version_5(parent_block_hash, exts, eth_tx_hashes)
@@ -460,16 +522,89 @@ where
             Ok(moonbeam_rpc_primitives_debug::Response::Block)
         };
 
+        // Offset to account for old buggy transactions that are in trace not in the ethereum block
+        let mut tx_position_offset = 0;
+
         return match trace_type {
             single::TraceType::CallList => {
                 let mut proxy = moonbeam_client_evm_tracing::listeners::CallList::default();
+                proxy.with_log = tracer_config.map_or(false, |cfg| cfg.with_log);
                 proxy.using(f)?;
                 proxy.finish_transaction();
                 let response = match tracer_input {
                     TracerInput::CallTracer => {
-                        moonbeam_client_evm_tracing::formatters::CallTracer::format(proxy)
-                            .ok_or("Trace result is empty.")
-                            .map_err(|e| internal_err(format!("{:?}", e)))
+                        let result =
+                            moonbeam_client_evm_tracing::formatters::CallTracer::format(proxy)
+                                .ok_or("Trace result is empty.")
+                                .map_err(|e| internal_err(format!("{:?}", e)))?
+                                .into_iter()
+                                .filter_map(|mut trace: BlockTransactionTrace| {
+                                    if let Some(EthTxPartial {
+                                        transaction_hash,
+                                        from,
+                                        to,
+                                    }) = eth_transactions_by_index
+                                        .get(&(trace.tx_position - tx_position_offset))
+                                    {
+                                        // verify that the trace matches the ethereum transaction
+                                        let (trace_from, trace_to) = match trace.result {
+                                            TransactionTrace::Raw { .. } => {
+                                                (Default::default(), None)
+                                            }
+                                            TransactionTrace::CallList(_) => {
+                                                (Default::default(), None)
+                                            }
+                                            TransactionTrace::CallListNested(ref call) => {
+                                                match call {
+                                                    single::Call::Blockscout(_) => {
+                                                        (Default::default(), None)
+                                                    }
+                                                    single::Call::CallTracer(call) => (
+                                                        call.from,
+                                                        match call.inner {
+                                                            CallTracerInner::Call {
+                                                                to, ..
+                                                            } => Some(to),
+                                                            CallTracerInner::Create { .. } => None,
+                                                            CallTracerInner::SelfDestruct {
+                                                                ..
+                                                            } => None,
+                                                        },
+                                                    ),
+                                                }
+                                            }
+                                        };
+                                        if trace_from == *from && trace_to == *to {
+                                            trace.tx_hash = *transaction_hash;
+                                            Some(trace)
+                                        } else {
+                                            // if the trace does not match the ethereum transaction
+                                            // it means that the trace is about a buggy transaction that is not in the block
+                                            // we need to offset the tx_position
+                                            tx_position_offset += 1;
+                                            None
+                                        }
+                                    } else {
+                                        // If the transaction is not in the ethereum block
+                                        // it should not appear in the block trace
+                                        tx_position_offset += 1;
+                                        None
+                                    }
+                                })
+                                .collect::<Vec<BlockTransactionTrace>>();
+
+                        let n_txs = eth_transactions_by_index.len();
+                        let n_traces = result.len();
+                        if n_txs != n_traces {
+                            log::warn!(
+								"The traces in block {:?} don't match with the number of ethereum transactions. (txs: {}, traces: {})",
+								request_block_id,
+								n_txs,
+								n_traces
+							);
+                        }
+
+                        Ok(result)
                     }
                     _ => Err(internal_err(
                         "Bug: failed to resolve the tracer format.".to_string(),
@@ -488,21 +623,21 @@ where
 
     /// Replays a transaction in the Runtime at a given block height.
     ///
-    /// In order to succesfully reproduce the result of the original transaction we need a correct
+    /// In order to successfully reproduce the result of the original transaction we need a correct
     /// state to replay over.
     ///
-    /// Substrate allows to apply extrinsics in the Runtime and thus creating an overlayed state.
-    /// This overlayed changes will live in-memory for the lifetime of the ApiRef.
+    /// Substrate allows to apply extrinsics in the Runtime and thus creating an overlaid state.
+    /// These overlaid changes will live in-memory for the lifetime of the ApiRef.
     fn handle_transaction_request(
         client: Arc<C>,
         backend: Arc<BE>,
         frontier_backend: Arc<dyn fc_api::Backend<B> + Send + Sync>,
         transaction_hash: H256,
         params: Option<TraceParams>,
-        storage_override: Arc<dyn StorageOverride<B>>,
+        overrides: Arc<dyn StorageOverride<B>>,
         raw_max_memory_usage: usize,
     ) -> RpcResult<Response> {
-        let (tracer_input, trace_type) = Self::handle_params(params)?;
+        let (tracer_input, trace_type, tracer_config) = Self::handle_params(params)?;
 
         let (hash, index) =
             match futures::executor::block_on(frontier_backend_client::load_transactions::<B, C>(
@@ -558,36 +693,99 @@ where
             ));
         };
 
-        let reference_block = storage_override.current_block(reference_hash);
+        let reference_block = overrides.current_block(reference_hash);
 
         // Get the actual ethereum transaction.
         if let Some(block) = reference_block {
             let transactions = block.transactions;
             if let Some(transaction) = transactions.get(index) {
                 let f = || -> RpcResult<_> {
-                    let result = if trace_api_version >= 5 {
+                    let result = if trace_api_version >= 7 {
                         // The block is initialized inside "trace_transaction"
                         api.trace_transaction(parent_block_hash, exts, &transaction, &header)
-                    } else {
-                        // Old "trace_transaction" api did not initialize block before applying transactions,
-                        // so we need to do it here before calling "trace_transaction".
+                    } else if trace_api_version == 5 || trace_api_version == 6 {
+                        // API version 5 and 6 expect TransactionV2, so we need to convert from TransactionV3
+                        let tx_v2 = match transaction {
+                            ethereum::TransactionV3::Legacy(tx) => {
+                                ethereum::TransactionV2::Legacy(tx.clone())
+                            }
+                            ethereum::TransactionV3::EIP2930(tx) => {
+                                ethereum::TransactionV2::EIP2930(tx.clone())
+                            }
+                            ethereum::TransactionV3::EIP1559(tx) => {
+                                ethereum::TransactionV2::EIP1559(tx.clone())
+                            }
+                            ethereum::TransactionV3::EIP7702(_) => {
+                                return Err(internal_err(
+                                    "EIP-7702 transactions are not supported".to_string(),
+                                ))
+                            }
+                        };
+
+                        // The block is initialized inside "trace_transaction"
                         #[allow(deprecated)]
-                        api.initialize_block_before_version_5(parent_block_hash, &header)
-                            .map_err(|e| {
-                                internal_err(format!("Runtime api access error: {:?}", e))
-                            })?;
+                        api.trace_transaction_before_version_7(
+                            parent_block_hash,
+                            exts,
+                            &tx_v2,
+                            &header,
+                        )
+                    } else {
+                        // Get core runtime api version
+                        let core_api_version = if let Ok(Some(api_version)) =
+                            api.api_version::<dyn Core<B>>(parent_block_hash)
+                        {
+                            api_version
+                        } else {
+                            return Err(internal_err(
+                                "Runtime api version call failed (core)".to_string(),
+                            ));
+                        };
+
+                        // Initialize block: calls the "on_initialize" hook on every pallet
+                        // in AllPalletsWithSystem
+                        // This was fine before pallet-message-queue because the XCM messages
+                        // were processed by the "setValidationData" inherent call and not on an
+                        // "on_initialize" hook, which runs before enabling XCM tracing
+                        if core_api_version >= 5 {
+                            api.initialize_block(parent_block_hash, &header)
+                                .map_err(|e| {
+                                    internal_err(format!("Runtime api access error: {:?}", e))
+                                })?;
+                        } else {
+                            #[allow(deprecated)]
+                            api.initialize_block_before_version_5(parent_block_hash, &header)
+                                .map_err(|e| {
+                                    internal_err(format!("Runtime api access error: {:?}", e))
+                                })?;
+                        }
 
                         if trace_api_version == 4 {
+                            // API version 4 expect TransactionV2, so we need to convert from TransactionV3
+                            let tx_v2 = match transaction {
+                                ethereum::TransactionV3::Legacy(tx) => {
+                                    ethereum::TransactionV2::Legacy(tx.clone())
+                                }
+                                ethereum::TransactionV3::EIP2930(tx) => {
+                                    ethereum::TransactionV2::EIP2930(tx.clone())
+                                }
+                                ethereum::TransactionV3::EIP1559(tx) => {
+                                    ethereum::TransactionV2::EIP1559(tx.clone())
+                                }
+                                ethereum::TransactionV3::EIP7702(_) => {
+                                    return Err(internal_err(
+                                        "EIP-7702 transactions are not supported".to_string(),
+                                    ))
+                                }
+                            };
+
+                            // Pre pallet-message-queue
                             #[allow(deprecated)]
-                            api.trace_transaction_before_version_5(
-                                parent_block_hash,
-                                exts,
-                                &transaction,
-                            )
+                            api.trace_transaction_before_version_5(parent_block_hash, exts, &tx_v2)
                         } else {
                             // Pre-london update, legacy transactions.
                             match transaction {
-                                ethereum::TransactionV2::Legacy(tx) =>
+                                ethereum::TransactionV3::Legacy(tx) =>
                                 {
                                     #[allow(deprecated)]
                                     api.trace_transaction_before_version_4(
@@ -642,6 +840,7 @@ where
                     }
                     single::TraceType::CallList => {
                         let mut proxy = moonbeam_client_evm_tracing::listeners::CallList::default();
+                        proxy.with_log = tracer_config.map_or(false, |cfg| cfg.with_log);
                         proxy.using(f)?;
                         proxy.finish_transaction();
                         let response = match tracer_input {
@@ -657,7 +856,7 @@ where
                                     )
                                     .ok_or("Trace result is empty.")
                                     .map_err(|e| internal_err(format!("{:?}", e)))?;
-                                Ok(res.pop().expect("Trace result is empty."))
+                                Ok(res.pop().expect("Trace result is empty.").result)
                             }
                             _ => Err(internal_err(
                                 "Bug: failed to resolve the tracer format.".to_string(),
@@ -683,12 +882,15 @@ where
         trace_params: Option<TraceParams>,
         raw_max_memory_usage: usize,
     ) -> RpcResult<Response> {
-        let (tracer_input, trace_type) = Self::handle_params(trace_params)?;
+        let (tracer_input, trace_type, tracer_config) = Self::handle_params(trace_params)?;
 
         let reference_id: BlockId<B> = match request_block_id {
             RequestBlockId::Number(n) => Ok(BlockId::Number(n.unique_saturated_into())),
             RequestBlockId::Tag(RequestBlockTag::Latest) => {
                 Ok(BlockId::Number(client.info().best_number))
+            }
+            RequestBlockId::Tag(RequestBlockTag::Finalized) => {
+                Ok(BlockId::Hash(client.info().finalized_hash))
             }
             RequestBlockId::Tag(RequestBlockTag::Earliest) => {
                 Ok(BlockId::Number(0u32.unique_saturated_into()))
@@ -750,6 +952,7 @@ where
             data,
             nonce,
             access_list,
+            authorization_list,
             ..
         } = call_params;
 
@@ -824,6 +1027,7 @@ where
                             .map(|item| (item.address, item.storage_keys))
                             .collect(),
                     ),
+                    authorization_list,
                 )
                 .map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?
                 .map_err(|e| internal_err(format!("DispatchError: {:?}", e)))?;
@@ -855,6 +1059,7 @@ where
             }
             single::TraceType::CallList => {
                 let mut proxy = moonbeam_client_evm_tracing::listeners::CallList::default();
+                proxy.with_log = tracer_config.map_or(false, |cfg| cfg.with_log);
                 proxy.using(f)?;
                 proxy.finish_transaction();
                 let response = match tracer_input {
@@ -868,7 +1073,7 @@ where
                             moonbeam_client_evm_tracing::formatters::CallTracer::format(proxy)
                                 .ok_or("Trace result is empty.")
                                 .map_err(|e| internal_err(format!("{:?}", e)))?;
-                        Ok(res.pop().expect("Trace result is empty."))
+                        Ok(res.pop().expect("Trace result is empty.").result)
                     }
                     _ => Err(internal_err(
                         "Bug: failed to resolve the tracer format.".to_string(),

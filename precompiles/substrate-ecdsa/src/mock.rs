@@ -31,7 +31,7 @@ use serde::{Deserialize, Serialize};
 use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
-use sp_core::H160;
+use sp_core::{DecodeWithMemTracking, H160};
 use sp_runtime::{traits::IdentityLookup, BuildStorage};
 
 pub type AccountId = TestAccount;
@@ -48,6 +48,7 @@ pub const PRECOMPILE_ADDRESS: H160 = H160::repeat_byte(0x3F);
     Clone,
     Encode,
     Decode,
+    DecodeWithMemTracking,
     Debug,
     MaxEncodedLen,
     Serialize,
@@ -171,7 +172,6 @@ impl pallet_evm::Config for Runtime {
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
     type AddressMapping = AccountId;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = TestPrecompileSet<Self>;
     type PrecompilesValue = PrecompilesValue;
@@ -186,6 +186,8 @@ impl pallet_evm::Config for Runtime {
     type GasLimitPovSizeRatio = ConstU64<4>;
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     type GasLimitStorageGrowthRatio = ConstU64<0>;
+    type CreateOriginFilter = ();
+    type CreateInnerOriginFilter = ();
 }
 
 // Configure a mock runtime to test the pallet.

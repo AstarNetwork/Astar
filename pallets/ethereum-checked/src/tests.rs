@@ -22,7 +22,7 @@ use super::*;
 use mock::*;
 
 use astar_primitives::ethereum_checked::EthereumTxInput;
-use ethereum::{ReceiptV3 as Receipt, TransactionV2 as Transaction};
+use ethereum::{ReceiptV4 as Receipt, TransactionV3 as Transaction};
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::DispatchError;
 

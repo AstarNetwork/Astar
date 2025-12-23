@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2025-07-21 (Y/M/D)
+//! DATE: 2025-12-19 (Y/M/D)
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
 //!
 //! SHORT-NAME: `extrinsic`, LONG-NAME: `ExtrinsicBase`, RUNTIME: `shiden`
@@ -32,6 +32,7 @@
 //   overhead
 //   --runtime=./target/release/wbuild/shiden-runtime/shiden_runtime.compact.compressed.wasm
 //   --repeat=50
+//   --header=./.github/license-check/headers/HEADER-GNUv3
 //   --weight-path=./benchmark-results/shiden
 
 use sp_core::parameter_types;
@@ -42,17 +43,17 @@ parameter_types! {
     /// Calculated by multiplying the *Average* with `1.0` and adding `0`.
     ///
     /// Stats nanoseconds:
-    ///   Min, Max: 99_473, 101_078
-    ///   Average:  100_238
-    ///   Median:   100_171
-    ///   Std-Dev:  351.48
+    ///   Min, Max: 96_923, 98_777
+    ///   Average:  97_667
+    ///   Median:   97_572
+    ///   Std-Dev:  446.91
     ///
     /// Percentiles nanoseconds:
-    ///   99th: 101_078
-    ///   95th: 100_859
-    ///   75th: 100_469
+    ///   99th: 98_777
+    ///   95th: 98_414
+    ///   75th: 97_954
     pub const ExtrinsicBaseWeight: Weight =
-        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(100_238), 166);
+        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(97_667), 166);
 }
 
 #[cfg(test)]

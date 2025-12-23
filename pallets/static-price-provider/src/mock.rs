@@ -47,9 +47,7 @@ impl pallet_balances::Config for Test {
     type AccountStore = System;
 }
 
-impl pallet_static_price_provider::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-}
+impl pallet_static_price_provider::Config for Test {}
 
 construct_runtime!(
     pub struct Test {

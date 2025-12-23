@@ -167,10 +167,7 @@ where
 
                 log::trace!(
                     target: LOG_TARGET,
-                    "approve_transfer: raw arguments: id: {:?}, delegate: {:?}, amount: {:?}",
-                    id,
-                    delegate,
-                    amount
+                    "approve_transfer: raw arguments: id: {id:?}, delegate: {delegate:?}, amount: {amount:?}",
                 );
 
                 let call_result = pallet_assets::Pallet::<T>::approve_transfer(

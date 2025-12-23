@@ -62,7 +62,6 @@ parameter_types! {
 }
 
 impl pallet_dynamic_evm_base_fee::Config for TestRuntime {
-    type RuntimeEvent = RuntimeEvent;
     type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
     type MinBaseFeePerGas = MinBaseFeePerGas;
     type MaxBaseFeePerGas = MaxBaseFeePerGas;

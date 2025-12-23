@@ -73,16 +73,14 @@ impl<Runtime: pallet_evm::Config> SubstrateEcdsaPrecompile<Runtime> {
 
         log::trace!(
             target: "substrate-ecdsa-precompile",
-            "Verify signature {:?} for public {:?} and message {:?}",
-            signature, public, message,
+            "Verify signature {signature:?} for public {public:?} and message {message:?}",
         );
 
         let is_confirmed = sp_io::crypto::ecdsa_verify(&signature, &message[..], &public);
 
         log::trace!(
             target: "substrate-ecdsa-precompile",
-            "Verified signature {:?} is {:?}",
-            signature, is_confirmed,
+            "Verified signature {signature:?} is {is_confirmed:?}",
         );
 
         Ok(is_confirmed)

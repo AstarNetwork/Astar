@@ -25,9 +25,12 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 extern crate alloc;
+extern crate core;
+
 use alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec, vec::Vec};
 use core::marker::PhantomData;
 
+use ethereum::AuthorizationList;
 use frame_support::{
     construct_runtime, genesis_builder_helper, parameter_types,
     traits::{
@@ -54,7 +57,9 @@ use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, sr25519, ConstBool, OpaqueMetadata, H160, H256, U256};
+use sp_core::{
+    crypto::KeyTypeId, sr25519, ConstBool, DecodeWithMemTracking, OpaqueMetadata, H160, H256, U256,
+};
 use sp_runtime::{
     generic, impl_opaque_keys,
     traits::{
@@ -350,6 +355,7 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
+    type Holder = ();
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
@@ -426,7 +432,6 @@ impl Get<Multiplier> for AdjustmentFactorGetter {
 }
 
 impl pallet_dynamic_evm_base_fee::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
     type MinBaseFeePerGas = MinBaseFeePerGas;
     type MaxBaseFeePerGas = MaxBaseFeePerGas;
@@ -441,9 +446,7 @@ parameter_types! {
     pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
 }
 
-impl pallet_static_price_provider::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-}
+impl pallet_static_price_provider::Config for Runtime {}
 
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BenchmarkHelper<SC, ACC>(PhantomData<(SC, ACC)>);
@@ -531,7 +534,6 @@ impl pallet_inflation::Config for Runtime {
     type Currency = Balances;
     type PayoutPerBlock = InflationPayoutPerBlock;
     type CycleConfiguration = InflationCycleConfig;
-    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_inflation::weights::SubstrateWeight<Runtime>;
 }
 
@@ -548,7 +550,6 @@ parameter_types! {
 }
 
 impl pallet_unified_accounts::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type DefaultMappings = HashedDefaultMappings<BlakeTwo256>;
     type ChainId = ChainId;
@@ -626,7 +627,6 @@ impl pallet_evm::Config for Runtime {
     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
     type AddressMapping = UnifiedAccounts;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
@@ -640,6 +640,8 @@ impl pallet_evm::Config for Runtime {
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     // gas based storage limit not enabled
     type GasLimitStorageGrowthRatio = ConstU64<0>;
+    type CreateOriginFilter = ();
+    type CreateInnerOriginFilter = ();
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
@@ -648,7 +650,6 @@ parameter_types! {
 }
 
 impl pallet_ethereum::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type StateRoot =
         pallet_ethereum::IntermediateStateRoot<<Self as frame_system::Config>::Version>;
     type PostLogContent = PostBlockAndTxnHashes;
@@ -672,6 +673,7 @@ impl pallet_scheduler::Config for Runtime {
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
     type Preimages = Preimage;
+    type BlockNumberProvider = System;
 }
 
 parameter_types! {
@@ -777,6 +779,7 @@ impl pallet_sudo::Config for Runtime {
     PartialOrd,
     Encode,
     Decode,
+    DecodeWithMemTracking,
     RuntimeDebug,
     MaxEncodedLen,
     scale_info::TypeInfo,
@@ -896,6 +899,7 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositBase = ConstU128<{ AST * 10 }>;
     // Acc Id + Hash + block number
     type AnnouncementDepositFactor = ConstU128<{ MILLIAST * 660 }>;
+    type BlockNumberProvider = System;
 }
 
 parameter_types! {
@@ -1118,7 +1122,6 @@ impl InstanceFilter<RuntimeCall> for CommunityCouncilCallFilter {
 }
 
 impl pallet_collective_proxy::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type CollectiveProxy = EnsureRootOrTwoThirdsCommunityCouncil;
     type ProxyAccountId = CommunityTreasuryAccountId;
@@ -1552,6 +1555,7 @@ impl_runtime_apis! {
             nonce: Option<U256>,
             estimate: bool,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
+            authorization_list: Option<AuthorizationList>,
         ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -1608,7 +1612,8 @@ impl_runtime_apis! {
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
                 nonce,
-                Vec::new(),
+                access_list.unwrap_or_default(),
+                authorization_list.unwrap_or_default(),
                 is_transactional,
                 validate,
                 weight_limit,
@@ -1630,6 +1635,7 @@ impl_runtime_apis! {
             nonce: Option<U256>,
             estimate: bool,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
+            authorization_list: Option<AuthorizationList>,
         ) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -1686,7 +1692,8 @@ impl_runtime_apis! {
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
                 nonce,
-                Vec::new(),
+                access_list.unwrap_or_default(),
+                authorization_list.unwrap_or_default(),
                 is_transactional,
                 validate,
                 weight_limit,
@@ -1877,7 +1884,7 @@ impl_runtime_apis! {
             Vec<frame_benchmarking::BenchmarkList>,
             Vec<frame_support::traits::StorageInfo>,
         ) {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
+            use frame_benchmarking::{baseline, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
             pub use frame_system_benchmarking::{
                 extensions::Pallet as SystemExtensionsBench, Pallet as SystemBench
@@ -1892,10 +1899,11 @@ impl_runtime_apis! {
             (list, storage_info)
         }
 
+        #[allow(non_local_definitions)]
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, alloc::string::String> {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
+            use frame_benchmarking::{baseline, BenchmarkBatch};
             pub use frame_system_benchmarking::{
                 extensions::Pallet as SystemExtensionsBench, Pallet as SystemBench
             };
@@ -2000,6 +2008,7 @@ impl_runtime_apis! {
             max_priority_fee_per_gas: Option<U256>,
             nonce: Option<U256>,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
+            authorization_list: Option<AuthorizationList>,
         ) -> Result<(), sp_runtime::DispatchError> {
             use moonbeam_evm_tracer::tracer::EvmTracer;
 
@@ -2057,6 +2066,7 @@ impl_runtime_apis! {
                     max_priority_fee_per_gas,
                     nonce,
                     access_list.unwrap_or_default(),
+                    authorization_list.unwrap_or_default(),
                     is_transactional,
                     validate,
                     weight_limit,

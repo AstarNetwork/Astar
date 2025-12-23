@@ -20,7 +20,7 @@
 //!
 //! ## Overview
 //!
-//! A `pallet-ethereum like pallet that execute transactions from checked source,
+//! A `pallet-ethereum` like pallet that execute transactions from checked source,
 //! like XCM remote call. Only `Call` transactions are supported
 //! (no `Create`).
 //!
@@ -43,7 +43,7 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
 use ethereum_types::U256;
-use fp_ethereum::{TransactionData, ValidatedTransaction};
+use fp_ethereum::{Transaction, TransactionData, ValidatedTransaction};
 use fp_evm::{
     CallInfo, CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, ExitReason,
     ExitSucceed, TransactionValidationError,
@@ -81,7 +81,17 @@ mod tests;
 pub type WeightInfoOf<T> = <T as Config>::WeightInfo;
 
 /// Origin for dispatch-able calls.
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(
+    PartialEq,
+    Eq,
+    Clone,
+    Encode,
+    Decode,
+    DecodeWithMemTracking,
+    RuntimeDebug,
+    TypeInfo,
+    MaxEncodedLen,
+)]
 pub enum RawOrigin<AccountId> {
     XcmEthereumTx(AccountId),
 }
@@ -182,7 +192,9 @@ impl<T: Config> Pallet<T> {
     ) -> Result<(PostDispatchInfo, CallInfo), DispatchErrorWithPostInfo> {
         let chain_id = T::ChainId::get();
         let nonce = Nonce::<T>::get();
-        let tx = checked_tx.into_ethereum_tx(Nonce::<T>::get(), chain_id);
+        let tx: Transaction = checked_tx
+            .into_ethereum_tx(Nonce::<T>::get(), chain_id)
+            .into();
         let tx_data: TransactionData = (&tx).into();
 
         let (weight_limit, proof_size_base_cost) =
@@ -247,7 +259,7 @@ impl<T: Config> Pallet<T> {
         }
 
         // Execute the tx.
-        let (post_info, apply_info) = T::ValidatedTransaction::apply(source, tx)?;
+        let (post_info, apply_info) = T::ValidatedTransaction::apply(source, tx, None)?;
         match apply_info {
             CallOrCreateInfo::Call(info) => Ok((post_info, info)),
             // It is not possible to have a `Create` transaction via `CheckedEthereumTx`.
