@@ -2472,7 +2472,7 @@ impl_runtime_apis! {
             use baseline::Pallet as BaselineBench;
             use xcm::latest::prelude::*;
             use xcm_builder::MintLocation;
-            use astar_primitives::benchmarks::XcmBenchmarkHelper;
+            use astar_primitives::{benchmarks::XcmBenchmarkHelper, xcm::ASSET_HUB_PARA_ID};
             use pallet_xcm::benchmarking::Pallet as PalletXcmExtrinsicsBenchmark;
 
             pub struct TestDeliveryHelper;
@@ -2511,7 +2511,7 @@ impl_runtime_apis! {
                 type DeliveryHelper = TestDeliveryHelper;
 
                 fn reachable_dest() -> Option<Location> {
-                    Some(Parent.into())
+                    Some(AssetHubLocation::get())
                 }
 
                 fn teleportable_asset_and_dest() -> Option<(Asset, Location)> {
@@ -2540,7 +2540,18 @@ impl_runtime_apis! {
                 }
             }
 
-            impl frame_system_benchmarking::Config for Runtime {}
+            // Needed to run `set_code` and `apply_authorized_upgrade` frame_system benchmarks
+            // https://github.com/paritytech/cumulus/pull/2766
+            impl frame_system_benchmarking::Config for Runtime {
+                fn setup_set_code_requirements(code: &Vec<u8>) -> Result<(), BenchmarkError> {
+                    ParachainSystem::initialize_for_set_code_benchmark(code.len() as u32);
+                    Ok(())
+                }
+
+                fn verify_set_code() {
+                    System::assert_last_event(cumulus_pallet_parachain_system::Event::<Runtime>::ValidationFunctionStored.into());
+                }
+            }
             impl baseline::Config for Runtime {}
 
             // XCM Benchmarks
@@ -2551,12 +2562,24 @@ impl_runtime_apis! {
             impl pallet_xcm_benchmarks::Config for Runtime {
                 type XcmConfig = xcm_config::XcmConfig;
                 type AccountIdConverter = xcm_config::LocationToAccountId;
-                type DeliveryHelper = ();
+                type DeliveryHelper = TestDeliveryHelper;
 
                 // destination location to be used in benchmarks
                 fn valid_destination() -> Result<Location, BenchmarkError> {
-                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v5::VERSION));
-                    Ok(Location::parent())
+                    let asset_hub = AssetHubLocation::get();
+                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(asset_hub.clone()), xcm::v5::VERSION));
+
+                    // This sets up the necessary infrastructure (HostConfiguration) for sending XCM messages
+                    <xcm_config::XcmRouter as xcm::latest::SendXcm>::ensure_successful_delivery(
+                        Some(asset_hub.clone())
+                    );
+
+                    // Open HRMP channel for sibling parachain destinations
+                    ParachainSystem::open_outbound_hrmp_channel_for_benchmarks_or_tests(
+                        AssetHubParaId::get().into()
+                    );
+
+                    Ok(asset_hub)
                 }
                 fn worst_case_holding(_depositable_count: u32) -> Assets {
                    XcmBenchmarkHelper::<Runtime>::worst_case_holding()
@@ -2622,7 +2645,9 @@ impl_runtime_apis! {
                 pub const TransactAssetId: u128 = 1001;
                 pub TransactAssetLocation: Location = Location { parents: 0, interior: [GeneralIndex(TransactAssetId::get())].into() };
 
-                pub TrustedReserveLocation: Location = Parent.into();
+                pub const AssetHubParaId: u32 = ASSET_HUB_PARA_ID;
+                pub AssetHubLocation: Location = Location::new(1, [Parachain(AssetHubParaId::get())]);
+                pub TrustedReserveLocation: Location = AssetHubLocation::get();
                 pub TrustedReserveAsset: Asset = Asset { id: AssetId(TrustedReserveLocation::get()), fun: Fungible(1_000_000) };
                 pub TrustedReserve: Option<(Location, Asset)> = Some((TrustedReserveLocation::get(), TrustedReserveAsset::get()));
             }
