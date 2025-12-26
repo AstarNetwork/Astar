@@ -122,7 +122,6 @@ pallet-collective-proxy = { workspace = true }
 pallet-dapp-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapp-staking = { workspace = true }
-pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
@@ -196,7 +195,6 @@ std = [
 	"pallet-evm-precompile-blake2/std",
 	"pallet-evm-precompile-bn128/std",
 	"pallet-evm-precompile-dapp-staking/std",
-	"pallet-evm-precompile-dispatch-lockdrop/std",
 	"pallet-evm-precompile-dispatch/std",
 	"pallet-evm-precompile-ed25519/std",
 	"pallet-evm-precompile-modexp/std",
