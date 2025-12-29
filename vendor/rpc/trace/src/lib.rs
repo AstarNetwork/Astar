@@ -1,4 +1,4 @@
-// Copyright 2019-2022 PureStake Inc.
+// Copyright 2019-2025 PureStake Inc.
 // This file is part of Moonbeam.
 
 // Moonbeam is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 //! executor.
 //!
 //! The implementation is composed of multiple tasks :
-//! - Many calls the the RPC handler `Trace::filter`, communicating with the main task.
+//! - Many calls the RPC handler `Trace::filter`, communicating with the main task.
 //! - A main `CacheTask` managing the cache and the communication between tasks.
 //! - For each traced block an async task responsible to wait for a permit, spawn a blocking
 //!   task and waiting for the result, then send it to the main `CacheTask`.
@@ -102,6 +102,9 @@ where
                 Ok(self.client.info().best_number)
             }
             Some(RequestBlockId::Tag(RequestBlockTag::Earliest)) => Ok(0),
+            Some(RequestBlockId::Tag(RequestBlockTag::Finalized)) => {
+                Ok(self.client.info().finalized_number)
+            }
             Some(RequestBlockId::Tag(RequestBlockTag::Pending)) => {
                 Err("'pending' is not supported")
             }
@@ -109,7 +112,7 @@ where
         }
     }
 
-    /// `trace_filter` endpoint (wrapped in the trait implementation with futures compatibilty)
+    /// `trace_filter` endpoint (wrapped in the trait implementation with futures compatibility)
     async fn filter(self, req: FilterRequest) -> TxsTraceRes {
         let from_block = self.block_id(req.from_block)?;
         let to_block = self.block_id(req.to_block)?;
@@ -244,7 +247,7 @@ where
         self.clone()
             .filter(filter)
             .await
-            .map_err(|e| fc_rpc::internal_err(e))
+            .map_err(fc_rpc::internal_err)
     }
 }
 
@@ -360,7 +363,7 @@ impl CacheRequester {
 
 /// Data stored for each block in the cache.
 /// `active_batch_count` represents the number of batches using this
-/// block. It will increase immediatly when a batch is created, but will be
+/// block. It will increase immediately when a batch is created, but will be
 /// decrease only after the batch ends and its expiration delay passes.
 /// It allows to keep the data in the cache for following requests that would use
 /// this block, which is important to handle pagination efficiently.
@@ -386,7 +389,7 @@ enum CacheBlockState {
         #[allow(dead_code)]
         unqueue_sender: oneshot::Sender<()>,
     },
-    /// Tracing has completed and the result is available. No Runtime API call
+    /// Tracing has been completed and the result is available. No Runtime API call
     /// will be needed until this block cache is removed.
     Cached { traces: TxsTraceRes },
 }
@@ -399,7 +402,7 @@ enum BlockingTaskMessage {
     /// the semaphore. This is used to prevent the deletion of a cache entry for a block that has
     /// started being traced.
     Started { block_hash: H256 },
-    /// The tracing is finished and the result is send to the main task.
+    /// The tracing is finished and the result is sent to the main task.
     Finished {
         block_hash: H256,
         result: TxsTraceRes,
@@ -435,14 +438,14 @@ where
 {
     /// Create a new cache task.
     ///
-    /// Returns a Future that needs to be added to a tokio executor, and an handle allowing to
+    /// Returns a Future that needs to be added to a tokio executor, and a handle allowing to
     /// send requests to the task.
     pub fn create(
         client: Arc<C>,
         backend: Arc<BE>,
         cache_duration: Duration,
         blocking_permits: Arc<Semaphore>,
-        storage_override: Arc<dyn StorageOverride<B>>,
+        overrides: Arc<dyn StorageOverride<B>>,
         prometheus: Option<PrometheusRegistry>,
     ) -> (impl Future<Output = ()>, CacheRequester) {
         // Communication with the outside world :
@@ -468,7 +471,7 @@ where
 				None
 			};
 			// Contains the inner state of the cache task, excluding the pooled futures/channels.
-			// Having this object allow to refactor each event into its own function, simplifying
+			// Having this object allows to refactor each event into its own function, simplifying
 			// the main loop.
 			let mut inner = Self {
 				client,
@@ -489,7 +492,7 @@ where
 						match request {
 							None => break,
 							Some(CacheRequest::StartBatch {sender, blocks})
-								=> inner.request_start_batch(&blocking_tx, sender, blocks, storage_override.clone()),
+								=> inner.request_start_batch(&blocking_tx, sender, blocks, overrides.clone()),
 							Some(CacheRequest::GetTraces {sender, block})
 								=> inner.request_get_traces(sender, block),
 							Some(CacheRequest::StopBatch {batch_id}) => {
@@ -529,19 +532,19 @@ where
 
     /// Handle the creation of a batch.
     /// Will start the tracing process for blocks that are not already in the cache.
-    #[instrument(skip(self, blocking_tx, sender, blocks, storage_override))]
+    #[instrument(skip(self, blocking_tx, sender, blocks, overrides))]
     fn request_start_batch(
         &mut self,
         blocking_tx: &mpsc::Sender<BlockingTaskMessage>,
         sender: oneshot::Sender<CacheBatchId>,
         blocks: Vec<H256>,
-        storage_override: Arc<dyn StorageOverride<B>>,
+        overrides: Arc<dyn StorageOverride<B>>,
     ) {
         tracing::trace!("Starting batch {}", self.next_batch_id);
         self.batches.insert(self.next_batch_id, blocks.clone());
 
         for block in blocks {
-            // The block is already in the cache, awesome !
+            // The block is already in the cache, awesome!
             if let Some(block_cache) = self.cached_blocks.get_mut(&block) {
                 block_cache.active_batch_count += 1;
                 tracing::trace!(
@@ -559,11 +562,11 @@ where
                 let client = Arc::clone(&self.client);
                 let backend = Arc::clone(&self.backend);
                 let blocking_tx = blocking_tx.clone();
-                let storage_override = storage_override.clone();
+                let overrides = overrides.clone();
 
                 // Spawn all block caching asynchronously.
                 // It will wait to obtain a permit, then spawn a blocking task.
-                // When the blocking task returns its result, it is send
+                // When the blocking task returns its result, it is sent
                 // thought a channel to the main task loop.
                 tokio::spawn(
                     async move {
@@ -587,7 +590,7 @@ where
                         // Perform block tracing in a tokio blocking task.
                         let result = async {
                             tokio::task::spawn_blocking(move || {
-                                Self::cache_block(client, backend, block, storage_override.clone())
+                                Self::cache_block(client, backend, block, overrides.clone())
                             })
                             .await
                             .map_err(|e| {
@@ -599,7 +602,7 @@ where
 
                         tracing::trace!("Block tracing finished, sending result to main task.");
 
-                        // Send response to main task.
+                        // Send a response to the main task.
                         let _ = blocking_tx
                             .send(BlockingTaskMessage::Finished {
                                 block_hash: block,
@@ -628,13 +631,13 @@ where
         // Respond with the batch ID.
         let _ = sender.send(CacheBatchId(self.next_batch_id));
 
-        // Increase batch ID for next request.
+        // Increase batch ID for the next request.
         self.next_batch_id = self.next_batch_id.overflowing_add(1).0;
     }
 
     /// Handle a request to get the traces of the provided block.
-    /// - If the result is stored in the cache, it sends it immediatly.
-    /// - If the block is currently being pooled, it is added in this block cache waiting list,
+    /// - If the result is stored in the cache, it sends it immediately.
+    /// - If the block is currently being pooled, it is added to this block cache waiting list,
     ///   and all requests concerning this block will be satisfied when the tracing for this block
     ///   is finished.
     /// - If this block is missing from the cache, it means no batch asked for it. All requested
@@ -710,7 +713,7 @@ where
                     tracing::trace!("Pooled block {} is no longer requested.", block);
                     // Remove block from the cache. Drops the value,
                     // closing all the channels contained in it.
-                    let _ = self.cached_blocks.remove(&block);
+                    let _ = self.cached_blocks.remove(block);
                 }
             }
         }
@@ -787,14 +790,14 @@ where
     }
 
     /// (In blocking task) Use the Runtime API to trace the block.
-    #[instrument(skip(client, backend, storage_override))]
+    #[instrument(skip(client, backend, overrides))]
     fn cache_block(
         client: Arc<C>,
         backend: Arc<BE>,
         substrate_hash: H256,
-        storage_override: Arc<dyn StorageOverride<B>>,
+        overrides: Arc<dyn StorageOverride<B>>,
     ) -> TxsTraceRes {
-        // Get Subtrate block data.
+        // Get Substrate block data.
         let api = client.runtime_api();
         let block_header = client
             .header(substrate_hash)
@@ -804,15 +807,15 @@ where
                     substrate_hash, e
                 )
             })?
-            .ok_or_else(|| format!("Subtrate block {} don't exist", substrate_hash))?;
+            .ok_or_else(|| format!("Substrate block {} don't exist", substrate_hash))?;
 
         let height = *block_header.number();
         let substrate_parent_hash = *block_header.parent_hash();
 
         // Get Ethereum block data.
         let (eth_block, eth_transactions) = match (
-            storage_override.current_block(substrate_hash),
-            storage_override.current_transaction_statuses(substrate_hash),
+            overrides.current_block(substrate_hash),
+            overrides.current_transaction_statuses(substrate_hash),
         ) {
             (Some(a), Some(b)) => (a, b),
             _ => {
@@ -853,7 +856,6 @@ where
         // Trace the block.
         let f = || -> Result<_, String> {
             let result = if trace_api_version >= 5 {
-                // The block is initialized inside "trace_block"
                 api.trace_block(
                     substrate_parent_hash,
                     extrinsics,
@@ -861,11 +863,28 @@ where
                     &block_header,
                 )
             } else {
-                // Old "trace_block" api did not initialize block before applying transactions,
-                // so we need to do it here before calling "trace_block".
-                #[allow(deprecated)]
-                api.initialize_block_before_version_5(substrate_parent_hash, &block_header)
-                    .map_err(|e| format!("Runtime api access error: {:?}", e))?;
+                // Get core runtime api version
+                let core_api_version = if let Ok(Some(api_version)) =
+                    api.api_version::<dyn Core<B>>(substrate_parent_hash)
+                {
+                    api_version
+                } else {
+                    return Err("Runtime api version call failed (core)".to_string());
+                };
+
+                // Initialize block: calls the "on_initialize" hook on every pallet
+                // in AllPalletsWithSystem
+                // This was fine before pallet-message-queue because the XCM messages
+                // were processed by the "setValidationData" inherent call and not on an
+                // "on_initialize" hook, which runs before enabling XCM tracing
+                if core_api_version >= 5 {
+                    api.initialize_block(substrate_parent_hash, &block_header)
+                        .map_err(|e| format!("Runtime api access error: {:?}", e))?;
+                } else {
+                    #[allow(deprecated)]
+                    api.initialize_block_before_version_5(substrate_parent_hash, &block_header)
+                        .map_err(|e| format!("Runtime api access error: {:?}", e))?;
+                }
 
                 #[allow(deprecated)]
                 api.trace_block_before_version_5(substrate_parent_hash, extrinsics, eth_tx_hashes)
@@ -875,6 +894,7 @@ where
                 .map_err(|e| format!("Blockchain error when replaying block {} : {:?}", height, e))?
                 .map_err(|e| {
                     tracing::warn!(
+                        target: "tracing",
                         "Internal runtime error when replaying block {} : {:?}",
                         height,
                         e
@@ -897,38 +917,39 @@ where
         proxy.using(f)?;
 
         let traces: Vec<TransactionTrace> =
-            moonbeam_client_evm_tracing::formatters::TraceFilter::format(proxy)
-                .ok_or("Fail to format proxy")?
-                .into_iter()
-                .filter_map(|mut trace| {
-                    match eth_transactions_by_index.get(&trace.transaction_position) {
-                        Some(transaction_hash) => {
-                            trace.block_hash = eth_block_hash;
-                            trace.block_number = height;
-                            trace.transaction_hash = *transaction_hash;
+			moonbeam_client_evm_tracing::formatters::TraceFilter::format(proxy)
+				.ok_or("Fail to format proxy")?
+				.into_iter()
+				.filter_map(|mut trace| {
+					match eth_transactions_by_index.get(&trace.transaction_position) {
+						Some(transaction_hash) => {
+							trace.block_hash = eth_block_hash;
+							trace.block_number = height;
+							trace.transaction_hash = *transaction_hash;
 
-                            // Reformat error messages.
-                            if let block::TransactionTraceOutput::Error(ref mut error) =
-                                trace.output
-                            {
-                                if error.as_slice() == b"execution reverted" {
-                                    *error = b"Reverted".to_vec();
-                                }
-                            }
+							// Reformat error messages.
+							if let block::TransactionTraceOutput::Error(ref mut error) =
+								trace.output
+							{
+								if error.as_slice() == b"execution reverted" {
+									*error = b"Reverted".to_vec();
+								}
+							}
 
-                            Some(trace)
-                        }
-                        None => {
-                            log::warn!(
+							Some(trace)
+						}
+						None => {
+							log::warn!(
+								target: "tracing",
 								"A trace in block {} does not map to any known ethereum transaction. Trace: {:?}",
 								height,
 								trace,
 							);
-                            None
-                        }
-                    }
-                })
-                .collect();
+							None
+						}
+					}
+				})
+				.collect();
 
         Ok(traces)
     }

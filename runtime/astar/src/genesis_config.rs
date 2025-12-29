@@ -60,15 +60,18 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
 
     let config = RuntimeGenesisConfig {
         system: Default::default(),
-        parachain_info: ParachainInfoConfig {
-            parachain_id: para_id.into(),
-            ..Default::default()
-        },
         #[cfg(feature = "astar-sudo")]
         sudo: SudoConfig {
             key: Some(alice.account_id()),
         },
-        balances: BalancesConfig { balances },
+        parachain_info: ParachainInfoConfig {
+            parachain_id: para_id.into(),
+            ..Default::default()
+        },
+        balances: BalancesConfig {
+            balances,
+            ..Default::default()
+        },
         vesting: VestingConfig { vesting: vec![] },
         session: SessionConfig {
             keys: authorities

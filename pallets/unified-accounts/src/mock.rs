@@ -94,7 +94,6 @@ impl pallet_evm::Config for TestRuntime {
     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
     type AddressMapping = UnifiedAccounts;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = ();
     type PrecompilesValue = ();
@@ -108,6 +107,8 @@ impl pallet_evm::Config for TestRuntime {
     type GasLimitPovSizeRatio = ConstU64<4>;
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     type GasLimitStorageGrowthRatio = ConstU64<0>;
+    type CreateOriginFilter = ();
+    type CreateInnerOriginFilter = ();
 }
 
 parameter_types! {
@@ -115,7 +116,6 @@ parameter_types! {
 }
 
 impl pallet_ethereum::Config for TestRuntime {
-    type RuntimeEvent = RuntimeEvent;
     type StateRoot =
         pallet_ethereum::IntermediateStateRoot<<TestRuntime as frame_system::Config>::Version>;
     type PostLogContent = PostBlockAndTxnHashes;
@@ -127,7 +127,6 @@ parameter_types! {
 }
 
 impl pallet_unified_accounts::Config for TestRuntime {
-    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type DefaultMappings = HashedDefaultMappings<BlakeTwo256>;
     type ChainId = ChainId;
@@ -187,6 +186,7 @@ impl ExtBuilder {
 
         pallet_balances::GenesisConfig::<TestRuntime> {
             balances: self.balances,
+            ..Default::default()
         }
         .assimilate_storage(&mut t)
         .unwrap();

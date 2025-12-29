@@ -18,7 +18,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::dapp_staking::{DAppId, EraNumber, PeriodNumber, RankedTier, TierId};
+#[allow(unused_imports)]
+use astar_primitives::dapp_staking::TierId;
+use astar_primitives::dapp_staking::{DAppId, EraNumber, PeriodNumber, RankedTier};
 use astar_primitives::BlockNumber;
 pub use sp_std::collections::btree_map::BTreeMap;
 

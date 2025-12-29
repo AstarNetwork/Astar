@@ -7,7 +7,11 @@ edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
+ethereum = { workspace = true }
 log = { workspace = true, optional = true }
 num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
@@ -193,6 +197,7 @@ std = [
 	"pallet-evm-precompile-assets-erc20/std",
 	"precompile-utils/std",
 	"scale-info/std",
+	"ethereum/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

@@ -1,4 +1,4 @@
-// Copyright 2019-2022 PureStake Inc.
+// Copyright 2019-2025 PureStake Inc.
 // This file is part of Moonbeam.
 
 // Moonbeam is free software: you can redistribute it and/or modify
@@ -13,11 +13,12 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
-use ethereum::AccessListItem;
+
+use ethereum::{AccessListItem, AuthorizationList};
 use ethereum_types::{H160, H256, U256};
 use fc_rpc_core::types::Bytes;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
-use moonbeam_client_evm_tracing::types::single;
+use moonbeam_client_evm_tracing::types::{block, single};
 use moonbeam_rpc_core_types::RequestBlockId;
 use serde::Deserialize;
 
@@ -29,6 +30,7 @@ pub struct TraceParams {
     pub disable_stack: Option<bool>,
     /// Javascript tracer (we just check if it's Blockscout tracer string)
     pub tracer: Option<String>,
+    pub tracer_config: Option<single::TraceCallConfig>,
     pub timeout: Option<String>,
 }
 
@@ -55,6 +57,8 @@ pub struct TraceCallParams {
     pub nonce: Option<U256>,
     /// EIP-2930 access list
     pub access_list: Option<Vec<AccessListItem>>,
+    /// EIP-7702 authorization list
+    pub authorization_list: Option<AuthorizationList>,
     /// EIP-2718 type
     #[serde(rename = "type")]
     pub transaction_type: Option<U256>,
@@ -81,5 +85,5 @@ pub trait Debug {
         &self,
         id: RequestBlockId,
         params: Option<TraceParams>,
-    ) -> RpcResult<Vec<single::TransactionTrace>>;
+    ) -> RpcResult<Vec<block::BlockTransactionTrace>>;
 }

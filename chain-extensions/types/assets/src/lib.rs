@@ -99,7 +99,7 @@ impl From<DispatchError> for Outcome {
             DispatchError::Module(ModuleError { message, .. }) => message,
             _ => Some("No module error Info"),
         };
-        return match error_text {
+        match error_text {
             Some("BalanceLow") => Outcome::BalanceLow,
             Some("NoAccount") => Outcome::NoAccount,
             Some("NoPermission") => Outcome::NoPermission,
@@ -121,7 +121,7 @@ impl From<DispatchError> for Outcome {
             Some("NotFrozen") => Outcome::NotFrozen,
             Some("CallbackFailed") => Outcome::CallbackFailed,
             _ => Outcome::RuntimeError,
-        };
+        }
     }
 }
 

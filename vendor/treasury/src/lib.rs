@@ -151,6 +151,7 @@ pub mod pallet {
         type RejectOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
         /// The overarching event type.
+        #[allow(deprecated)]
         type RuntimeEvent: From<Event<Self, I>>
             + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -303,7 +304,7 @@ pub mod pallet {
             if pot != deactivated {
                 T::Currency::reactivate(deactivated);
                 T::Currency::deactivate(pot);
-                Deactivated::<T, I>::put(&pot);
+                Deactivated::<T, I>::put(pot);
                 Self::deposit_event(Event::<T, I>::UpdatedInactive {
                     reactivated: deactivated,
                     deactivated: pot,
@@ -407,7 +408,7 @@ pub mod pallet {
             T::RejectOrigin::ensure_origin(origin)?;
 
             let proposal =
-                <Proposals<T, I>>::take(&proposal_id).ok_or(Error::<T, I>::InvalidIndex)?;
+                <Proposals<T, I>>::take(proposal_id).ok_or(Error::<T, I>::InvalidIndex)?;
             let value = proposal.bond;
             let imbalance = T::Currency::slash_reserved(&proposal.proposer, value).0;
             T::OnSlash::on_unbalanced(imbalance);
@@ -581,9 +582,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     ///
     /// 1. [`ProposalCount`] >= Number of elements in [`Proposals`].
     /// 2. Each entry in [`Proposals`] should be saved under a key strictly less than current
-    /// [`ProposalCount`].
+    ///    [`ProposalCount`].
     /// 3. Each [`ProposalIndex`] contained in [`Approvals`] should exist in [`Proposals`].
-    /// Note, that this automatically implies [`Approvals`].count() <= [`Proposals`].count().
+    ///    Note, that this automatically implies [`Approvals`].count() <= [`Proposals`].count().
     #[cfg(any(feature = "try-runtime", test))]
     fn try_state_proposals() -> Result<(), sp_runtime::TryRuntimeError> {
         let current_proposal_count = ProposalCount::<T, I>::get();
@@ -594,7 +595,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
         Proposals::<T, I>::iter_keys().try_for_each(|proposal_index| -> DispatchResult {
             ensure!(
-				current_proposal_count as u32 > proposal_index,
+				current_proposal_count > proposal_index,
 				"`ProposalCount` should by strictly greater than any ProposalIndex used as a key for `Proposals`."
 			);
             Ok(())
@@ -619,7 +620,7 @@ impl<T: Config<I>, I: 'static> OnUnbalanced<NegativeImbalanceOf<T, I>> for Palle
         let numeric_amount = amount.peek();
 
         // Must resolve into existing but better to be safe.
-        let _ = T::Currency::resolve_creating(&Self::account_id(), amount);
+        T::Currency::resolve_creating(&Self::account_id(), amount);
 
         Self::deposit_event(Event::Deposit {
             value: numeric_amount,

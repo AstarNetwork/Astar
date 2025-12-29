@@ -157,9 +157,6 @@ pub mod pallet {
         /// Cycle ('year') configuration - covers periods, subperiods, eras & blocks.
         type CycleConfiguration: CycleConfiguration;
 
-        /// The overarching event type.
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
     }
@@ -555,7 +552,19 @@ pub mod pallet {
 
 /// Configuration of the inflation.
 /// Contains information about rewards, when inflation is recalculated, etc.
-#[derive(Encode, Decode, MaxEncodedLen, Default, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(
+    Encode,
+    Decode,
+    DecodeWithMemTracking,
+    MaxEncodedLen,
+    Default,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    TypeInfo,
+)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct InflationConfiguration {
     /// Era number at which the inflation configuration must be recalculated, based on the total issuance at that block.
@@ -630,6 +639,7 @@ impl InflationConfiguration {
 #[derive(
     Encode,
     Decode,
+    DecodeWithMemTracking,
     MaxEncodedLen,
     Copy,
     Clone,

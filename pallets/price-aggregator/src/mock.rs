@@ -57,7 +57,6 @@ parameter_types! {
 }
 
 impl pallet_price_aggregator::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
     // Should at least be 3 for tests to work properly
     type MaxValuesPerBlock = ConstU32<4>;
     type ProcessBlockValues = AverageBlockValue;

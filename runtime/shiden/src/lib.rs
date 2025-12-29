@@ -23,6 +23,8 @@
 #![recursion_limit = "256"]
 
 extern crate alloc;
+extern crate core;
+
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
 extern crate frame_benchmarking;
@@ -30,6 +32,7 @@ use alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec, vec::Vec};
 use core::marker::PhantomData;
 
 use cumulus_primitives_core::AggregateMessageOrigin;
+use ethereum::AuthorizationList;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
@@ -56,7 +59,7 @@ use pallet_identity::legacy::IdentityInfo;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
-use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Compact, Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
 use sp_core::{sr25519, OpaqueMetadata, H160, H256, U256};
@@ -215,7 +218,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 2 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2),
-    astar_primitives::MAX_POV_SIZE as u64,
+    polkadot_primitives::MAX_POV_SIZE as u64,
 );
 
 parameter_types! {
@@ -375,6 +378,8 @@ impl pallet_identity::Config for Runtime {
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
     type UsernameDeposit = UsernameDeposit;
     type UsernameGracePeriod = ConstU32<{ 7 * DAYS }>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 parameter_types! {
@@ -391,6 +396,7 @@ impl pallet_multisig::Config for Runtime {
     type DepositBase = DepositBase;
     type DepositFactor = DepositFactor;
     type MaxSignatories = ConstU32<100>;
+    type BlockNumberProvider = System;
     type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
 }
 
@@ -492,7 +498,6 @@ impl pallet_inflation::Config for Runtime {
     type Currency = Balances;
     type PayoutPerBlock = InflationPayoutPerBlock;
     type CycleConfiguration = InflationCycleConfig;
-    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = weights::pallet_inflation::SubstrateWeight<Runtime>;
 }
 
@@ -523,6 +528,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ConsensusHook = ConsensusHook;
     type SelectCore = cumulus_pallet_parachain_system::DefaultCoreSelector<Runtime>;
     type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
+    type RelayParentOffset = ConstU32<0>;
 }
 
 type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
@@ -563,6 +569,7 @@ impl pallet_session::Config for Runtime {
     type SessionManager = CollatorSelection;
     type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
     type Keys = SessionKeys;
+    type DisablingStrategy = ();
     type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
 }
 
@@ -583,7 +590,6 @@ impl pallet_collator_selection::AccountCheck<AccountId> for CollatorSelectionAcc
 }
 
 impl pallet_collator_selection::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type UpdateOrigin = EnsureRoot<AccountId>;
     type ForceRemovalOrigin = EnsureRoot<AccountId>;
@@ -684,6 +690,7 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
+    type Holder = ();
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
@@ -871,7 +878,6 @@ impl Get<Multiplier> for AdjustmentFactorGetter {
 }
 
 impl pallet_dynamic_evm_base_fee::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
     type MinBaseFeePerGas = MinBaseFeePerGas;
     type MaxBaseFeePerGas = MaxBaseFeePerGas;
@@ -935,7 +941,6 @@ impl pallet_evm::Config for Runtime {
     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
     type AddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
@@ -950,6 +955,8 @@ impl pallet_evm::Config for Runtime {
     // gas based storage limit not enabled
     type GasLimitStorageGrowthRatio = ConstU64<0>;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
+    type CreateOriginFilter = ();
+    type CreateInnerOriginFilter = ();
 }
 
 parameter_types! {
@@ -957,7 +964,6 @@ parameter_types! {
 }
 
 impl pallet_ethereum::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type StateRoot =
         pallet_ethereum::IntermediateStateRoot<<Self as frame_system::Config>::Version>;
     type PostLogContent = PostBlockAndTxnHashes;
@@ -972,7 +978,6 @@ impl pallet_sudo::Config for Runtime {
 }
 
 impl pallet_xc_asset_config::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
     type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
@@ -988,6 +993,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     PartialOrd,
     Encode,
     Decode,
+    DecodeWithMemTracking,
     RuntimeDebug,
     MaxEncodedLen,
     scale_info::TypeInfo,
@@ -1103,6 +1109,7 @@ impl pallet_proxy::Config for Runtime {
     type ProxyDepositBase = ProxyDepositBase;
     type ProxyDepositFactor = ProxyDepositFactor;
     type MaxProxies = MaxProxies;
+    type BlockNumberProvider = System;
     type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
     type MaxPending = MaxPending;
     type CallHasher = BlakeTwo256;
@@ -1117,7 +1124,6 @@ parameter_types! {
 }
 
 impl pallet_price_aggregator::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type MaxValuesPerBlock = ConstU32<8>;
     type ProcessBlockValues = pallet_price_aggregator::MedianBlockValue;
     type NativeCurrencyId = NativeCurrencyId;
@@ -1146,7 +1152,6 @@ parameter_types! {
 }
 
 impl orml_oracle::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type OnNewData = PriceAggregator;
     type CombineData = DummyCombineData<Runtime>;
     type Time = Timestamp;
@@ -1600,6 +1605,7 @@ impl_runtime_apis! {
             nonce: Option<U256>,
             estimate: bool,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
+            authorization_list: Option<AuthorizationList>,
         ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -1656,7 +1662,8 @@ impl_runtime_apis! {
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
                 nonce,
-                Vec::new(),
+                access_list.unwrap_or_default(),
+                authorization_list.unwrap_or_default(),
                 is_transactional,
                 validate,
                 weight_limit,
@@ -1678,6 +1685,7 @@ impl_runtime_apis! {
             nonce: Option<U256>,
             estimate: bool,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
+            authorization_list: Option<AuthorizationList>,
         ) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -1734,7 +1742,8 @@ impl_runtime_apis! {
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
                 nonce,
-                Vec::new(),
+                access_list.unwrap_or_default(),
+                authorization_list.unwrap_or_default(),
                 is_transactional,
                 validate,
                 weight_limit,
@@ -1995,7 +2004,7 @@ impl_runtime_apis! {
             Vec<frame_benchmarking::BenchmarkList>,
             Vec<frame_support::traits::StorageInfo>,
         ) {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
+            use frame_benchmarking::{baseline, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
             pub use frame_system_benchmarking::{
                 extensions::Pallet as SystemExtensionsBench, Pallet as SystemBench
@@ -2017,11 +2026,12 @@ impl_runtime_apis! {
             (list, storage_info)
         }
 
+        #[allow(non_local_definitions)]
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, alloc::string::String> {
             use alloc::boxed::Box;
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, BenchmarkError};
+            use frame_benchmarking::{baseline, BenchmarkBatch, BenchmarkError};
             pub use frame_system_benchmarking::{
                 extensions::Pallet as SystemExtensionsBench, Pallet as SystemBench
             };
@@ -2029,23 +2039,36 @@ impl_runtime_apis! {
             use baseline::Pallet as BaselineBench;
             use xcm::latest::prelude::*;
             use xcm_builder::MintLocation;
-            use astar_primitives::benchmarks::XcmBenchmarkHelper;
+            use astar_primitives::{benchmarks::XcmBenchmarkHelper, xcm::ASSET_HUB_PARA_ID};
             use pallet_xcm::benchmarking::Pallet as PalletXcmExtrinsicsBenchmark;
 
             pub struct TestDeliveryHelper;
             impl xcm_builder::EnsureDelivery for TestDeliveryHelper {
                 fn ensure_successful_delivery(
                     origin_ref: &Location,
-                    _dest: &Location,
+                    dest: &Location,
                     _fee_reason: xcm_executor::traits::FeeReason,
                 ) -> (Option<xcm_executor::FeesMode>, Option<Assets>) {
                     use xcm_executor::traits::ConvertLocation;
-                    let account = xcm_config::LocationToAccountId::convert_location(origin_ref)
-                        .expect("Invalid location");
-                    // Give the existential deposit at least
-                    let balance = ExistentialDeposit::get();
-                    let _ = <Balances as frame_support::traits::Currency<_>>::
-                        make_free_balance_be(&account.into(), balance);
+
+                    // This sets up the necessary infrastructure (HostConfiguration) for sending XCM messages
+                    <xcm_config::XcmRouter as xcm::latest::SendXcm>::ensure_successful_delivery(
+                        Some(dest.clone())
+                    );
+
+                    // Open HRMP channel for sibling parachain destinations
+                    if let Some(Parachain(para_id)) = dest.interior().first() {
+                        ParachainSystem::open_outbound_hrmp_channel_for_benchmarks_or_tests(
+                            (*para_id).into()
+                        );
+                    }
+
+                    if let Some(account) = xcm_config::LocationToAccountId::convert_location(origin_ref) {
+                        // Give the account some balance to ensure delivery
+                        let balance = ExistentialDeposit::get() * 1000u128; // Give more than just ED
+                        let _ = <Balances as frame_support::traits::Currency<_>>::
+                            make_free_balance_be(&account.into(), balance);
+                    }
 
                     (None, None)
                 }
@@ -2055,7 +2078,7 @@ impl_runtime_apis! {
                 type DeliveryHelper = TestDeliveryHelper;
 
                 fn reachable_dest() -> Option<Location> {
-                    Some(Parent.into())
+                    Some(AssetHubLocation::get())
                 }
 
                 fn teleportable_asset_and_dest() -> Option<(Asset, Location)> {
@@ -2084,7 +2107,18 @@ impl_runtime_apis! {
                 }
             }
 
-            impl frame_system_benchmarking::Config for Runtime {}
+            // Needed to run `set_code` and `apply_authorized_upgrade` frame_system benchmarks
+            // https://github.com/paritytech/cumulus/pull/2766
+            impl frame_system_benchmarking::Config for Runtime {
+                fn setup_set_code_requirements(code: &Vec<u8>) -> Result<(), BenchmarkError> {
+                    ParachainSystem::initialize_for_set_code_benchmark(code.len() as u32);
+                    Ok(())
+                }
+
+                fn verify_set_code() {
+                    System::assert_last_event(cumulus_pallet_parachain_system::Event::<Runtime>::ValidationFunctionStored.into());
+                }
+            }
             impl baseline::Config for Runtime {}
 
             // XCM Benchmarks
@@ -2095,12 +2129,24 @@ impl_runtime_apis! {
             impl pallet_xcm_benchmarks::Config for Runtime {
                 type XcmConfig = xcm_config::XcmConfig;
                 type AccountIdConverter = xcm_config::LocationToAccountId;
-                type DeliveryHelper = ();
+                type DeliveryHelper = TestDeliveryHelper;
 
                 // destination location to be used in benchmarks
                 fn valid_destination() -> Result<Location, BenchmarkError> {
-                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(Location::parent()), xcm::v5::VERSION));
-                    Ok(Location::parent())
+                    let asset_hub = AssetHubLocation::get();
+                    assert_ok!(PolkadotXcm::force_xcm_version(RuntimeOrigin::root(), Box::new(asset_hub.clone()), xcm::v5::VERSION));
+
+                    // This sets up the necessary infrastructure (HostConfiguration) for sending XCM messages
+                    <xcm_config::XcmRouter as xcm::latest::SendXcm>::ensure_successful_delivery(
+                        Some(asset_hub.clone())
+                    );
+
+                    // Open HRMP channel for sibling parachain destinations
+                    ParachainSystem::open_outbound_hrmp_channel_for_benchmarks_or_tests(
+                        AssetHubParaId::get().into()
+                    );
+
+                    Ok(asset_hub)
                 }
                 fn worst_case_holding(_depositable_count: u32) -> Assets {
                     XcmBenchmarkHelper::<Runtime>::worst_case_holding()
@@ -2151,8 +2197,11 @@ impl_runtime_apis! {
                 fn alias_origin() -> Result<(Location, Location), BenchmarkError> {
                     Err(BenchmarkError::Skip)
                 }
-                fn fee_asset() -> Result<Asset, BenchmarkError> {
-                    Ok((AssetId(Here.into()), 1_000_000_000_000_000_000u128).into())
+                fn worst_case_for_trader() -> Result<(Asset, WeightLimit), BenchmarkError> {
+                    Ok((
+                        (AssetId(Here.into()), 1_000_000_000_000_000_000u128).into(),
+                        Limited(Weight::from_parts(5000, 5000)),
+                    ))
                 }
             }
 
@@ -2162,7 +2211,9 @@ impl_runtime_apis! {
                 pub const TransactAssetId: u128 = 1001;
                 pub TransactAssetLocation: Location = Location { parents: 0, interior: [GeneralIndex(TransactAssetId::get())].into() };
 
-                pub TrustedReserveLocation: Location = Parent.into();
+                pub const AssetHubParaId: u32 = ASSET_HUB_PARA_ID;
+                pub AssetHubLocation: Location = Location::new(1, [Parachain(AssetHubParaId::get())]);
+                pub TrustedReserveLocation: Location = AssetHubLocation::get();
                 pub TrustedReserveAsset: Asset = Asset { id: AssetId(TrustedReserveLocation::get()), fun: Fungible(1_000_000) };
                 pub TrustedReserve: Option<(Location, Asset)> = Some((TrustedReserveLocation::get(), TrustedReserveAsset::get()));
             }
@@ -2301,6 +2352,7 @@ impl_runtime_apis! {
             max_priority_fee_per_gas: Option<U256>,
             nonce: Option<U256>,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
+            authorization_list: Option<AuthorizationList>,
         ) -> Result<(), sp_runtime::DispatchError> {
             use moonbeam_evm_tracer::tracer::EvmTracer;
 
@@ -2358,6 +2410,7 @@ impl_runtime_apis! {
                     max_priority_fee_per_gas,
                     nonce,
                     access_list.unwrap_or_default(),
+                    authorization_list.unwrap_or_default(),
                     is_transactional,
                     validate,
                     weight_limit,

@@ -307,11 +307,7 @@ fn remote_dapps_staking_staker_claim() {
         let dapp_staking_events = parachain::System::events()
             .into_iter()
             .map(|r| r.event)
-            .filter_map(|e| {
-                <parachain::Runtime as pallet_dapp_staking::Config>::RuntimeEvent::from(e)
-                    .try_into()
-                    .ok()
-            })
+            .filter_map(|e| e.try_into().ok())
             .collect::<Vec<pallet_dapp_staking::Event<parachain::Runtime>>>();
 
         assert_eq!(dapp_staking_events.len(), 1);

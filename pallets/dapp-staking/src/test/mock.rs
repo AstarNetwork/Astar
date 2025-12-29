@@ -261,9 +261,12 @@ impl ExtBuilder {
             .map(|(idx, amount)| (idx as u64 + 1, amount))
             .collect();
 
-        pallet_balances::GenesisConfig::<Test> { balances: balances }
-            .assimilate_storage(&mut storage)
-            .ok();
+        pallet_balances::GenesisConfig::<Test> {
+            balances,
+            ..Default::default()
+        }
+        .assimilate_storage(&mut storage)
+        .ok();
 
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| {

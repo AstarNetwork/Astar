@@ -20,7 +20,8 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
 use ethereum::{
-    AccessListItem, EIP1559Transaction, TransactionAction, TransactionV2 as Transaction,
+    eip2930::TransactionSignature, AccessListItem, EIP1559Transaction, TransactionAction,
+    TransactionV2 as Transaction,
 };
 use ethereum_types::{H160, H256, U256};
 use frame_support::{pallet_prelude::*, traits::ConstU32, BoundedVec};
@@ -32,7 +33,7 @@ pub const MAX_ETHEREUM_TX_INPUT_SIZE: u32 = 2u32.pow(16);
 pub type EthereumTxInput = BoundedVec<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>>;
 
 /// The checked Ethereum transaction. Only contracts `call` is support(no `create`).
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, DecodeWithMemTracking)]
 pub struct CheckedEthereumTx {
     /// Gas limit.
     pub gas_limit: U256,
@@ -69,9 +70,8 @@ impl CheckedEthereumTx {
             action: TransactionAction::Call(self.target),
             input: self.input.to_vec(),
             access_list,
-            odd_y_parity: true,
-            r: dummy_rs(),
-            s: dummy_rs(),
+            signature: TransactionSignature::new(true, dummy_rs(), dummy_rs())
+                .expect("dummy signature must be valid"),
         })
     }
 }

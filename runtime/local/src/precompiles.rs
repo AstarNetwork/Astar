@@ -18,7 +18,7 @@
 
 //! The Local Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
-use crate::{RuntimeCall, UnifiedAccounts};
+use crate::{Runtime, RuntimeCall, UnifiedAccounts};
 use astar_primitives::precompiles::DispatchFilterValidate;
 use frame_support::{parameter_types, traits::Contains};
 use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
@@ -83,7 +83,11 @@ pub type LocalPrecompilesSetAt<R> = (
     PrecompileAt<AddressU64<8>, Bn128Pairing, EthereumPrecompilesChecks>,
     PrecompileAt<AddressU64<9>, Blake2F, EthereumPrecompilesChecks>,
     // Non-Local specific nor Ethereum precompiles :
-    PrecompileAt<AddressU64<1024>, Sha3FIPS256, (CallableByContract, CallableByPrecompile)>,
+    PrecompileAt<
+        AddressU64<1024>,
+        Sha3FIPS256<Runtime, ()>,
+        (CallableByContract, CallableByPrecompile),
+    >,
     PrecompileAt<
         AddressU64<1025>,
         Dispatch<R, DispatchFilterValidate<RuntimeCall, WhitelistedCalls>>,

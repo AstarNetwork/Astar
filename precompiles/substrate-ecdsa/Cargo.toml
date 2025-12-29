@@ -7,6 +7,9 @@ edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 assert_matches = { workspace = true }
 log = { workspace = true }

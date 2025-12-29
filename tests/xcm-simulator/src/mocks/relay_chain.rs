@@ -18,7 +18,7 @@
 
 use frame_support::{
     construct_runtime, derive_impl, parameter_types,
-    traits::{ConstU32, Everything, Nothing, ProcessMessage, ProcessMessageError},
+    traits::{ConstU32, Disabled, Everything, Nothing, ProcessMessage, ProcessMessageError},
     weights::{Weight, WeightMeter},
 };
 use frame_system::EnsureRoot;
@@ -137,6 +137,7 @@ impl xcm_executor::Config for XcmConfig {
     type HrmpChannelAcceptedHandler = ();
     type HrmpChannelClosingHandler = ();
     type XcmRecorder = ();
+    type XcmEventEmitter = ();
 }
 
 pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, KusamaNetwork>;
@@ -169,6 +170,7 @@ impl pallet_xcm::Config for Runtime {
     type MaxRemoteLockConsumers = ConstU32<0>;
     type RemoteLockConsumerIdentifier = ();
     type AdminOrigin = EnsureRoot<AccountId>;
+    type AuthorizedAliasConsideration = Disabled;
 }
 
 parameter_types! {

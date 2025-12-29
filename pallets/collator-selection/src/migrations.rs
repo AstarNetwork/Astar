@@ -46,7 +46,7 @@ impl<T: Config> OnRuntimeUpgrade for LastAuthoredBlockCleanup<T> {
 
         for (account, _) in LastAuthoredBlock::<T>::iter() {
             if read >= MAX_SCAN {
-                log::warn!("LastAuthoredBlockCleanup: scan limit {} reached.", MAX_SCAN);
+                log::warn!("LastAuthoredBlockCleanup: scan limit {MAX_SCAN} reached.");
                 break;
             }
             read += 1;
@@ -63,10 +63,7 @@ impl<T: Config> OnRuntimeUpgrade for LastAuthoredBlockCleanup<T> {
         }
 
         log::info!(
-            "LastAuthoredBlockCleanup completed: removed {} entries (reads {}, writes {}).",
-            write,
-            read,
-            write
+            "LastAuthoredBlockCleanup completed: removed {write:?} entries (reads {read:?}, writes {write:?})."
         );
 
         <T as frame_system::Config>::DbWeight::get().reads_writes(read, write)
