@@ -19,7 +19,7 @@
 //! The Local Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
 use crate::{Runtime, RuntimeCall, UnifiedAccounts};
-use astar_primitives::precompiles::DispatchFilterValidate;
+use astar_primitives::precompiles::{DisabledPrecompile, DispatchFilterValidate};
 use frame_support::{parameter_types, traits::Contains};
 use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
 use pallet_evm_precompile_blake2::Blake2F;
@@ -68,6 +68,11 @@ impl Contains<RuntimeCall> for WhitelistedCalls {
     }
 }
 
+// Type aliases to avoid name collision in the precompile_name_from_address macro
+// when the same deprecated precompile is used at multiple addresses
+type DisabledXvmPrecompile<R> = DisabledPrecompile<R>;
+type DisabledLockdropPrecompile<R> = DisabledPrecompile<R>;
+
 /// The PrecompileSet installed in the Local runtime.
 #[precompile_utils::precompile_name_from_address]
 pub type LocalPrecompilesSetAt<R> = (
@@ -113,13 +118,21 @@ pub type LocalPrecompilesSetAt<R> = (
         (CallableByContract, CallableByPrecompile),
     >,
     // skip 20484 for xcm precompile
-    // Skipping 20485 - prev. XVM precompile
+    PrecompileAt<
+        AddressU64<20485>,
+        DisabledXvmPrecompile<R>,
+        (),
+    >,
     PrecompileAt<
         AddressU64<20486>,
         UnifiedAccountsPrecompile<R, UnifiedAccounts>,
         (CallableByContract, CallableByPrecompile),
     >,
-    // Skipping 20487 - prev. Lockdrop precompile
+    PrecompileAt<
+        AddressU64<20487>,
+        DisabledLockdropPrecompile<R>,
+        (),
+    >,
 );
 
 pub type LocalPrecompiles<R> = PrecompileSetBuilder<

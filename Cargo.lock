@@ -969,6 +969,7 @@ dependencies = [
  "pallet-treasury 37.0.0",
  "pallet-xc-asset-config",
  "parity-scale-codec",
+ "precompile-utils",
  "scale-info",
  "sp-arithmetic",
  "sp-core",

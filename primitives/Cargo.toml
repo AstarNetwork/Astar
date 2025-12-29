@@ -20,6 +20,7 @@ scale-info = { workspace = true }
 ethereum = { workspace = true, features = ["with-scale"] }
 ethereum-types = { workspace = true }
 fp-evm = { workspace = true }
+precompile-utils = { workspace = true, default-features = false }
 
 # Substrate dependencies
 frame-support = { workspace = true }
