@@ -71,6 +71,7 @@ std = [
 	"frame-system/std",
 	"pallet-membership/std",
 	"pallet-collective/std",
+	"precompile-utils/std",
 	"sp-std/std",
 	"sp-runtime/std",
 	"sp-core/std",

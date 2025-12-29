@@ -130,17 +130,9 @@ pub type AstarPrecompilesSetAt<R, C> = (
             CallableByPrecompile,
         ),
     >,
-    PrecompileAt<
-        AddressU64<20485>,
-        DisabledXvmPrecompile<R>,
-        (),
-    >,
+    PrecompileAt<AddressU64<20485>, DisabledXvmPrecompile<R>, ()>,
     // Skipping 20486 to make sure all network have consistent precompiles address
-    PrecompileAt<
-        AddressU64<20487>,
-        DisabledLockdropPrecompile<R>,
-        (),
-    >,
+    PrecompileAt<AddressU64<20487>, DisabledLockdropPrecompile<R>, ()>,
 );
 
 pub type AstarPrecompiles<R, C> = PrecompileSetBuilder<

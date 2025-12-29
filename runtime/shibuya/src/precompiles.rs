@@ -130,21 +130,13 @@ pub type ShibuyaPrecompilesSetAt<R, C> = (
             CallableByPrecompile,
         ),
     >,
-    PrecompileAt<
-        AddressU64<20485>,
-        DisabledXvmPrecompile<R>,
-        (),
-    >,
+    PrecompileAt<AddressU64<20485>, DisabledXvmPrecompile<R>, ()>,
     PrecompileAt<
         AddressU64<20486>,
         UnifiedAccountsPrecompile<R, UnifiedAccounts>,
         (CallableByContract, CallableByPrecompile),
     >,
-    PrecompileAt<
-        AddressU64<20487>,
-        DisabledLockdropPrecompile<R>,
-        (),
-    >,
+    PrecompileAt<AddressU64<20487>, DisabledLockdropPrecompile<R>, ()>,
 );
 
 pub type ShibuyaPrecompiles<R, C> = PrecompileSetBuilder<

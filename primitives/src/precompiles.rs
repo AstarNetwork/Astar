@@ -23,8 +23,8 @@ use frame_support::{
     dispatch::{DispatchClass, GetDispatchInfo, Pays},
     traits::Contains,
 };
-use precompile_utils::prelude::*;
 use pallet_evm_precompile_dispatch::DispatchValidateT;
+use precompile_utils::prelude::*;
 
 /// Struct that allows only calls based on `Filter` to pass through.
 pub struct DispatchFilterValidate<RuntimeCall, Filter: Contains<RuntimeCall>>(
@@ -54,7 +54,6 @@ impl<AccountId, RuntimeCall: GetDispatchInfo, Filter: Contains<RuntimeCall>>
         }
     }
 }
-
 
 /// A minimal precompile that always reverts
 pub struct DisabledPrecompile<R>(PhantomData<R>);
