@@ -1,5 +1,9 @@
-(function() {var implementors = {
-"dapp_staking_runtime_api":[["impl&lt;Block: BlockT&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"dapp_staking_runtime_api/trait.DappStakingApi.html\" title=\"trait dapp_staking_runtime_api::DappStakingApi\">DappStakingApi</a>&lt;Block&gt;"]],
-"moonbeam_rpc_primitives_debug":[["impl&lt;Block: BlockT&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"moonbeam_rpc_primitives_debug/trait.DebugRuntimeApi.html\" title=\"trait moonbeam_rpc_primitives_debug::DebugRuntimeApi\">DebugRuntimeApi</a>&lt;Block&gt;"]],
-"moonbeam_rpc_primitives_txpool":[["impl&lt;Block: BlockT&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"moonbeam_rpc_primitives_txpool/trait.TxPoolRuntimeApi.html\" title=\"trait moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi\">TxPoolRuntimeApi</a>&lt;Block&gt;"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {
+    var implementors = Object.fromEntries([["dapp_staking_runtime_api",[["impl&lt;Block: BlockT&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"dapp_staking_runtime_api/trait.DappStakingApi.html\" title=\"trait dapp_staking_runtime_api::DappStakingApi\">DappStakingApi</a>&lt;Block&gt;"]]],["moonbeam_rpc_primitives_debug",[["impl&lt;Block: BlockT&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"moonbeam_rpc_primitives_debug/trait.DebugRuntimeApi.html\" title=\"trait moonbeam_rpc_primitives_debug::DebugRuntimeApi\">DebugRuntimeApi</a>&lt;Block&gt;"]]],["moonbeam_rpc_primitives_txpool",[["impl&lt;Block: BlockT&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"moonbeam_rpc_primitives_txpool/trait.TxPoolRuntimeApi.html\" title=\"trait moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi\">TxPoolRuntimeApi</a>&lt;Block&gt;"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[251,270,276]}

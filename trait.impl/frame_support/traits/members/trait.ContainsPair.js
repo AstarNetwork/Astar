@@ -1,3 +1,9 @@
-(function() {var implementors = {
-"astar_primitives":[["impl ContainsPair&lt;Asset, Location&gt; for <a class=\"struct\" href=\"astar_primitives/xcm/struct.ReserveAssetFilter.html\" title=\"struct astar_primitives::xcm::ReserveAssetFilter\">ReserveAssetFilter</a>"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {
+    var implementors = Object.fromEntries([["astar_primitives",[["impl ContainsPair&lt;Asset, Location&gt; for <a class=\"struct\" href=\"astar_primitives/xcm/struct.ReserveAssetFilter.html\" title=\"struct astar_primitives::xcm::ReserveAssetFilter\">ReserveAssetFilter</a>"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[234]}

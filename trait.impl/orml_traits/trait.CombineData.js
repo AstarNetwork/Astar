@@ -1,3 +1,9 @@
-(function() {var implementors = {
-"astar_primitives":[["impl&lt;T: Config&lt;I&gt;, I&gt; CombineData&lt;<a class=\"enum\" href=\"astar_primitives/oracle/enum.CurrencyId.html\" title=\"enum astar_primitives::oracle::CurrencyId\">CurrencyId</a>, TimestampedValue&lt;FixedU128, &lt;&lt;T as Config&lt;I&gt;&gt;::Time as Time&gt;::Moment&gt;&gt; for <a class=\"struct\" href=\"astar_primitives/oracle/struct.DummyCombineData.html\" title=\"struct astar_primitives::oracle::DummyCombineData\">DummyCombineData</a>&lt;T, I&gt;"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {
+    var implementors = Object.fromEntries([["astar_primitives",[["impl&lt;T: Config&lt;I&gt;, I&gt; CombineData&lt;<a class=\"enum\" href=\"astar_primitives/oracle/enum.CurrencyId.html\" title=\"enum astar_primitives::oracle::CurrencyId\">CurrencyId</a>, TimestampedValue&lt;FixedU128, &lt;&lt;T as Config&lt;I&gt;&gt;::Time as Time&gt;::Moment&gt;&gt; for <a class=\"struct\" href=\"astar_primitives/oracle/struct.DummyCombineData.html\" title=\"struct astar_primitives::oracle::DummyCombineData\">DummyCombineData</a>&lt;T, I&gt;"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[492]}

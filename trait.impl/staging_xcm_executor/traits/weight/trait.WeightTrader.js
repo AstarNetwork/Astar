@@ -1,3 +1,9 @@
-(function() {var implementors = {
-"astar_primitives":[["impl&lt;T: ExecutionPaymentRate, R: TakeRevenue&gt; WeightTrader for <a class=\"struct\" href=\"astar_primitives/xcm/struct.FixedRateOfForeignAsset.html\" title=\"struct astar_primitives::xcm::FixedRateOfForeignAsset\">FixedRateOfForeignAsset</a>&lt;T, R&gt;"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {
+    var implementors = Object.fromEntries([["astar_primitives",[["impl&lt;T: ExecutionPaymentRate, R: TakeRevenue&gt; WeightTrader for <a class=\"struct\" href=\"astar_primitives/xcm/struct.FixedRateOfForeignAsset.html\" title=\"struct astar_primitives::xcm::FixedRateOfForeignAsset\">FixedRateOfForeignAsset</a>&lt;T, R&gt;"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[285]}

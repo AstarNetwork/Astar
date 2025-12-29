@@ -1,3 +1,9 @@
-(function() {var implementors = {
-"pallet_unified_accounts":[["impl&lt;T: <a class=\"trait\" href=\"pallet_unified_accounts/pallet/trait.Config.html\" title=\"trait pallet_unified_accounts::pallet::Config\">Config</a>&gt; OnKilledAccount&lt;&lt;T as Config&gt;::AccountId&gt; for <a class=\"struct\" href=\"pallet_unified_accounts/struct.KillAccountMapping.html\" title=\"struct pallet_unified_accounts::KillAccountMapping\">KillAccountMapping</a>&lt;T&gt;"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {
+    var implementors = Object.fromEntries([["pallet_unified_accounts",[["impl&lt;T: <a class=\"trait\" href=\"pallet_unified_accounts/pallet/trait.Config.html\" title=\"trait pallet_unified_accounts::pallet::Config\">Config</a>&gt; OnKilledAccount&lt;&lt;T as Config&gt;::AccountId&gt; for <a class=\"struct\" href=\"pallet_unified_accounts/struct.KillAccountMapping.html\" title=\"struct pallet_unified_accounts::KillAccountMapping\">KillAccountMapping</a>&lt;T&gt;"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[427]}
