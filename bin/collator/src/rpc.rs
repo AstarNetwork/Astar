@@ -342,6 +342,7 @@ where
     )?;
 
     let max_past_logs: u32 = 10_000;
+    let max_block_range: u32 = 1024;
     let max_stored_filters: usize = 500;
     io.merge(
         EthFilter::new(
@@ -351,6 +352,7 @@ where
             filter_pool,
             max_stored_filters,
             max_past_logs,
+            max_block_range,
             block_data_cache,
         )
         .into_rpc(),

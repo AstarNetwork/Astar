@@ -1,4 +1,4 @@
-// Copyright 2019-2022 PureStake Inc.
+// Copyright 2019-2025 PureStake Inc.
 // This file is part of Moonbeam.
 
 // Moonbeam is free software: you can redistribute it and/or modify
@@ -22,6 +22,17 @@ use serde::Serialize;
 use ethereum_types::{H160, H256, U256};
 use parity_scale_codec::{Decode, Encode};
 use sp_std::vec::Vec;
+
+/// Block transaction trace.
+#[derive(Clone, Eq, PartialEq, Debug, Encode, Decode, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BlockTransactionTrace {
+    #[serde(serialize_with = "h256_0x_serialize")]
+    pub tx_hash: H256,
+    pub result: crate::types::single::TransactionTrace,
+    #[serde(skip_serializing)]
+    pub tx_position: u32,
+}
 
 #[derive(Clone, Eq, PartialEq, Debug, Encode, Decode, Serialize)]
 #[serde(rename_all = "camelCase")]

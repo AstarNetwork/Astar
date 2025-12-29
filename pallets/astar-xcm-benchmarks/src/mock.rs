@@ -215,6 +215,7 @@ impl xcm_executor::Config for XcmConfig {
     type HrmpChannelAcceptedHandler = ();
     type HrmpChannelClosingHandler = ();
     type XcmRecorder = ();
+    type XcmEventEmitter = ();
 }
 
 impl pallet_xcm_benchmarks::Config for Test {
@@ -290,8 +291,11 @@ impl pallet_xcm_benchmarks::generic::Config for Test {
         Err(BenchmarkError::Skip)
     }
 
-    fn fee_asset() -> Result<Asset, BenchmarkError> {
-        Ok((AssetId(Here.into()), 100).into())
+    fn worst_case_for_trader() -> Result<(Asset, WeightLimit), BenchmarkError> {
+        Ok((
+            (AssetId(Here.into()), 100).into(),
+            Limited(Weight::from_parts(5000, 5000)),
+        ))
     }
 }
 

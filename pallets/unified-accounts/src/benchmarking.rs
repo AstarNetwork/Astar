@@ -25,7 +25,7 @@ use frame_system::RawOrigin;
 use sp_std::prelude::*;
 
 /// Assert that the last event equals the provided one.
-fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+fn assert_last_event<T: Config>(generic_event: crate::Event<T>) {
     frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 

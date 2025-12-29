@@ -34,7 +34,6 @@ pub mod mock_msg_queue {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type XcmExecutor: ExecuteXcm<Self::RuntimeCall>;
     }
 
@@ -74,7 +73,7 @@ pub mod mock_msg_queue {
         /// Some XCM was executed OK.
         Success(Option<T::Hash>),
         /// Some XCM failed.
-        Fail(Option<T::Hash>, XcmError),
+        Fail(Option<T::Hash>, InstructionError),
         /// Bad XCM version used.
         BadVersion(Option<T::Hash>),
         /// Bad XCM format used.
@@ -99,7 +98,7 @@ pub mod mock_msg_queue {
             _sent_at: RelayBlockNumber,
             xcm: VersionedXcm<T::RuntimeCall>,
             max_weight: Weight,
-        ) -> Result<Weight, XcmError> {
+        ) -> Result<Weight, InstructionError> {
             let hash = Encode::using_encoded(&xcm, T::Hashing::hash);
             let mut message_hash = Encode::using_encoded(&xcm, sp_io::hashing::blake2_256);
             let (result, event) = match Xcm::<T::RuntimeCall>::try_from(xcm) {
@@ -113,7 +112,7 @@ pub mod mock_msg_queue {
                         max_weight,
                         Weight::zero(),
                     ) {
-                        Outcome::Error { error } => {
+                        Outcome::Error(error) => {
                             println!("Error in XCMP handling: {:?}, sender=Parachain({sender}), xcm={xcm:?}", error);
                             (Err(error.clone()), Event::Fail(Some(hash), error))
                         }
@@ -127,7 +126,10 @@ pub mod mock_msg_queue {
                     }
                 }
                 Err(()) => (
-                    Err(XcmError::UnhandledXcmVersion),
+                    Err(InstructionError {
+                        error: XcmError::UnhandledXcmVersion,
+                        index: 0,
+                    }),
                     Event::BadVersion(Some(hash)),
                 ),
             };

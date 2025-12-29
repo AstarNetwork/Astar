@@ -133,7 +133,6 @@ impl pallet_evm::Config for Runtime {
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
     type AddressMapping = AccountId;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = Erc20AssetsPrecompileSet<Self>;
     type PrecompilesValue = PrecompilesValue;
@@ -148,6 +147,8 @@ impl pallet_evm::Config for Runtime {
     type GasLimitPovSizeRatio = ConstU64<4>;
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     type GasLimitStorageGrowthRatio = ConstU64<0>;
+    type CreateOriginFilter = ();
+    type CreateInnerOriginFilter = ();
 }
 
 // These parameters dont matter much as this will only be called by root with the forced arguments
@@ -217,6 +218,7 @@ impl ExtBuilder {
 
         pallet_balances::GenesisConfig::<Runtime> {
             balances: self.balances,
+            ..Default::default()
         }
         .assimilate_storage(&mut t)
         .expect("Pallet balances storage can be assimilated");

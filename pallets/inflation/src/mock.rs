@@ -105,7 +105,6 @@ impl pallet_inflation::Config for Test {
     type Currency = Balances;
     type PayoutPerBlock = DummyPayoutPerBlock;
     type CycleConfiguration = DummyCycleConfiguration;
-    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -128,6 +127,7 @@ impl ExternalityBuilder {
         // This will cause some initial issuance
         pallet_balances::GenesisConfig::<Test> {
             balances: vec![(1, 9 * unit), (2, 7 * unit), (3, 5 * unit)],
+            ..Default::default()
         }
         .assimilate_storage(&mut storage)
         .ok();

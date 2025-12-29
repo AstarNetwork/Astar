@@ -153,7 +153,6 @@ impl pallet_evm::Config for TestRuntime {
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
     type AddressMapping = AddressMapper;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = TestPrecompileSet<Self>;
     type PrecompilesValue = PrecompilesValue;
@@ -168,6 +167,8 @@ impl pallet_evm::Config for TestRuntime {
     type GasLimitPovSizeRatio = ConstU64<4>;
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     type GasLimitStorageGrowthRatio = ConstU64<0>;
+    type CreateOriginFilter = ();
+    type CreateInnerOriginFilter = ();
 }
 
 impl pallet_utility::Config for TestRuntime {

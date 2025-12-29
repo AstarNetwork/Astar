@@ -26,7 +26,7 @@ use sp_std::prelude::*;
 const UNIT: u128 = 1_000_000_000_000_000_000;
 
 /// Assert that the last event equals the provided one.
-fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+fn assert_last_event<T: Config>(generic_event: crate::Event<T>) {
     System::<T>::assert_last_event(generic_event.into());
 }
 

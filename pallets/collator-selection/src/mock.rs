@@ -149,6 +149,7 @@ impl pallet_session::Config for Test {
     type SessionManager = CollatorSelection;
     type SessionHandler = TestSessionHandler;
     type Keys = MockSessionKeys;
+    type DisablingStrategy = ();
     type WeightInfo = ();
 }
 
@@ -186,7 +187,6 @@ impl AccountCheck<u64> for DummyAccountCheck {
 }
 
 impl Config for Test {
-    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type UpdateOrigin = EnsureSignedBy<RootAccount, u64>;
     type GovernanceOrigin = EnsureSignedBy<RootAccount, u64>;
@@ -234,9 +234,12 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         keys,
         ..Default::default()
     };
-    pallet_balances::GenesisConfig::<Test> { balances }
-        .assimilate_storage(&mut t)
-        .unwrap();
+    pallet_balances::GenesisConfig::<Test> {
+        balances,
+        ..Default::default()
+    }
+    .assimilate_storage(&mut t)
+    .unwrap();
     // collator selection must be initialized before session.
     collator_selection.assimilate_storage(&mut t).unwrap();
     session.assimilate_storage(&mut t).unwrap();

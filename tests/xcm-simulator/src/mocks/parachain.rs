@@ -24,7 +24,7 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, Contains,
-        Everything, InstanceFilter, Nothing,
+        Disabled, Everything, InstanceFilter, Nothing,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -55,7 +55,7 @@ use xcm_builder::{
 };
 
 use orml_xcm_support::DisabledParachainFee;
-
+use sp_core::DecodeWithMemTracking;
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use astar_primitives::{
@@ -84,6 +84,8 @@ impl frame_system::Config for Runtime {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type AccountData = pallet_balances::AccountData<Balance>;
+    type BlockWeights = RuntimeBlockWeights;
+    type BlockLength = RuntimeBlockLength;
 }
 
 parameter_types! {
@@ -147,7 +149,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
-    astar_primitives::MAX_POV_SIZE as u64,
+    polkadot_primitives::MAX_POV_SIZE as u64,
 );
 
 parameter_types! {
@@ -234,6 +236,7 @@ impl pallet_contracts::Config for Runtime {
     PartialOrd,
     Encode,
     Decode,
+    DecodeWithMemTracking,
     RuntimeDebug,
     MaxEncodedLen,
     scale_info::TypeInfo,
@@ -295,6 +298,7 @@ impl pallet_proxy::Config for Runtime {
     type CallHasher = sp_runtime::traits::BlakeTwo256;
     type AnnouncementDepositBase = ConstU128<100>;
     type AnnouncementDepositFactor = ConstU128<400>;
+    type BlockNumberProvider = System;
 }
 
 parameter_types! {
@@ -303,7 +307,6 @@ parameter_types! {
 }
 
 impl pallet_xc_asset_config::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
     type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Runtime>;
@@ -470,10 +473,10 @@ impl xcm_executor::Config for XcmConfig {
     type HrmpChannelAcceptedHandler = ();
     type HrmpChannelClosingHandler = ();
     type XcmRecorder = ();
+    type XcmEventEmitter = ();
 }
 
 impl mock_msg_queue::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
@@ -504,6 +507,7 @@ impl pallet_xcm::Config for Runtime {
     type MaxRemoteLockConsumers = ConstU32<0>;
     type RemoteLockConsumerIdentifier = ();
     type AdminOrigin = EnsureRoot<AccountId>;
+    type AuthorizedAliasConsideration = Disabled;
 }
 
 /// Convert `AccountId` to `Location`.
@@ -539,7 +543,6 @@ impl Convert<AssetId, Option<Location>> for AssetIdConvert {
 }
 
 impl orml_xtokens::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type CurrencyId = AssetId;
     type CurrencyIdConvert = AssetIdConvert;

@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2025-07-21 (Y/M/D)
+//! DATE: 2025-12-19 (Y/M/D)
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
 //!
 //! SHORT-NAME: `block`, LONG-NAME: `BlockExecution`, RUNTIME: `shiden`
@@ -32,6 +32,7 @@
 //   overhead
 //   --runtime=./target/release/wbuild/shiden-runtime/shiden_runtime.compact.compressed.wasm
 //   --repeat=50
+//   --header=./.github/license-check/headers/HEADER-GNUv3
 //   --weight-path=./benchmark-results/shiden
 
 use sp_core::parameter_types;
@@ -42,17 +43,17 @@ parameter_types! {
     /// Calculated by multiplying the *Average* with `1.0` and adding `0`.
     ///
     /// Stats nanoseconds:
-    ///   Min, Max: 536_243, 1_147_647
-    ///   Average:  707_170
-    ///   Median:   591_106
-    ///   Std-Dev:  203027.75
+    ///   Min, Max: 657_311, 761_956
+    ///   Average:  695_724
+    ///   Median:   694_546
+    ///   Std-Dev:  25173.39
     ///
     /// Percentiles nanoseconds:
-    ///   99th: 1_147_647
-    ///   95th: 1_085_068
-    ///   75th: 800_885
+    ///   99th: 761_956
+    ///   95th: 750_997
+    ///   75th: 696_542
     pub const BlockExecutionWeight: Weight =
-        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(707_170), 4_688);
+        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(695_724), 5_443);
 }
 
 #[cfg(test)]
