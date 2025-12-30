@@ -1756,6 +1756,11 @@ parameter_types! {
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased = (
     pallet_xc_asset_config::migrations::versioned::V4ToV5<Runtime>,
+    pallet_session::migrations::v1::MigrateV0ToV1<
+        Runtime,
+        pallet_session::migrations::v1::InitOffenceSeverity<Runtime>,
+    >,
+    cumulus_pallet_aura_ext::migration::MigrateV0ToV1<Runtime>,
     frame_support::migrations::RemovePallet<SudoPalletToRemoveStr, RocksDbWeight>,
     pallet_collator_selection::migrations::LastAuthoredBlockCleanup<Runtime>,
 );
