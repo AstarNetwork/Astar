@@ -591,11 +591,9 @@ pub fn build_import_queue(
 
     // CIDP for relay chain verifier - minimal, only timestamp (no AuraApi required)
     // This is used for pre-AuraApi blocks (Shiden genesis did not start with AuraApi)
-    let create_relay_inherent_data_providers = move |_parent_hash: Hash, _| {
-        async move {
-            let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-            Ok(timestamp)
-        }
+    let create_relay_inherent_data_providers = move |_parent_hash: Hash, _| async move {
+        let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+        Ok(timestamp)
     };
 
     let aura_verifier = Box::new(cumulus_client_consensus_aura::build_verifier::<
