@@ -571,8 +571,8 @@ pub fn build_import_queue(
     task_manager: &TaskManager,
 ) -> sc_consensus::DefaultImportQueue<Block> {
     let verifier_client = client.clone();
-
-    let create_inherent_data_providers = move |parent_hash, _| {
+    // CIDP for Aura verifier - requires AuraApi for slot_duration
+    let create_aura_inherent_data_providers = move |parent_hash, _| {
         let cidp_client = verifier_client.clone();
         async move {
             let slot_duration =
@@ -589,6 +589,13 @@ pub fn build_import_queue(
         }
     };
 
+    // CIDP for relay chain verifier - minimal, only timestamp (no AuraApi required)
+    // This is used for pre-AuraApi blocks (Shiden genesis did not start with AuraApi)
+    let create_relay_inherent_data_providers = move |_parent_hash: Hash, _| async move {
+        let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+        Ok(timestamp)
+    };
+
     let aura_verifier = Box::new(cumulus_client_consensus_aura::build_verifier::<
         AuraPair,
         _,
@@ -596,13 +603,13 @@ pub fn build_import_queue(
         _,
     >(cumulus_client_consensus_aura::BuildVerifierParams {
         client: client.clone(),
-        create_inherent_data_providers: create_inherent_data_providers.clone(),
+        create_inherent_data_providers: create_aura_inherent_data_providers,
         telemetry: telemetry_handle,
     }));
 
     let relay_chain_verifier = Box::new(RelayChainVerifier::new(
         client.clone(),
-        create_inherent_data_providers,
+        create_relay_inherent_data_providers,
     )) as Box<_>;
 
     let verifier = Verifier {
