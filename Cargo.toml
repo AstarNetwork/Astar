@@ -2,7 +2,6 @@
 members = [
 	"bin/collator",
 	"bin/xcm-tools",
-	"runtime/local",
 	"runtime/astar",
 	"runtime/shiden",
 	"runtime/shibuya",
@@ -349,7 +348,6 @@ pallet-chain-extension-unified-accounts = { path = "./chain-extensions/unified-a
 assets-chain-extension-types = { path = "./chain-extensions/types/assets", default-features = false }
 unified-accounts-chain-extension-types = { path = "./chain-extensions/types/unified-accounts", default-features = false }
 
-local-runtime = { path = "./runtime/local", default-features = false }
 shibuya-runtime = { path = "./runtime/shibuya", default-features = false }
 shiden-runtime = { path = "./runtime/shiden", default-features = false }
 astar-runtime = { path = "./runtime/astar", default-features = false }

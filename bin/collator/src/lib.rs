@@ -21,8 +21,6 @@
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 
-/// Development node support.
-pub mod local;
 /// Parachain node support.
 pub mod parachain;
 
