@@ -316,7 +316,7 @@ pub fn run() -> Result<()> {
                     cmd.run(params.client)
                 }),
                 BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
-                    let params = local::new_partial(&config, &rpc_config)?;
+                    let params = parachain::new_partial(&config, &rpc_config)?;
                     let db = params.backend.expose_db();
                     let storage = params.backend.expose_storage();
 
