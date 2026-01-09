@@ -45,7 +45,7 @@ Some notes:
 ### Mandatory PR Labels
 When submitting a Pull Request (PR), please make sure to include the necessary labels to help us categorize and prioritize your changes. PRs should contain at least one of the following mandatory labels:
 
-- **runtime**: Use this label for changes or additions to the code that relate to runtime **(shiden, astar, shibuya, local)**
+- **runtime**: Use this label for changes or additions to the code that relate to runtime **(shiden, astar, shibuya)**
 - **client**: PRs related to client.
 - **ci**: PRs related to CI (workflows).
 - **tests**: PRs related to xcm-simulator tests,rpc-tests or any other kind of test.
