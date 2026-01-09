@@ -83,7 +83,6 @@ pallet-dapp-staking = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapp-staking = { workspace = true }
-pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-unified-accounts = { workspace = true }
@@ -152,7 +151,6 @@ std = [
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
 	"pallet-evm-precompile-unified-accounts/std",
-	"pallet-evm-precompile-dispatch-lockdrop/std",
 	"pallet-grandpa/std",
 	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-preimage/std",
