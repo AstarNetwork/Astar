@@ -114,11 +114,6 @@ fn query_response_version_negotiation_succeeds() {
         use parachain::{RuntimeEvent, System};
         let events = System::events();
 
-        println!("=== Events on ParaA ===");
-        for (i, event) in events.iter().enumerate() {
-            println!("[{}] {:?}", i, event.event);
-        }
-
         // Verify our QueryResponse with specific topic ID was processed successfully
         let has_success_with_our_topic = events.iter().any(|r| {
             matches!(
