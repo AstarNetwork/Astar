@@ -34,7 +34,9 @@ use sp_runtime::traits::{Convert, MaybeEquivalence};
 // Polkadot imports
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use frame_support::traits::{Disabled, TransformOrigin};
-use parachains_common::message_queue::ParaIdToSibling;
+use parachains_common::{
+    message_queue::ParaIdToSibling, xcm_config::ParentRelayOrSiblingParachains,
+};
 use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -43,7 +45,7 @@ use xcm_builder::{
     FungibleAdapter, FungiblesAdapter, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents, WeightInfoBounds,
+    TrailingSetTopicAsId, UsingComponents, WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{
     traits::{JustTry, WithOriginFilter},
@@ -225,16 +227,24 @@ impl Contains<RuntimeCall> for SafeCallFilter {
     }
 }
 
-pub type XcmBarrier = (
+pub type XcmBarrier = TrailingSetTopicAsId<(
     TakeWeightCredit,
-    AllowTopLevelPaidExecutionFrom<Everything>,
-    // Parent and its plurality get free execution
-    AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
     // Expected responses are OK.
     AllowKnownQueryResponses<PolkadotXcm>,
-    // Subscriptions for version tracking are OK.
-    AllowSubscriptionsFrom<Everything>,
-);
+    // Allow XCMs with some computed origins to pass through.
+    WithComputedOrigin<
+        (
+            // If the message is one that immediately attempts to pay for execution, then allow it.
+            AllowTopLevelPaidExecutionFrom<Everything>,
+            // Subscriptions for version tracking are OK.
+            AllowSubscriptionsFrom<ParentRelayOrSiblingParachains>,
+        ),
+        UniversalLocation,
+        ConstU32<8>,
+    >,
+    // Parent and its plurality get free execution
+    AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
+)>;
 
 // Used to handle XCM fee deposit into treasury account
 pub type AstarXcmFungibleFeeHandler = XcmFungibleFeeHandler<

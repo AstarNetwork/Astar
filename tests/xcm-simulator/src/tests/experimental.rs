@@ -142,7 +142,7 @@ fn basic_xcmp_transact_outcome_query_response() {
         // check queue failed events
         assert!(System::events().iter().any(|r| matches!(
             r.event,
-            RuntimeEvent::MsgQueue(mock_msg_queue::Event::Fail(..))
+            RuntimeEvent::MsgQueue(mock_msg_queue::Event::Fail { .. })
         )));
     });
 

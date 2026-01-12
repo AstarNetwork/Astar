@@ -24,3 +24,6 @@ mod fungible_assets;
 
 #[cfg(test)]
 mod general;
+
+#[cfg(test)]
+mod version;

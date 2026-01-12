@@ -46,6 +46,7 @@ polkadot-primitives = { workspace = true }
 cumulus-pallet-xcm = { workspace = true }
 pallet-message-queue = { workspace = true }
 pallet-xcm = { workspace = true }
+parachains-common = { workspace = true }
 polkadot-core-primitives = { workspace = true }
 polkadot-parachain = { workspace = true }
 polkadot-runtime-parachains = { workspace = true }
@@ -85,6 +86,7 @@ std = [
 	"orml-traits/std",
 	"orml-xcm-support/std",
 	"pallet-dapp-staking/std",
+	"parachains-common/std",
 ]
 runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
@@ -101,4 +103,5 @@ runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
 	"pallet-dapp-staking/runtime-benchmarks",
+	"parachains-common/runtime-benchmarks",
 ]

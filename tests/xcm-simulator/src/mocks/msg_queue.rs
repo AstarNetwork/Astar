@@ -18,7 +18,6 @@
 
 use frame_support::weights::Weight;
 use parity_scale_codec::{Decode, Encode};
-use sp_runtime::traits::Hash;
 use sp_std::prelude::*;
 
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
@@ -70,27 +69,38 @@ pub mod mock_msg_queue {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         // XCMP
-        /// Some XCM was executed OK.
-        Success(Option<T::Hash>),
+        /// Some XCM was executed OK. message_id is SetTopic value if TrailingSetTopicAsId is used.
+        Success { message_id: Option<T::Hash> },
         /// Some XCM failed.
-        Fail(Option<T::Hash>, InstructionError),
+        Fail {
+            message_id: Option<T::Hash>,
+            error: InstructionError,
+        },
         /// Bad XCM version used.
-        BadVersion(Option<T::Hash>),
+        BadVersion { message_id: Option<T::Hash> },
         /// Bad XCM format used.
-        BadFormat(Option<T::Hash>),
+        BadFormat { message_id: Option<T::Hash> },
 
         // DMP
         /// Downward message is invalid XCM.
-        InvalidFormat(MessageId),
+        InvalidFormat { message_id: MessageId },
         /// Downward message is unsupported version of XCM.
-        UnsupportedVersion(MessageId),
+        UnsupportedVersion { message_id: MessageId },
         /// Downward message executed with the given outcome.
-        ExecutedDownward(MessageId, Outcome),
+        ExecutedDownward {
+            message_id: MessageId,
+            outcome: Outcome,
+        },
     }
 
     impl<T: Config> Pallet<T> {
         pub fn set_para_id(para_id: ParaId) {
             ParachainId::<T>::put(para_id);
+        }
+
+        /// Convert `[u8; 32]` to `T::Hash`.
+        fn hash_from_raw(raw: [u8; 32]) -> T::Hash {
+            Decode::decode(&mut &raw[..]).expect("32 bytes always decodes to H256")
         }
 
         fn handle_xcmp_message(
@@ -99,12 +109,13 @@ pub mod mock_msg_queue {
             xcm: VersionedXcm<T::RuntimeCall>,
             max_weight: Weight,
         ) -> Result<Weight, InstructionError> {
-            let hash = Encode::using_encoded(&xcm, T::Hashing::hash);
             let mut message_hash = Encode::using_encoded(&xcm, sp_io::hashing::blake2_256);
             let (result, event) = match Xcm::<T::RuntimeCall>::try_from(xcm) {
                 Ok(xcm) => {
                     let location = (Parent, Parachain(sender.into()));
                     <ReceivedXcmp<T>>::append(xcm.clone());
+
+                    // TrailingSetTopicAsId MUTATES message_hash to SetTopic value during execution
                     match T::XcmExecutor::prepare_and_execute(
                         location,
                         xcm.clone(),
@@ -114,14 +125,29 @@ pub mod mock_msg_queue {
                     ) {
                         Outcome::Error(error) => {
                             println!("Error in XCMP handling: {:?}, sender=Parachain({sender}), xcm={xcm:?}", error);
-                            (Err(error.clone()), Event::Fail(Some(hash), error))
+                            (
+                                Err(error.clone()),
+                                Event::Fail {
+                                    message_id: Some(Self::hash_from_raw(message_hash)),
+                                    error,
+                                },
+                            )
                         }
-                        Outcome::Complete { used } => (Ok(used), Event::Success(Some(hash))),
-                        // As far as the caller is concerned, this was dispatched without error, so
-                        // we just report the weight used.
+                        Outcome::Complete { used } => (
+                            Ok(used),
+                            Event::Success {
+                                message_id: Some(Self::hash_from_raw(message_hash)),
+                            },
+                        ),
                         Outcome::Incomplete { used, error } => {
                             println!("Incomplete XCMP handling: {:?}, {sender}", error);
-                            (Ok(used), Event::Fail(Some(hash), error))
+                            (
+                                Ok(used),
+                                Event::Fail {
+                                    message_id: Some(Self::hash_from_raw(message_hash)),
+                                    error,
+                                },
+                            )
                         }
                     }
                 }
@@ -130,7 +156,9 @@ pub mod mock_msg_queue {
                         error: XcmError::UnhandledXcmVersion,
                         index: 0,
                     }),
-                    Event::BadVersion(Some(hash)),
+                    Event::BadVersion {
+                        message_id: Some(Self::hash_from_raw(message_hash)),
+                    },
                 ),
             };
             Self::deposit_event(event);
@@ -173,10 +201,12 @@ pub mod mock_msg_queue {
                 let maybe_versioned = VersionedXcm::<T::RuntimeCall>::decode(&mut &data[..]);
                 match maybe_versioned {
                     Err(_) => {
-                        Self::deposit_event(Event::InvalidFormat(id));
+                        Self::deposit_event(Event::InvalidFormat { message_id: id });
                     }
                     Ok(versioned) => match Xcm::try_from(versioned) {
-                        Err(()) => Self::deposit_event(Event::UnsupportedVersion(id)),
+                        Err(()) => {
+                            Self::deposit_event(Event::UnsupportedVersion { message_id: id })
+                        }
                         Ok(x) => {
                             let outcome = T::XcmExecutor::prepare_and_execute(
                                 Parent,
@@ -186,7 +216,10 @@ pub mod mock_msg_queue {
                                 Weight::zero(),
                             );
                             <ReceivedDmp<T>>::append(x);
-                            Self::deposit_event(Event::ExecutedDownward(id, outcome));
+                            Self::deposit_event(Event::ExecutedDownward {
+                                message_id: id,
+                                outcome,
+                            });
                         }
                     },
                 }

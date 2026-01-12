@@ -44,6 +44,7 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 use super::msg_queue::*;
+use parachains_common::xcm_config::ParentRelayOrSiblingParachains;
 use xcm::latest::prelude::{AssetId as XcmAssetId, *};
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -51,7 +52,7 @@ use xcm_builder::{
     FixedWeightBounds, FungibleAdapter, FungiblesAdapter, IsConcrete, NoChecking,
     ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, WithComputedOrigin,
+    SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, WithComputedOrigin,
 };
 
 use orml_xcm_support::DisabledParachainFee;
@@ -416,17 +417,24 @@ impl Contains<Location> for ParentOrParentsPlurality {
     }
 }
 
-pub type XcmBarrier = (
+pub type XcmBarrier = TrailingSetTopicAsId<(
     TakeWeightCredit,
-    // This will first calculate the derived origin, before checking it against the barrier implementation
-    WithComputedOrigin<AllowTopLevelPaidExecutionFrom<Everything>, UniversalLocation, ConstU32<8>>,
-    // Parent and its plurality get free execution
-    AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
     // Expected responses are OK.
     AllowKnownQueryResponses<PolkadotXcm>,
-    // Subscriptions for version tracking are OK.
-    AllowSubscriptionsFrom<Everything>,
-);
+    // Allow XCMs with computed origins - handles both paid execution AND subscriptions
+    WithComputedOrigin<
+        (
+            // If the message is one that immediately attempts to pay for execution, then allow it.
+            AllowTopLevelPaidExecutionFrom<Everything>,
+            // Subscriptions for version tracking are OK.
+            AllowSubscriptionsFrom<ParentRelayOrSiblingParachains>,
+        ),
+        UniversalLocation,
+        ConstU32<8>,
+    >,
+    // Parent and its plurality get free execution
+    AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
+)>;
 
 // Used to handle XCM fee deposit into treasury account
 pub type ShidenXcmFungibleFeeHandler = XcmFungibleFeeHandler<
@@ -453,10 +461,10 @@ impl xcm_executor::Config for XcmConfig {
         FixedRateOfFungible<NativePerSecond, ()>,
         FixedRateOfForeignAsset<XcAssetConfig, ShidenXcmFungibleFeeHandler>,
     );
-    type ResponseHandler = ();
+    type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
     type AssetClaims = PolkadotXcm;
-    type SubscriptionService = ();
+    type SubscriptionService = PolkadotXcm;
 
     type PalletInstancesInfo = AllPalletsWithSystem;
     type MaxAssetsIntoHolding = ConstU32<64>;
