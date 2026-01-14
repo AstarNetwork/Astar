@@ -15,7 +15,7 @@ jobs:
   checks-and-tests:
     # Just to ensure this runs AFTER the tracing runtimes are built, for the sake of generating a release faster
     needs: evm-tracing-runtimes
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     steps:
       - name: Free disk space
         run: |
@@ -50,7 +50,7 @@ jobs:
         run: make test-all
 
   evm-tracing-runtimes:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout the source code
         uses: actions/checkout@v5

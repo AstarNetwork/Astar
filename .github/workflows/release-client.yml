@@ -12,7 +12,7 @@ env:
   RELEASE_TAG: ${{ github.ref_name }}
 jobs:
   checks-and-tests:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     steps:
       - name: Free disk space
         run: |
@@ -48,7 +48,7 @@ jobs:
 
   native-linux:
     needs: checks-and-tests
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         target:
