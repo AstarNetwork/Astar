@@ -171,7 +171,8 @@ jobs:
         with:
           images: staketechnologies/astar-collator
           tags: |
-            type=raw,value=shiden
+            type=raw,value=latest
+            type=raw,value=${{ github.ref_name }}
             type=sha,format=short
 
       - name: Download pre-built linux collator binary
