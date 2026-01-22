@@ -463,8 +463,6 @@ where
                 block_data_cache: block_data_cache.clone(),
                 storage_override: storage_override.clone(),
                 enable_evm_rpc: additional_config.enable_evm_rpc,
-                #[cfg(feature = "manual-seal")]
-                command_sink: None,
             };
 
             crate::rpc::create_full(

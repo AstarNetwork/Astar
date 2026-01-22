@@ -19,6 +19,7 @@
 //! Astar collator CLI handlers.
 use crate::{
     cli::{Cli, RelayChainCli, Subcommand},
+    local::{self, development_config},
     parachain::{self, chain_spec, service::AdditionalConfig},
 };
 use cumulus_primitives_core::ParaId;
@@ -36,6 +37,7 @@ use sp_runtime::traits::AccountIdConversion;
 
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
+    fn is_dev(&self) -> bool;
     fn is_shiden(&self) -> bool;
     fn is_shibuya(&self) -> bool;
 }
@@ -43,6 +45,9 @@ trait IdentifyChain {
 impl IdentifyChain for dyn sc_service::ChainSpec {
     fn is_astar(&self) -> bool {
         self.id().starts_with("astar")
+    }
+    fn is_dev(&self) -> bool {
+        self.id().starts_with("dev")
     }
     fn is_shiden(&self) -> bool {
         self.id().starts_with("shiden")
@@ -56,6 +61,9 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
     fn is_astar(&self) -> bool {
         <dyn sc_service::ChainSpec>::is_astar(self)
     }
+    fn is_dev(&self) -> bool {
+        <dyn sc_service::ChainSpec>::is_dev(self)
+    }
     fn is_shiden(&self) -> bool {
         <dyn sc_service::ChainSpec>::is_shiden(self)
     }
@@ -66,6 +74,7 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
     Ok(match id {
+        "dev" => Box::new(development_config()),
         "astar-dev" => Box::new(chain_spec::astar::get_chain_spec()),
         "shibuya-dev" => Box::new(chain_spec::shibuya::get_chain_spec()),
         "shiden-dev" => Box::new(chain_spec::shiden::get_chain_spec()),
@@ -243,16 +252,29 @@ pub fn run() -> Result<()> {
         }
         Some(Subcommand::Revert(cmd)) => {
             let runner = cli.create_runner(cmd)?;
+            let chain_spec = &runner.config().chain_spec;
             let rpc_config = cli.eth_api_options.new_rpc_config();
-            runner.async_run(|config| {
-                let PartialComponents {
-                    client,
-                    task_manager,
-                    backend,
-                    ..
-                } = parachain::new_partial(&config, &rpc_config)?;
-                Ok((cmd.run(client, backend, None), task_manager))
-            })
+            if chain_spec.is_dev() {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        backend,
+                        ..
+                    } = local::new_partial(&config, &rpc_config)?;
+                    Ok((cmd.run(client, backend, None), task_manager))
+                })
+            } else {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        backend,
+                        ..
+                    } = parachain::new_partial(&config, &rpc_config)?;
+                    Ok((cmd.run(client, backend, None), task_manager))
+                })
+            }
         }
         Some(Subcommand::ExportGenesisState(cmd)) => {
             let runner = cli.create_runner(cmd)?;
@@ -305,23 +327,45 @@ pub fn run() -> Result<()> {
                             )
                         })
                     } else {
-                        Err(format!(
-                            "Unknown chain '{}' for benchmarking. Use --chain astar, shiden, shibuya, astar-dev, shiden-dev, or shibuya-dev",
-                            chain_spec.id()
-                        ).into())
+                        runner.sync_run(|config| {
+                            cmd.run_with_spec::<HashingFor<shibuya_runtime::Block>, local::HostFunctions>(
+                                Some(config.chain_spec),
+                            )
+                        })
                     }
                 }
-                BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-                    let params = parachain::new_partial(&config, &rpc_config)?;
-                    cmd.run(params.client)
-                }),
-                BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
-                    let params = parachain::new_partial(&config, &rpc_config)?;
-                    let db = params.backend.expose_db();
-                    let storage = params.backend.expose_storage();
+                BenchmarkCmd::Block(cmd) => {
+                    if chain_spec.is_dev() {
+                        runner.sync_run(|config| {
+                            let params = local::new_partial(&config, &rpc_config)?;
+                            cmd.run(params.client)
+                        })
+                    } else {
+                        runner.sync_run(|config| {
+                            let params = parachain::new_partial(&config, &rpc_config)?;
+                            cmd.run(params.client)
+                        })
+                    }
+                }
+                BenchmarkCmd::Storage(cmd) => {
+                    if chain_spec.is_dev() {
+                        runner.sync_run(|config| {
+                            let params = local::new_partial(&config, &rpc_config)?;
+                            let db = params.backend.expose_db();
+                            let storage = params.backend.expose_storage();
 
-                    cmd.run(config, params.client, db, storage, None)
-                }),
+                            cmd.run(config, params.client, db, storage, None)
+                        })
+                    } else {
+                        runner.sync_run(|config| {
+                            let params = parachain::new_partial(&config, &rpc_config)?;
+                            let db = params.backend.expose_db();
+                            let storage = params.backend.expose_storage();
+
+                            cmd.run(config, params.client, db, storage, None)
+                        })
+                    }
+                }
                 BenchmarkCmd::Overhead(_) => {
                     todo!("Overhead benchmarking is not supported. Use 'frame-omni-bencher' tool instead.");
                 }
@@ -340,6 +384,14 @@ pub fn run() -> Result<()> {
             let evm_tracing_config = cli.eth_api_options.new_rpc_config();
 
             runner.run_node_until_exit(|config| async move {
+                if config.chain_spec.is_dev() {
+                    return local::start_node::<sc_network::NetworkWorker<_, _>>(
+                        config,
+                        evm_tracing_config,
+                    )
+                    .map_err(Into::into);
+                }
+
                 let polkadot_cli = RelayChainCli::new(
                     &config,
                     [RelayChainCli::executable_name()]

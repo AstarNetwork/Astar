@@ -16,20 +16,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! Astar collator library.
+//! Support for local development node.
 
-#![warn(missing_docs)]
-#![warn(unused_extern_crates)]
+/// Local development service.
+mod service;
 
-/// Development node support.
-pub mod local;
-/// Parachain node support.
-pub mod parachain;
+/// Development chain specs.
+mod chain_spec;
 
-mod cli;
-mod command;
-mod evm_tracing_types;
-mod rpc;
-
-pub use cli::*;
-pub use command::*;
+pub use crate::parachain::fake_runtime_api::RuntimeApi;
+pub use chain_spec::*;
+pub use service::{new_partial, start_node, HostFunctions};
