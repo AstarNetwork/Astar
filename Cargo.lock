@@ -20444,6 +20444,7 @@ dependencies = [
  "pallet-utility",
  "pallet-xc-asset-config",
  "pallet-xcm",
+ "parachains-common",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain-primitives",
