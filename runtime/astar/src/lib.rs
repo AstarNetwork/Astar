@@ -1667,6 +1667,10 @@ mod runtime {
     pub type Balances = pallet_balances;
     #[runtime::pallet_index(32)]
     pub type Vesting = pallet_vesting;
+    // Inflation needs to execute `on_initialize` as soon as possible, and `on_finalize` as late as possible.
+    // However, we need to execute Balance genesis before Inflation genesis, otherwise we'll have zero issuance when Inflation
+    // logic is executed.
+    // TODO: Address this later. It would be best if Inflation was first pallet.
     #[runtime::pallet_index(33)]
     pub type Inflation = pallet_inflation;
     #[runtime::pallet_index(34)]
