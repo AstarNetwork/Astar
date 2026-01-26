@@ -1751,7 +1751,7 @@ mod runtime {
 
     #[runtime::pallet_index(99)]
     #[cfg(feature = "astar-sudo")]
-    pub type Sudo = pallet_sudo;
+    pub type Sudo = pallet_sudo + Pallet + Call + Event<T> + Error<T> + Config<T>;
 }
 
 /// Block type as expected by this runtime.
