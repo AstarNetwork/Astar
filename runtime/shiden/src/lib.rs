@@ -34,7 +34,6 @@ use core::marker::PhantomData;
 use cumulus_primitives_core::AggregateMessageOrigin;
 use ethereum::AuthorizationList;
 use frame_support::{
-    construct_runtime,
     dispatch::DispatchClass,
     genesis_builder_helper, parameter_types,
     traits::{
@@ -1224,59 +1223,106 @@ impl pallet_migrations::Config for Runtime {
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
 }
 
-construct_runtime!(
-    pub struct Runtime
-    {
-        System: frame_system = 10,
-        Utility: pallet_utility = 11,
-        Identity: pallet_identity = 12,
-        Timestamp: pallet_timestamp = 13,
-        Multisig: pallet_multisig = 14,
-        Proxy: pallet_proxy = 15,
+#[frame_support::runtime]
+mod runtime {
+    #[runtime::runtime]
+    #[runtime::derive(
+        RuntimeCall,
+        RuntimeEvent,
+        RuntimeError,
+        RuntimeOrigin,
+        RuntimeFreezeReason,
+        RuntimeHoldReason,
+        RuntimeSlashReason,
+        RuntimeLockId,
+        RuntimeTask
+    )]
+    pub struct Runtime;
 
-        ParachainSystem: cumulus_pallet_parachain_system = 20,
-        ParachainInfo: parachain_info = 21,
+    #[runtime::pallet_index(10)]
+    pub type System = frame_system;
+    #[runtime::pallet_index(11)]
+    pub type Utility = pallet_utility;
+    #[runtime::pallet_index(12)]
+    pub type Identity = pallet_identity;
+    #[runtime::pallet_index(13)]
+    pub type Timestamp = pallet_timestamp;
+    #[runtime::pallet_index(14)]
+    pub type Multisig = pallet_multisig;
+    #[runtime::pallet_index(15)]
+    pub type Proxy = pallet_proxy;
 
-        TransactionPayment: pallet_transaction_payment = 30,
-        Balances: pallet_balances = 31,
-        Vesting: pallet_vesting = 32,
-        // Inflation needs to execute `on_initialize` as soon as possible, and `on_finalize` as late as possible.
-        // However, we need to execute Balance genesis before Inflation genesis, otherwise we'll have zero issuance when Inflation
-        // logic is executed.
-        // TODO: Address this later. It would be best if Inflation was first pallet.
-        Inflation: pallet_inflation = 33,
-        DappStaking: pallet_dapp_staking = 34,
-        Assets: pallet_assets = 36,
-        PriceAggregator: pallet_price_aggregator = 37,
-        Oracle: orml_oracle = 38,
-        OracleMembership: pallet_membership::<Instance1> = 39,
+    #[runtime::pallet_index(20)]
+    pub type ParachainSystem = cumulus_pallet_parachain_system;
+    #[runtime::pallet_index(21)]
+    pub type ParachainInfo = parachain_info;
 
-        Authorship: pallet_authorship = 40,
-        CollatorSelection: pallet_collator_selection = 41,
-        Session: pallet_session = 42,
-        Aura: pallet_aura = 43,
-        AuraExt: cumulus_pallet_aura_ext = 44,
+    #[runtime::pallet_index(30)]
+    pub type TransactionPayment = pallet_transaction_payment;
+    #[runtime::pallet_index(31)]
+    pub type Balances = pallet_balances;
+    #[runtime::pallet_index(32)]
+    pub type Vesting = pallet_vesting;
+    // Inflation needs to execute `on_initialize` as soon as possible, and `on_finalize` as late as possible.
+    // However, we need to execute Balance genesis before Inflation genesis, otherwise we'll have zero issuance when Inflation
+    // logic is executed.
+    // TODO: Address this later. It would be best if Inflation was first pallet.
+    #[runtime::pallet_index(33)]
+    pub type Inflation = pallet_inflation;
+    #[runtime::pallet_index(34)]
+    pub type DappStaking = pallet_dapp_staking;
+    #[runtime::pallet_index(36)]
+    pub type Assets = pallet_assets;
+    #[runtime::pallet_index(37)]
+    pub type PriceAggregator = pallet_price_aggregator;
+    #[runtime::pallet_index(38)]
+    pub type Oracle = orml_oracle;
+    #[runtime::pallet_index(39)]
+    pub type OracleMembership = pallet_membership<Instance1>;
 
-        XcmpQueue: cumulus_pallet_xcmp_queue = 50,
-        PolkadotXcm: pallet_xcm = 51,
-        CumulusXcm: cumulus_pallet_xcm = 52,
-        // skip 53 - cumulus_pallet_dmp_queue previously
-        XcAssetConfig: pallet_xc_asset_config = 54,
-        XTokens: orml_xtokens = 55,
-        MessageQueue: pallet_message_queue = 56,
+    #[runtime::pallet_index(40)]
+    pub type Authorship = pallet_authorship;
+    #[runtime::pallet_index(41)]
+    pub type CollatorSelection = pallet_collator_selection;
+    #[runtime::pallet_index(42)]
+    pub type Session = pallet_session;
+    #[runtime::pallet_index(43)]
+    pub type Aura = pallet_aura;
+    #[runtime::pallet_index(44)]
+    pub type AuraExt = cumulus_pallet_aura_ext;
 
-        EVM: pallet_evm = 60,
-        Ethereum: pallet_ethereum = 61,
-        DynamicEvmBaseFee: pallet_dynamic_evm_base_fee = 63,
+    #[runtime::pallet_index(50)]
+    pub type XcmpQueue = cumulus_pallet_xcmp_queue;
+    #[runtime::pallet_index(51)]
+    pub type PolkadotXcm = pallet_xcm;
+    #[runtime::pallet_index(52)]
+    pub type CumulusXcm = cumulus_pallet_xcm;
+    // skip 53 - cumulus_pallet_dmp_queue previously
+    #[runtime::pallet_index(54)]
+    pub type XcAssetConfig = pallet_xc_asset_config;
+    #[runtime::pallet_index(55)]
+    pub type XTokens = orml_xtokens;
+    #[runtime::pallet_index(56)]
+    pub type MessageQueue = pallet_message_queue;
 
-        Contracts: pallet_contracts = 70,
-        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 71,
+    #[runtime::pallet_index(60)]
+    pub type EVM = pallet_evm;
+    #[runtime::pallet_index(61)]
+    pub type Ethereum = pallet_ethereum;
+    #[runtime::pallet_index(63)]
+    pub type DynamicEvmBaseFee = pallet_dynamic_evm_base_fee;
 
-        Sudo: pallet_sudo = 99,
+    #[runtime::pallet_index(70)]
+    pub type Contracts = pallet_contracts;
+    #[runtime::pallet_index(71)]
+    pub type RandomnessCollectiveFlip = pallet_insecure_randomness_collective_flip;
 
-        MultiBlockMigrations: pallet_migrations = 120,
-    }
-);
+    #[runtime::pallet_index(99)]
+    pub type Sudo = pallet_sudo;
+
+    #[runtime::pallet_index(120)]
+    pub type MultiBlockMigrations = pallet_migrations;
+}
 
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;

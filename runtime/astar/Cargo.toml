@@ -75,7 +75,7 @@ pallet-proxy = { workspace = true }
 pallet-safe-mode = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true, features = ["historical"] }
-pallet-sudo = { workspace = true, optional = true }
+pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
@@ -221,7 +221,7 @@ std = [
 	"pallet-proxy/std",
 	"pallet-scheduler/std",
 	"pallet-session/std",
-	"pallet-sudo?/std",
+	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
@@ -304,7 +304,7 @@ runtime-benchmarks = [
 	"pallet-price-aggregator/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
-	"pallet-sudo?/runtime-benchmarks",
+	"pallet-sudo/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
 	"pallet-transaction-payment/runtime-benchmarks",
@@ -365,7 +365,7 @@ try-runtime = [
 	"pallet-proxy/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"pallet-session/try-runtime",
-	"pallet-sudo?/try-runtime",
+	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-treasury/try-runtime",
@@ -383,7 +383,7 @@ evm-tracing = [
 	"moonbeam-rpc-primitives-debug",
 	"moonbeam-rpc-primitives-txpool",
 ]
-astar-sudo = ["pallet-sudo"]
+astar-sudo = []
 
 # Enable metadata hash generation at compile time for the `CheckMetadataHash` extension.
 metadata-hash = ["substrate-wasm-builder?/metadata-hash"]

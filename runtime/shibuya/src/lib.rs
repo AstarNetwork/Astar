@@ -31,7 +31,6 @@ use core::marker::PhantomData;
 use cumulus_primitives_core::AggregateMessageOrigin;
 use ethereum::AuthorizationList;
 use frame_support::{
-    construct_runtime,
     dispatch::DispatchClass,
     genesis_builder_helper, parameter_types,
     traits::{
@@ -1644,76 +1643,139 @@ impl pallet_tx_pause::Config for Runtime {
     type WeightInfo = pallet_tx_pause::weights::SubstrateWeight<Runtime>;
 }
 
-construct_runtime!(
-    pub struct Runtime
-    {
-        System: frame_system = 10,
-        Utility: pallet_utility = 11,
-        Identity: pallet_identity = 12,
-        Timestamp: pallet_timestamp = 13,
-        Multisig: pallet_multisig = 14,
-        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 16,
-        Scheduler: pallet_scheduler = 17,
-        Proxy: pallet_proxy = 18,
+#[frame_support::runtime]
+mod runtime {
+    #[runtime::runtime]
+    #[runtime::derive(
+        RuntimeCall,
+        RuntimeEvent,
+        RuntimeError,
+        RuntimeOrigin,
+        RuntimeFreezeReason,
+        RuntimeHoldReason,
+        RuntimeSlashReason,
+        RuntimeLockId,
+        RuntimeTask
+    )]
+    pub struct Runtime;
 
-        ParachainSystem: cumulus_pallet_parachain_system = 20,
-        ParachainInfo: parachain_info = 21,
+    #[runtime::pallet_index(10)]
+    pub type System = frame_system;
+    #[runtime::pallet_index(11)]
+    pub type Utility = pallet_utility;
+    #[runtime::pallet_index(12)]
+    pub type Identity = pallet_identity;
+    #[runtime::pallet_index(13)]
+    pub type Timestamp = pallet_timestamp;
+    #[runtime::pallet_index(14)]
+    pub type Multisig = pallet_multisig;
+    #[runtime::pallet_index(16)]
+    pub type RandomnessCollectiveFlip = pallet_insecure_randomness_collective_flip;
+    #[runtime::pallet_index(17)]
+    pub type Scheduler = pallet_scheduler;
+    #[runtime::pallet_index(18)]
+    pub type Proxy = pallet_proxy;
 
-        TransactionPayment: pallet_transaction_payment = 30,
-        Balances: pallet_balances = 31,
-        Vesting: pallet_vesting = 32,
-        DappStaking: pallet_dapp_staking = 34,
-        Inflation: pallet_inflation = 35,
-        Assets: pallet_assets = 36,
-        PriceAggregator: pallet_price_aggregator = 37,
-        Oracle: orml_oracle = 38,
-        OracleMembership: pallet_membership::<Instance1> = 39,
+    #[runtime::pallet_index(20)]
+    pub type ParachainSystem = cumulus_pallet_parachain_system;
+    #[runtime::pallet_index(21)]
+    pub type ParachainInfo = parachain_info;
 
-        Authorship: pallet_authorship = 40,
-        CollatorSelection: pallet_collator_selection = 41,
-        Session: pallet_session = 42,
-        Aura: pallet_aura = 43,
-        AuraExt: cumulus_pallet_aura_ext = 44,
+    #[runtime::pallet_index(30)]
+    pub type TransactionPayment = pallet_transaction_payment;
+    #[runtime::pallet_index(31)]
+    pub type Balances = pallet_balances;
+    #[runtime::pallet_index(32)]
+    pub type Vesting = pallet_vesting;
+    #[runtime::pallet_index(34)]
+    pub type DappStaking = pallet_dapp_staking;
+    #[runtime::pallet_index(35)]
+    pub type Inflation = pallet_inflation;
+    #[runtime::pallet_index(36)]
+    pub type Assets = pallet_assets;
+    #[runtime::pallet_index(37)]
+    pub type PriceAggregator = pallet_price_aggregator;
+    #[runtime::pallet_index(38)]
+    pub type Oracle = orml_oracle;
+    #[runtime::pallet_index(39)]
+    pub type OracleMembership = pallet_membership<Instance1>;
 
-        XcmpQueue: cumulus_pallet_xcmp_queue = 50,
-        PolkadotXcm: pallet_xcm = 51,
-        CumulusXcm: cumulus_pallet_xcm = 52,
-        // skip 53 - cumulus_pallet_dmp_queue previously
-        XcAssetConfig: pallet_xc_asset_config = 54,
-        XTokens: orml_xtokens = 55,
-        MessageQueue: pallet_message_queue = 56,
+    #[runtime::pallet_index(40)]
+    pub type Authorship = pallet_authorship;
+    #[runtime::pallet_index(41)]
+    pub type CollatorSelection = pallet_collator_selection;
+    #[runtime::pallet_index(42)]
+    pub type Session = pallet_session;
+    #[runtime::pallet_index(43)]
+    pub type Aura = pallet_aura;
+    #[runtime::pallet_index(44)]
+    pub type AuraExt = cumulus_pallet_aura_ext;
 
-        EVM: pallet_evm = 60,
-        Ethereum: pallet_ethereum = 61,
-        DynamicEvmBaseFee: pallet_dynamic_evm_base_fee = 62,
-        EVMChainId: pallet_evm_chain_id = 63,
-        EthereumChecked: pallet_ethereum_checked = 64,
-        UnifiedAccounts: pallet_unified_accounts = 65,
+    #[runtime::pallet_index(50)]
+    pub type XcmpQueue = cumulus_pallet_xcmp_queue;
+    #[runtime::pallet_index(51)]
+    pub type PolkadotXcm = pallet_xcm;
+    #[runtime::pallet_index(52)]
+    pub type CumulusXcm = cumulus_pallet_xcm;
+    // skip 53 - cumulus_pallet_dmp_queue previously
+    #[runtime::pallet_index(54)]
+    pub type XcAssetConfig = pallet_xc_asset_config;
+    #[runtime::pallet_index(55)]
+    pub type XTokens = orml_xtokens;
+    #[runtime::pallet_index(56)]
+    pub type MessageQueue = pallet_message_queue;
 
-        Contracts: pallet_contracts = 70,
+    #[runtime::pallet_index(60)]
+    pub type EVM = pallet_evm;
+    #[runtime::pallet_index(61)]
+    pub type Ethereum = pallet_ethereum;
+    #[runtime::pallet_index(62)]
+    pub type DynamicEvmBaseFee = pallet_dynamic_evm_base_fee;
+    #[runtime::pallet_index(63)]
+    pub type EVMChainId = pallet_evm_chain_id;
+    #[runtime::pallet_index(64)]
+    pub type EthereumChecked = pallet_ethereum_checked;
+    #[runtime::pallet_index(65)]
+    pub type UnifiedAccounts = pallet_unified_accounts;
 
-        Preimage: pallet_preimage = 84,
+    #[runtime::pallet_index(70)]
+    pub type Contracts = pallet_contracts;
 
-        // skip 90 - pallet_xvm previously
+    #[runtime::pallet_index(84)]
+    pub type Preimage = pallet_preimage;
 
-        // Governance
-        Sudo: pallet_sudo = 99,
-        CouncilMembership: pallet_membership::<Instance2> = 100,
-        TechnicalCommitteeMembership: pallet_membership::<Instance3> = 101,
-        CommunityCouncilMembership: pallet_membership::<Instance4> = 102,
-        Council: pallet_collective::<Instance2> = 103,
-        TechnicalCommittee: pallet_collective::<Instance3> = 104,
-        CommunityCouncil: pallet_collective::<Instance4> = 105,
-        Democracy: pallet_democracy = 106,
-        Treasury: pallet_treasury::<Instance1> = 107,
-        CommunityTreasury: pallet_treasury::<Instance2> = 108,
-        CollectiveProxy: pallet_collective_proxy = 109,
-        SafeMode: pallet_safe_mode = 110,
-        TxPause: pallet_tx_pause = 111,
+    // skip 90 - pallet_xvm previously
 
-        MultiBlockMigrations: pallet_migrations = 120,
-    }
-);
+    #[runtime::pallet_index(99)]
+    pub type Sudo = pallet_sudo;
+    #[runtime::pallet_index(100)]
+    pub type CouncilMembership = pallet_membership<Instance2>;
+    #[runtime::pallet_index(101)]
+    pub type TechnicalCommitteeMembership = pallet_membership<Instance3>;
+    #[runtime::pallet_index(102)]
+    pub type CommunityCouncilMembership = pallet_membership<Instance4>;
+    #[runtime::pallet_index(103)]
+    pub type Council = pallet_collective<Instance2>;
+    #[runtime::pallet_index(104)]
+    pub type TechnicalCommittee = pallet_collective<Instance3>;
+    #[runtime::pallet_index(105)]
+    pub type CommunityCouncil = pallet_collective<Instance4>;
+    #[runtime::pallet_index(106)]
+    pub type Democracy = pallet_democracy;
+    #[runtime::pallet_index(107)]
+    pub type Treasury = pallet_treasury<Instance1>;
+    #[runtime::pallet_index(108)]
+    pub type CommunityTreasury = pallet_treasury<Instance2>;
+    #[runtime::pallet_index(109)]
+    pub type CollectiveProxy = pallet_collective_proxy;
+    #[runtime::pallet_index(110)]
+    pub type SafeMode = pallet_safe_mode;
+    #[runtime::pallet_index(111)]
+    pub type TxPause = pallet_tx_pause;
+
+    #[runtime::pallet_index(120)]
+    pub type MultiBlockMigrations = pallet_migrations;
+}
 
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
