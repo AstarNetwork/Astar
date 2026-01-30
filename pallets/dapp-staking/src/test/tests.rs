@@ -2798,6 +2798,8 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
             config.slots_per_tier = BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap();
         });
 
+        let tier_params = StaticTierParams::<Test>::get();
+
         // Scenario:
         // - 1st tier is filled up, with one dApp satisfying the threshold but not making it due to lack of tier capacity
         // - 2nd tier has 2 dApps - 1 that could make it into the 1st tier and one that's supposed to be in the 2nd tier
@@ -2869,18 +2871,25 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
 
         // Finally, the actual test
         let protocol_state = ActiveProtocolState::<Test>::get();
-        let dapp_reward_pool = 1000000;
+        let dapp_reward_pool = 1_000_000;
         let (tier_assignment, counter) = DappStaking::get_dapp_tier_assignment_and_rewards(
             protocol_state.era + 1,
             protocol_state.period_number(),
             dapp_reward_pool,
         );
 
-        // There's enough reward to satisfy 100% reward per rank.
-        // Slot reward is 60_000 therefore expected rank reward is 6_000
+        // Debug: Print actual ranks assigned
+        for (dapp_id, ranked_tier) in tier_assignment.dapps.iter() {
+            let (tier, rank) = ranked_tier.deconstruct();
+            println!("Tier {}: dApp {} has rank {}", tier, dapp_id, rank);
+        }
+
+        // Ranks rewards are 50% of the tier allocation
+        // Dapp rewards allocations for tiers are: 40%, 30%, 20%, 10%
+        // Points per tiers are: 1, 55, 55, 55
         assert_eq!(
             tier_assignment.rank_rewards,
-            BoundedVec::<Balance, ConstU32<4>>::try_from(vec![0, 6_000, 0, 0]).unwrap()
+            BoundedVec::<Balance, ConstU32<4>>::try_from(vec![200_000, 2_727, 1_818, 909]).unwrap()
         );
 
         // Basic checks
@@ -2896,18 +2905,18 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
 
         // 1st tier checks
         let (dapp_1_tier, dapp_2_tier) = (tier_assignment.dapps[&0], tier_assignment.dapps[&1]);
-        assert_eq!(dapp_1_tier, RankedTier::new_saturated(0, 0));
-        assert_eq!(dapp_2_tier, RankedTier::new_saturated(0, 0));
+        assert_eq!(dapp_1_tier, RankedTier::new_saturated(0, 0, 9));
+        assert_eq!(dapp_2_tier, RankedTier::new_saturated(0, 0, 9));
 
         // 2nd tier checks
         let (dapp_3_tier, dapp_4_tier) = (tier_assignment.dapps[&2], tier_assignment.dapps[&3]);
-        assert_eq!(dapp_3_tier, RankedTier::new_saturated(1, 10));
-        assert_eq!(dapp_4_tier, RankedTier::new_saturated(1, 9));
+        assert_eq!(dapp_3_tier, RankedTier::new_saturated(1, 9, 9));
+        assert_eq!(dapp_4_tier, RankedTier::new_saturated(1, 9, 9));
 
         // 4th tier checks
         let (dapp_5_tier, dapp_6_tier) = (tier_assignment.dapps[&4], tier_assignment.dapps[&5]);
-        assert_eq!(dapp_5_tier, RankedTier::new_saturated(3, 0));
-        assert_eq!(dapp_6_tier, RankedTier::new_saturated(3, 0));
+        assert_eq!(dapp_5_tier, RankedTier::new_saturated(3, 0, 9));
+        assert_eq!(dapp_6_tier, RankedTier::new_saturated(3, 0, 9));
 
         // Sanity check - last dapp should not exists in the tier assignment
         assert!(tier_assignment
@@ -2923,7 +2932,10 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
             .enumerate()
             .for_each(|(idx, (reward_portion, slots))| {
                 let total_tier_allocation = *reward_portion * dapp_reward_pool;
-                let tier_reward: Balance = total_tier_allocation / (*slots as Balance);
+                let base_portion = tier_params.base_reward_portion;
+                let tier_reward: Balance = base_portion
+                    .mul_floor(total_tier_allocation)
+                    .saturating_div((*slots).into());
 
                 assert_eq!(tier_assignment.rewards[idx], tier_reward,);
             });
@@ -2960,6 +2972,10 @@ fn get_dapp_tier_assignment_and_rewards_zero_slots_per_tier_works() {
         assert!(
             tier_assignment.rewards[0].is_zero(),
             "1st tier has no slots so no rewards should be assigned to it."
+        );
+        assert!(
+            tier_assignment.rank_rewards[0].is_zero(),
+            "1st tier has no slots so no rank rewards should be assigned."
         );
 
         // Regardless of that, other tiers shouldn't benefit from this
@@ -3571,14 +3587,45 @@ fn base_number_of_slots_is_respected() {
 }
 
 #[test]
-fn ranking_will_calc_reward_correctly() {
+fn ranking_with_points_calculates_reward_correctly() {
     ExtBuilder::default().build_and_execute(|| {
+        // Configure tiers with specific rank_points for predictable testing
+        // Tier 1: 3 slots with points [5, 10, 15] (sum = 30)
+        // Tier 2: 2 slots with points [4, 8] (sum = 12)
+        let tier_params = TierParameters::<<Test as Config>::NumberOfTiers> {
+            reward_portion: BoundedVec::try_from(vec![
+                Permill::from_percent(40),
+                Permill::from_percent(30),
+                Permill::from_percent(20),
+                Permill::from_percent(10),
+            ])
+            .unwrap(),
+            slot_distribution: BoundedVec::try_from(vec![
+                Permill::from_percent(10),
+                Permill::from_percent(20),
+                Permill::from_percent(30),
+                Permill::from_percent(40),
+            ])
+            .unwrap(),
+            tier_thresholds: StaticTierParams::<Test>::get().tier_thresholds,
+            slot_number_args: (0, 16),
+            rank_points: BoundedVec::try_from(vec![
+                BoundedVec::try_from(vec![]).unwrap(), // tier 0: no ranking
+                BoundedVec::try_from(vec![5u8, 10, 15]).unwrap(), // tier 1: sum = 30
+                BoundedVec::try_from(vec![4u8, 8]).unwrap(), // tier 2: sum = 12
+                BoundedVec::try_from(vec![]).unwrap(), // tier 3: no ranking
+            ])
+            .unwrap(),
+            base_reward_portion: Permill::from_percent(50),
+        };
+        StaticTierParams::<Test>::put(tier_params);
+
         // Tier config is specially adapted for this test.
         TierConfig::<Test>::mutate(|config| {
             config.slots_per_tier = BoundedVec::try_from(vec![2, 3, 2, 20]).unwrap();
         });
 
-        // Register smart contracts
+        // Register 8 smart contracts
         let smart_contracts: Vec<_> = (1..=8u32)
             .map(|x| {
                 let smart_contract = MockSmartContract::Wasm(x.into());
@@ -3606,38 +3653,64 @@ fn ranking_will_calc_reward_correctly() {
             1_000_000,
         );
 
+        // Verify rank_points are stored
+        assert_eq!(tier_assignment.rank_points[1], vec![5u8, 10, 15]);
+        assert_eq!(tier_assignment.rank_points[2], vec![4u8, 8]);
+
         assert_eq!(
             tier_assignment,
             DAppTierRewardsFor::<Test> {
                 dapps: BoundedBTreeMap::try_from(BTreeMap::from([
-                    (0, RankedTier::new_saturated(0, 0)),
-                    (1, RankedTier::new_saturated(0, 0)),
-                    (2, RankedTier::new_saturated(1, 10)),
-                    (3, RankedTier::new_saturated(1, 9)),
-                    (5, RankedTier::new_saturated(2, 9)),
-                    (6, RankedTier::new_saturated(2, 5)),
-                    (4, RankedTier::new_saturated(3, 0)),
+                    (0, RankedTier::new_saturated(0, 0, 0)),
+                    (1, RankedTier::new_saturated(0, 0, 0)),
+                    (2, RankedTier::new_saturated(1, 2, 3)),
+                    (3, RankedTier::new_saturated(1, 1, 3)),
+                    (5, RankedTier::new_saturated(2, 0, 2)),
+                    (6, RankedTier::new_saturated(2, 0, 2)),
+                    (4, RankedTier::new_saturated(3, 0, 0)),
                 ]))
                 .unwrap(),
-                rewards: BoundedVec::try_from(vec![200_000, 100_000, 100_000, 5_000]).unwrap(),
+                // Verify base rewards (50% of tier allocation / slots)
+                rewards: BoundedVec::try_from(vec![100_000, 50_000, 50_000, 2_500]).unwrap(),
                 period: 1,
-                // Tier 0 has no ranking therefore no rank reward.
-                // For tier 1 there's not enough reward to satisfy 100% reward per rank.
-                // Only one slot is empty. Slot reward is 100_000 therefore expected rank reward is 100_000 / 19 (ranks_sum).
-                // Tier 2 has ranking but there's no empty slot therefore no rank reward.
-                // Tier 3 has no ranking therefore no rank reward.
-                rank_rewards: BoundedVec::try_from(vec![0, 5_263, 0, 0]).unwrap()
+                // Verify rank rewards (50% of tier allocation / total_points)
+                // Tier 0: no ranking → 0
+                // Tier 1: 150k / 30 points = 5k per point
+                // Tier 2: 100k / 12 points = 8,333 per point
+                // Tier 3: no ranking → 0
+                rank_rewards: BoundedVec::try_from(vec![0, 5_000, 8_333, 0]).unwrap(),
+                rank_points: BoundedVec::try_from(vec![
+                    BoundedVec::try_from(vec![]).unwrap(), // tier 0: no ranking
+                    BoundedVec::try_from(vec![5u8, 10, 15]).unwrap(), // tier 1: sum = 30
+                    BoundedVec::try_from(vec![4u8, 8]).unwrap(), // tier 2: sum = 12
+                    BoundedVec::try_from(vec![]).unwrap(), // tier 3: no ranking
+                ])
+                .unwrap(),
             }
         );
 
         // one didn't make it
         assert_eq!(counter, 8);
+        assert_eq!(tier_assignment.dapps.len(), 7);
     })
 }
 
 #[test]
-fn claim_dapp_reward_with_rank() {
+fn claim_dapp_reward_with_rank_points() {
     ExtBuilder::default().build_and_execute(|| {
+        // Configure tier 1 with rank_points for testing
+        // 5 slots with points [1, 5, 10, 15, 20]
+        StaticTierParams::<Test>::mutate(|params| {
+            params.rank_points = BoundedVec::try_from(vec![
+                BoundedVec::try_from(vec![]).unwrap(),
+                BoundedVec::try_from(vec![1, 5, 10, 15, 20]).unwrap(),
+                BoundedVec::try_from(vec![]).unwrap(),
+                BoundedVec::try_from(vec![]).unwrap(),
+            ])
+            .unwrap();
+            params.base_reward_portion = Permill::from_percent(50);
+        });
+
         let total_issuance = <Test as Config>::Currency::total_issuance();
 
         // Register smart contract, lock&stake some amount
@@ -3645,7 +3718,7 @@ fn claim_dapp_reward_with_rank() {
         assert_register(1, &smart_contract);
 
         let alice = 2;
-        let amount = Perbill::from_parts(11_000_000) * total_issuance; // very close to tier 0 so will enter tier 1 with rank 9
+        let amount = Perbill::from_parts(11_000_000) * total_issuance; // very close to tier 0 so will enter tier 1 with rank 4
         assert_lock(alice, amount);
         assert_stake(alice, &smart_contract, amount);
 
@@ -3655,8 +3728,19 @@ fn claim_dapp_reward_with_rank() {
         let era = ActiveProtocolState::<Test>::get().era - 1;
         let tiers = DAppTiers::<Test>::get(era).unwrap();
 
-        let slot_reward = tiers.rewards[1];
-        let rank_reward = tiers.rank_rewards[1];
+        // Verify tier assignment
+        let ranked_tier = tiers.dapps.get(&0).unwrap();
+        assert_eq!(ranked_tier.tier(), 1, "Should be in tier 1");
+        let (tier_id, rank) = ranked_tier.deconstruct();
+
+        // Get reward components
+        let base_reward = tiers.rewards[tier_id as usize];
+        let rank_reward_per_point = tiers.rank_rewards[tier_id as usize];
+        let points = tiers.rank_points[tier_id as usize][rank as usize];
+
+        // Calculate expected reward: base + (rank_reward_per_point * points)
+        let expected_rank_reward = rank_reward_per_point * (points as Balance);
+        let expected_total_reward = base_reward + expected_rank_reward;
 
         // Claim dApp reward & verify event
         assert_ok!(DappStaking::claim_dapp_reward(
@@ -3665,17 +3749,11 @@ fn claim_dapp_reward_with_rank() {
             era,
         ));
 
-        let expected_rank = 9;
-        let expected_total_reward = slot_reward + expected_rank * rank_reward;
-        assert_eq!(slot_reward, 15_000_000);
-        assert_eq!(rank_reward, 1_500_000); // slot_reward / 10
-        assert_eq!(expected_total_reward, 28_500_000);
-
         System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppReward {
             beneficiary: 1,
             smart_contract: smart_contract.clone(),
             tier_id: 1,
-            rank: 9,
+            rank: 4,
             era,
             amount: expected_total_reward,
         }));

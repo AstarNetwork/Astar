@@ -35,6 +35,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+
+use alloc::vec;
+pub use alloc::vec::Vec;
 use frame_support::{
     pallet_prelude::*,
     traits::{
@@ -49,13 +53,12 @@ use sp_runtime::{
     traits::{One, Saturating, UniqueSaturatedInto, Zero},
     Perbill, Permill, SaturatedConversion,
 };
-pub use sp_std::vec::Vec;
 
 use astar_primitives::{
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver,
         PeriodNumber, Rank, RankedTier, SmartContractHandle, StakingRewardHandler, TierId,
-        TierSlots as TierSlotFunc, STANDARD_TIER_SLOTS_ARGS,
+        TierSlots as TierSlotFunc, MAX_ENCODED_RANK, STANDARD_TIER_SLOTS_ARGS,
     },
     oracle::PriceProvider,
     Balance, BlockNumber,
@@ -94,7 +97,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(10);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(11);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -530,6 +533,8 @@ pub mod pallet {
         pub slot_number_args: (u64, u64),
         pub slots_per_tier: Vec<u16>,
         pub safeguard: Option<bool>,
+        pub rank_points: Vec<Vec<u8>>,
+        pub base_reward_portion: Permill,
         #[serde(skip)]
         pub _config: PhantomData<T>,
     }
@@ -538,6 +543,15 @@ pub mod pallet {
         fn default() -> Self {
             use sp_std::vec;
             let num_tiers = T::NumberOfTiers::get();
+            let slots_per_tier = vec![100u16; num_tiers as usize];
+            let rank_points: Vec<Vec<u8>> = slots_per_tier
+                .iter()
+                .map(|&slots| {
+                    let capped = slots.min(MAX_ENCODED_RANK as u16);
+                    (1..=capped as u8).collect()
+                })
+                .collect();
+
             Self {
                 reward_portion: vec![Permill::from_percent(100 / num_tiers); num_tiers as usize],
                 slot_distribution: vec![Permill::from_percent(100 / num_tiers); num_tiers as usize],
@@ -548,8 +562,10 @@ pub mod pallet {
                     })
                     .collect(),
                 slot_number_args: STANDARD_TIER_SLOTS_ARGS,
-                slots_per_tier: vec![100; num_tiers as usize],
+                slots_per_tier,
                 safeguard: None,
+                rank_points,
+                base_reward_portion: Permill::from_percent(50),
                 _config: Default::default(),
             }
         }
@@ -558,6 +574,12 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
+            let rank_points: Vec<BoundedVec<u8, ConstU32<MAX_ENCODED_RANK>>> = self
+                .rank_points
+                .iter()
+                .map(|inner| BoundedVec::try_from(inner.clone()).expect("Too many rank points"))
+                .collect();
+
             // Prepare tier parameters & verify their correctness
             let tier_params = TierParameters::<T::NumberOfTiers> {
                 reward_portion: BoundedVec::<Permill, T::NumberOfTiers>::try_from(
@@ -573,6 +595,8 @@ pub mod pallet {
                 )
                 .expect("Invalid number of tier thresholds provided."),
                 slot_number_args: self.slot_number_args,
+                rank_points: BoundedVec::try_from(rank_points).expect("Too many tiers"),
+                base_reward_portion: self.base_reward_portion,
             };
             assert!(
                 tier_params.is_valid(),
@@ -1882,6 +1906,7 @@ pub mod pallet {
             dapp_stakes.sort_unstable_by(|(_, amount_1), (_, amount_2)| amount_2.cmp(amount_1));
 
             let tier_config = TierConfig::<T>::get();
+            let tier_params = StaticTierParams::<T>::get();
 
             // In case when tier has 1 more free slot, but two dApps with exactly same score satisfy the threshold,
             // one of them will be assigned to the tier, and the other one will be assigned to the lower tier, if it exists.
@@ -1890,29 +1915,35 @@ pub mod pallet {
             // There is no guarantee this will persist in the future, so it's best for dApps to do their
             // best to avoid getting themselves into such situations.
 
-            // 3. Calculate rewards.
-            let tier_rewards = tier_config
+            // 3. Calculate tier allocations
+            let tier_allocations: Vec<Balance> = tier_config
                 .reward_portion
                 .iter()
+                .map(|percent| *percent * dapp_reward_pool)
+                .collect();
+
+            // 4. Base rewards = base_reward_portion% of allocation / slots capacity
+            let base_portion = tier_params.base_reward_portion;
+            let base_rewards_per_tier: Vec<Balance> = tier_allocations
+                .iter()
                 .zip(tier_config.slots_per_tier.iter())
-                .map(|(percent, slots)| {
-                    if slots.is_zero() {
+                .map(|(allocation, capacity)| {
+                    if capacity.is_zero() {
                         Zero::zero()
                     } else {
-                        *percent * dapp_reward_pool / <u16 as Into<Balance>>::into(*slots)
+                        base_portion
+                            .mul_floor(*allocation)
+                            .saturating_div((*capacity).into())
                     }
                 })
-                .collect::<Vec<_>>();
+                .collect();
 
-            // 4.
+            // 5.
             // Iterate over configured tier and potential dApps.
             // Each dApp will be assigned to the best possible tier if it satisfies the required condition,
             // and tier capacity hasn't been filled yet.
             let mut dapp_tiers = BTreeMap::new();
-            let mut tier_slots = BTreeMap::new();
-
             let mut upper_bound = Balance::zero();
-            let mut rank_rewards = Vec::new();
 
             for (tier_id, (tier_capacity, lower_bound)) in tier_config
                 .slots_per_tier
@@ -1929,49 +1960,71 @@ pub mod pallet {
                     .take_while(|(_, amount)| amount.ge(lower_bound))
                     .take(*tier_capacity as usize)
                 {
+                    let max_rank = tier_params
+                        .rank_points
+                        .get(tier_id)
+                        .map(|v| v.len().saturating_sub(1) as u8) // ranks 0 to len-1, never exceed valid indices
+                        .unwrap_or(0);
+
                     let rank = if T::RankingEnabled::get() {
-                        RankedTier::find_rank(*lower_bound, upper_bound, *staked_amount)
+                        RankedTier::find_rank(*lower_bound, upper_bound, *staked_amount, max_rank)
                     } else {
                         0
                     };
-                    tier_slots.insert(*dapp_id, RankedTier::new_saturated(tier_id as u8, rank));
+
+                    let ranked_tier = RankedTier::new_saturated(tier_id as u8, rank, max_rank);
+                    dapp_tiers.insert(*dapp_id, ranked_tier);
                 }
 
-                // sum of all ranks for this tier
-                let ranks_sum = tier_slots
-                    .iter()
-                    .fold(0u32, |accum, (_, x)| accum.saturating_add(x.rank().into()));
-
-                let reward_per_rank = if ranks_sum.is_zero() {
-                    Balance::zero()
-                } else {
-                    // calculate reward per rank
-                    let tier_reward = tier_rewards.get(tier_id).copied().unwrap_or_default();
-                    let empty_slots = tier_capacity.saturating_sub(tier_slots.len() as u16);
-                    let remaining_reward = tier_reward.saturating_mul(empty_slots.into());
-                    // make sure required reward doesn't exceed remaining reward
-                    let reward_per_rank = tier_reward.saturating_div(RankedTier::MAX_RANK.into());
-                    let expected_reward_for_ranks =
-                        reward_per_rank.saturating_mul(ranks_sum.into());
-                    let reward_for_ranks = expected_reward_for_ranks.min(remaining_reward);
-                    // re-calculate reward per rank based on available reward
-                    reward_for_ranks.saturating_div(ranks_sum.into())
-                };
-
-                rank_rewards.push(reward_per_rank);
-                dapp_tiers.append(&mut tier_slots);
                 upper_bound = *lower_bound; // current threshold becomes upper bound for next tier
             }
 
-            // 5.
+            // 6. Calculate rank_rewards (reward per rank point for each tier)
+            // rank_rewards[tier] = (remainder portion of base% of tier allocation) / sum_of_all_rank_points_in_tier
+            let rank_rewards: Vec<Balance> = tier_allocations
+                .iter()
+                .zip(tier_config.slots_per_tier.iter())
+                .enumerate()
+                .map(|(tier_id, (allocation, slots))| {
+                    // If tier has no slots, no rank rewards can be claimed
+                    if slots.is_zero() {
+                        return Zero::zero();
+                    }
+
+                    // Sum ALL configured rank_points for this tier
+                    let total_points: u32 = tier_params
+                        .rank_points
+                        .get(tier_id)
+                        .map(|points| points.iter().map(|&p| p as u32).sum())
+                        .unwrap_or(0);
+
+                    if total_points.is_zero() {
+                        Zero::zero()
+                    } else {
+                        let rank_portion =
+                            Permill::one().saturating_sub(tier_params.base_reward_portion);
+                        let rank_pool = rank_portion.mul_floor(*allocation);
+                        rank_pool.saturating_div(total_points.into())
+                    }
+                })
+                .collect();
+
+            let rank_points_vec: Vec<Vec<u8>> = tier_params
+                .rank_points
+                .iter()
+                .map(|inner_bv| inner_bv.clone().into_inner())
+                .collect();
+
+            // 7.
             // Prepare and return tier & rewards info.
             // In case rewards creation fails, we just write the default value. This should never happen though.
             (
                 DAppTierRewards::<T::MaxNumberOfContracts, T::NumberOfTiers>::new(
                     dapp_tiers,
-                    tier_rewards,
+                    base_rewards_per_tier,
                     period,
                     rank_rewards,
+                    rank_points_vec,
                 )
                 .unwrap_or_default(),
                 counter,

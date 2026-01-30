@@ -303,6 +303,14 @@ impl ExternalityBuilder {
                 slot_number_args: STANDARD_TIER_SLOTS_ARGS,
                 slots_per_tier: vec![10, 20, 30, 40],
                 safeguard: None,
+                rank_points: BoundedVec::try_from(vec![
+                    BoundedVec::try_from(vec![1u8]).unwrap(),
+                    BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).unwrap(),
+                    BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).unwrap(),
+                    BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).unwrap(),
+                ])
+                    .unwrap(),
+                base_reward_portion: Permill::from_percent(50),
                 _config: PhantomData,
             },
             &mut storage,

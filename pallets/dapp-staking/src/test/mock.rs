@@ -88,8 +88,7 @@ parameter_types! {
 #[derive_impl(pallet_migrations::config_preludes::TestDefaultConfig)]
 impl pallet_migrations::Config for Test {
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations =
-        (crate::migration::LazyMigration<Test, crate::weights::SubstrateWeight<Test>>,);
+    type Migrations = ();
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
     type MaxServiceWeight = MaxServiceWeight;
@@ -342,6 +341,14 @@ impl ExtBuilder {
                 ])
                 .unwrap(),
                 slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+                rank_points: BoundedVec::try_from(vec![
+                    BoundedVec::try_from(vec![1u8]).unwrap(),
+                    BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),
+                    BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),
+                    BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),
+                ])
+                .unwrap(),
+                base_reward_portion: Permill::from_percent(50),
             };
 
             let total_issuance = <Test as Config>::Currency::total_issuance();

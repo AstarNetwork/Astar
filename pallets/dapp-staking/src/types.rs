@@ -75,12 +75,12 @@ use sp_runtime::{
 };
 pub use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec::Vec};
 
+use crate::pallet::Config;
+use astar_primitives::dapp_staking::MAX_ENCODED_RANK;
 use astar_primitives::{
     dapp_staking::{DAppId, EraNumber, PeriodNumber, RankedTier, TierSlots as TierSlotsFunc},
     Balance, BlockNumber,
 };
-
-use crate::pallet::Config;
 
 // Convenience type for `AccountLedger` usage.
 pub type AccountLedgerFor<T> = AccountLedger<<T as Config>::MaxUnlockingChunks>;
@@ -879,7 +879,7 @@ impl Iterator for EraStakePairIter {
         if self.start_era <= self.end_era {
             let value = (self.start_era, self.amount);
             self.start_era.saturating_inc();
-            return Some(value);
+            Some(value)
         } else {
             None
         }
@@ -1710,6 +1710,11 @@ pub struct TierParameters<NT: Get<u32>> {
     /// This can be made more generic in the future in case more complex equations are required.
     /// But for now this simple tuple serves the purpose.
     pub(crate) slot_number_args: (u64, u64),
+    /// Rank points per tier in ASCENDING order, index = rank
+    pub(crate) rank_points: BoundedVec<BoundedVec<u8, ConstU32<MAX_ENCODED_RANK>>, NT>,
+    /// Portion of tier allocation for base rewards (remainder → rank rewards)
+    /// e.g., Permill::from_percent(50) = 50% base, 50% rank
+    pub(crate) base_reward_portion: Permill,
 }
 
 impl<NT: Get<u32>> TierParameters<NT> {
@@ -1760,6 +1765,7 @@ impl<NT: Get<u32>> TierParameters<NT> {
         number_of_tiers == self.reward_portion.len()
             && number_of_tiers == self.slot_distribution.len()
             && number_of_tiers == self.tier_thresholds.len()
+            && number_of_tiers == self.rank_points.len()
     }
 }
 
@@ -1931,6 +1937,8 @@ pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
     pub(crate) period: PeriodNumber,
     /// Rank reward for each tier. First entry refers to the first tier, and so on.
     pub(crate) rank_rewards: BoundedVec<Balance, NT>,
+    /// Points configuration for each tier/rank in ASCENDING order.
+    pub(crate) rank_points: BoundedVec<BoundedVec<u8, ConstU32<MAX_ENCODED_RANK>>, NT>,
 }
 
 impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
@@ -1941,15 +1949,24 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
         rewards: Vec<Balance>,
         period: PeriodNumber,
         rank_rewards: Vec<Balance>,
+        rank_points: Vec<Vec<u8>>,
     ) -> Result<Self, ()> {
         let dapps = BoundedBTreeMap::try_from(dapps).map_err(|_| ())?;
         let rewards = BoundedVec::try_from(rewards).map_err(|_| ())?;
         let rank_rewards = BoundedVec::try_from(rank_rewards).map_err(|_| ())?;
+
+        let rank_points: Vec<BoundedVec<u8, ConstU32<MAX_ENCODED_RANK>>> = rank_points
+            .into_iter()
+            .map(|inner| BoundedVec::try_from(inner).map_err(|_| ()))
+            .collect::<Result<Vec<_>, ()>>()?;
+        let rank_points = BoundedVec::try_from(rank_points).map_err(|_| ())?;
+
         Ok(Self {
             dapps,
             rewards,
             period,
             rank_rewards,
+            rank_points,
         })
     }
 
@@ -1968,12 +1985,25 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
             .get(tier_id as usize)
             .map_or(Balance::zero(), |x| *x);
 
-        let reward_per_rank = self
+        let reward_per_point = self
             .rank_rewards
             .get(tier_id as usize)
             .map_or(Balance::zero(), |x| *x);
 
-        let additional_reward = reward_per_rank.saturating_mul(rank.into());
+        let additional_reward = if self.rank_points.is_empty() {
+            // Legacy formula: reward_per_point * rank
+            reward_per_point.saturating_mul(rank.into())
+        } else {
+            let points: u32 = self
+                .rank_points
+                .get(tier_id as usize)
+                .and_then(|tier_points| tier_points.get(rank as usize))
+                .copied()
+                .unwrap_or(0)
+                .into();
+            reward_per_point.saturating_mul(points.into())
+        };
+
         amount = amount.saturating_add(additional_reward);
 
         Ok((amount, ranked_tier))

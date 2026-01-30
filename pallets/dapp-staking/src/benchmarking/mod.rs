@@ -21,7 +21,7 @@ use super::{Pallet as DappStaking, *};
 use astar_primitives::Balance;
 use frame_benchmarking::v2::*;
 
-use frame_support::{assert_ok, migrations::SteppedMigration, weights::WeightMeter};
+use frame_support::assert_ok;
 use frame_system::{Pallet as System, RawOrigin};
 use sp_std::prelude::*;
 
@@ -1145,12 +1145,28 @@ mod benchmarks {
         });
         EraRewards::<T>::insert(&cleanup_marker.era_reward_index, reward_span);
 
+        let rank_points: BoundedVec<
+            BoundedVec<u8, ConstU32<15>>,
+            T::NumberOfTiers,
+        > = (1..=T::NumberOfTiers::get())
+            .map(|slots| {
+                let inner: BoundedVec<u8, ConstU32<15>> =
+                    (1..=slots as u8)
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .expect("Using incremental points; QED.");
+                inner
+            })
+            .collect::<Vec<_>>()
+            .try_into()
+            .expect("Using `NumberOfTiers` as length; QED.");
+
         // Prepare completely filled up tier rewards and insert it into storage.
         DAppTiers::<T>::insert(
             &cleanup_marker.dapp_tiers_index,
             DAppTierRewardsFor::<T> {
                 dapps: (0..T::MaxNumberOfContracts::get())
-                    .map(|dapp_id| (dapp_id as DAppId, RankedTier::new_saturated(0, 0)))
+                    .map(|dapp_id| (dapp_id as DAppId, RankedTier::new_saturated(0, 0, 10)))
                     .collect::<BTreeMap<DAppId, RankedTier>>()
                     .try_into()
                     .expect("Using `MaxNumberOfContracts` as length; QED."),
@@ -1161,6 +1177,7 @@ mod benchmarks {
                 rank_rewards: vec![0; T::NumberOfTiers::get() as usize]
                     .try_into()
                     .expect("Using `NumberOfTiers` as length; QED."),
+                rank_points,
             },
         );
 
@@ -1177,73 +1194,6 @@ mod benchmarks {
         assert!(
             !DAppTiers::<T>::contains_key(cleanup_marker.dapp_tiers_index),
             "Period end info should have been cleaned up."
-        );
-    }
-
-    /// Benchmark a single step of mbm migration.
-    #[benchmark]
-    fn step() {
-        let alice: T::AccountId = account("alice", 0, 1);
-
-        Ledger::<T>::set(
-            &alice,
-            AccountLedger {
-                locked: 1000,
-                unlocking: vec![
-                    UnlockingChunk {
-                        amount: 100,
-                        unlock_block: 5,
-                    },
-                    UnlockingChunk {
-                        amount: 100,
-                        unlock_block: 20,
-                    },
-                ]
-                .try_into()
-                .unwrap(),
-                staked: Default::default(),
-                staked_future: None,
-                contract_stake_count: 0,
-            },
-        );
-        CurrentEraInfo::<T>::put(EraInfo {
-            total_locked: 1000,
-            unlocking: 200,
-            current_stake_amount: Default::default(),
-            next_stake_amount: Default::default(),
-        });
-
-        System::<T>::set_block_number(10u32.into());
-        let mut meter = WeightMeter::new();
-
-        #[block]
-        {
-            crate::migration::LazyMigration::<T, weights::SubstrateWeight<T>>::step(
-                None, &mut meter,
-            )
-            .unwrap();
-        }
-
-        assert_eq!(
-            Ledger::<T>::get(&alice),
-            AccountLedger {
-                locked: 1000,
-                unlocking: vec![
-                    UnlockingChunk {
-                        amount: 100,
-                        unlock_block: 5, // already unlocked
-                    },
-                    UnlockingChunk {
-                        amount: 100,
-                        unlock_block: 30, // double remaining blocks
-                    },
-                ]
-                .try_into()
-                .unwrap(),
-                staked: Default::default(),
-                staked_future: None,
-                contract_stake_count: 0,
-            }
         );
     }
 

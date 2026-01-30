@@ -3488,6 +3488,13 @@ fn tier_params_check_is_ok() {
         ])
         .unwrap(),
         slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+        rank_points: BoundedVec::try_from(vec![
+            BoundedVec::try_from(vec![6u8, 8, 10]).unwrap(),
+            BoundedVec::try_from(vec![1u8, 3, 5]).unwrap(),
+            BoundedVec::try_from(vec![1u8, 2]).unwrap(),
+        ])
+        .unwrap(),
+        base_reward_portion: Permill::from_percent(50),
     };
     assert!(params.is_valid());
 
@@ -3572,6 +3579,25 @@ fn tier_params_check_is_ok() {
     ])
     .unwrap();
     assert!(!invalid_dynamic_params.is_valid());
+
+    // 7th scenario - rank_points length mismatch with number of tiers
+    let mut invalid_rank_points = params.clone();
+    invalid_rank_points.rank_points = BoundedVec::try_from(vec![
+        BoundedVec::try_from(vec![8u8, 10]).unwrap(),
+        BoundedVec::try_from(vec![3u8, 5]).unwrap(),
+        // Missing 3rd tier rank_points
+    ])
+    .unwrap();
+    assert!(!invalid_rank_points.is_valid());
+
+    // 8th scenario - base_reward_portion at extremes (0% and 100% are valid)
+    let mut zero_base = params.clone();
+    zero_base.base_reward_portion = Permill::from_percent(0);
+    assert!(zero_base.is_valid(), "0% base (100% rank) is valid");
+
+    let mut full_base = params.clone();
+    full_base.base_reward_portion = Permill::from_percent(100);
+    assert!(full_base.is_valid(), "100% base (0% rank) is valid");
 }
 
 #[test]
@@ -3615,6 +3641,14 @@ fn tier_configuration_basic_tests() {
         ])
         .unwrap(),
         slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+        rank_points: BoundedVec::try_from(vec![
+            BoundedVec::try_from(vec![6u8, 9, 12, 15]).unwrap(),
+            BoundedVec::try_from(vec![4u8, 7, 10]).unwrap(),
+            BoundedVec::try_from(vec![1u8, 3, 5]).unwrap(),
+            BoundedVec::try_from(vec![1u8]).unwrap(),
+        ])
+        .unwrap(),
+        base_reward_portion: Permill::from_percent(50),
     };
     assert!(params.is_valid(), "Example params must be valid!");
 
@@ -3658,11 +3692,11 @@ fn dapp_tier_rewards_basic_tests() {
 
     // Example dApps & rewards
     let dapps = BTreeMap::<DAppId, RankedTier>::from([
-        (1, RankedTier::new_saturated(0, 0)),
-        (2, RankedTier::new_saturated(0, 0)),
-        (3, RankedTier::new_saturated(1, 0)),
-        (5, RankedTier::new_saturated(1, 0)),
-        (6, RankedTier::new_saturated(2, 0)),
+        (1, RankedTier::new_saturated(0, 0, 10)),
+        (2, RankedTier::new_saturated(0, 0, 10)),
+        (3, RankedTier::new_saturated(1, 0, 10)),
+        (5, RankedTier::new_saturated(1, 0, 10)),
+        (6, RankedTier::new_saturated(2, 0, 10)),
     ]);
     let tier_rewards = vec![300, 20, 1];
     let period = 2;
@@ -3672,6 +3706,7 @@ fn dapp_tier_rewards_basic_tests() {
         tier_rewards.clone(),
         period,
         vec![0, 0, 0],
+        vec![],
     )
     .expect("Bounds are respected.");
 
@@ -3746,11 +3781,11 @@ fn dapp_tier_rewards_with_rank() {
 
     // Example dApps & rewards
     let dapps = BTreeMap::<DAppId, RankedTier>::from([
-        (1, RankedTier::new_saturated(0, 5)),
-        (2, RankedTier::new_saturated(0, 0)),
-        (3, RankedTier::new_saturated(1, 10)),
-        (5, RankedTier::new_saturated(1, 5)),
-        (6, RankedTier::new_saturated(2, 0)),
+        (1, RankedTier::new_saturated(0, 5, 10)),
+        (2, RankedTier::new_saturated(0, 0, 10)),
+        (3, RankedTier::new_saturated(1, 10, 10)),
+        (5, RankedTier::new_saturated(1, 5, 10)),
+        (6, RankedTier::new_saturated(2, 0, 10)),
     ]);
     let tier_rewards = vec![300, 20, 1];
     let rank_rewards = vec![0, 2, 0];
@@ -3761,6 +3796,7 @@ fn dapp_tier_rewards_with_rank() {
         tier_rewards.clone(),
         period,
         rank_rewards.clone(),
+        vec![],
     )
     .expect("Bounds are respected.");
 
@@ -3789,6 +3825,212 @@ fn dapp_tier_rewards_with_rank() {
             ranked_tier
         ))
     );
+}
+
+#[test]
+fn dapp_tier_rewards_with_rank_points() {
+    get_u32_type!(NumberOfDApps, 8);
+    get_u32_type!(NumberOfTiers, 3);
+
+    // New behavior: rank_points populated, uses points * rank_rewards
+    // Tier 0: positions 0,1,2 have points [15, 12, 9]
+    // Tier 1: positions 0,1,2,3 have points [10, 7, 4, 1]
+    // Tier 2: positions 0,1 have points [5, 2]
+    let dapps = BTreeMap::<DAppId, RankedTier>::from([
+        (1, RankedTier::new_saturated(0, 0, 10)), // tier 0, rank 0 → points 15
+        (2, RankedTier::new_saturated(0, 2, 10)), // tier 0, rank 2 → points 9
+        (3, RankedTier::new_saturated(1, 1, 10)), // tier 1, rank 1 → points 7
+        (4, RankedTier::new_saturated(1, 3, 10)), // tier 1, rank 3 → points 1
+        (5, RankedTier::new_saturated(2, 0, 10)), // tier 2, rank 0 → points 5
+    ]);
+    let tier_rewards = vec![100, 50, 10]; // base reward per tier
+    let rank_rewards = vec![10, 5, 2]; // reward per point per tier
+    let period = 2;
+    let rank_points = vec![
+        vec![9u8, 12, 15],   // tier 0
+        vec![1u8, 4, 7, 10], // tier 1
+        vec![2u8, 5],        // tier 2
+    ];
+
+    let mut dapp_tier_rewards = DAppTierRewards::<NumberOfDApps, NumberOfTiers>::new(
+        dapps.clone(),
+        tier_rewards.clone(),
+        period,
+        rank_rewards.clone(),
+        rank_points.clone(),
+    )
+    .expect("Bounds are respected.");
+
+    // dApp 1: tier 0, rank 0, points 9 → 100 + (10 * 9) = 190
+    let ranked_tier = dapps[&1];
+    assert_eq!(
+        dapp_tier_rewards.try_claim(1),
+        Ok((100 + 10 * 9, ranked_tier))
+    );
+
+    // dApp 2: tier 0, rank 2, points 15 → 100 + (10 * 15) = 250
+    let ranked_tier = dapps[&2];
+    assert_eq!(
+        dapp_tier_rewards.try_claim(2),
+        Ok((100 + 10 * 15, ranked_tier))
+    );
+
+    // dApp 3: tier 1, rank 1, points 4 → 50 + (5 * 4) = 70
+    let ranked_tier = dapps[&3];
+    assert_eq!(
+        dapp_tier_rewards.try_claim(3),
+        Ok((50 + 5 * 4, ranked_tier))
+    );
+
+    // dApp 4: tier 1, rank 3, points 10 → 50 + (5 * 10) = 100
+    let ranked_tier = dapps[&4];
+    assert_eq!(
+        dapp_tier_rewards.try_claim(4),
+        Ok((50 + 5 * 10, ranked_tier))
+    );
+
+    // dApp 5: tier 2, rank 0, points 2 → 10 + (2 * 2) = 14
+    let ranked_tier = dapps[&5];
+    assert_eq!(
+        dapp_tier_rewards.try_claim(5),
+        Ok((10 + 2 * 2, ranked_tier))
+    );
+}
+
+#[test]
+fn dapp_tier_rewards_rank_out_of_bounds() {
+    get_u32_type!(NumberOfDApps, 4);
+    get_u32_type!(NumberOfTiers, 2);
+
+    // rank_points only has 2 entries per tier, but dApp has rank 5
+    let dapps = BTreeMap::<DAppId, RankedTier>::from([
+        (1, RankedTier::new_saturated(0, 5, 10)), // rank 5, but only points[0..2] exist
+    ]);
+    let tier_rewards = vec![100, 50];
+    let rank_rewards = vec![10, 5];
+    let rank_points = vec![
+        vec![12u8, 15], // only 2 entries
+        vec![7u8, 10],
+    ];
+
+    let mut dapp_tier_rewards = DAppTierRewards::<NumberOfDApps, NumberOfTiers>::new(
+        dapps.clone(),
+        tier_rewards.clone(),
+        2,
+        rank_rewards.clone(),
+        rank_points,
+    )
+    .expect("Bounds are respected.");
+
+    // rank 5 is out of bounds → points = 0 → only base reward
+    let ranked_tier = dapps[&1];
+    assert_eq!(
+        dapp_tier_rewards.try_claim(1),
+        Ok((100, ranked_tier)), // base only, no rank reward
+    );
+}
+
+#[test]
+fn dapp_tier_rewards_base_portion_allocation() {
+    get_u32_type!(NumberOfDApps, 8);
+    get_u32_type!(NumberOfTiers, 3);
+
+    // rank_points for tier 1 (ascending): [2, 4, 6, 8, 10] (5 elements, indices 0-4)
+    let rank_points_tier1 = vec![2u8, 4, 6, 8, 10];
+    let max_rank: u8 = rank_points_tier1.len() as u8; // 5
+
+    // Scenario 1: 50% base / 50% rank, dApp at rank 3 (8 points)
+    {
+        let dapps = BTreeMap::from([
+            (1, RankedTier::new_saturated(1, 3, max_rank)), // tier 1, rank 3
+        ]);
+        let mut entry = DAppTierRewards::<NumberOfDApps, NumberOfTiers>::new(
+            dapps,
+            vec![0, 500, 0], // base reward per tier
+            1,
+            vec![0, 16, 0], // reward per point
+            vec![vec![], rank_points_tier1.clone(), vec![]],
+        )
+        .unwrap();
+
+        let (reward, rt) = entry.try_claim(1).unwrap();
+        let (_, rank) = rt.deconstruct();
+
+        assert_eq!(rank, 3);
+        let points = rank_points_tier1[rank as usize];
+        assert_eq!(points, 8, "rank 3 → index 3 → 8 points");
+        assert_eq!(reward, 500 + 16 * 8, "base=500 + rank=128 = 628");
+    }
+
+    // Scenario 2: Compare all ranks in tier 1
+    {
+        let dapps = BTreeMap::from([
+            (0, RankedTier::new_saturated(1, 0, max_rank)), // rank 0 → 2 points
+            (1, RankedTier::new_saturated(1, 1, max_rank)), // rank 1 → 4 points
+            (2, RankedTier::new_saturated(1, 2, max_rank)), // rank 2 → 6 points
+            (3, RankedTier::new_saturated(1, 3, max_rank)), // rank 3 → 8 points
+            (4, RankedTier::new_saturated(1, 4, max_rank)), // rank 4 → 10 points
+        ]);
+        let mut entry = DAppTierRewards::<NumberOfDApps, NumberOfTiers>::new(
+            dapps,
+            vec![0, 100, 0], // base = 100
+            1,
+            vec![0, 10, 0], // 10 per point
+            vec![vec![], rank_points_tier1.clone(), vec![]],
+        )
+        .unwrap();
+
+        // Claim in order and verify rewards increase with rank
+        let (r0, _) = entry.try_claim(0).unwrap();
+        let (r1, _) = entry.try_claim(1).unwrap();
+        let (r2, _) = entry.try_claim(2).unwrap();
+        let (r3, _) = entry.try_claim(3).unwrap();
+        let (r4, _) = entry.try_claim(4).unwrap();
+
+        assert_eq!(r0, 100 + 10 * 2, "rank 0: 100 + 20 = 120");
+        assert_eq!(r1, 100 + 10 * 4, "rank 1: 100 + 40 = 140");
+        assert_eq!(r2, 100 + 10 * 6, "rank 2: 100 + 60 = 160");
+        assert_eq!(r3, 100 + 10 * 8, "rank 3: 100 + 80 = 180");
+        assert_eq!(r4, 100 + 10 * 10, "rank 4: 100 + 100 = 200");
+
+        assert!(
+            r0 < r1 && r1 < r2 && r2 < r3 && r3 < r4,
+            "Higher rank (higher stake) should earn more"
+        );
+    }
+
+    // Scenario 3: 100% base (no rank bonus)
+    {
+        let dapps = BTreeMap::from([(1, RankedTier::new_saturated(1, 4, max_rank))]);
+        let mut entry = DAppTierRewards::<NumberOfDApps, NumberOfTiers>::new(
+            dapps,
+            vec![0, 1000, 0], // 100% to base
+            1,
+            vec![0, 0, 0], // 0% to rank
+            vec![vec![], rank_points_tier1.clone(), vec![]],
+        )
+        .unwrap();
+
+        let (reward, _) = entry.try_claim(1).unwrap();
+        assert_eq!(reward, 1000, "100% base: only base reward, no rank bonus");
+    }
+
+    // Scenario 4: 0% base (all rank)
+    {
+        let dapps = BTreeMap::from([(1, RankedTier::new_saturated(1, 4, max_rank))]);
+        let mut entry = DAppTierRewards::<NumberOfDApps, NumberOfTiers>::new(
+            dapps,
+            vec![0, 0, 0], // 0% base
+            1,
+            vec![0, 33, 0], // all to rank
+            vec![vec![], rank_points_tier1.clone(), vec![]],
+        )
+        .unwrap();
+
+        let (reward, _) = entry.try_claim(1).unwrap();
+        // rank 4 → 10 points → 33 * 10 = 330
+        assert_eq!(reward, 33 * 10, "0% base: only rank reward = 330");
+    }
 }
 
 #[test]
@@ -3890,6 +4132,8 @@ fn tier_configuration_calculate_new_with_maximum_threshold() {
         tier_thresholds: tier_thresholds_legacy,
         reward_portion: reward_portion.clone(),
         slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+        rank_points: Default::default(),
+        base_reward_portion: Default::default(),
     };
 
     let params_with_max = TierParameters::<TiersNum> {
@@ -3897,6 +4141,8 @@ fn tier_configuration_calculate_new_with_maximum_threshold() {
         tier_thresholds: tier_thresholds_with_max,
         reward_portion: reward_portion.clone(),
         slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+        rank_points: Default::default(),
+        base_reward_portion: Default::default(),
     };
 
     // Create a starting configuration with some values
