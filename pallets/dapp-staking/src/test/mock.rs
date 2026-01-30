@@ -36,7 +36,7 @@ use sp_std::cell::RefCell;
 
 use astar_primitives::{
     dapp_staking::{
-        Observer as DappStakingObserver, SmartContract, StandardTierSlots, STANDARD_TIER_SLOTS_ARGS,
+        Observer as DappStakingObserver, SmartContract, StandardTierSlots, FIXED_TIER_SLOTS_ARGS,
     },
     Balance, BlockNumber,
 };
@@ -340,7 +340,7 @@ impl ExtBuilder {
                     },
                 ])
                 .unwrap(),
-                slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+                slot_number_args: FIXED_TIER_SLOTS_ARGS,
                 rank_points: BoundedVec::try_from(vec![
                     BoundedVec::try_from(vec![1u8]).unwrap(),
                     BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),

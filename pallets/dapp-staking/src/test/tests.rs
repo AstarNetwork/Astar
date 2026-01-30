@@ -42,7 +42,7 @@ use sp_runtime::{
 use astar_primitives::{
     dapp_staking::{
         CycleConfiguration, EraNumber, RankedTier, SmartContractHandle, StakingRewardHandler,
-        TierSlots,
+        TierSlots, STANDARD_TIER_SLOTS_ARGS,
     },
     Balance, BlockNumber,
 };
@@ -2685,6 +2685,13 @@ fn force_with_safeguard_on_fails() {
 #[test]
 fn tier_config_recalculation_works() {
     ExtBuilder::default().build_and_execute(|| {
+        // Setup for price based slot capacity
+        StaticTierParams::<Test>::mutate(|params| {
+            params.slot_number_args = STANDARD_TIER_SLOTS_ARGS;
+        });
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
         let init_price = NATIVE_PRICE.with(|v| v.borrow().clone());
         let init_tier_config = TierConfig::<Test>::get();
 
@@ -2877,12 +2884,6 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
             protocol_state.period_number(),
             dapp_reward_pool,
         );
-
-        // Debug: Print actual ranks assigned
-        for (dapp_id, ranked_tier) in tier_assignment.dapps.iter() {
-            let (tier, rank) = ranked_tier.deconstruct();
-            println!("Tier {}: dApp {} has rank {}", tier, dapp_id, rank);
-        }
 
         // Ranks rewards are 50% of the tier allocation
         // Dapp rewards allocations for tiers are: 40%, 30%, 20%, 10%
@@ -3478,6 +3479,13 @@ fn safeguard_configurable_by_genesis_config() {
 #[test]
 fn base_number_of_slots_is_respected() {
     ExtBuilder::default().build_and_execute(|| {
+        // Setup for price based slot capacity
+        StaticTierParams::<Test>::mutate(|params| {
+            params.slot_number_args = STANDARD_TIER_SLOTS_ARGS;
+        });
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
         // 0. Get expected number of slots for the base price
         let total_issuance = <Test as Config>::Currency::total_issuance();
         let base_native_price = <Test as Config>::BaseNativeCurrencyPrice::get();
@@ -3589,36 +3597,17 @@ fn base_number_of_slots_is_respected() {
 #[test]
 fn ranking_with_points_calculates_reward_correctly() {
     ExtBuilder::default().build_and_execute(|| {
-        // Configure tiers with specific rank_points for predictable testing
         // Tier 1: 3 slots with points [5, 10, 15] (sum = 30)
         // Tier 2: 2 slots with points [4, 8] (sum = 12)
-        let tier_params = TierParameters::<<Test as Config>::NumberOfTiers> {
-            reward_portion: BoundedVec::try_from(vec![
-                Permill::from_percent(40),
-                Permill::from_percent(30),
-                Permill::from_percent(20),
-                Permill::from_percent(10),
-            ])
-            .unwrap(),
-            slot_distribution: BoundedVec::try_from(vec![
-                Permill::from_percent(10),
-                Permill::from_percent(20),
-                Permill::from_percent(30),
-                Permill::from_percent(40),
-            ])
-            .unwrap(),
-            tier_thresholds: StaticTierParams::<Test>::get().tier_thresholds,
-            slot_number_args: (0, 16),
-            rank_points: BoundedVec::try_from(vec![
+        StaticTierParams::<Test>::mutate(|params| {
+            params.rank_points = BoundedVec::try_from(vec![
                 BoundedVec::try_from(vec![]).unwrap(), // tier 0: no ranking
                 BoundedVec::try_from(vec![5u8, 10, 15]).unwrap(), // tier 1: sum = 30
                 BoundedVec::try_from(vec![4u8, 8]).unwrap(), // tier 2: sum = 12
                 BoundedVec::try_from(vec![]).unwrap(), // tier 3: no ranking
             ])
-            .unwrap(),
-            base_reward_portion: Permill::from_percent(50),
-        };
-        StaticTierParams::<Test>::put(tier_params);
+            .unwrap();
+        });
 
         // Tier config is specially adapted for this test.
         TierConfig::<Test>::mutate(|config| {
@@ -3680,10 +3669,10 @@ fn ranking_with_points_calculates_reward_correctly() {
                 // Tier 3: no ranking → 0
                 rank_rewards: BoundedVec::try_from(vec![0, 5_000, 8_333, 0]).unwrap(),
                 rank_points: BoundedVec::try_from(vec![
-                    BoundedVec::try_from(vec![]).unwrap(), // tier 0: no ranking
-                    BoundedVec::try_from(vec![5u8, 10, 15]).unwrap(), // tier 1: sum = 30
-                    BoundedVec::try_from(vec![4u8, 8]).unwrap(), // tier 2: sum = 12
-                    BoundedVec::try_from(vec![]).unwrap(), // tier 3: no ranking
+                    BoundedVec::try_from(vec![]).unwrap(),
+                    BoundedVec::try_from(vec![5u8, 10, 15]).unwrap(),
+                    BoundedVec::try_from(vec![4u8, 8]).unwrap(),
+                    BoundedVec::try_from(vec![]).unwrap(),
                 ])
                 .unwrap(),
             }
@@ -3698,8 +3687,7 @@ fn ranking_with_points_calculates_reward_correctly() {
 #[test]
 fn claim_dapp_reward_with_rank_points() {
     ExtBuilder::default().build_and_execute(|| {
-        // Configure tier 1 with rank_points for testing
-        // 5 slots with points [1, 5, 10, 15, 20]
+        // Tier-1: 5 slots with points [1, 5, 10, 15, 20]
         StaticTierParams::<Test>::mutate(|params| {
             params.rank_points = BoundedVec::try_from(vec![
                 BoundedVec::try_from(vec![]).unwrap(),
@@ -3708,7 +3696,6 @@ fn claim_dapp_reward_with_rank_points() {
                 BoundedVec::try_from(vec![]).unwrap(),
             ])
             .unwrap();
-            params.base_reward_portion = Permill::from_percent(50);
         });
 
         let total_issuance = <Test as Config>::Currency::total_issuance();

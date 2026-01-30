@@ -86,7 +86,7 @@ use xcm_runtime_apis::{
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, RankedTier, SmartContract, StandardTierSlots,
+        PeriodNumber, RankedTier, SmartContract, StandardTierSlots, FIXED_TIER_SLOTS_ARGS,
     },
     evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler},
     governance::OracleMembershipInst,
@@ -1353,7 +1353,7 @@ impl pallet_dapp_staking::migration::TierParamsV11Config for ShidenTierParamsV11
     }
 
     fn slot_number_args() -> (u64, u64) {
-        (0, 16)
+        FIXED_TIER_SLOTS_ARGS
     }
 
     fn rank_points() -> [Vec<u8>; 4] {
@@ -1382,10 +1382,6 @@ pub type Unreleased = (
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
-
-parameter_types! {
-    pub const TierSlotsArgs: (u64, u64) = (100, 50);
-}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

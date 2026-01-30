@@ -85,7 +85,7 @@ use xcm_runtime_apis::{
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, RankedTier, SmartContract, StandardTierSlots,
+        PeriodNumber, RankedTier, SmartContract, StandardTierSlots, FIXED_TIER_SLOTS_ARGS,
     },
     evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler, HashedDefaultMappings},
     governance::{
@@ -1790,7 +1790,7 @@ impl pallet_dapp_staking::migration::TierParamsV11Config for ShibuyaTierParamsV1
     }
 
     fn slot_number_args() -> (u64, u64) {
-        (0, 16)
+        FIXED_TIER_SLOTS_ARGS
     }
 
     fn rank_points() -> [Vec<u8>; 4] {

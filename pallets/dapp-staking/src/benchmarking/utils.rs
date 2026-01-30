@@ -18,7 +18,7 @@
 
 use super::{Pallet as DappStaking, *};
 
-use astar_primitives::{dapp_staking::STANDARD_TIER_SLOTS_ARGS, Balance};
+use astar_primitives::{dapp_staking::FIXED_TIER_SLOTS_ARGS, Balance};
 
 use frame_system::Pallet as System;
 
@@ -197,12 +197,12 @@ pub(super) fn init_tier_settings<T: Config>() {
             },
         ])
         .unwrap(),
-        slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+        slot_number_args: FIXED_TIER_SLOTS_ARGS,
         rank_points: BoundedVec::try_from(vec![
             BoundedVec::try_from(vec![1u8]).unwrap(),
-            BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).unwrap(),
-            BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).unwrap(),
-            BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).unwrap(),
+            BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),
+            BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),
+            BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),
         ])
         .unwrap(),
         base_reward_portion: Permill::from_percent(50),
