@@ -1145,16 +1145,13 @@ mod benchmarks {
         });
         EraRewards::<T>::insert(&cleanup_marker.era_reward_index, reward_span);
 
-        let rank_points: BoundedVec<
-            BoundedVec<u8, ConstU32<15>>,
-            T::NumberOfTiers,
-        > = (1..=T::NumberOfTiers::get())
+        let rank_points: BoundedVec<BoundedVec<u8, ConstU32<15>>, T::NumberOfTiers> = (1
+            ..=T::NumberOfTiers::get())
             .map(|slots| {
-                let inner: BoundedVec<u8, ConstU32<15>> =
-                    (1..=slots as u8)
-                        .collect::<Vec<_>>()
-                        .try_into()
-                        .expect("Using incremental points; QED.");
+                let inner: BoundedVec<u8, ConstU32<15>> = (1..=slots as u8)
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .expect("Using incremental points; QED.");
                 inner
             })
             .collect::<Vec<_>>()

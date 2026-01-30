@@ -1788,10 +1788,10 @@ impl pallet_dapp_staking::migration::TierParamsV11Config for AstarTierParamsV11 
 
     fn rank_points() -> [Vec<u8>; 4] {
         [
-            vec![],                                    // Tier 0: dummy
-            vec![10, 11, 12, 13, 14, 15],             // Tier 1: 6 slots
-            vec![1, 3, 5, 7, 9, 11, 13, 15, 17, 19],  // Tier 2: 10 slots
-            vec![],                                    // Tier 3: dummy
+            vec![],                                  // Tier 0: dummy
+            vec![10, 11, 12, 13, 14, 15],            // Tier 1: 6 slots
+            vec![1, 3, 5, 7, 9, 11, 13, 15, 17, 19], // Tier 2: 10 slots
+            vec![],                                  // Tier 3: dummy
         ]
     }
 
@@ -1806,7 +1806,8 @@ impl pallet_dapp_staking::migration::TierParamsV11Config for AstarTierParamsV11 
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (pallet_dapp_staking::migration::versioned_migrations::V10ToV11<Runtime, AstarTierParamsV11>,);
+pub type Unreleased =
+    (pallet_dapp_staking::migration::versioned_migrations::V10ToV11<Runtime, AstarTierParamsV11>,);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);

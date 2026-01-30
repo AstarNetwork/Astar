@@ -204,7 +204,7 @@ pub(super) fn init_tier_settings<T: Config>() {
             BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).unwrap(),
             BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).unwrap(),
         ])
-            .unwrap(),
+        .unwrap(),
         base_reward_portion: Permill::from_percent(50),
     };
 

@@ -55,9 +55,7 @@ pub trait TierParamsV11Config {
 
 mod v11 {
     use super::*;
-    use crate::migration::v10::{
-        DAppTierRewards as DAppTierRewardsV10,
-    };
+    use crate::migration::v10::DAppTierRewards as DAppTierRewardsV10;
 
     pub struct VersionMigrateV10ToV11<T, P>(PhantomData<(T, P)>);
 
@@ -93,8 +91,9 @@ mod v11 {
                     rank_points_config
                         .into_iter()
                         .map(|points| BoundedVec::try_from(points).expect("rank points"))
-                        .collect::<Vec<_>>()
-                ).expect("4 tiers"),
+                        .collect::<Vec<_>>(),
+                )
+                .expect("4 tiers"),
                 base_reward_portion: P::base_reward_portion(),
             };
 
@@ -131,8 +130,9 @@ mod v11 {
                 }
 
                 reads += 1;
-                let maybe_old: Option<DAppTierRewardsV10<T::MaxNumberOfContracts, T::NumberOfTiers>> =
-                    v10::DAppTiers::<T>::get(era);
+                let maybe_old: Option<
+                    DAppTierRewardsV10<T::MaxNumberOfContracts, T::NumberOfTiers>,
+                > = v10::DAppTiers::<T>::get(era);
 
                 match maybe_old {
                     Some(old) => {
@@ -232,14 +232,14 @@ mod v11 {
             ensure!(new_params.is_valid(), "New tier params invalid");
 
             let new_count = DAppTiers::<T>::iter().count() as u32;
-            ensure!(
-                new_count == expected_count,
-                "DAppTiers count mismatch"
-            );
+            ensure!(new_count == expected_count, "DAppTiers count mismatch");
 
             for (era, rewards) in DAppTiers::<T>::iter() {
                 ensure!(era >= oldest_valid_era, "Found expired entry");
-                ensure!(rewards.rank_points.is_empty(), "Should have empty rank_points");
+                ensure!(
+                    rewards.rank_points.is_empty(),
+                    "Should have empty rank_points"
+                );
             }
 
             ensure!(
@@ -269,10 +269,10 @@ mod v10 {
     /// v10 storage alias for DAppTiers
     #[storage_alias]
     pub type DAppTiers<T: Config> = StorageMap<
-    Pallet<T>,
-    Twox64Concat,
-    EraNumber,
-    DAppTierRewards<<T as Config>::MaxNumberOfContracts, <T as Config>::NumberOfTiers>,
-    OptionQuery,
+        Pallet<T>,
+        Twox64Concat,
+        EraNumber,
+        DAppTierRewards<<T as Config>::MaxNumberOfContracts, <T as Config>::NumberOfTiers>,
+        OptionQuery,
     >;
 }
