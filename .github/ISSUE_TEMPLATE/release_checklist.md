@@ -19,7 +19,6 @@ All the preparation specific for this release, for example
      - `astar-runtime`
      - `shiden-runtime`
      - `shibuya-runtime`
-     - `local-runtime`
      - `astar-collator`
      - `xcm-tools` (if needed)
 - [ ] Check Spec Version bumped for all runtimes

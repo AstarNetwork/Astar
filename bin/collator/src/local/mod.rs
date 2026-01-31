@@ -24,5 +24,6 @@ mod service;
 /// Development chain specs.
 mod chain_spec;
 
+pub use crate::parachain::fake_runtime_api::RuntimeApi;
 pub use chain_spec::*;
-pub use service::{new_partial, start_node, HostFunctions, RuntimeApi};
+pub use service::{new_partial, start_node, HostFunctions};

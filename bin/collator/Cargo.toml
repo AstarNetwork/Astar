@@ -62,9 +62,7 @@ sc-client-api = { workspace = true }
 sc-client-db = { workspace = true }
 sc-consensus = { workspace = true }
 sc-consensus-aura = { workspace = true }
-sc-consensus-babe = { workspace = true }
-sc-consensus-grandpa = { workspace = true }
-sc-consensus-manual-seal = { workspace = true, optional = true }
+sc-consensus-manual-seal = { workspace = true }
 sc-executor = { workspace = true }
 sc-network = { workspace = true }
 sc-network-sync = { workspace = true }
@@ -100,7 +98,6 @@ frame-system-rpc-runtime-api = { workspace = true }
 
 # astar-specific dependencies
 astar-runtime = { workspace = true, features = ["std"] }
-local-runtime = { workspace = true, features = ["std"] }
 shibuya-runtime = { workspace = true, features = ["std"] }
 shiden-runtime = { workspace = true, features = ["std"] }
 
@@ -126,6 +123,7 @@ cumulus-client-consensus-common = { workspace = true }
 cumulus-client-consensus-proposer = { workspace = true }
 cumulus-client-consensus-relay-chain = { workspace = true }
 cumulus-client-network = { workspace = true }
+cumulus-client-parachain-inherent = { workspace = true }
 cumulus-client-service = { workspace = true }
 cumulus-primitives-aura = { workspace = true }
 cumulus-primitives-core = { workspace = true, features = ["std"] }
@@ -168,7 +166,6 @@ substrate-build-script-utils = { workspace = true }
 [features]
 default = ["sc-cli", "polkadot-cli", "sc-service", "sc-service/rocksdb"]
 runtime-benchmarks = [
-	"local-runtime/runtime-benchmarks",
 	"shibuya-runtime/runtime-benchmarks",
 	"shiden-runtime/runtime-benchmarks",
 	"astar-runtime/runtime-benchmarks",
@@ -194,7 +191,6 @@ runtime-benchmarks = [
 	"pallet-transaction-payment/runtime-benchmarks",
 ]
 try-runtime = [
-	"local-runtime/try-runtime",
 	"astar-primitives/try-runtime",
 	"astar-runtime/try-runtime",
 	"frame-system/try-runtime",
@@ -210,4 +206,3 @@ try-runtime = [
 	"sp-runtime/try-runtime",
 	"frame-support/try-runtime",
 ]
-manual-seal = ["sc-consensus-manual-seal"]

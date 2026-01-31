@@ -22,29 +22,30 @@ use crate::{
     evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig},
     rpc::tracing,
 };
+use cumulus_client_parachain_inherent::MockValidationDataInherentDataProvider;
+use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_storage::StorageOverrideHandler;
 use futures::{FutureExt, StreamExt};
-use sc_client_api::{Backend, BlockBackend, BlockchainEvents};
-use sc_consensus_grandpa::SharedVoterState;
+use parity_scale_codec::Encode;
+use polkadot_primitives::UpgradeGoAhead;
+use sc_client_api::{Backend, BlockchainEvents};
+use sc_consensus_manual_seal::consensus::aura::AuraConsensusDataProvider;
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::NetworkBackend;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
-#[cfg(not(feature = "manual-seal"))]
-use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
-use sp_runtime::traits::Block as BlockT;
-use std::{collections::BTreeMap, sync::Arc, time::Duration};
+use sp_api::ProvideRuntimeApi;
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
+use std::{collections::BTreeMap, ops::Sub, sync::Arc, time::Duration};
 
-pub use local_runtime::RuntimeApi;
-
+use astar_primitives::parachain::SHIBUYA_ID;
 use astar_primitives::*;
 
-/// The minimum period of blocks on which justifications will be
-/// imported and generated.
-const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
+const RELAY_CHAIN_SLOT_DURATION_MILLIS: u64 = 2_000;
+const DEV_BLOCK_TIME_MS: u64 = 2_000;
 
 /// Parachain host functions
 #[cfg(feature = "runtime-benchmarks")]
@@ -63,7 +64,11 @@ pub type HostFunctions = (
 
 type ParachainExecutor = WasmExecutor<HostFunctions>;
 
-type FullClient = sc_service::TFullClient<Block, RuntimeApi, ParachainExecutor>;
+type FullClient = sc_service::TFullClient<
+    Block,
+    crate::parachain::fake_runtime_api::RuntimeApi,
+    ParachainExecutor,
+>;
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
@@ -79,17 +84,7 @@ pub fn new_partial(
         sc_consensus::DefaultImportQueue<Block>,
         sc_transaction_pool::TransactionPoolHandle<Block, FullClient>,
         (
-            FrontierBlockImport<
-                Block,
-                sc_consensus_grandpa::GrandpaBlockImport<
-                    FullBackend,
-                    Block,
-                    FullClient,
-                    FullSelectChain,
-                >,
-                FullClient,
-            >,
-            sc_consensus_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
+            FrontierBlockImport<Block, Arc<FullClient>, FullClient>,
             Option<Telemetry>,
             Arc<fc_db::Backend<Block, FullClient>>,
         ),
@@ -123,7 +118,11 @@ pub fn new_partial(
         .build();
 
     let (client, backend, keystore_container, task_manager) =
-        sc_service::new_full_parts_record_import::<Block, RuntimeApi, _>(
+        sc_service::new_full_parts_record_import::<
+            Block,
+            crate::parachain::fake_runtime_api::RuntimeApi,
+            _,
+        >(
             config,
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
             executor,
@@ -145,53 +144,19 @@ pub fn new_partial(
     .with_options(config.transaction_pool.clone())
     .with_prometheus(config.prometheus_registry())
     .build();
-    let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
-        client.clone(),
-        GRANDPA_JUSTIFICATION_PERIOD,
-        &(client.clone() as Arc<_>),
-        select_chain.clone(),
-        telemetry.as_ref().map(|x| x.handle()),
-    )?;
+
     let frontier_backend = Arc::new(crate::rpc::open_frontier_backend(
         client.clone(),
         config,
         evm_tracing_config,
     )?);
-    let frontier_block_import =
-        FrontierBlockImport::new(grandpa_block_import.clone(), client.clone());
+    let frontier_block_import = FrontierBlockImport::new(client.clone(), client.clone());
 
-    #[cfg(feature = "manual-seal")]
     let import_queue = sc_consensus_manual_seal::import_queue(
         Box::new(client.clone()),
         &task_manager.spawn_essential_handle(),
         config.prometheus_registry(),
     );
-
-    #[cfg(not(feature = "manual-seal"))]
-    let import_queue = {
-        let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
-        sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
-            sc_consensus_aura::ImportQueueParams {
-                block_import: frontier_block_import.clone(),
-                justification_import: Some(Box::new(grandpa_block_import)),
-                client: client.clone(),
-                create_inherent_data_providers: move |_, ()| async move {
-                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-                    let slot =
-                        sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                            *timestamp,
-                            slot_duration,
-                        );
-                    Ok((slot, timestamp))
-                },
-                spawner: &task_manager.spawn_essential_handle(),
-                registry: config.prometheus_registry(),
-                check_for_equivocation: Default::default(),
-                telemetry: telemetry.as_ref().map(|x| x.handle()),
-                compatibility_mode: Default::default(),
-            },
-        )?
-    };
 
     Ok(sc_service::PartialComponents {
         client,
@@ -201,18 +166,104 @@ pub fn new_partial(
         keystore_container,
         select_chain,
         transaction_pool: transaction_pool.into(),
-        other: (
-            frontier_block_import,
-            grandpa_link,
-            telemetry,
-            frontier_backend,
-        ),
+        other: (frontier_block_import, telemetry, frontier_backend),
     })
+}
+
+/// Configuration for dev node parachain inherents
+struct DevParachainInherents {
+    para_id: ParaId,
+    initial_relay_slot: u64,
+}
+
+impl DevParachainInherents {
+    fn new(para_id: ParaId) -> Self {
+        // Start 2 hours in the past to avoid timestamp conflicts
+        let initial_relay_slot = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Current time is always after UNIX_EPOCH")
+            .sub(Duration::from_secs(2 * 60 * 60))
+            .as_millis() as u64
+            / RELAY_CHAIN_SLOT_DURATION_MILLIS;
+
+        Self {
+            para_id,
+            initial_relay_slot,
+        }
+    }
+
+    /// Create inherent data providers for manual seal consensus
+    fn create_providers(
+        &self,
+        client: Arc<FullClient>,
+    ) -> impl Fn(
+        Hash,
+        (),
+    ) -> futures::future::Ready<
+        Result<
+            (
+                sp_timestamp::InherentDataProvider,
+                MockValidationDataInherentDataProvider<()>,
+            ),
+            Box<dyn std::error::Error + Send + Sync>,
+        >,
+    > + Send
+           + Sync
+           + Clone {
+        let para_id = self.para_id;
+        let initial_relay_slot = self.initial_relay_slot;
+
+        move |block: Hash, ()| {
+            let current_para_head = client
+                .header(block)
+                .expect("Header lookup should succeed")
+                .expect("Header should be present");
+
+            let should_send_go_ahead = client
+                .runtime_api()
+                .collect_collation_info(block, &current_para_head)
+                .map(|info| info.new_validation_code.is_some())
+                .unwrap_or_default();
+
+            let current_para_block_head =
+                Some(polkadot_primitives::HeadData(current_para_head.encode()));
+            let current_block_number =
+                UniqueSaturatedInto::<u32>::unique_saturated_into(*current_para_head.number()) + 1;
+
+            // Dev mode: always advance at least one relay slot per para block
+            let relay_blocks_per_para_block: u32 = 1;
+
+            let target_relay_slot = initial_relay_slot
+                + u64::from(current_block_number) * u64::from(relay_blocks_per_para_block);
+
+            let relay_offset = (target_relay_slot as u32)
+                .saturating_sub(relay_blocks_per_para_block * current_block_number);
+
+            let mocked_parachain = MockValidationDataInherentDataProvider::<()> {
+                current_para_block: current_block_number,
+                para_id,
+                current_para_block_head,
+                relay_blocks_per_para_block,
+                relay_offset,
+                para_blocks_per_relay_epoch: 10,
+                upgrade_go_ahead: should_send_go_ahead.then(|| {
+                    log::info!("Detected pending validation code, sending go-ahead signal.");
+                    UpgradeGoAhead::GoAhead
+                }),
+                ..Default::default()
+            };
+
+            let timestamp = target_relay_slot * RELAY_CHAIN_SLOT_DURATION_MILLIS;
+            let timestamp_provider = sp_timestamp::InherentDataProvider::new(timestamp.into());
+
+            futures::future::ready(Ok((timestamp_provider, mocked_parachain)))
+        }
+    }
 }
 
 /// Builds a new service.
 pub fn start_node<N>(
-    config: Configuration,
+    mut config: Configuration,
     evm_tracing_config: FrontierConfig,
 ) -> Result<TaskManager, ServiceError>
 where
@@ -226,18 +277,14 @@ where
         keystore_container,
         select_chain,
         transaction_pool,
-        other: (block_import, grandpa_link, mut telemetry, frontier_backend),
+        other: (block_import, mut telemetry, frontier_backend),
     } = new_partial(&config, &evm_tracing_config)?;
 
-    let protocol_name = sc_consensus_grandpa::protocol_standard_name(
-        &client
-            .block_hash(0)
-            .ok()
-            .flatten()
-            .expect("Genesis block exists; qed"),
-        &config.chain_spec,
-    );
-    let mut net_config = sc_network::config::FullNetworkConfiguration::<_, _, N>::new(
+    // Dev node: no peers
+    config.network.default_peers_set.in_peers = 0;
+    config.network.default_peers_set.out_peers = 0;
+
+    let net_config = sc_network::config::FullNetworkConfiguration::<_, _, N>::new(
         &config.network,
         config.prometheus_registry().cloned(),
     );
@@ -245,15 +292,6 @@ where
     let metrics = N::register_notification_metrics(
         config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
     );
-    let peer_store_handle = net_config.peer_store_handle();
-
-    let (grandpa_protocol_config, grandpa_notification_service) =
-        sc_consensus_grandpa::grandpa_peers_set_config::<_, N>(
-            protocol_name.clone(),
-            metrics.clone(),
-            Arc::clone(&peer_store_handle),
-        );
-    net_config.add_notification_protocol(grandpa_protocol_config);
 
     let (network, system_rpc_tx, tx_handler_controller, sync_service) =
         sc_service::build_network(sc_service::BuildNetworkParams {
@@ -394,14 +432,6 @@ where
         ),
     );
 
-    #[cfg(not(feature = "manual-seal"))]
-    let force_authoring = config.force_authoring;
-    #[cfg(not(feature = "manual-seal"))]
-    let backoff_authoring_blocks: Option<()> = None;
-
-    let role = config.role.clone();
-    let name = config.network.node_name.clone();
-    let enable_grandpa = !config.disable_grandpa;
     let prometheus_registry = config.prometheus_registry().cloned();
     let is_authority = config.role.is_authority();
 
@@ -414,8 +444,17 @@ where
     ));
 
     // Channel for the rpc handler to communicate with the authorship task.
-    #[cfg(feature = "manual-seal")]
     let (command_sink, commands_stream) = futures::channel::mpsc::channel(1024);
+
+    let aura_digest_provider =
+        AuraConsensusDataProvider::<Block, FullClient, ()>::new(client.clone());
+
+    // Auto-seal blocks
+    spawn_block_authoring_task(
+        task_manager.spawn_essential_handle(),
+        command_sink.clone(),
+        DEV_BLOCK_TIME_MS,
+    );
 
     let rpc_extensions_builder = {
         let client = client.clone();
@@ -442,8 +481,6 @@ where
                 block_data_cache: block_data_cache.clone(),
                 storage_override: storage_override.clone(),
                 enable_evm_rpc: true, // enable EVM RPC for dev node by default
-                #[cfg(feature = "manual-seal")]
-                command_sink: Some(command_sink.clone()),
             };
 
             crate::rpc::create_full(
@@ -475,129 +512,51 @@ where
         telemetry: telemetry.as_mut(),
     })?;
 
-    if role.is_authority() {
-        let proposer_factory = sc_basic_authorship::ProposerFactory::new(
+    // === Consensus ===
+    let dev_inherents = DevParachainInherents::new(ParaId::from(SHIBUYA_ID));
+
+    let params = sc_consensus_manual_seal::ManualSealParams {
+        block_import,
+        env: sc_basic_authorship::ProposerFactory::new(
             task_manager.spawn_handle(),
             client.clone(),
             transaction_pool.clone(),
             prometheus_registry.as_ref(),
             telemetry.as_ref().map(|x| x.handle()),
-        );
-
-        let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
-
-        #[cfg(feature = "manual-seal")]
-        let aura = sc_consensus_manual_seal::run_manual_seal(
-            sc_consensus_manual_seal::ManualSealParams {
-                block_import,
-                env: proposer_factory,
-                client: client.clone(),
-                pool: transaction_pool.clone(),
-                commands_stream,
-                select_chain,
-                consensus_data_provider: Some(Box::new(
-                    sc_consensus_manual_seal::consensus::aura::AuraConsensusDataProvider::new(
-                        client.clone(),
-                    ),
-                )),
-                create_inherent_data_providers: move |_, ()| async move {
-                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-                    let slot =
-                        sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                            *timestamp,
-                            slot_duration.clone(),
-                        );
-                    Ok((slot, timestamp))
-                },
-            },
-        );
-
-        #[cfg(not(feature = "manual-seal"))]
-        let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _>(
-            sc_consensus_aura::StartAuraParams {
-                slot_duration,
-                client,
-                select_chain,
-                block_import,
-                proposer_factory,
-                create_inherent_data_providers: move |_, ()| async move {
-                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-                    let slot =
-                        sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                            *timestamp,
-                            slot_duration,
-                        );
-
-                    Ok((slot, timestamp))
-                },
-                force_authoring,
-                backoff_authoring_blocks,
-                keystore: keystore_container.keystore(),
-                sync_oracle: sync_service.clone(),
-                justification_sync_link: sync_service.clone(),
-                block_proposal_slot_portion: sc_consensus_aura::SlotProportion::new(2f32 / 3f32),
-                max_block_proposal_slot_portion: None,
-                telemetry: telemetry.as_ref().map(|x| x.handle()),
-                compatibility_mode: Default::default(),
-            },
-        )?;
-
-        // the AURA authoring task is considered essential, i.e. if it
-        // fails we take down the service with it.
-        task_manager
-            .spawn_essential_handle()
-            .spawn_blocking("aura", Some("block-authoring"), aura);
-    }
-
-    // if the node isn't actively participating in consensus then it doesn't
-    // need a keystore, regardless of which protocol we use below.
-    let keystore = if role.is_authority() {
-        Some(keystore_container.keystore())
-    } else {
-        None
+        ),
+        client: client.clone(),
+        pool: transaction_pool,
+        select_chain,
+        commands_stream: Box::pin(commands_stream),
+        consensus_data_provider: Some(Box::new(aura_digest_provider)),
+        create_inherent_data_providers: dev_inherents.create_providers(client.clone()),
     };
 
-    let grandpa_config = sc_consensus_grandpa::Config {
-        // FIXME #1578 make this available through chainspec
-        gossip_duration: Duration::from_millis(333),
-        justification_generation_period: GRANDPA_JUSTIFICATION_PERIOD,
-        name: Some(name),
-        observer_enabled: false,
-        keystore,
-        local_role: role,
-        telemetry: telemetry.as_ref().map(|x| x.handle()),
-        protocol_name,
-    };
-
-    if enable_grandpa {
-        // start the full GRANDPA voter
-        // NOTE: non-authorities could run the GRANDPA observer protocol, but at
-        // this point the full voter should provide better guarantees of block
-        // and vote data availability than the observer. The observer has not
-        // been tested extensively yet and having most nodes in a network run it
-        // could lead to finality stalls.
-        let grandpa_config = sc_consensus_grandpa::GrandpaParams {
-            config: grandpa_config,
-            link: grandpa_link,
-            network,
-            sync: Arc::new(sync_service),
-            notification_service: grandpa_notification_service,
-            voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
-            prometheus_registry,
-            shared_voter_state: SharedVoterState::empty(),
-            telemetry: telemetry.as_ref().map(|x| x.handle()),
-            offchain_tx_pool_factory: OffchainTransactionPoolFactory::new(transaction_pool),
-        };
-
-        // the GRANDPA voter task is considered infallible, i.e.
-        // if it fails we take down the service with it.
-        task_manager.spawn_essential_handle().spawn_blocking(
-            "grandpa-voter",
-            None,
-            sc_consensus_grandpa::run_grandpa_voter(grandpa_config)?,
-        );
-    }
+    task_manager.spawn_essential_handle().spawn_blocking(
+        "manual-seal",
+        Some("block-authoring"),
+        sc_consensus_manual_seal::run_manual_seal(params),
+    );
 
     Ok(task_manager)
+}
+
+/// Spawn task that produces blocks at regular intervals
+fn spawn_block_authoring_task(
+    spawner: sc_service::SpawnEssentialTaskHandle,
+    mut command_sink: futures::channel::mpsc::Sender<sc_consensus_manual_seal::EngineCommand<Hash>>,
+    interval_ms: u64,
+) {
+    spawner.spawn("block-authoring", None, async move {
+        let mut interval = tokio::time::interval(Duration::from_millis(interval_ms));
+        loop {
+            interval.tick().await;
+            let _ = command_sink.try_send(sc_consensus_manual_seal::EngineCommand::SealNewBlock {
+                create_empty: true,
+                finalize: true,
+                parent_hash: None,
+                sender: None,
+            });
+        }
+    });
 }

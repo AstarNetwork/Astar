@@ -262,11 +262,7 @@ pub fn run() -> Result<()> {
                         backend,
                         ..
                     } = local::new_partial(&config, &rpc_config)?;
-                    let aux_revert = Box::new(|client, _, blocks| {
-                        sc_consensus_grandpa::revert(client, blocks)?;
-                        Ok(())
-                    });
-                    Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
+                    Ok((cmd.run(client, backend, None), task_manager))
                 })
             } else {
                 runner.async_run(|config| {
@@ -332,7 +328,7 @@ pub fn run() -> Result<()> {
                         })
                     } else {
                         runner.sync_run(|config| {
-                            cmd.run_with_spec::<HashingFor<local_runtime::Block>, local::HostFunctions>(
+                            cmd.run_with_spec::<HashingFor<shibuya_runtime::Block>, local::HostFunctions>(
                                 Some(config.chain_spec),
                             )
                         })

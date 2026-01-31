@@ -2,7 +2,6 @@
 members = [
 	"bin/collator",
 	"bin/xcm-tools",
-	"runtime/local",
 	"runtime/astar",
 	"runtime/shiden",
 	"runtime/shibuya",
@@ -158,9 +157,7 @@ sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "
 sc-client-db = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
 sc-consensus = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
 sc-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
-sc-consensus-babe = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
 sc-executor = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
-sc-consensus-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
 sc-consensus-manual-seal = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
 sc-network = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
 sc-network-sync = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
@@ -209,7 +206,6 @@ frame-system-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk"
 frame-try-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506", default-features = false }
 pallet-preimage = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506", default-features = false }
 pallet-scheduler = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506", default-features = false }
-pallet-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506", default-features = false }
 pallet-message-queue = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506", default-features = false }
 pallet-membership = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506", default-features = false }
 pallet-collective = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506", default-features = false }
@@ -273,6 +269,7 @@ cumulus-client-consensus-aura = { git = "https://github.com/paritytech/polkadot-
 cumulus-client-consensus-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
 cumulus-client-consensus-relay-chain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
 cumulus-client-network = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
+cumulus-client-parachain-inherent = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
 cumulus-client-service = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
 cumulus-client-collator = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
 cumulus-client-consensus-proposer = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
@@ -349,7 +346,6 @@ pallet-chain-extension-unified-accounts = { path = "./chain-extensions/unified-a
 assets-chain-extension-types = { path = "./chain-extensions/types/assets", default-features = false }
 unified-accounts-chain-extension-types = { path = "./chain-extensions/types/unified-accounts", default-features = false }
 
-local-runtime = { path = "./runtime/local", default-features = false }
 shibuya-runtime = { path = "./runtime/shibuya", default-features = false }
 shiden-runtime = { path = "./runtime/shiden", default-features = false }
 astar-runtime = { path = "./runtime/astar", default-features = false }

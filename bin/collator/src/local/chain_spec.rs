@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use local_runtime::wasm_binary_unwrap;
 use sc_service::ChainType;
+use shibuya_runtime::wasm_binary_unwrap;
 
 /// Specialized `ChainSpec` for local network.
 pub type ChainSpec = sc_service::GenericChainSpec;
@@ -33,7 +33,7 @@ pub fn development_config() -> ChainSpec {
         .with_id("dev")
         .with_chain_type(ChainType::Development)
         .with_properties(properties)
-        .with_genesis_config(local_runtime::genesis_config::default_config())
+        .with_genesis_config_preset_name("development")
         .build()
 }
 
