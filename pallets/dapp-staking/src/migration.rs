@@ -243,7 +243,7 @@ mod v11 {
 
                 for (dapp_id, _) in rewards.dapps.iter() {
                     // Verify try_claim still works (without mutating)
-                    let test_rewards = rewards.clone();
+                    let mut test_rewards = rewards.clone();
                     assert!(
                         test_rewards.try_claim(*dapp_id).is_ok(),
                         "Legacy claim broken"
