@@ -224,6 +224,7 @@ impl pallet_dapp_staking::Config for Test {
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
+    type MaxNumberOfContractsLegacy = ConstU32<10>;
     type MaxUnlockingChunks = ConstU32<5>;
     type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
     type UnlockingPeriod = ConstU32<2>;
@@ -237,11 +238,15 @@ impl pallet_dapp_staking::Config for Test {
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
 }
 
-pub struct ExtBuilder {}
+pub struct ExtBuilder {
+    run_try_state: bool,
+}
 
 impl Default for ExtBuilder {
     fn default() -> Self {
-        Self {}
+        Self {
+            run_try_state: true,
+        }
     }
 }
 
@@ -388,14 +393,22 @@ impl ExtBuilder {
     }
 
     pub fn build_and_execute(self, test: impl FnOnce() -> ()) {
+        let run_try_state = self.run_try_state;
         self.build().execute_with(|| {
             test();
-            DappStaking::do_try_state().unwrap();
+            if run_try_state {
+                DappStaking::do_try_state().unwrap();
+            }
         })
     }
 
     pub fn with_max_bonus_safe_moves(self, value: u8) -> Self {
         MAX_BONUS_SAFE_MOVES.with(|v| *v.borrow_mut() = value);
+        self
+    }
+
+    pub fn without_try_state(mut self) -> Self {
+        self.run_try_state = false;
         self
     }
 }

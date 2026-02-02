@@ -999,7 +999,7 @@ mod benchmarks {
         let snapshot_state = ActiveProtocolState::<T>::get();
 
         // Advance over to the last era of the subperiod, and then again to the last block of that era.
-        advance_to_era::<T>(
+        force_advance_to_era::<T>(
             ActiveProtocolState::<T>::get()
                 .period_info
                 .next_subperiod_start_era

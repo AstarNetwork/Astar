@@ -498,6 +498,7 @@ impl pallet_dapp_staking::Config for Runtime {
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<16>;
+    type MaxNumberOfContractsLegacy = ConstU32<500>;
     type MaxUnlockingChunks = ConstU32<8>;
     type MinimumLockedAmount = MinimumStakingAmount;
     type UnlockingPeriod = ConstU32<4>;

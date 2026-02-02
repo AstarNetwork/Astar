@@ -115,7 +115,7 @@ pub(super) const UNIT: Balance = 1_000_000_000_000_000_000;
 pub(super) const MIN_TIER_THRESHOLD: Balance = 10 * UNIT;
 
 /// Number of slots in the tier system.
-pub(super) const NUMBER_OF_SLOTS: u32 = 100;
+pub(super) const NUMBER_OF_SLOTS: u32 = 16;
 
 /// Random seed.
 pub(super) const SEED: u32 = 9000;
@@ -163,49 +163,44 @@ pub(super) fn initial_config<T: Config>() {
 pub(super) fn init_tier_settings<T: Config>() {
     let tier_params = TierParameters::<T::NumberOfTiers> {
         reward_portion: BoundedVec::try_from(vec![
-            Permill::from_percent(40),
+            Permill::from_percent(0),
+            Permill::from_percent(70),
             Permill::from_percent(30),
-            Permill::from_percent(20),
-            Permill::from_percent(10),
+            Permill::from_percent(0),
         ])
         .unwrap(),
         slot_distribution: BoundedVec::try_from(vec![
-            Permill::from_percent(10),
-            Permill::from_percent(20),
-            Permill::from_percent(30),
-            Permill::from_percent(40),
+            Permill::from_percent(0),
+            Permill::from_parts(375_000), // 37.5%
+            Permill::from_parts(625_000), // 62.5%
+            Permill::from_percent(0),
         ])
         .unwrap(),
         tier_thresholds: BoundedVec::try_from(vec![
-            TierThreshold::DynamicPercentage {
-                percentage: Perbill::from_parts(11_112_000), // 1.1112%
-                minimum_required_percentage: Perbill::from_parts(8_889_000), // 0.8889%
-                maximum_possible_percentage: Perbill::from_percent(100),
-            },
-            TierThreshold::DynamicPercentage {
-                percentage: Perbill::from_parts(5_556_000), // 0.5556%
-                minimum_required_percentage: Perbill::from_parts(4_400_000), // 0.44%
-                maximum_possible_percentage: Perbill::from_percent(100),
-            },
-            TierThreshold::DynamicPercentage {
-                percentage: Perbill::from_parts(2_223_000), // 0.2223%
-                minimum_required_percentage: Perbill::from_parts(2_223_000), // 0.2223%
-                maximum_possible_percentage: Perbill::from_percent(100),
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_parts(23_200_000), // 2.32%
             },
             TierThreshold::FixedPercentage {
-                required_percentage: Perbill::from_parts(1_667_000), // 0.1667%
+                required_percentage: Perbill::from_parts(11_600_000), // 1.16%
+            },
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_parts(5_800_000), // 0.58%
+            },
+            // Tier 3: unreachable dummy
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_parts(0), // 0%
             },
         ])
         .unwrap(),
         slot_number_args: FIXED_TIER_SLOTS_ARGS,
         rank_points: BoundedVec::try_from(vec![
-            BoundedVec::try_from(vec![1u8]).unwrap(),
+            BoundedVec::try_from(vec![]).unwrap(),
+            BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6]).unwrap(),
             BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),
-            BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),
-            BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),
+            BoundedVec::try_from(vec![]).unwrap(),
         ])
         .unwrap(),
-        base_reward_portion: Permill::from_percent(50),
+        base_reward_portion: Permill::from_percent(10),
     };
 
     let total_issuance = 1000 * MIN_TIER_THRESHOLD;
@@ -220,7 +215,7 @@ pub(super) fn init_tier_settings<T: Config>() {
     // Init tier config, based on the initial params
     let init_tier_config =
         TiersConfiguration::<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice> {
-            slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
+            slots_per_tier: BoundedVec::try_from(vec![0, 6, 10, 0]).unwrap(),
             reward_portion: tier_params.reward_portion.clone(),
             tier_thresholds,
             _phantom: Default::default(),

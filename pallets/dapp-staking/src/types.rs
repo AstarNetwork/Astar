@@ -75,19 +75,21 @@ use sp_runtime::{
 };
 pub use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec::Vec};
 
-use crate::pallet::Config;
-use astar_primitives::dapp_staking::MAX_ENCODED_RANK;
 use astar_primitives::{
-    dapp_staking::{DAppId, EraNumber, PeriodNumber, RankedTier, TierSlots as TierSlotsFunc},
+    dapp_staking::{
+        DAppId, EraNumber, PeriodNumber, RankedTier, TierSlots as TierSlotsFunc, MAX_ENCODED_RANK,
+    },
     Balance, BlockNumber,
 };
+
+use crate::pallet::Config;
 
 // Convenience type for `AccountLedger` usage.
 pub type AccountLedgerFor<T> = AccountLedger<<T as Config>::MaxUnlockingChunks>;
 
 // Convenience type for `DAppTierRewards` usage.
 pub type DAppTierRewardsFor<T> =
-    DAppTierRewards<<T as Config>::MaxNumberOfContracts, <T as Config>::NumberOfTiers>;
+    DAppTierRewards<<T as Config>::MaxNumberOfContractsLegacy, <T as Config>::NumberOfTiers>;
 
 // Convenience type for `EraRewardSpan` usage.
 pub type EraRewardSpanFor<T> = EraRewardSpan<<T as Config>::EraRewardSpanLength>;
@@ -1710,7 +1712,7 @@ pub struct TierParameters<NT: Get<u32>> {
     /// This can be made more generic in the future in case more complex equations are required.
     /// But for now this simple tuple serves the purpose.
     pub(crate) slot_number_args: (u64, u64),
-    /// Rank points per tier in ASCENDING order, index = rank
+    /// Rank points per tier in ASCENDING order by rank (index 0 = rank 0 = lowest stake in tier)
     pub(crate) rank_points: BoundedVec<BoundedVec<u8, ConstU32<MAX_ENCODED_RANK>>, NT>,
     /// Portion of tier allocation for base rewards (remainder → rank rewards)
     /// e.g., Permill::from_percent(50) = 50% base, 50% rank
@@ -1937,7 +1939,7 @@ pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
     pub(crate) period: PeriodNumber,
     /// Rank reward for each tier. First entry refers to the first tier, and so on.
     pub(crate) rank_rewards: BoundedVec<Balance, NT>,
-    /// Points configuration for each tier/rank in ASCENDING order.
+    /// Rank points per tier in ASCENDING order by rank (index 0 = rank 0 = lowest stake in tier)
     pub(crate) rank_points: BoundedVec<BoundedVec<u8, ConstU32<MAX_ENCODED_RANK>>, NT>,
 }
 

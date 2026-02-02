@@ -131,7 +131,7 @@ mod v11 {
 
                 reads += 1;
                 let maybe_old: Option<
-                    DAppTierRewardsV10<T::MaxNumberOfContracts, T::NumberOfTiers>,
+                    DAppTierRewardsV10<T::MaxNumberOfContractsLegacy, T::NumberOfTiers>,
                 > = v10::DAppTiers::<T>::get(era);
 
                 match maybe_old {
@@ -240,6 +240,15 @@ mod v11 {
                     rewards.rank_points.is_empty(),
                     "Should have empty rank_points"
                 );
+
+                for (dapp_id, _) in rewards.dapps.iter() {
+                    // Verify try_claim still works (without mutating)
+                    let test_rewards = rewards.clone();
+                    assert!(
+                        test_rewards.try_claim(*dapp_id).is_ok(),
+                        "Legacy claim broken"
+                    );
+                }
             }
 
             ensure!(
@@ -272,7 +281,114 @@ mod v10 {
         Pallet<T>,
         Twox64Concat,
         EraNumber,
-        DAppTierRewards<<T as Config>::MaxNumberOfContracts, <T as Config>::NumberOfTiers>,
+        DAppTierRewards<<T as Config>::MaxNumberOfContractsLegacy, <T as Config>::NumberOfTiers>,
         OptionQuery,
     >;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test::mock::{ExtBuilder, Test};
+    use astar_primitives::dapp_staking::FIXED_TIER_SLOTS_ARGS;
+
+    pub struct TestTierParams;
+    impl TierParamsV11Config for TestTierParams {
+        fn reward_portion() -> [Permill; 4] {
+            [
+                Permill::from_percent(0),
+                Permill::from_percent(70),
+                Permill::from_percent(30),
+                Permill::from_percent(0),
+            ]
+        }
+
+        fn slot_distribution() -> [Permill; 4] {
+            [
+                Permill::from_percent(0),
+                Permill::from_parts(375_000), // 37.5%
+                Permill::from_parts(625_000), // 62.5%
+                Permill::from_percent(0),
+            ]
+        }
+
+        fn tier_thresholds() -> [TierThreshold; 4] {
+            use crate::TierThreshold;
+            [
+                TierThreshold::FixedPercentage {
+                    required_percentage: Perbill::from_parts(23_200_000), // 2.32%
+                },
+                TierThreshold::FixedPercentage {
+                    required_percentage: Perbill::from_parts(11_600_000), // 1.16%
+                },
+                TierThreshold::FixedPercentage {
+                    required_percentage: Perbill::from_parts(5_800_000), // 0.58%
+                },
+                // Tier 3: unreachable dummy
+                TierThreshold::FixedPercentage {
+                    required_percentage: Perbill::from_parts(0), // 0%
+                },
+            ]
+        }
+
+        fn slot_number_args() -> (u64, u64) {
+            FIXED_TIER_SLOTS_ARGS
+        }
+
+        fn rank_points() -> [Vec<u8>; 4] {
+            [
+                vec![],                                  // Tier 0: dummy
+                vec![10, 11, 12, 13, 14, 15],            // Tier 1: 6 slots
+                vec![1, 3, 5, 7, 9, 11, 13, 15, 17, 19], // Tier 2: 10 slots
+                vec![],                                  // Tier 3: dummy
+            ]
+        }
+
+        fn base_reward_portion() -> Permill {
+            Permill::from_percent(10)
+        }
+    }
+
+    #[test]
+    fn migration_v10_to_v11_preserves_claimable_rewards() {
+        ExtBuilder::default()
+            .without_try_state()
+            .build_and_execute(|| {
+                // Setup: Create v10-style DAppTiers entry
+                let era = 5;
+                let period = 1;
+                let old_entry = v10::DAppTierRewards {
+                    dapps: BoundedBTreeMap::try_from(BTreeMap::from([
+                        (0, RankedTier::new_saturated(1, 5, 10)),
+                        (1, RankedTier::new_saturated(2, 3, 10)),
+                    ]))
+                    .unwrap(),
+                    rewards: BoundedVec::try_from(vec![0, 100_000, 50_000, 0]).unwrap(),
+                    period,
+                    rank_rewards: BoundedVec::try_from(vec![0, 1_000, 500, 0]).unwrap(),
+                };
+
+                v10::DAppTiers::<Test>::insert(era, old_entry);
+
+                // Set cleanup marker so this era is "valid"
+                HistoryCleanupMarker::<Test>::put(CleanupMarker {
+                    oldest_valid_era: era,
+                    ..Default::default()
+                });
+
+                let _weight =
+                    v11::VersionMigrateV10ToV11::<Test, TestTierParams>::on_runtime_upgrade();
+
+                let mut new_entry = DAppTiers::<Test>::get(era).expect("Entry should exist");
+                assert!(
+                    new_entry.rank_points.is_empty(),
+                    "Migrated entries have empty rank_points"
+                );
+
+                let (reward, ranked_tier) = new_entry.try_claim(0).unwrap();
+                assert_eq!(ranked_tier.rank(), 5);
+                // Legacy formula: base + rank * rank_reward_per_point
+                assert_eq!(reward, 100_000 + 5 * 1_000);
+            });
+    }
 }

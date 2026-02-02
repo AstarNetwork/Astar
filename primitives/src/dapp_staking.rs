@@ -248,6 +248,7 @@ impl RankedTier {
 
     /// Create new encoded RankedTier from tier and rank with saturation.
     pub fn new_saturated(tier: TierId, rank: Rank, max_rank: Rank) -> Self {
+        let max_rank = max_rank.min(MAX_ENCODED_RANK as Rank);
         Self((rank.min(max_rank) << 4) | (tier.min(0x0f) & 0x0f))
     }
 

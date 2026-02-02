@@ -186,6 +186,11 @@ pub mod pallet {
         #[pallet::constant]
         type MaxNumberOfContracts: Get<u32>;
 
+        /// Legacy bound for backward compatibility with pre-v11 DAppTierRewards.
+        // TODO: Can be removed to use MaxNumberOfContracts only after period 4 periods post-revamp-upgrade.
+        #[pallet::constant]
+        type MaxNumberOfContractsLegacy: Get<u32>;
+
         /// Maximum number of unlocking chunks that can exist per account at a time.
         #[pallet::constant]
         type MaxUnlockingChunks: Get<u32>;
@@ -543,7 +548,7 @@ pub mod pallet {
         fn default() -> Self {
             use sp_std::vec;
             let num_tiers = T::NumberOfTiers::get();
-            let slots_per_tier = vec![100u16; num_tiers as usize];
+            let slots_per_tier = vec![0u16, 6, 10, 0];
             let rank_points: Vec<Vec<u8>> = slots_per_tier
                 .iter()
                 .map(|&slots| {
@@ -1859,14 +1864,16 @@ pub mod pallet {
         ///
         /// 2. Sort the entries by the score, in descending order - the top score dApp comes first.
         ///
-        /// 3. Calculate rewards for each tier.
-        ///    This is done by dividing the total reward pool into tier reward pools,
-        ///    after which the tier reward pool is divided by the number of available slots in the tier.
+        /// 3. Calculate tier allocations from the total dApp reward pool using `reward_portion`.
         ///
-        /// 4. Read in tier configuration. This contains information about how many slots per tier there are,
-        ///    as well as the threshold for each tier. Threshold is the minimum amount of stake required to be eligible for a tier.
-        ///    Iterate over tier thresholds & capacities, starting from the top tier, and assign dApps to them.
+        /// 4. Calculate base rewards per tier:
+        ///    `base_reward = base_reward_portion * tier_allocation / slots_per_tier`
         ///
+        /// 5. Calculate rank rewards per tier:
+        ///    `rank_reward_per_point = (tier_allocation - base_pool) / sum_of_all_rank_points`
+        ///    Where `sum_of_all_rank_points` is the sum of all configured rank points for that tier.
+        ///
+        /// 6. Assign dApps to tiers:
         ///    ```text
         ////   for each tier:
         ///        for each unassigned dApp:
@@ -1877,8 +1884,22 @@ pub mod pallet {
         ///    ```
         ///    (Sort the entries by dApp ID, in ascending order. This is so we can efficiently search for them using binary search.)
         ///
-        /// The returned object contains information about each dApp that made it into a tier.
-        /// Alongside tier assignment info, number of read DB contract stake entries is returned.
+        ///
+        /// 7. Rank calculation within tier:
+        ///    - `rank = 0` for lowest stake in tier, up to `max_rank - 1` for highest
+        ///    - Rank maps to `rank_points[tier][rank]` for reward calculation
+        ///
+        /// ### Reward Formula
+        ///
+        /// For each dApp:
+        /// `total_reward = base_reward + (rank_points[tier][rank] * rank_reward_per_point)`
+        ///
+        /// ### Notes
+        ///
+        /// - Empty tier slots result in unminted rewards (by design)
+        /// - `rank_points` array is ascending: index 0 = lowest stake position in tier
+        /// - The returned object contains information about each dApp that made it into a tier.
+        ///   Alongside tier assignment info, number of read DB contract stake entries is returned.
         pub(crate) fn get_dapp_tier_assignment_and_rewards(
             era: EraNumber,
             period: PeriodNumber,
@@ -1931,9 +1952,8 @@ pub mod pallet {
                     if capacity.is_zero() {
                         Zero::zero()
                     } else {
-                        base_portion
-                            .mul_floor(*allocation)
-                            .saturating_div((*capacity).into())
+                        let base_pool = base_portion.mul_floor(*allocation);
+                        base_pool.saturating_div((*capacity).into())
                     }
                 })
                 .collect();
@@ -2001,9 +2021,9 @@ pub mod pallet {
                     if total_points.is_zero() {
                         Zero::zero()
                     } else {
-                        let rank_portion =
-                            Permill::one().saturating_sub(tier_params.base_reward_portion);
-                        let rank_pool = rank_portion.mul_floor(*allocation);
+                        let base_pool = tier_params.base_reward_portion.mul_floor(*allocation);
+                        let rank_pool = allocation.saturating_sub(base_pool);
+                        // Note: slight reward underpayment may be expected due to integer math.
                         rank_pool.saturating_div(total_points.into())
                     }
                 })
@@ -2019,7 +2039,7 @@ pub mod pallet {
             // Prepare and return tier & rewards info.
             // In case rewards creation fails, we just write the default value. This should never happen though.
             (
-                DAppTierRewards::<T::MaxNumberOfContracts, T::NumberOfTiers>::new(
+                DAppTierRewards::<T::MaxNumberOfContractsLegacy, T::NumberOfTiers>::new(
                     dapp_tiers,
                     base_rewards_per_tier,
                     period,
