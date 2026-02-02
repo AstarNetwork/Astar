@@ -42,7 +42,7 @@ pub(super) fn run_for_blocks<T: Config>(n: BlockNumberFor<T>) {
 /// Advance blocks until the specified era has been reached.
 ///
 /// Function has no effect if era is already passed.
-pub(super) fn advance_to_era<T: Config>(era: EraNumber) {
+pub(super) fn _advance_to_era<T: Config>(era: EraNumber) {
     assert!(era >= ActiveProtocolState::<T>::get().era);
     while ActiveProtocolState::<T>::get().era < era {
         run_for_blocks::<T>(One::one());
@@ -65,7 +65,7 @@ pub(super) fn force_advance_to_era<T: Config>(era: EraNumber) {
 
 /// Advance blocks until next era has been reached.
 pub(super) fn _advance_to_next_era<T: Config>() {
-    advance_to_era::<T>(ActiveProtocolState::<T>::get().era + 1);
+    _advance_to_era::<T>(ActiveProtocolState::<T>::get().era + 1);
 }
 
 /// Advance to next era, in the next block using the `force` approach.
