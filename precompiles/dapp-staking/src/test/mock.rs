@@ -273,6 +273,12 @@ impl ExternalityBuilder {
             .build_storage()
             .unwrap();
 
+        let slots_per_tier = vec![10, 20, 30, 40];
+        let tier_rank_multipliers: Vec<u32> = slots_per_tier
+            .iter()
+            .map(|&slots| if slots == 0 { 10_000 } else { 20_000 })
+            .collect();
+
         pallet_dapp_staking::GenesisConfig::<Test>::assimilate_storage(
             &pallet_dapp_staking::GenesisConfig::<Test> {
                 reward_portion: vec![
@@ -302,15 +308,9 @@ impl ExternalityBuilder {
                     },
                 ],
                 slot_number_args: STANDARD_TIER_SLOTS_ARGS,
-                slots_per_tier: vec![10, 20, 30, 40],
+                slots_per_tier,
                 safeguard: None,
-                rank_points: vec![
-                    vec![1u8],
-                    vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                    vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                    vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                ],
-                base_reward_portion: Permill::from_percent(50),
+                tier_rank_multipliers,
                 _config: PhantomData,
             },
             &mut storage,

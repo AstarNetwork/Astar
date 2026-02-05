@@ -21,6 +21,7 @@ use super::{Pallet as DappStaking, *};
 use astar_primitives::{dapp_staking::FIXED_TIER_SLOTS_ARGS, Balance};
 
 use frame_system::Pallet as System;
+use sp_arithmetic::Permill;
 
 /// Run to the specified block number.
 /// Function assumes first block has been initialized.
@@ -181,10 +182,10 @@ pub(super) fn init_tier_settings<T: Config>() {
                 required_percentage: Perbill::from_parts(23_200_000), // 2.32%
             },
             TierThreshold::FixedPercentage {
-                required_percentage: Perbill::from_parts(11_600_000), // 1.16%
+                required_percentage: Perbill::from_parts(9_300_000), // 0.93%
             },
             TierThreshold::FixedPercentage {
-                required_percentage: Perbill::from_parts(5_800_000), // 0.58%
+                required_percentage: Perbill::from_parts(3_500_000), // 0.35%
             },
             // Tier 3: unreachable dummy
             TierThreshold::FixedPercentage {
@@ -193,14 +194,7 @@ pub(super) fn init_tier_settings<T: Config>() {
         ])
         .unwrap(),
         slot_number_args: FIXED_TIER_SLOTS_ARGS,
-        rank_points: BoundedVec::try_from(vec![
-            BoundedVec::try_from(vec![]).unwrap(),
-            BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6]).unwrap(),
-            BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),
-            BoundedVec::try_from(vec![]).unwrap(),
-        ])
-        .unwrap(),
-        base_reward_portion: Permill::from_percent(10),
+        tier_rank_multipliers: BoundedVec::try_from(vec![0, 24_000, 46_700, 0]).unwrap(),
     };
 
     let total_issuance = 1000 * MIN_TIER_THRESHOLD;

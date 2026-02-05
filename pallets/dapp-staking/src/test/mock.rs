@@ -238,15 +238,11 @@ impl pallet_dapp_staking::Config for Test {
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
 }
 
-pub struct ExtBuilder {
-    run_try_state: bool,
-}
+pub struct ExtBuilder {}
 
 impl Default for ExtBuilder {
     fn default() -> Self {
-        Self {
-            run_try_state: true,
-        }
+        Self {}
     }
 }
 
@@ -346,14 +342,7 @@ impl ExtBuilder {
                 ])
                 .unwrap(),
                 slot_number_args: FIXED_TIER_SLOTS_ARGS,
-                rank_points: BoundedVec::try_from(vec![
-                    BoundedVec::try_from(vec![1u8]).unwrap(),
-                    BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),
-                    BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),
-                    BoundedVec::try_from(vec![1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10]).unwrap(),
-                ])
-                .unwrap(),
-                base_reward_portion: Permill::from_percent(50),
+                tier_rank_multipliers: BoundedVec::try_from(vec![0, 24_000, 46_700, 0]).unwrap(),
             };
 
             let total_issuance = <Test as Config>::Currency::total_issuance();
@@ -393,22 +382,14 @@ impl ExtBuilder {
     }
 
     pub fn build_and_execute(self, test: impl FnOnce() -> ()) {
-        let run_try_state = self.run_try_state;
         self.build().execute_with(|| {
             test();
-            if run_try_state {
-                DappStaking::do_try_state().unwrap();
-            }
+            DappStaking::do_try_state().unwrap();
         })
     }
 
     pub fn with_max_bonus_safe_moves(self, value: u8) -> Self {
         MAX_BONUS_SAFE_MOVES.with(|v| *v.borrow_mut() = value);
-        self
-    }
-
-    pub fn without_try_state(mut self) -> Self {
-        self.run_try_state = false;
         self
     }
 }

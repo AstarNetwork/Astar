@@ -86,7 +86,7 @@ use xcm_runtime_apis::{
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, RankedTier, SmartContract, StandardTierSlots, FIXED_TIER_SLOTS_ARGS,
+        PeriodNumber, RankedTier, SmartContract, StandardTierSlots,
     },
     evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler},
     governance::OracleMembershipInst,
@@ -1314,63 +1314,6 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-pub struct ShidenTierParamsV11;
-impl pallet_dapp_staking::migration::TierParamsV11Config for ShidenTierParamsV11 {
-    fn reward_portion() -> [Permill; 4] {
-        [
-            Permill::from_percent(0),
-            Permill::from_percent(70),
-            Permill::from_percent(30),
-            Permill::from_percent(0),
-        ]
-    }
-
-    fn slot_distribution() -> [Permill; 4] {
-        [
-            Permill::from_percent(0),
-            Permill::from_parts(375_000), // 37.5%
-            Permill::from_parts(625_000), // 62.5%
-            Permill::from_percent(0),
-        ]
-    }
-
-    fn tier_thresholds() -> [pallet_dapp_staking::TierThreshold; 4] {
-        use pallet_dapp_staking::TierThreshold;
-        [
-            TierThreshold::FixedPercentage {
-                required_percentage: Perbill::from_parts(23_200_000), // 2.32%
-            },
-            TierThreshold::FixedPercentage {
-                required_percentage: Perbill::from_parts(11_600_000), // 1.16%
-            },
-            TierThreshold::FixedPercentage {
-                required_percentage: Perbill::from_parts(5_800_000), // 0.58%
-            },
-            // Tier 3: unreachable dummy
-            TierThreshold::FixedPercentage {
-                required_percentage: Perbill::from_parts(0), // 0%
-            },
-        ]
-    }
-
-    fn slot_number_args() -> (u64, u64) {
-        FIXED_TIER_SLOTS_ARGS
-    }
-
-    fn rank_points() -> [Vec<u8>; 4] {
-        [
-            vec![],                                  // Tier 0: dummy
-            vec![10, 11, 12, 13, 14, 15],            // Tier 1: 6 slots
-            vec![1, 3, 5, 7, 9, 11, 13, 15, 17, 19], // Tier 2: 10 slots
-            vec![],                                  // Tier 3: dummy
-        ]
-    }
-
-    fn base_reward_portion() -> Permill {
-        Permill::from_percent(10)
-    }
-}
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// __NOTE:__ THE ORDER IS IMPORTANT.
@@ -1378,7 +1321,11 @@ pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased = (
-    pallet_dapp_staking::migration::versioned_migrations::V10ToV11<Runtime, ShidenTierParamsV11>,
+    pallet_dapp_staking::migration::versioned_migrations::V10ToV11<
+        Runtime,
+        pallet_dapp_staking::migration::DefaultTierParamsV11,
+        ConstU32<55>
+    >,
 );
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.

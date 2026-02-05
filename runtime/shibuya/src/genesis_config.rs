@@ -18,7 +18,7 @@
 
 use crate::*;
 use astar_primitives::{
-    dapp_staking::MAX_ENCODED_RANK, evm::EVM_REVERT_CODE, genesis::GenesisAccount,
+    dapp_staking::FIXED_TIER_SLOTS_ARGS, evm::EVM_REVERT_CODE, genesis::GenesisAccount,
     parachain::SHIBUYA_ID,
 };
 
@@ -62,10 +62,7 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
         .collect::<Vec<_>>();
 
     let slots_per_tier = vec![0, 6, 10, 0];
-    let rank_points: Vec<Vec<u8>> = slots_per_tier
-        .iter()
-        .map(|&slots| (1..=slots.min(MAX_ENCODED_RANK as u16) as u8).collect())
-        .collect();
+    let tier_rank_multipliers: Vec<u32> = vec![0, 24_000, 46_700, 0];
 
     let config = RuntimeGenesisConfig {
         system: Default::default(),
@@ -154,10 +151,10 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
                     required_percentage: Perbill::from_parts(23_200_000), // 2.32%
                 },
                 TierThreshold::FixedPercentage {
-                    required_percentage: Perbill::from_parts(11_600_000), // 1.16%
+                    required_percentage: Perbill::from_parts(9_300_000), // 0.93%
                 },
                 TierThreshold::FixedPercentage {
-                    required_percentage: Perbill::from_parts(5_800_000), // 0.58%
+                    required_percentage: Perbill::from_parts(3_500_000), // 0.35%
                 },
                 // Tier 3: unreachable dummy
                 TierThreshold::FixedPercentage {
@@ -165,11 +162,9 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
                 },
             ],
             slots_per_tier,
-            // Force fixed 16 slots
-            slot_number_args: (0, 16),
+            slot_number_args: FIXED_TIER_SLOTS_ARGS,
             safeguard: Some(false),
-            rank_points,
-            base_reward_portion: Permill::from_percent(10),
+            tier_rank_multipliers,
             ..Default::default()
         },
         inflation: Default::default(),

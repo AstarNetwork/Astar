@@ -17,6 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use astar_primitives::dapp_staking::FIXED_TIER_SLOTS_ARGS;
 use core::marker::PhantomData;
 use frame_support::traits::UncheckedOnRuntimeUpgrade;
 
@@ -34,10 +35,10 @@ pub mod versioned_migrations {
 
     /// Migration V10 to V11 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
     /// the migration is only performed when on-chain version is 10.
-    pub type V10ToV11<T, TierParamsConfig> = frame_support::migrations::VersionedMigration<
+    pub type V10ToV11<T, TierParamsConfig, OldErasBnE> = frame_support::migrations::VersionedMigration<
         10,
         11,
-        v11::VersionMigrateV10ToV11<T, TierParamsConfig>,
+        v11::VersionMigrateV10ToV11<T, TierParamsConfig, OldErasBnE>,
         Pallet<T>,
         <T as frame_system::Config>::DbWeight,
     >;
@@ -49,52 +50,79 @@ pub trait TierParamsV11Config {
     fn slot_distribution() -> [Permill; 4];
     fn tier_thresholds() -> [TierThreshold; 4];
     fn slot_number_args() -> (u64, u64);
-    fn rank_points() -> [Vec<u8>; 4];
-    fn base_reward_portion() -> Permill;
+    fn tier_rank_multipliers() -> [u32; 4];
+}
+
+pub struct DefaultTierParamsV11;
+impl TierParamsV11Config for DefaultTierParamsV11 {
+    fn reward_portion() -> [Permill; 4] {
+        [
+            Permill::from_percent(0),
+            Permill::from_percent(70),
+            Permill::from_percent(30),
+            Permill::from_percent(0),
+        ]
+    }
+
+    fn slot_distribution() -> [Permill; 4] {
+        [
+            Permill::from_percent(0),
+            Permill::from_parts(375_000), // 37.5%
+            Permill::from_parts(625_000), // 62.5%
+            Permill::from_percent(0),
+        ]
+    }
+
+    fn tier_thresholds() -> [TierThreshold; 4] {
+        [
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_parts(23_200_000), // 2.32%
+            },
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_parts(9_300_000), // 0.93%
+            },
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_parts(3_500_000), // 0.35%
+            },
+            // Tier 3: unreachable dummy
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_parts(0), // 0%
+            },
+        ]
+    }
+
+    fn slot_number_args() -> (u64, u64) {
+        FIXED_TIER_SLOTS_ARGS
+    }
+
+    fn tier_rank_multipliers() -> [u32; 4] {
+        [0, 24_000, 46_700, 0]
+    }
 }
 
 mod v11 {
     use super::*;
-    use crate::migration::v10::DAppTierRewards as DAppTierRewardsV10;
 
-    pub struct VersionMigrateV10ToV11<T, P>(PhantomData<(T, P)>);
+    pub struct VersionMigrateV10ToV11<T, P, OldErasBnE>(PhantomData<(T, P, OldErasBnE)>);
 
-    impl<T: Config, P: TierParamsV11Config> UncheckedOnRuntimeUpgrade for VersionMigrateV10ToV11<T, P> {
+    impl<T: Config, P: TierParamsV11Config, OldErasBnE: Get<u32>> UncheckedOnRuntimeUpgrade for VersionMigrateV10ToV11<T, P, OldErasBnE> {
         fn on_runtime_upgrade() -> Weight {
-            let mut reads = 1u64; // HistoryCleanupMarker
-            let mut writes = 0u64;
+            let old_eras_bne = OldErasBnE::get();
 
-            let cleanup_marker = HistoryCleanupMarker::<T>::get();
-            let oldest_valid_era = cleanup_marker.oldest_valid_era;
-
-            log::info!(
-                target: LOG_TARGET,
-                "Migration v11: oldest_valid_era = {}, will skip expired entries",
-                oldest_valid_era
-            );
+            let mut reads: u64 = 0;
+            let mut writes: u64 = 0;
 
             // 1. Migrate StaticTierParams
-            let reward_portion = P::reward_portion();
-            let slot_distribution = P::slot_distribution();
-            let tier_thresholds = P::tier_thresholds();
-            let rank_points_config = P::rank_points();
-
             let new_params = TierParameters::<T::NumberOfTiers> {
-                reward_portion: BoundedVec::try_from(reward_portion.to_vec())
+                reward_portion: BoundedVec::try_from(P::reward_portion().to_vec())
                     .expect("4 tiers configured"),
-                slot_distribution: BoundedVec::try_from(slot_distribution.to_vec())
+                slot_distribution: BoundedVec::try_from(P::slot_distribution().to_vec())
                     .expect("4 tiers configured"),
-                tier_thresholds: BoundedVec::try_from(tier_thresholds.to_vec())
+                tier_thresholds: BoundedVec::try_from(P::tier_thresholds().to_vec())
                     .expect("4 tiers configured"),
                 slot_number_args: P::slot_number_args(),
-                rank_points: BoundedVec::try_from(
-                    rank_points_config
-                        .into_iter()
-                        .map(|points| BoundedVec::try_from(points).expect("rank points"))
-                        .collect::<Vec<_>>(),
-                )
-                .expect("4 tiers"),
-                base_reward_portion: P::base_reward_portion(),
+                tier_rank_multipliers: BoundedVec::try_from(P::tier_rank_multipliers().to_vec())
+                    .expect("4 tiers configured"),
             };
 
             if !new_params.is_valid() {
@@ -102,293 +130,185 @@ mod v11 {
                     target: LOG_TARGET,
                     "New TierParameters validation failed. Enabling maintenance mode."
                 );
+
+                // ActiveProtocolState::mutate => 1 read + 1 write
                 ActiveProtocolState::<T>::mutate(|state| {
                     state.maintenance = true;
                 });
-                return T::DbWeight::get().reads_writes(reads, 1);
+                reads += 1;
+                writes += 1;
+
+                return T::DbWeight::get().reads_writes(reads, writes);
             }
 
+            // StaticTierParams::put => 1 write
             StaticTierParams::<T>::put(new_params);
             writes += 1;
             log::info!(target: LOG_TARGET, "StaticTierParams updated successfully");
 
-            // 2. Migrate DAppTiers entries - only valid ones
-            let mut migrated_count = 0u32;
-            let mut deleted_count = 0u32;
-            let mut migration_failed = false;
+            // 2. Update ActiveProtocolState in a SINGLE mutate (avoid extra .get() read)
+            // ActiveProtocolState::mutate => 1 read + 1 write
+            ActiveProtocolState::<T>::mutate(|state| {
+                if state.period_info.subperiod == Subperiod::Voting {
+                    // Recalculate next_era_start block
+                    let current_block: u32 =
+                        frame_system::Pallet::<T>::block_number().saturated_into();
+                    let new_voting_length: u32 = Pallet::<T>::blocks_per_voting_period();
 
-            let all_eras: Vec<EraNumber> = v10::DAppTiers::<T>::iter_keys().collect();
-            reads += all_eras.len() as u64;
+                    state.next_era_start = current_block.saturating_add(new_voting_length);
 
-            for era in all_eras {
-                // Delete expired entries
-                if era < oldest_valid_era {
-                    v10::DAppTiers::<T>::remove(era);
-                    deleted_count += 1;
-                    writes += 1;
-                    continue;
+                    log::info!(target: LOG_TARGET, "ActiveProtocolState updated: next_era_start");
+                } else {
+                    // Build&Earn: adjust remainder for next_subperiod_start_era
+                    let new_eras_total: EraNumber =
+                        T::CycleConfiguration::eras_per_build_and_earn_subperiod();
+
+                    // "only the remainder" logic
+                    let current_era: EraNumber = state.era;
+                    let old_end: EraNumber = state.period_info.next_subperiod_start_era;
+
+                    let remaining_old: EraNumber = old_end.saturating_sub(current_era);
+                    let elapsed: EraNumber =
+                        old_eras_bne.saturating_sub(remaining_old);
+
+                    let remaining_new: EraNumber = new_eras_total.saturating_sub(elapsed);
+
+                    state.period_info.next_subperiod_start_era =
+                        current_era.saturating_add(remaining_new);
+
+                    log::info!(
+                        target: LOG_TARGET,
+                        "ActiveProtocolState updated: next_subperiod_start_era (remainder-adjusted)"
+                    );
                 }
-
-                reads += 1;
-                let maybe_old: Option<
-                    DAppTierRewardsV10<T::MaxNumberOfContractsLegacy, T::NumberOfTiers>,
-                > = v10::DAppTiers::<T>::get(era);
-
-                match maybe_old {
-                    Some(old) => {
-                        let new = DAppTierRewards {
-                            dapps: old.dapps,
-                            rewards: old.rewards,
-                            period: old.period,
-                            rank_rewards: old.rank_rewards,
-                            rank_points: BoundedVec::default(), // Empty = legacy formula
-                        };
-                        DAppTiers::<T>::insert(era, new);
-                        migrated_count += 1;
-                        writes += 1;
-                    }
-                    None => {
-                        log::error!(
-                            target: LOG_TARGET,
-                            "Failed to decode DAppTiers for valid era {}",
-                            era
-                        );
-                        migration_failed = true;
-                        break;
-                    }
-                }
-            }
-
-            if migration_failed {
-                log::error!(
-                    target: LOG_TARGET,
-                    "DAppTiers migration failed. Enabling maintenance mode."
-                );
-                ActiveProtocolState::<T>::mutate(|state| {
-                    state.maintenance = true;
-                });
-                return T::DbWeight::get().reads_writes(reads, writes + 1);
-            }
-
-            // 3. Update cleanup marker
-            if deleted_count > 0 {
-                HistoryCleanupMarker::<T>::mutate(|marker| {
-                    marker.dapp_tiers_index = marker.dapp_tiers_index.max(oldest_valid_era);
-                });
-                writes += 1;
-            }
-
-            log::info!(
-                target: LOG_TARGET,
-                "Migration v11 complete: migrated={}, deleted_expired={}",
-                migrated_count,
-                deleted_count
-            );
+            });
+            reads += 1;
+            writes += 1;
 
             T::DbWeight::get().reads_writes(reads, writes)
         }
 
         #[cfg(feature = "try-runtime")]
         fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
-            let cleanup_marker = HistoryCleanupMarker::<T>::get();
-            let oldest_valid_era = cleanup_marker.oldest_valid_era;
-
-            let valid_count = v10::DAppTiers::<T>::iter_keys()
-                .filter(|era| *era >= oldest_valid_era)
-                .count() as u32;
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let subperiod = protocol_state.period_info.subperiod;
+            let current_era = protocol_state.era;
+            let next_era_start = protocol_state.next_era_start;
+            let old_next_subperiod_era = protocol_state.period_info.next_subperiod_start_era;
+            let current_block: u32 = frame_system::Pallet::<T>::block_number().saturated_into();
 
             log::info!(
                 target: LOG_TARGET,
-                "Pre-upgrade: {} valid DAppTiers entries (era >= {})",
-                valid_count,
-                oldest_valid_era
+                "Pre-upgrade: era={}, subperiod={:?}, next_era_start={}, next_subperiod_era={}, block={}",
+                current_era,
+                subperiod,
+                next_era_start,
+                old_next_subperiod_era,
+                current_block
             );
 
-            // Verify all valid entries can be decoded
-            for era in v10::DAppTiers::<T>::iter_keys() {
-                if era >= oldest_valid_era {
-                    ensure!(
-                        v10::DAppTiers::<T>::get(era).is_some(),
-                        "Failed to decode DAppTiers for era {}",
-                    );
-                }
-            }
+            // Verify current StaticTierParams can be read
+            let old_params = StaticTierParams::<T>::get();
+            ensure!(old_params.is_valid(), "Old tier params invalid");
 
-            Ok((valid_count, oldest_valid_era).encode())
+            Ok((
+                subperiod,
+                current_era,
+                next_era_start,
+                old_next_subperiod_era,
+                current_block,
+            )
+                .encode())
         }
 
         #[cfg(feature = "try-runtime")]
         fn post_upgrade(data: Vec<u8>) -> Result<(), TryRuntimeError> {
-            let (expected_count, oldest_valid_era): (u32, EraNumber) =
-                Decode::decode(&mut &data[..])
-                    .map_err(|_| TryRuntimeError::Other("Failed to decode pre-upgrade data"))?;
+            let (old_subperiod, old_era, old_next_era_start, old_next_subperiod_era, pre_block): (
+                Subperiod,
+                EraNumber,
+                u32,
+                EraNumber,
+                u32,
+            ) = Decode::decode(&mut &data[..])
+                .map_err(|_| TryRuntimeError::Other("Failed to decode pre-upgrade data"))?;
+            let old_eras_bne = OldErasBnE::get();
 
+            // Verify storage version
             ensure!(
                 Pallet::<T>::on_chain_storage_version() == StorageVersion::new(11),
                 "Version should be 11"
             );
 
+            // Verify new params are valid
             let new_params = StaticTierParams::<T>::get();
             ensure!(new_params.is_valid(), "New tier params invalid");
+            ensure!(
+                new_params.tier_rank_multipliers.len() == 4,
+                "Should have 4 tier_rank_multipliers entries"
+            );
 
-            let new_count = DAppTiers::<T>::iter().count() as u32;
-            ensure!(new_count == expected_count, "DAppTiers count mismatch");
+            // Verify ActiveProtocolState update
+            let protocol_state = ActiveProtocolState::<T>::get();
 
-            for (era, rewards) in DAppTiers::<T>::iter() {
-                ensure!(era >= oldest_valid_era, "Found expired entry");
+            if old_subperiod == Subperiod::Voting {
+                // expected_end = pre_block + new_voting_length
+                let new_voting_length: u32 = Pallet::<T>::blocks_per_voting_period();
+                let expected_end = pre_block.saturating_add(new_voting_length);
+
                 ensure!(
-                    rewards.rank_points.is_empty(),
-                    "Should have empty rank_points"
+                    protocol_state.next_era_start == expected_end,
+                    "next_era_start should be pre_block + new_voting_length"
                 );
 
-                for (dapp_id, _) in rewards.dapps.iter() {
-                    // Verify try_claim still works (without mutating)
-                    let mut test_rewards = rewards.clone();
-                    assert!(
-                        test_rewards.try_claim(*dapp_id).is_ok(),
-                        "Legacy claim broken"
-                    );
-                }
+                // Optional sanity: should have changed (unless it already matched)
+                ensure!(
+                    protocol_state.next_era_start != old_next_era_start
+                        || old_next_era_start == expected_end,
+                    "next_era_start did not update as expected"
+                );
+
+                // We did NOT change next_subperiod_start_era in voting branch (in this migration)
+                ensure!(
+                    protocol_state.period_info.next_subperiod_start_era == old_next_subperiod_era,
+                    "next_subperiod_start_era should be unchanged in Voting branch"
+                );
+
+                log::info!(target: LOG_TARGET, "Post-upgrade: Voting branch OK");
+            } else {
+                // Build&Earn branch: remainder-adjusted next_subperiod_start_era
+                let new_total: EraNumber =
+                    T::CycleConfiguration::eras_per_build_and_earn_subperiod();
+
+                let current_era: EraNumber = old_era;
+                let old_end: EraNumber = old_next_subperiod_era;
+
+                let remaining_old: EraNumber = old_end.saturating_sub(current_era);
+                let elapsed: EraNumber = old_eras_bne.saturating_sub(remaining_old);
+                let remaining_new: EraNumber = new_total.saturating_sub(elapsed);
+
+                let expected_new_end: EraNumber = current_era.saturating_add(remaining_new);
+
+                ensure!(
+                    protocol_state.period_info.next_subperiod_start_era == expected_new_end,
+                    "next_subperiod_start_era should be remainder-adjusted to the new schedule"
+                );
+
+                // next_era_start was not modified by this branch in this migration
+                ensure!(
+                    protocol_state.next_era_start == old_next_era_start,
+                    "next_era_start should be unchanged in Build&Earn branch"
+                );
+
+                log::info!(target: LOG_TARGET, "Post-upgrade: Build&Earn branch OK");
             }
 
+            // Verify not in maintenance mode
             ensure!(
-                !ActiveProtocolState::<T>::get().maintenance,
+                !protocol_state.maintenance,
                 "Maintenance mode should not be enabled"
             );
 
             Ok(())
         }
-    }
-}
-
-mod v10 {
-    use super::*;
-    use frame_support::storage_alias;
-
-    /// v10 DAppTierRewards (without rank_points)
-    #[derive(Encode, Decode, Clone)]
-    pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
-        pub dapps: BoundedBTreeMap<DAppId, RankedTier, MD>,
-        pub rewards: BoundedVec<Balance, NT>,
-        #[codec(compact)]
-        pub period: PeriodNumber,
-        pub rank_rewards: BoundedVec<Balance, NT>,
-    }
-
-    /// v10 storage alias for DAppTiers
-    #[storage_alias]
-    pub type DAppTiers<T: Config> = StorageMap<
-        Pallet<T>,
-        Twox64Concat,
-        EraNumber,
-        DAppTierRewards<<T as Config>::MaxNumberOfContractsLegacy, <T as Config>::NumberOfTiers>,
-        OptionQuery,
-    >;
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::test::mock::{ExtBuilder, Test};
-    use astar_primitives::dapp_staking::FIXED_TIER_SLOTS_ARGS;
-
-    pub struct TestTierParams;
-    impl TierParamsV11Config for TestTierParams {
-        fn reward_portion() -> [Permill; 4] {
-            [
-                Permill::from_percent(0),
-                Permill::from_percent(70),
-                Permill::from_percent(30),
-                Permill::from_percent(0),
-            ]
-        }
-
-        fn slot_distribution() -> [Permill; 4] {
-            [
-                Permill::from_percent(0),
-                Permill::from_parts(375_000), // 37.5%
-                Permill::from_parts(625_000), // 62.5%
-                Permill::from_percent(0),
-            ]
-        }
-
-        fn tier_thresholds() -> [TierThreshold; 4] {
-            use crate::TierThreshold;
-            [
-                TierThreshold::FixedPercentage {
-                    required_percentage: Perbill::from_parts(23_200_000), // 2.32%
-                },
-                TierThreshold::FixedPercentage {
-                    required_percentage: Perbill::from_parts(11_600_000), // 1.16%
-                },
-                TierThreshold::FixedPercentage {
-                    required_percentage: Perbill::from_parts(5_800_000), // 0.58%
-                },
-                // Tier 3: unreachable dummy
-                TierThreshold::FixedPercentage {
-                    required_percentage: Perbill::from_parts(0), // 0%
-                },
-            ]
-        }
-
-        fn slot_number_args() -> (u64, u64) {
-            FIXED_TIER_SLOTS_ARGS
-        }
-
-        fn rank_points() -> [Vec<u8>; 4] {
-            [
-                vec![],                                  // Tier 0: dummy
-                vec![10, 11, 12, 13, 14, 15],            // Tier 1: 6 slots
-                vec![1, 3, 5, 7, 9, 11, 13, 15, 17, 19], // Tier 2: 10 slots
-                vec![],                                  // Tier 3: dummy
-            ]
-        }
-
-        fn base_reward_portion() -> Permill {
-            Permill::from_percent(10)
-        }
-    }
-
-    #[test]
-    fn migration_v10_to_v11_preserves_claimable_rewards() {
-        ExtBuilder::default()
-            .without_try_state()
-            .build_and_execute(|| {
-                // Setup: Create v10-style DAppTiers entry
-                let era = 5;
-                let period = 1;
-                let old_entry = v10::DAppTierRewards {
-                    dapps: BoundedBTreeMap::try_from(BTreeMap::from([
-                        (0, RankedTier::new_saturated(1, 5, 10)),
-                        (1, RankedTier::new_saturated(2, 3, 10)),
-                    ]))
-                    .unwrap(),
-                    rewards: BoundedVec::try_from(vec![0, 100_000, 50_000, 0]).unwrap(),
-                    period,
-                    rank_rewards: BoundedVec::try_from(vec![0, 1_000, 500, 0]).unwrap(),
-                };
-
-                v10::DAppTiers::<Test>::insert(era, old_entry);
-
-                // Set cleanup marker so this era is "valid"
-                HistoryCleanupMarker::<Test>::put(CleanupMarker {
-                    oldest_valid_era: era,
-                    ..Default::default()
-                });
-
-                let _weight =
-                    v11::VersionMigrateV10ToV11::<Test, TestTierParams>::on_runtime_upgrade();
-
-                let mut new_entry = DAppTiers::<Test>::get(era).expect("Entry should exist");
-                assert!(
-                    new_entry.rank_points.is_empty(),
-                    "Migrated entries have empty rank_points"
-                );
-
-                let (reward, ranked_tier) = new_entry.try_claim(0).unwrap();
-                assert_eq!(ranked_tier.rank(), 5);
-                // Legacy formula: base + rank * rank_reward_per_point
-                assert_eq!(reward, 100_000 + 5 * 1_000);
-            });
     }
 }

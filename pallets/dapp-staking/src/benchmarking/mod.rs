@@ -1145,25 +1145,12 @@ mod benchmarks {
         });
         EraRewards::<T>::insert(&cleanup_marker.era_reward_index, reward_span);
 
-        let rank_points: BoundedVec<BoundedVec<u8, ConstU32<15>>, T::NumberOfTiers> = (1
-            ..=T::NumberOfTiers::get())
-            .map(|slots| {
-                let inner: BoundedVec<u8, ConstU32<15>> = (1..=slots as u8)
-                    .collect::<Vec<_>>()
-                    .try_into()
-                    .expect("Using incremental points; QED.");
-                inner
-            })
-            .collect::<Vec<_>>()
-            .try_into()
-            .expect("Using `NumberOfTiers` as length; QED.");
-
         // Prepare completely filled up tier rewards and insert it into storage.
         DAppTiers::<T>::insert(
             &cleanup_marker.dapp_tiers_index,
             DAppTierRewardsFor::<T> {
                 dapps: (0..T::MaxNumberOfContracts::get())
-                    .map(|dapp_id| (dapp_id as DAppId, RankedTier::new_saturated(0, 0, 10)))
+                    .map(|dapp_id| (dapp_id as DAppId, RankedTier::new_saturated(0, 0)))
                     .collect::<BTreeMap<DAppId, RankedTier>>()
                     .try_into()
                     .expect("Using `MaxNumberOfContracts` as length; QED."),
@@ -1174,7 +1161,6 @@ mod benchmarks {
                 rank_rewards: vec![0; T::NumberOfTiers::get() as usize]
                     .try_into()
                     .expect("Using `NumberOfTiers` as length; QED."),
-                rank_points,
             },
         );
 
