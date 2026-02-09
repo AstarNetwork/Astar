@@ -116,10 +116,18 @@ mod v11 {
             let mut writes: u64 = 0;
 
             // 1. Migrate StaticTierParams
-            let reward_portion = BoundedVec::<Permill, T::NumberOfTiers>::truncate_from(P::reward_portion().to_vec());
-            let slot_distribution = BoundedVec::<Permill, T::NumberOfTiers>::truncate_from(P::slot_distribution().to_vec());
-            let tier_thresholds = BoundedVec::<TierThreshold, T::NumberOfTiers>::truncate_from(P::tier_thresholds().to_vec());
-            let tier_rank_multipliers = BoundedVec::<u32, T::NumberOfTiers>::truncate_from(P::tier_rank_multipliers().to_vec());
+            let reward_portion = BoundedVec::<Permill, T::NumberOfTiers>::truncate_from(
+                P::reward_portion().to_vec(),
+            );
+            let slot_distribution = BoundedVec::<Permill, T::NumberOfTiers>::truncate_from(
+                P::slot_distribution().to_vec(),
+            );
+            let tier_thresholds = BoundedVec::<TierThreshold, T::NumberOfTiers>::truncate_from(
+                P::tier_thresholds().to_vec(),
+            );
+            let tier_rank_multipliers = BoundedVec::<u32, T::NumberOfTiers>::truncate_from(
+                P::tier_rank_multipliers().to_vec(),
+            );
 
             let new_params = TierParameters::<T::NumberOfTiers> {
                 reward_portion,
