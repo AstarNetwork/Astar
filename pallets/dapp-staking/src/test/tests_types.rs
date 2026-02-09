@@ -17,7 +17,9 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use astar_primitives::{
-    dapp_staking::{RankedTier, StandardTierSlots, STANDARD_TIER_SLOTS_ARGS, FIXED_TIER_SLOTS_ARGS},
+    dapp_staking::{
+        RankedTier, StandardTierSlots, FIXED_TIER_SLOTS_ARGS, STANDARD_TIER_SLOTS_ARGS,
+    },
     Balance,
 };
 use frame_support::{assert_ok, parameter_types};
@@ -3585,17 +3587,13 @@ fn tier_params_check_is_ok() {
 
     // 8th scenario - multiplier is capped
     let mut valid_tier_points = params.clone();
-    valid_tier_points.tier_rank_multipliers = BoundedVec::try_from(vec![
-        10_000, 100_000, 100_000
-    ])
-        .unwrap();
+    valid_tier_points.tier_rank_multipliers =
+        BoundedVec::try_from(vec![10_000, 100_000, 100_000]).unwrap();
     assert!(valid_tier_points.is_valid());
 
     let mut invalid_tier_points = params.clone();
-    invalid_tier_points.tier_rank_multipliers = BoundedVec::try_from(vec![
-        10_000, 100_001, 100_000
-    ])
-        .unwrap();
+    invalid_tier_points.tier_rank_multipliers =
+        BoundedVec::try_from(vec![10_000, 100_001, 100_000]).unwrap();
     assert!(!invalid_tier_points.is_valid());
 }
 

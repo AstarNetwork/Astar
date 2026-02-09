@@ -35,13 +35,14 @@ pub mod versioned_migrations {
 
     /// Migration V10 to V11 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
     /// the migration is only performed when on-chain version is 10.
-    pub type V10ToV11<T, TierParamsConfig, OldErasBnE> = frame_support::migrations::VersionedMigration<
-        10,
-        11,
-        v11::VersionMigrateV10ToV11<T, TierParamsConfig, OldErasBnE>,
-        Pallet<T>,
-        <T as frame_system::Config>::DbWeight,
-    >;
+    pub type V10ToV11<T, TierParamsConfig, OldErasBnE> =
+        frame_support::migrations::VersionedMigration<
+            10,
+            11,
+            v11::VersionMigrateV10ToV11<T, TierParamsConfig, OldErasBnE>,
+            Pallet<T>,
+            <T as frame_system::Config>::DbWeight,
+        >;
 }
 
 /// Configuration for V11 tier parameters
@@ -105,7 +106,9 @@ mod v11 {
 
     pub struct VersionMigrateV10ToV11<T, P, OldErasBnE>(PhantomData<(T, P, OldErasBnE)>);
 
-    impl<T: Config, P: TierParamsV11Config, OldErasBnE: Get<u32>> UncheckedOnRuntimeUpgrade for VersionMigrateV10ToV11<T, P, OldErasBnE> {
+    impl<T: Config, P: TierParamsV11Config, OldErasBnE: Get<u32>> UncheckedOnRuntimeUpgrade
+        for VersionMigrateV10ToV11<T, P, OldErasBnE>
+    {
         fn on_runtime_upgrade() -> Weight {
             let old_eras_bne = OldErasBnE::get();
 
@@ -168,8 +171,7 @@ mod v11 {
                     let old_end: EraNumber = state.period_info.next_subperiod_start_era;
 
                     let remaining_old: EraNumber = old_end.saturating_sub(current_era);
-                    let elapsed: EraNumber =
-                        old_eras_bne.saturating_sub(remaining_old);
+                    let elapsed: EraNumber = old_eras_bne.saturating_sub(remaining_old);
 
                     let remaining_new: EraNumber = new_eras_total.saturating_sub(elapsed);
 
