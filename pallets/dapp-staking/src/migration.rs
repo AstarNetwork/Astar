@@ -116,16 +116,17 @@ mod v11 {
             let mut writes: u64 = 0;
 
             // 1. Migrate StaticTierParams
+            let reward_portion = BoundedVec::<Permill, T::NumberOfTiers>::truncate_from(P::reward_portion().to_vec());
+            let slot_distribution = BoundedVec::<Permill, T::NumberOfTiers>::truncate_from(P::slot_distribution().to_vec());
+            let tier_thresholds = BoundedVec::<TierThreshold, T::NumberOfTiers>::truncate_from(P::tier_thresholds().to_vec());
+            let tier_rank_multipliers = BoundedVec::<u32, T::NumberOfTiers>::truncate_from(P::tier_rank_multipliers().to_vec());
+
             let new_params = TierParameters::<T::NumberOfTiers> {
-                reward_portion: BoundedVec::try_from(P::reward_portion().to_vec())
-                    .expect("4 tiers configured"),
-                slot_distribution: BoundedVec::try_from(P::slot_distribution().to_vec())
-                    .expect("4 tiers configured"),
-                tier_thresholds: BoundedVec::try_from(P::tier_thresholds().to_vec())
-                    .expect("4 tiers configured"),
+                reward_portion,
+                slot_distribution,
+                tier_thresholds,
                 slot_number_args: P::slot_number_args(),
-                tier_rank_multipliers: BoundedVec::try_from(P::tier_rank_multipliers().to_vec())
-                    .expect("4 tiers configured"),
+                tier_rank_multipliers,
             };
 
             if !new_params.is_valid() {
@@ -156,11 +157,21 @@ mod v11 {
                     // Recalculate next_era_start block
                     let current_block: u32 =
                         frame_system::Pallet::<T>::block_number().saturated_into();
-                    let new_voting_length: u32 = Pallet::<T>::blocks_per_voting_period();
+                    let new_voting_length: u32 = Pallet::<T>::blocks_per_voting_period()
+                        .max(T::CycleConfiguration::blocks_per_era());
+                    let remaining_old: u32 = state.next_era_start.saturating_sub(current_block);
+                    // Carry over remaining time, but never extend beyond the new voting length.
+                    // If already overdue, schedule for the next block.
+                    let remaining_new: u32 = remaining_old.min(new_voting_length).max(1);
 
                     state.next_era_start = current_block.saturating_add(new_voting_length);
 
-                    log::info!(target: LOG_TARGET, "ActiveProtocolState updated: next_era_start");
+                    log::info!(
+                        target: LOG_TARGET,
+                        "ActiveProtocolState updated: next_era_start (remaining_old={}, remaining_new={})",
+                        remaining_old,
+                        remaining_new
+                    );
                 } else {
                     // Build&Earn: adjust remainder for next_subperiod_start_era
                     let new_eras_total: EraNumber =
