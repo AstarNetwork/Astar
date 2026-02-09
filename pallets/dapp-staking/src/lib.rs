@@ -545,12 +545,7 @@ pub mod pallet {
 
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
-            let slots_per_tier = vec![0u16, 6, 10, 0];
-            let tier_rank_multipliers: Vec<u32> = slots_per_tier
-                .iter()
-                .map(|&slots| if slots == 0 { 10_000 } else { 20_000 })
-                .collect();
-
+            let num_tiers = T::NumberOfTiers::get();
             Self {
                 reward_portion: vec![
                     Permill::zero(),           // Tier 0: dummy
@@ -579,9 +574,9 @@ pub mod pallet {
                     },
                 ],
                 slot_number_args: FIXED_TIER_SLOTS_ARGS,
-                slots_per_tier,
+                slots_per_tier: vec![100; num_tiers as usize],
                 safeguard: None,
-                tier_rank_multipliers,
+                tier_rank_multipliers: vec![0u32, 24_000, 46_700, 0],
                 _config: Default::default(),
             }
         }
