@@ -1710,7 +1710,14 @@ pub struct TierParameters<NT: Get<u32>> {
     /// This can be made more generic in the future in case more complex equations are required.
     /// But for now this simple tuple serves the purpose.
     pub(crate) slot_number_args: (u64, u64),
-    /// Rank multiplier per tier in bips (100% = 10_000 bips): rank 10 reward as percentage of rank 0 reward.
+    /// Rank multiplier per tier in bips (100% = 10_000 bips):
+    /// defines how much rank 10 earns relative to rank 0.
+    ///
+    /// Example:
+    /// - `24_000` → rank 10 earns 2.4× rank 0
+    ///   ⇒ per-rank increment = (240% − 100%) / 10 = +14% per rank
+    /// - `10_000` → rank rewards disabled (rank 0..10 all earn the same)
+    /// - `0` → no rewards for all slots
     pub(crate) tier_rank_multipliers: BoundedVec<u32, NT>,
 }
 

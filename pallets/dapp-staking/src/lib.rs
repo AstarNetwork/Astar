@@ -1865,7 +1865,6 @@ pub mod pallet {
         ///    This information is used to calculate 'score' per dApp, which is used to determine the tier.
         ///
         /// 2. Sort the entries by the score, in descending order - the top score dApp comes first.
-        /// Ties are broken by dApp ID (ascending).
         ///
         /// 3. Assign dApps to tiers based on stake thresholds, calculating ratio-based ranks within each tier.
         ///
@@ -1912,10 +1911,8 @@ pub mod pallet {
             }
 
             // 2.
-            // Sort descending by stake, ascending by dApp ID for ties - top dApp will end in the first place, 0th index.
-            dapp_stakes.sort_unstable_by(|(id_a, amount_a), (id_b, amount_b)| {
-                amount_b.cmp(amount_a).then_with(|| id_a.cmp(id_b))
-            });
+            // Sort by amount staked, in reverse - top dApp will end in the first place, 0th index.
+            dapp_stakes.sort_unstable_by(|(_, amount_1), (_, amount_2)| amount_2.cmp(amount_1));
 
             let tier_config = TierConfig::<T>::get();
             let tier_params = StaticTierParams::<T>::get();
@@ -1964,7 +1961,10 @@ pub mod pallet {
 
                 // 4. Compute tier rewards using rank multiplier
                 let filled_slots = tier_slots.len() as u32;
-                let ranks_sum: u32 = tier_slots.values().map(|rt| rt.rank() as u32).sum();
+                // sum of all ranks for this tier
+                let ranks_sum = tier_slots
+                    .iter()
+                    .fold(0u32, |accum, (_, x)| accum.saturating_add(x.rank().into()));
 
                 let multiplier_bips = tier_params
                     .tier_rank_multipliers
@@ -2472,49 +2472,71 @@ pub mod pallet {
         }
 
         /// Compute deterministic tier rewards params (base-0 reward and per-rank-step reward)
-        /// using rank-multiplier in bips (10_000 = 100%)
+        /// - `tier_base_reward0`: reward for rank 0 (base component)
+        /// - `reward_per_rank_step`: additional reward per +1 rank
+        /// `rank10_multiplier_bips` defines the weight at MAX_RANK relative to rank 0 (in bips, 10_000 = 100%)
         pub(crate) fn compute_tier_rewards(
             tier_allocation: Balance,
             tier_capacity: u16,
             filled_slots: u32,
             ranks_sum: u32,
-            multiplier_bips: u32,
+            rank10_multiplier_bips: u32,
         ) -> (Balance, Balance) {
-            const WEIGHT_UNIT: u128 = 10_000; // 100% in bips
+            const BASE_WEIGHT_BIPS: u128 = 10_000; // 100% in bips
+
             let max_rank: u128 = RankedTier::MAX_RANK as u128; // 10
             let avg_rank: u128 = max_rank / 2; // 5
 
+            // If there is nothing to distribute or no participants, return zero components.
             if tier_allocation.is_zero() || tier_capacity == 0 || filled_slots == 0 {
                 return (Balance::zero(), Balance::zero());
             }
 
-            // weight(rank) = WEIGHT_UNIT + rank * inc_w, where:
-            // inc_w = (multiplier_bips - WEIGHT_UNIT) / MAX_RANK
-            let inc_w: u128 = (multiplier_bips as u128)
-                .saturating_sub(WEIGHT_UNIT)
+            // Convert "Rank 10 earns X% of Rank 0" into a linear per-rank-step extra weight:
+            //
+            //   step_weight = (weight(MAX_RANK) - weight(0)) / MAX_RANK
+            //              = (rank10_multiplier_bips - BASE_WEIGHT_BIPS) / MAX_RANK
+            let step_weight_bips: u128 = (rank10_multiplier_bips as u128)
+                .saturating_sub(BASE_WEIGHT_BIPS)
                 .saturating_div(max_rank);
 
-            // actual_weight = filled_slots * WEIGHT_UNIT + inc_w * ranks_sum
-            let actual_weight: u128 = (filled_slots as u128)
-                .saturating_mul(WEIGHT_UNIT)
-                .saturating_add((ranks_sum as u128).saturating_mul(inc_w));
+            // Total weight contributed by currently occupied slots:
+            //
+            //   Each slot contributes BASE_WEIGHT_BIPS
+            //   Each rank point contributes step_weight_bips
+            //
+            //   total_weight = filled_slots * BASE_WEIGHT_BIPS + sum(rank_i) * step_weight_bips
+            let observed_total_weight: u128 = (filled_slots as u128)
+                .saturating_mul(BASE_WEIGHT_BIPS)
+                .saturating_add((ranks_sum as u128).saturating_mul(step_weight_bips));
 
-            // target_weight = tier_capacity * avg_weight, avg_weight = WEIGHT_UNIT + avg_rank * inc_w
-            let avg_weight: u128 = WEIGHT_UNIT.saturating_add(avg_rank.saturating_mul(inc_w));
-            let target_weight: u128 = (tier_capacity as u128).saturating_mul(avg_weight);
+            // "Normally filled tier" cap (prevents over-distribution when ranks collide, e.g. all MAX_RANK):
+            //
+            // Expected average slot weight if ranks are roughly evenly spread:
+            //   avg_slot_weight = BASE_WEIGHT_BIPS + avg_rank * step_weight_bips
+            //   expected_full_weight = tier_capacity * avg_slot_weight
+            let avg_slot_weight_bips: u128 =
+                BASE_WEIGHT_BIPS.saturating_add(avg_rank.saturating_mul(step_weight_bips));
+            let expected_full_weight: u128 =
+                (tier_capacity as u128).saturating_mul(avg_slot_weight_bips);
 
-            let denom: u128 = actual_weight.max(target_weight);
-            if denom == 0 {
+            // Normalize by the larger of:
+            // - observed_total_weight: proportional distribution for partially filled tiers
+            // - expected_full_weight: cap for extreme rank distributions / collisions
+            let normalization_weight: u128 = observed_total_weight.max(expected_full_weight);
+            if normalization_weight == 0 {
                 return (Balance::zero(), Balance::zero());
             }
 
             let alloc: u128 = tier_allocation.into();
-            let tier_reward0_u128 = alloc.saturating_mul(WEIGHT_UNIT) / denom;
-            let rank_reward_u128 = alloc.saturating_mul(inc_w) / denom;
+            let tier_base_reward0_u128 =
+                alloc.saturating_mul(BASE_WEIGHT_BIPS) / normalization_weight;
+            let reward_per_rank_step_u128 =
+                alloc.saturating_mul(step_weight_bips) / normalization_weight;
 
             (
-                tier_reward0_u128.saturated_into::<Balance>(),
-                rank_reward_u128.saturated_into::<Balance>(),
+                tier_base_reward0_u128.saturated_into::<Balance>(),
+                reward_per_rank_step_u128.saturated_into::<Balance>(),
             )
         }
 
