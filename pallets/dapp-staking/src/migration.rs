@@ -144,7 +144,6 @@ mod v11 {
                 for (contract, dapp_id) in victims {
                     ContractStake::<T>::remove(&dapp_id);
                     IntegratedDApps::<T>::remove(&contract);
-                    reads += 2;
                     writes += 2;
 
                     let current_era = ActiveProtocolState::<T>::get().era;

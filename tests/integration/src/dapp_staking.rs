@@ -314,9 +314,14 @@ fn full_period_transition_recalculation_and_reward_distribution() {
             RuntimeOrigin::signed(ALICE.clone()),
             stakes.iter().sum()
         ));
+        assert_ok!(DappStaking::lock(
+            RuntimeOrigin::signed(BOB.clone()),
+            stakes.iter().sum()
+        ));
+        let stakers = [ALICE.clone(), BOB.clone()];
         for (i, &s) in stakes.iter().enumerate() {
             assert_ok!(DappStaking::stake(
-                RuntimeOrigin::signed(ALICE.clone()),
+                RuntimeOrigin::signed(stakers[i % 2].clone()),
                 SmartContract::Wasm(contracts[i].clone()),
                 s,
             ));
