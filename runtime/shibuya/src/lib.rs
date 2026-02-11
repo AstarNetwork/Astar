@@ -214,7 +214,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("shibuya"),
     impl_name: Cow::Borrowed("shibuya"),
     authoring_version: 1,
-    spec_version: 2000,
+    spec_version: 2100,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
