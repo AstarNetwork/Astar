@@ -1828,6 +1828,21 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
         self.slots_per_tier.iter().copied().sum()
     }
 
+    /// Returns the stake thresholds required to enter each tier.
+    pub fn tier_thresholds(&self) -> &BoundedVec<Balance, NT> {
+        &self.tier_thresholds
+    }
+
+    /// Returns the number of available slots for each tier.
+    pub fn slots_per_tier(&self) -> &BoundedVec<u16, NT> {
+        &self.slots_per_tier
+    }
+
+    /// Returns the reward distribution portion assigned to each tier.
+    pub fn reward_portion(&self) -> &BoundedVec<Permill, NT> {
+        &self.reward_portion
+    }
+
     /// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.
     pub fn calculate_new(
         &self,

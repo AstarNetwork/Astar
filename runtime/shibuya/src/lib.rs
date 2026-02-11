@@ -1761,6 +1761,7 @@ pub type Unreleased = (
     pallet_dapp_staking::migration::versioned_migrations::V10ToV11<
         Runtime,
         pallet_dapp_staking::migration::DefaultTierParamsV11,
+        ConstU32<8>,
         ConstU32<20>,
     >,
 );
