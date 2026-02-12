@@ -87,7 +87,7 @@
 <a href=#87 id=87 data-nosnippet>87</a>
 <a href=#88 id=88 data-nosnippet>88</a><span class="comment">// Convenience type for `DAppTierRewards` usage.
 <a href=#89 id=89 data-nosnippet>89</a></span><span class="kw">pub type </span>DAppTierRewardsFor&lt;T&gt; =
-<a href=#90 id=90 data-nosnippet>90</a>    DAppTierRewards&lt;&lt;T <span class="kw">as </span>Config&gt;::MaxNumberOfContracts, &lt;T <span class="kw">as </span>Config&gt;::NumberOfTiers&gt;;
+<a href=#90 id=90 data-nosnippet>90</a>    DAppTierRewards&lt;&lt;T <span class="kw">as </span>Config&gt;::MaxNumberOfContractsLegacy, &lt;T <span class="kw">as </span>Config&gt;::NumberOfTiers&gt;;
 <a href=#91 id=91 data-nosnippet>91</a>
 <a href=#92 id=92 data-nosnippet>92</a><span class="comment">// Convenience type for `EraRewardSpan` usage.
 <a href=#93 id=93 data-nosnippet>93</a></span><span class="kw">pub type </span>EraRewardSpanFor&lt;T&gt; = EraRewardSpan&lt;&lt;T <span class="kw">as </span>Config&gt;::EraRewardSpanLength&gt;;
@@ -879,7 +879,7 @@
 <a href=#879 id=879 data-nosnippet>879</a>        </span><span class="kw">if </span><span class="self">self</span>.start_era &lt;= <span class="self">self</span>.end_era {
 <a href=#880 id=880 data-nosnippet>880</a>            <span class="kw">let </span>value = (<span class="self">self</span>.start_era, <span class="self">self</span>.amount);
 <a href=#881 id=881 data-nosnippet>881</a>            <span class="self">self</span>.start_era.saturating_inc();
-<a href=#882 id=882 data-nosnippet>882</a>            <span class="kw">return </span><span class="prelude-val">Some</span>(value);
+<a href=#882 id=882 data-nosnippet>882</a>            <span class="prelude-val">Some</span>(value)
 <a href=#883 id=883 data-nosnippet>883</a>        } <span class="kw">else </span>{
 <a href=#884 id=884 data-nosnippet>884</a>            <span class="prelude-val">None
 <a href=#885 id=885 data-nosnippet>885</a>        </span>}
@@ -1710,302 +1710,338 @@
 <a href=#1710 id=1710 data-nosnippet>1710</a>    /// This can be made more generic in the future in case more complex equations are required.
 <a href=#1711 id=1711 data-nosnippet>1711</a>    /// But for now this simple tuple serves the purpose.
 <a href=#1712 id=1712 data-nosnippet>1712</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) slot_number_args: (u64, u64),
-<a href=#1713 id=1713 data-nosnippet>1713</a>}
-<a href=#1714 id=1714 data-nosnippet>1714</a>
-<a href=#1715 id=1715 data-nosnippet>1715</a><span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;&gt; TierParameters&lt;NT&gt; {
-<a href=#1716 id=1716 data-nosnippet>1716</a>    <span class="doccomment">/// Check if configuration is valid.
-<a href=#1717 id=1717 data-nosnippet>1717</a>    /// All vectors are expected to have exactly the amount of entries as `number_of_tiers`.
-<a href=#1718 id=1718 data-nosnippet>1718</a>    </span><span class="kw">pub fn </span>is_valid(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-<a href=#1719 id=1719 data-nosnippet>1719</a>        <span class="comment">// Reward portions sum should not exceed 100%.
-<a href=#1720 id=1720 data-nosnippet>1720</a>        </span><span class="kw">if </span><span class="self">self
-<a href=#1721 id=1721 data-nosnippet>1721</a>            </span>.reward_portion
-<a href=#1722 id=1722 data-nosnippet>1722</a>            .iter()
-<a href=#1723 id=1723 data-nosnippet>1723</a>            .fold(<span class="prelude-val">Some</span>(Permill::zero()), |acc, permill| <span class="kw">match </span>acc {
-<a href=#1724 id=1724 data-nosnippet>1724</a>                <span class="prelude-val">Some</span>(acc) =&gt; acc.checked_add(permill),
-<a href=#1725 id=1725 data-nosnippet>1725</a>                <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
-<a href=#1726 id=1726 data-nosnippet>1726</a>            })
-<a href=#1727 id=1727 data-nosnippet>1727</a>            .is_none()
-<a href=#1728 id=1728 data-nosnippet>1728</a>        {
-<a href=#1729 id=1729 data-nosnippet>1729</a>            <span class="kw">return </span><span class="bool-val">false</span>;
-<a href=#1730 id=1730 data-nosnippet>1730</a>        }
-<a href=#1731 id=1731 data-nosnippet>1731</a>
-<a href=#1732 id=1732 data-nosnippet>1732</a>        <span class="comment">// Slot distribution sum should not exceed 100%.
-<a href=#1733 id=1733 data-nosnippet>1733</a>        </span><span class="kw">if </span><span class="self">self
-<a href=#1734 id=1734 data-nosnippet>1734</a>            </span>.slot_distribution
-<a href=#1735 id=1735 data-nosnippet>1735</a>            .iter()
-<a href=#1736 id=1736 data-nosnippet>1736</a>            .fold(<span class="prelude-val">Some</span>(Permill::zero()), |acc, permill| <span class="kw">match </span>acc {
-<a href=#1737 id=1737 data-nosnippet>1737</a>                <span class="prelude-val">Some</span>(acc) =&gt; acc.checked_add(permill),
-<a href=#1738 id=1738 data-nosnippet>1738</a>                <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
-<a href=#1739 id=1739 data-nosnippet>1739</a>            })
-<a href=#1740 id=1740 data-nosnippet>1740</a>            .is_none()
-<a href=#1741 id=1741 data-nosnippet>1741</a>        {
-<a href=#1742 id=1742 data-nosnippet>1742</a>            <span class="kw">return </span><span class="bool-val">false</span>;
-<a href=#1743 id=1743 data-nosnippet>1743</a>        }
-<a href=#1744 id=1744 data-nosnippet>1744</a>
-<a href=#1745 id=1745 data-nosnippet>1745</a>        <span class="comment">// Validate that the minimum percentage is less than or equal to maximum percentage.
-<a href=#1746 id=1746 data-nosnippet>1746</a>        </span><span class="kw">for </span>threshold <span class="kw">in </span><span class="self">self</span>.tier_thresholds.iter() {
-<a href=#1747 id=1747 data-nosnippet>1747</a>            <span class="kw">if let </span>TierThreshold::DynamicPercentage {
-<a href=#1748 id=1748 data-nosnippet>1748</a>                minimum_required_percentage,
-<a href=#1749 id=1749 data-nosnippet>1749</a>                maximum_possible_percentage,
-<a href=#1750 id=1750 data-nosnippet>1750</a>                ..
-<a href=#1751 id=1751 data-nosnippet>1751</a>            } = threshold
-<a href=#1752 id=1752 data-nosnippet>1752</a>            {
-<a href=#1753 id=1753 data-nosnippet>1753</a>                <span class="kw">if </span>minimum_required_percentage &gt; maximum_possible_percentage {
-<a href=#1754 id=1754 data-nosnippet>1754</a>                    <span class="kw">return </span><span class="bool-val">false</span>;
-<a href=#1755 id=1755 data-nosnippet>1755</a>                }
-<a href=#1756 id=1756 data-nosnippet>1756</a>            }
-<a href=#1757 id=1757 data-nosnippet>1757</a>        }
-<a href=#1758 id=1758 data-nosnippet>1758</a>
-<a href=#1759 id=1759 data-nosnippet>1759</a>        <span class="kw">let </span>number_of_tiers: usize = NT::get() <span class="kw">as </span>usize;
-<a href=#1760 id=1760 data-nosnippet>1760</a>        number_of_tiers == <span class="self">self</span>.reward_portion.len()
-<a href=#1761 id=1761 data-nosnippet>1761</a>            &amp;&amp; number_of_tiers == <span class="self">self</span>.slot_distribution.len()
-<a href=#1762 id=1762 data-nosnippet>1762</a>            &amp;&amp; number_of_tiers == <span class="self">self</span>.tier_thresholds.len()
-<a href=#1763 id=1763 data-nosnippet>1763</a>    }
-<a href=#1764 id=1764 data-nosnippet>1764</a>}
-<a href=#1765 id=1765 data-nosnippet>1765</a>
-<a href=#1766 id=1766 data-nosnippet>1766</a><span class="doccomment">/// Configuration of dApp tiers.
-<a href=#1767 id=1767 data-nosnippet>1767</a></span><span class="attr">#[derive(
-<a href=#1768 id=1768 data-nosnippet>1768</a>    Encode,
-<a href=#1769 id=1769 data-nosnippet>1769</a>    Decode,
-<a href=#1770 id=1770 data-nosnippet>1770</a>    MaxEncodedLen,
-<a href=#1771 id=1771 data-nosnippet>1771</a>    RuntimeDebugNoBound,
-<a href=#1772 id=1772 data-nosnippet>1772</a>    PartialEqNoBound,
-<a href=#1773 id=1773 data-nosnippet>1773</a>    DefaultNoBound,
-<a href=#1774 id=1774 data-nosnippet>1774</a>    EqNoBound,
-<a href=#1775 id=1775 data-nosnippet>1775</a>    CloneNoBound,
-<a href=#1776 id=1776 data-nosnippet>1776</a>    TypeInfo,
-<a href=#1777 id=1777 data-nosnippet>1777</a>)]
-<a href=#1778 id=1778 data-nosnippet>1778</a>#[scale_info(skip_type_params(NT, T, P))]
-<a href=#1779 id=1779 data-nosnippet>1779</a></span><span class="kw">pub struct </span>TiersConfiguration&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; {
-<a href=#1780 id=1780 data-nosnippet>1780</a>    <span class="doccomment">/// Number of slots per tier.
-<a href=#1781 id=1781 data-nosnippet>1781</a>    /// First entry refers to the first tier, and so on.
-<a href=#1782 id=1782 data-nosnippet>1782</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) slots_per_tier: BoundedVec&lt;u16, NT&gt;,
-<a href=#1783 id=1783 data-nosnippet>1783</a>    <span class="doccomment">/// Reward distribution per tier, in percentage.
-<a href=#1784 id=1784 data-nosnippet>1784</a>    /// First entry refers to the first tier, and so on.
-<a href=#1785 id=1785 data-nosnippet>1785</a>    /// The sum of all values must be exactly equal to 1.
-<a href=#1786 id=1786 data-nosnippet>1786</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) reward_portion: BoundedVec&lt;Permill, NT&gt;,
-<a href=#1787 id=1787 data-nosnippet>1787</a>    <span class="doccomment">/// Requirements for entry into each tier.
-<a href=#1788 id=1788 data-nosnippet>1788</a>    /// First entry refers to the first tier, and so on.
-<a href=#1789 id=1789 data-nosnippet>1789</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) tier_thresholds: BoundedVec&lt;Balance, NT&gt;,
-<a href=#1790 id=1790 data-nosnippet>1790</a>    <span class="doccomment">/// Phantom data to keep track of the tier slots function.
-<a href=#1791 id=1791 data-nosnippet>1791</a>    </span><span class="attr">#[codec(skip)]
-<a href=#1792 id=1792 data-nosnippet>1792</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) _phantom: PhantomData&lt;(T, P)&gt;,
-<a href=#1793 id=1793 data-nosnippet>1793</a>}
-<a href=#1794 id=1794 data-nosnippet>1794</a>
-<a href=#1795 id=1795 data-nosnippet>1795</a><span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; TiersConfiguration&lt;NT, T, P&gt; {
-<a href=#1796 id=1796 data-nosnippet>1796</a>    <span class="doccomment">/// Check if parameters are valid.
-<a href=#1797 id=1797 data-nosnippet>1797</a>    </span><span class="kw">pub fn </span>is_valid(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-<a href=#1798 id=1798 data-nosnippet>1798</a>        <span class="kw">let </span>number_of_tiers: usize = NT::get() <span class="kw">as </span>usize;
-<a href=#1799 id=1799 data-nosnippet>1799</a>        number_of_tiers == <span class="self">self</span>.slots_per_tier.len()
-<a href=#1800 id=1800 data-nosnippet>1800</a>            <span class="comment">// All vector length must match number of tiers.
-<a href=#1801 id=1801 data-nosnippet>1801</a>            </span>&amp;&amp; number_of_tiers == <span class="self">self</span>.reward_portion.len()
-<a href=#1802 id=1802 data-nosnippet>1802</a>            &amp;&amp; number_of_tiers == <span class="self">self</span>.tier_thresholds.len()
-<a href=#1803 id=1803 data-nosnippet>1803</a>    }
-<a href=#1804 id=1804 data-nosnippet>1804</a>
-<a href=#1805 id=1805 data-nosnippet>1805</a>    <span class="doccomment">/// Calculate the total number of slots.
-<a href=#1806 id=1806 data-nosnippet>1806</a>    </span><span class="kw">pub fn </span>total_number_of_slots(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u16 {
-<a href=#1807 id=1807 data-nosnippet>1807</a>        <span class="self">self</span>.slots_per_tier.iter().copied().sum()
-<a href=#1808 id=1808 data-nosnippet>1808</a>    }
-<a href=#1809 id=1809 data-nosnippet>1809</a>
-<a href=#1810 id=1810 data-nosnippet>1810</a>    <span class="doccomment">/// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.
-<a href=#1811 id=1811 data-nosnippet>1811</a>    </span><span class="kw">pub fn </span>calculate_new(
-<a href=#1812 id=1812 data-nosnippet>1812</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
-<a href=#1813 id=1813 data-nosnippet>1813</a>        params: <span class="kw-2">&amp;</span>TierParameters&lt;NT&gt;,
-<a href=#1814 id=1814 data-nosnippet>1814</a>        native_price: FixedU128,
-<a href=#1815 id=1815 data-nosnippet>1815</a>        total_issuance: Balance,
-<a href=#1816 id=1816 data-nosnippet>1816</a>    ) -&gt; <span class="self">Self </span>{
-<a href=#1817 id=1817 data-nosnippet>1817</a>        <span class="comment">// It must always be at least 1 slot.
-<a href=#1818 id=1818 data-nosnippet>1818</a>        </span><span class="kw">let </span>base_number_of_slots = T::number_of_slots(P::get(), params.slot_number_args).max(<span class="number">1</span>);
-<a href=#1819 id=1819 data-nosnippet>1819</a>        <span class="kw">let </span>new_number_of_slots = T::number_of_slots(native_price, params.slot_number_args).max(<span class="number">1</span>);
-<a href=#1820 id=1820 data-nosnippet>1820</a>
-<a href=#1821 id=1821 data-nosnippet>1821</a>        <span class="comment">// Calculate how much each tier gets slots.
-<a href=#1822 id=1822 data-nosnippet>1822</a>        </span><span class="kw">let </span>new_slots_per_tier: Vec&lt;u16&gt; = params
-<a href=#1823 id=1823 data-nosnippet>1823</a>            .slot_distribution
-<a href=#1824 id=1824 data-nosnippet>1824</a>            .clone()
-<a href=#1825 id=1825 data-nosnippet>1825</a>            .into_inner()
-<a href=#1826 id=1826 data-nosnippet>1826</a>            .iter()
-<a href=#1827 id=1827 data-nosnippet>1827</a>            .map(|percent| <span class="kw-2">*</span>percent * new_number_of_slots <span class="kw">as </span>u128)
-<a href=#1828 id=1828 data-nosnippet>1828</a>            .map(|x| x.unique_saturated_into())
-<a href=#1829 id=1829 data-nosnippet>1829</a>            .collect();
-<a href=#1830 id=1830 data-nosnippet>1830</a>        <span class="kw">let </span>new_slots_per_tier =
-<a href=#1831 id=1831 data-nosnippet>1831</a>            BoundedVec::&lt;u16, NT&gt;::try_from(new_slots_per_tier).unwrap_or_default();
-<a href=#1832 id=1832 data-nosnippet>1832</a>
-<a href=#1833 id=1833 data-nosnippet>1833</a>        <span class="comment">// NOTE: even though we could ignore the situation when the new &amp; base slot numbers are equal, it's necessary to re-calculate it since
-<a href=#1834 id=1834 data-nosnippet>1834</a>        // other params related to calculation might have changed.
-<a href=#1835 id=1835 data-nosnippet>1835</a>        </span><span class="kw">let </span>delta_threshold = <span class="kw">if </span>new_number_of_slots &gt;= base_number_of_slots {
-<a href=#1836 id=1836 data-nosnippet>1836</a>            FixedU128::from_rational(
-<a href=#1837 id=1837 data-nosnippet>1837</a>                (new_number_of_slots - base_number_of_slots).into(),
-<a href=#1838 id=1838 data-nosnippet>1838</a>                new_number_of_slots.into(),
-<a href=#1839 id=1839 data-nosnippet>1839</a>            )
-<a href=#1840 id=1840 data-nosnippet>1840</a>        } <span class="kw">else </span>{
-<a href=#1841 id=1841 data-nosnippet>1841</a>            FixedU128::from_rational(
-<a href=#1842 id=1842 data-nosnippet>1842</a>                (base_number_of_slots - new_number_of_slots).into(),
-<a href=#1843 id=1843 data-nosnippet>1843</a>                new_number_of_slots.into(),
-<a href=#1844 id=1844 data-nosnippet>1844</a>            )
-<a href=#1845 id=1845 data-nosnippet>1845</a>        };
-<a href=#1846 id=1846 data-nosnippet>1846</a>
-<a href=#1847 id=1847 data-nosnippet>1847</a>        <span class="comment">// Update tier thresholds.
-<a href=#1848 id=1848 data-nosnippet>1848</a>        // In case number of slots increase, we decrease thresholds required to enter the tier.
-<a href=#1849 id=1849 data-nosnippet>1849</a>        // In case number of slots decrease, we increase the threshold required to enter the tier.
-<a href=#1850 id=1850 data-nosnippet>1850</a>        //
-<a href=#1851 id=1851 data-nosnippet>1851</a>        // According to formula: %delta_threshold = (100% / (100% - delta_%_slots) - 1) * 100%
-<a href=#1852 id=1852 data-nosnippet>1852</a>        //
-<a href=#1853 id=1853 data-nosnippet>1853</a>        // where delta_%_slots is simply: (base_num_slots - new_num_slots) / base_num_slots
-<a href=#1854 id=1854 data-nosnippet>1854</a>        //
-<a href=#1855 id=1855 data-nosnippet>1855</a>        // `base_num_slots` is the number of slots at the base native currency price.
-<a href=#1856 id=1856 data-nosnippet>1856</a>        //
-<a href=#1857 id=1857 data-nosnippet>1857</a>        // When these entries are put into the threshold formula, we get:
-<a href=#1858 id=1858 data-nosnippet>1858</a>        // = 1 / ( 1 - (base_num_slots - new_num_slots) / base_num_slots ) - 1
-<a href=#1859 id=1859 data-nosnippet>1859</a>        // = 1 / ( new / base) - 1
-<a href=#1860 id=1860 data-nosnippet>1860</a>        // = base / new - 1
-<a href=#1861 id=1861 data-nosnippet>1861</a>        // = (base - new) / new
-<a href=#1862 id=1862 data-nosnippet>1862</a>        //
-<a href=#1863 id=1863 data-nosnippet>1863</a>        // This number can be negative. In order to keep all operations in unsigned integer domain,
-<a href=#1864 id=1864 data-nosnippet>1864</a>        // formulas are adjusted like:
-<a href=#1865 id=1865 data-nosnippet>1865</a>        //
-<a href=#1866 id=1866 data-nosnippet>1866</a>        // 1. Number of slots has increased, threshold is expected to decrease
-<a href=#1867 id=1867 data-nosnippet>1867</a>        // %delta_threshold = (new_num_slots - base_num_slots) / new_num_slots
-<a href=#1868 id=1868 data-nosnippet>1868</a>        // new_threshold = base_threshold * (1 - %delta_threshold)
-<a href=#1869 id=1869 data-nosnippet>1869</a>        //
-<a href=#1870 id=1870 data-nosnippet>1870</a>        // 2. Number of slots has decreased, threshold is expected to increase
-<a href=#1871 id=1871 data-nosnippet>1871</a>        // %delta_threshold = (base_num_slots - new_num_slots) / new_num_slots
-<a href=#1872 id=1872 data-nosnippet>1872</a>        // new_threshold = base_threshold * (1 + %delta_threshold)
-<a href=#1873 id=1873 data-nosnippet>1873</a>        //
-<a href=#1874 id=1874 data-nosnippet>1874</a>        </span><span class="kw">let </span>new_tier_thresholds: BoundedVec&lt;Balance, NT&gt; = params
-<a href=#1875 id=1875 data-nosnippet>1875</a>            .tier_thresholds
-<a href=#1876 id=1876 data-nosnippet>1876</a>            .clone()
-<a href=#1877 id=1877 data-nosnippet>1877</a>            .iter()
-<a href=#1878 id=1878 data-nosnippet>1878</a>            .map(|threshold| <span class="kw">match </span>threshold {
-<a href=#1879 id=1879 data-nosnippet>1879</a>                TierThreshold::DynamicPercentage {
-<a href=#1880 id=1880 data-nosnippet>1880</a>                    percentage,
-<a href=#1881 id=1881 data-nosnippet>1881</a>                    minimum_required_percentage,
-<a href=#1882 id=1882 data-nosnippet>1882</a>                    maximum_possible_percentage,
-<a href=#1883 id=1883 data-nosnippet>1883</a>                } =&gt; {
-<a href=#1884 id=1884 data-nosnippet>1884</a>                    <span class="kw">let </span>amount = <span class="kw-2">*</span>percentage * total_issuance;
-<a href=#1885 id=1885 data-nosnippet>1885</a>                    <span class="kw">let </span>adjusted_amount = <span class="kw">if </span>new_number_of_slots &gt;= base_number_of_slots {
-<a href=#1886 id=1886 data-nosnippet>1886</a>                        amount.saturating_sub(delta_threshold.saturating_mul_int(amount))
-<a href=#1887 id=1887 data-nosnippet>1887</a>                    } <span class="kw">else </span>{
-<a href=#1888 id=1888 data-nosnippet>1888</a>                        amount.saturating_add(delta_threshold.saturating_mul_int(amount))
-<a href=#1889 id=1889 data-nosnippet>1889</a>                    };
-<a href=#1890 id=1890 data-nosnippet>1890</a>                    <span class="kw">let </span>minimum_amount = <span class="kw-2">*</span>minimum_required_percentage * total_issuance;
-<a href=#1891 id=1891 data-nosnippet>1891</a>                    <span class="kw">let </span>maximum_amount = <span class="kw-2">*</span>maximum_possible_percentage * total_issuance;
-<a href=#1892 id=1892 data-nosnippet>1892</a>                    adjusted_amount.max(minimum_amount).min(maximum_amount)
-<a href=#1893 id=1893 data-nosnippet>1893</a>                }
-<a href=#1894 id=1894 data-nosnippet>1894</a>                TierThreshold::FixedPercentage {
-<a href=#1895 id=1895 data-nosnippet>1895</a>                    required_percentage,
-<a href=#1896 id=1896 data-nosnippet>1896</a>                } =&gt; <span class="kw-2">*</span>required_percentage * total_issuance,
-<a href=#1897 id=1897 data-nosnippet>1897</a>            })
-<a href=#1898 id=1898 data-nosnippet>1898</a>            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
-<a href=#1899 id=1899 data-nosnippet>1899</a>            .try_into()
-<a href=#1900 id=1900 data-nosnippet>1900</a>            .unwrap_or_default();
-<a href=#1901 id=1901 data-nosnippet>1901</a>
-<a href=#1902 id=1902 data-nosnippet>1902</a>        <span class="self">Self </span>{
-<a href=#1903 id=1903 data-nosnippet>1903</a>            slots_per_tier: new_slots_per_tier,
-<a href=#1904 id=1904 data-nosnippet>1904</a>            reward_portion: params.reward_portion.clone(),
-<a href=#1905 id=1905 data-nosnippet>1905</a>            tier_thresholds: new_tier_thresholds,
-<a href=#1906 id=1906 data-nosnippet>1906</a>            _phantom: Default::default(),
-<a href=#1907 id=1907 data-nosnippet>1907</a>        }
-<a href=#1908 id=1908 data-nosnippet>1908</a>    }
-<a href=#1909 id=1909 data-nosnippet>1909</a>}
-<a href=#1910 id=1910 data-nosnippet>1910</a>
-<a href=#1911 id=1911 data-nosnippet>1911</a><span class="doccomment">/// Information about all of the dApps that got into tiers, and tier rewards
-<a href=#1912 id=1912 data-nosnippet>1912</a></span><span class="attr">#[derive(
-<a href=#1913 id=1913 data-nosnippet>1913</a>    Encode,
-<a href=#1914 id=1914 data-nosnippet>1914</a>    Decode,
-<a href=#1915 id=1915 data-nosnippet>1915</a>    MaxEncodedLen,
-<a href=#1916 id=1916 data-nosnippet>1916</a>    RuntimeDebugNoBound,
-<a href=#1917 id=1917 data-nosnippet>1917</a>    PartialEqNoBound,
-<a href=#1918 id=1918 data-nosnippet>1918</a>    DefaultNoBound,
-<a href=#1919 id=1919 data-nosnippet>1919</a>    EqNoBound,
-<a href=#1920 id=1920 data-nosnippet>1920</a>    CloneNoBound,
-<a href=#1921 id=1921 data-nosnippet>1921</a>    TypeInfo,
-<a href=#1922 id=1922 data-nosnippet>1922</a>)]
-<a href=#1923 id=1923 data-nosnippet>1923</a>#[scale_info(skip_type_params(MD, NT))]
-<a href=#1924 id=1924 data-nosnippet>1924</a></span><span class="kw">pub struct </span>DAppTierRewards&lt;MD: Get&lt;u32&gt;, NT: Get&lt;u32&gt;&gt; {
-<a href=#1925 id=1925 data-nosnippet>1925</a>    <span class="doccomment">/// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
-<a href=#1926 id=1926 data-nosnippet>1926</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) dapps: BoundedBTreeMap&lt;DAppId, RankedTier, MD&gt;,
-<a href=#1927 id=1927 data-nosnippet>1927</a>    <span class="doccomment">/// Rewards for each tier. First entry refers to the first tier, and so on.
-<a href=#1928 id=1928 data-nosnippet>1928</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) rewards: BoundedVec&lt;Balance, NT&gt;,
-<a href=#1929 id=1929 data-nosnippet>1929</a>    <span class="doccomment">/// Period during which this struct was created.
-<a href=#1930 id=1930 data-nosnippet>1930</a>    </span><span class="attr">#[codec(compact)]
-<a href=#1931 id=1931 data-nosnippet>1931</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) period: PeriodNumber,
-<a href=#1932 id=1932 data-nosnippet>1932</a>    <span class="doccomment">/// Rank reward for each tier. First entry refers to the first tier, and so on.
-<a href=#1933 id=1933 data-nosnippet>1933</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) rank_rewards: BoundedVec&lt;Balance, NT&gt;,
-<a href=#1934 id=1934 data-nosnippet>1934</a>}
-<a href=#1935 id=1935 data-nosnippet>1935</a>
-<a href=#1936 id=1936 data-nosnippet>1936</a><span class="kw">impl</span>&lt;MD: Get&lt;u32&gt;, NT: Get&lt;u32&gt;&gt; DAppTierRewards&lt;MD, NT&gt; {
-<a href=#1937 id=1937 data-nosnippet>1937</a>    <span class="doccomment">/// Attempt to construct `DAppTierRewards` struct.
-<a href=#1938 id=1938 data-nosnippet>1938</a>    /// If the provided arguments exceed the allowed capacity, return an error.
-<a href=#1939 id=1939 data-nosnippet>1939</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(
-<a href=#1940 id=1940 data-nosnippet>1940</a>        dapps: BTreeMap&lt;DAppId, RankedTier&gt;,
-<a href=#1941 id=1941 data-nosnippet>1941</a>        rewards: Vec&lt;Balance&gt;,
-<a href=#1942 id=1942 data-nosnippet>1942</a>        period: PeriodNumber,
-<a href=#1943 id=1943 data-nosnippet>1943</a>        rank_rewards: Vec&lt;Balance&gt;,
-<a href=#1944 id=1944 data-nosnippet>1944</a>    ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, ()&gt; {
-<a href=#1945 id=1945 data-nosnippet>1945</a>        <span class="kw">let </span>dapps = BoundedBTreeMap::try_from(dapps).map_err(|<span class="kw">_</span>| ())<span class="question-mark">?</span>;
-<a href=#1946 id=1946 data-nosnippet>1946</a>        <span class="kw">let </span>rewards = BoundedVec::try_from(rewards).map_err(|<span class="kw">_</span>| ())<span class="question-mark">?</span>;
-<a href=#1947 id=1947 data-nosnippet>1947</a>        <span class="kw">let </span>rank_rewards = BoundedVec::try_from(rank_rewards).map_err(|<span class="kw">_</span>| ())<span class="question-mark">?</span>;
-<a href=#1948 id=1948 data-nosnippet>1948</a>        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-<a href=#1949 id=1949 data-nosnippet>1949</a>            dapps,
-<a href=#1950 id=1950 data-nosnippet>1950</a>            rewards,
-<a href=#1951 id=1951 data-nosnippet>1951</a>            period,
-<a href=#1952 id=1952 data-nosnippet>1952</a>            rank_rewards,
-<a href=#1953 id=1953 data-nosnippet>1953</a>        })
-<a href=#1954 id=1954 data-nosnippet>1954</a>    }
-<a href=#1955 id=1955 data-nosnippet>1955</a>
-<a href=#1956 id=1956 data-nosnippet>1956</a>    <span class="doccomment">/// Consume reward for the specified dapp id, returning its amount and tier Id.
-<a href=#1957 id=1957 data-nosnippet>1957</a>    /// In case dapp isn't applicable for rewards, or they have already been consumed, returns `None`.
-<a href=#1958 id=1958 data-nosnippet>1958</a>    </span><span class="kw">pub fn </span>try_claim(<span class="kw-2">&amp;mut </span><span class="self">self</span>, dapp_id: DAppId) -&gt; <span class="prelude-ty">Result</span>&lt;(Balance, RankedTier), DAppTierError&gt; {
-<a href=#1959 id=1959 data-nosnippet>1959</a>        <span class="comment">// Check if dApp Id exists.
-<a href=#1960 id=1960 data-nosnippet>1960</a>        </span><span class="kw">let </span>ranked_tier = <span class="self">self
-<a href=#1961 id=1961 data-nosnippet>1961</a>            </span>.dapps
-<a href=#1962 id=1962 data-nosnippet>1962</a>            .remove(<span class="kw-2">&amp;</span>dapp_id)
-<a href=#1963 id=1963 data-nosnippet>1963</a>            .ok_or(DAppTierError::NoDAppInTiers)<span class="question-mark">?</span>;
-<a href=#1964 id=1964 data-nosnippet>1964</a>
-<a href=#1965 id=1965 data-nosnippet>1965</a>        <span class="kw">let </span>(tier_id, rank) = ranked_tier.deconstruct();
-<a href=#1966 id=1966 data-nosnippet>1966</a>        <span class="kw">let </span><span class="kw-2">mut </span>amount = <span class="self">self
-<a href=#1967 id=1967 data-nosnippet>1967</a>            </span>.rewards
-<a href=#1968 id=1968 data-nosnippet>1968</a>            .get(tier_id <span class="kw">as </span>usize)
-<a href=#1969 id=1969 data-nosnippet>1969</a>            .map_or(Balance::zero(), |x| <span class="kw-2">*</span>x);
-<a href=#1970 id=1970 data-nosnippet>1970</a>
-<a href=#1971 id=1971 data-nosnippet>1971</a>        <span class="kw">let </span>reward_per_rank = <span class="self">self
-<a href=#1972 id=1972 data-nosnippet>1972</a>            </span>.rank_rewards
-<a href=#1973 id=1973 data-nosnippet>1973</a>            .get(tier_id <span class="kw">as </span>usize)
-<a href=#1974 id=1974 data-nosnippet>1974</a>            .map_or(Balance::zero(), |x| <span class="kw-2">*</span>x);
-<a href=#1975 id=1975 data-nosnippet>1975</a>
-<a href=#1976 id=1976 data-nosnippet>1976</a>        <span class="kw">let </span>additional_reward = reward_per_rank.saturating_mul(rank.into());
-<a href=#1977 id=1977 data-nosnippet>1977</a>        amount = amount.saturating_add(additional_reward);
-<a href=#1978 id=1978 data-nosnippet>1978</a>
-<a href=#1979 id=1979 data-nosnippet>1979</a>        <span class="prelude-val">Ok</span>((amount, ranked_tier))
-<a href=#1980 id=1980 data-nosnippet>1980</a>    }
-<a href=#1981 id=1981 data-nosnippet>1981</a>}
-<a href=#1982 id=1982 data-nosnippet>1982</a>
-<a href=#1983 id=1983 data-nosnippet>1983</a><span class="attr">#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-<a href=#1984 id=1984 data-nosnippet>1984</a></span><span class="kw">pub enum </span>DAppTierError {
-<a href=#1985 id=1985 data-nosnippet>1985</a>    <span class="doccomment">/// Specified dApp Id doesn't exist in any tier.
-<a href=#1986 id=1986 data-nosnippet>1986</a>    </span>NoDAppInTiers,
-<a href=#1987 id=1987 data-nosnippet>1987</a>    <span class="doccomment">/// Internal, unexpected error occurred.
-<a href=#1988 id=1988 data-nosnippet>1988</a>    </span>InternalError,
-<a href=#1989 id=1989 data-nosnippet>1989</a>}
-<a href=#1990 id=1990 data-nosnippet>1990</a>
-<a href=#1991 id=1991 data-nosnippet>1991</a><span class="doccomment">/// Describes which entries are next in line for cleanup.
-<a href=#1992 id=1992 data-nosnippet>1992</a></span><span class="attr">#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
-<a href=#1993 id=1993 data-nosnippet>1993</a></span><span class="kw">pub struct </span>CleanupMarker {
-<a href=#1994 id=1994 data-nosnippet>1994</a>    <span class="doccomment">/// Era reward span index that should be checked &amp; cleaned up next.
-<a href=#1995 id=1995 data-nosnippet>1995</a>    </span><span class="attr">#[codec(compact)]
-<a href=#1996 id=1996 data-nosnippet>1996</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) era_reward_index: EraNumber,
-<a href=#1997 id=1997 data-nosnippet>1997</a>    <span class="doccomment">/// dApp tier rewards index that should be checked &amp; cleaned up next.
-<a href=#1998 id=1998 data-nosnippet>1998</a>    </span><span class="attr">#[codec(compact)]
-<a href=#1999 id=1999 data-nosnippet>1999</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) dapp_tiers_index: EraNumber,
-<a href=#2000 id=2000 data-nosnippet>2000</a>    <span class="doccomment">/// Oldest valid era or earliest era in the oldest valid period.
-<a href=#2001 id=2001 data-nosnippet>2001</a>    </span><span class="attr">#[codec(compact)]
-<a href=#2002 id=2002 data-nosnippet>2002</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) oldest_valid_era: EraNumber,
-<a href=#2003 id=2003 data-nosnippet>2003</a>}
-<a href=#2004 id=2004 data-nosnippet>2004</a>
-<a href=#2005 id=2005 data-nosnippet>2005</a><span class="kw">impl </span>CleanupMarker {
-<a href=#2006 id=2006 data-nosnippet>2006</a>    <span class="doccomment">/// Used to check whether there are any pending cleanups, according to marker values.
-<a href=#2007 id=2007 data-nosnippet>2007</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>has_pending_cleanups(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-<a href=#2008 id=2008 data-nosnippet>2008</a>        <span class="self">self</span>.era_reward_index != <span class="self">self</span>.oldest_valid_era
-<a href=#2009 id=2009 data-nosnippet>2009</a>            || <span class="self">self</span>.dapp_tiers_index != <span class="self">self</span>.oldest_valid_era
-<a href=#2010 id=2010 data-nosnippet>2010</a>    }
-<a href=#2011 id=2011 data-nosnippet>2011</a>}</code></pre></div></section></main></body></html>
+<a href=#1713 id=1713 data-nosnippet>1713</a>    <span class="doccomment">/// Rank multiplier per tier in bips (100% = 10_000 bips):
+<a href=#1714 id=1714 data-nosnippet>1714</a>    /// defines how much rank 10 earns relative to rank 0.
+<a href=#1715 id=1715 data-nosnippet>1715</a>    ///
+<a href=#1716 id=1716 data-nosnippet>1716</a>    /// Example:
+<a href=#1717 id=1717 data-nosnippet>1717</a>    /// - `24_000` → rank 10 earns 2.4× rank 0
+<a href=#1718 id=1718 data-nosnippet>1718</a>    ///   ⇒ per-rank increment = (240% − 100%) / 10 = +14% per rank
+<a href=#1719 id=1719 data-nosnippet>1719</a>    /// - `10_000` → rank rewards disabled (rank 0..10 all earn the same)
+<a href=#1720 id=1720 data-nosnippet>1720</a>    /// - `0` → no rewards for all slots
+<a href=#1721 id=1721 data-nosnippet>1721</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) tier_rank_multipliers: BoundedVec&lt;u32, NT&gt;,
+<a href=#1722 id=1722 data-nosnippet>1722</a>}
+<a href=#1723 id=1723 data-nosnippet>1723</a>
+<a href=#1724 id=1724 data-nosnippet>1724</a><span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;&gt; TierParameters&lt;NT&gt; {
+<a href=#1725 id=1725 data-nosnippet>1725</a>    <span class="doccomment">/// Check if configuration is valid.
+<a href=#1726 id=1726 data-nosnippet>1726</a>    /// All vectors are expected to have exactly the amount of entries as `number_of_tiers`.
+<a href=#1727 id=1727 data-nosnippet>1727</a>    </span><span class="kw">pub fn </span>is_valid(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+<a href=#1728 id=1728 data-nosnippet>1728</a>        <span class="comment">// Reward portions sum should not exceed 100%.
+<a href=#1729 id=1729 data-nosnippet>1729</a>        </span><span class="kw">if </span><span class="self">self
+<a href=#1730 id=1730 data-nosnippet>1730</a>            </span>.reward_portion
+<a href=#1731 id=1731 data-nosnippet>1731</a>            .iter()
+<a href=#1732 id=1732 data-nosnippet>1732</a>            .fold(<span class="prelude-val">Some</span>(Permill::zero()), |acc, permill| <span class="kw">match </span>acc {
+<a href=#1733 id=1733 data-nosnippet>1733</a>                <span class="prelude-val">Some</span>(acc) =&gt; acc.checked_add(permill),
+<a href=#1734 id=1734 data-nosnippet>1734</a>                <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+<a href=#1735 id=1735 data-nosnippet>1735</a>            })
+<a href=#1736 id=1736 data-nosnippet>1736</a>            .is_none()
+<a href=#1737 id=1737 data-nosnippet>1737</a>        {
+<a href=#1738 id=1738 data-nosnippet>1738</a>            <span class="kw">return </span><span class="bool-val">false</span>;
+<a href=#1739 id=1739 data-nosnippet>1739</a>        }
+<a href=#1740 id=1740 data-nosnippet>1740</a>
+<a href=#1741 id=1741 data-nosnippet>1741</a>        <span class="comment">// Slot distribution sum should not exceed 100%.
+<a href=#1742 id=1742 data-nosnippet>1742</a>        </span><span class="kw">if </span><span class="self">self
+<a href=#1743 id=1743 data-nosnippet>1743</a>            </span>.slot_distribution
+<a href=#1744 id=1744 data-nosnippet>1744</a>            .iter()
+<a href=#1745 id=1745 data-nosnippet>1745</a>            .fold(<span class="prelude-val">Some</span>(Permill::zero()), |acc, permill| <span class="kw">match </span>acc {
+<a href=#1746 id=1746 data-nosnippet>1746</a>                <span class="prelude-val">Some</span>(acc) =&gt; acc.checked_add(permill),
+<a href=#1747 id=1747 data-nosnippet>1747</a>                <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+<a href=#1748 id=1748 data-nosnippet>1748</a>            })
+<a href=#1749 id=1749 data-nosnippet>1749</a>            .is_none()
+<a href=#1750 id=1750 data-nosnippet>1750</a>        {
+<a href=#1751 id=1751 data-nosnippet>1751</a>            <span class="kw">return </span><span class="bool-val">false</span>;
+<a href=#1752 id=1752 data-nosnippet>1752</a>        }
+<a href=#1753 id=1753 data-nosnippet>1753</a>
+<a href=#1754 id=1754 data-nosnippet>1754</a>        <span class="comment">// Validate that the minimum percentage is less than or equal to maximum percentage.
+<a href=#1755 id=1755 data-nosnippet>1755</a>        </span><span class="kw">for </span>threshold <span class="kw">in </span><span class="self">self</span>.tier_thresholds.iter() {
+<a href=#1756 id=1756 data-nosnippet>1756</a>            <span class="kw">if let </span>TierThreshold::DynamicPercentage {
+<a href=#1757 id=1757 data-nosnippet>1757</a>                minimum_required_percentage,
+<a href=#1758 id=1758 data-nosnippet>1758</a>                maximum_possible_percentage,
+<a href=#1759 id=1759 data-nosnippet>1759</a>                ..
+<a href=#1760 id=1760 data-nosnippet>1760</a>            } = threshold
+<a href=#1761 id=1761 data-nosnippet>1761</a>            {
+<a href=#1762 id=1762 data-nosnippet>1762</a>                <span class="kw">if </span>minimum_required_percentage &gt; maximum_possible_percentage {
+<a href=#1763 id=1763 data-nosnippet>1763</a>                    <span class="kw">return </span><span class="bool-val">false</span>;
+<a href=#1764 id=1764 data-nosnippet>1764</a>                }
+<a href=#1765 id=1765 data-nosnippet>1765</a>            }
+<a href=#1766 id=1766 data-nosnippet>1766</a>        }
+<a href=#1767 id=1767 data-nosnippet>1767</a>
+<a href=#1768 id=1768 data-nosnippet>1768</a>        <span class="comment">// - Tier 0: must be &lt;= 100% (no rank bonus for the top tier)
+<a href=#1769 id=1769 data-nosnippet>1769</a>        </span><span class="kw">match </span><span class="self">self</span>.tier_rank_multipliers.first() {
+<a href=#1770 id=1770 data-nosnippet>1770</a>            <span class="prelude-val">Some</span>(m0) <span class="kw">if </span><span class="kw-2">*</span>m0 &lt;= <span class="number">10_000 </span>=&gt; {}
+<a href=#1771 id=1771 data-nosnippet>1771</a>            <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="bool-val">false</span>,
+<a href=#1772 id=1772 data-nosnippet>1772</a>        }
+<a href=#1773 id=1773 data-nosnippet>1773</a>
+<a href=#1774 id=1774 data-nosnippet>1774</a>        <span class="comment">// Safety cap
+<a href=#1775 id=1775 data-nosnippet>1775</a>        </span><span class="kw">if </span><span class="self">self</span>.tier_rank_multipliers.iter().any(|m| <span class="kw-2">*</span>m &gt; <span class="number">100_000</span>) {
+<a href=#1776 id=1776 data-nosnippet>1776</a>            <span class="kw">return </span><span class="bool-val">false</span>;
+<a href=#1777 id=1777 data-nosnippet>1777</a>        }
+<a href=#1778 id=1778 data-nosnippet>1778</a>
+<a href=#1779 id=1779 data-nosnippet>1779</a>        <span class="kw">let </span>number_of_tiers: usize = NT::get() <span class="kw">as </span>usize;
+<a href=#1780 id=1780 data-nosnippet>1780</a>        number_of_tiers == <span class="self">self</span>.reward_portion.len()
+<a href=#1781 id=1781 data-nosnippet>1781</a>            &amp;&amp; number_of_tiers == <span class="self">self</span>.slot_distribution.len()
+<a href=#1782 id=1782 data-nosnippet>1782</a>            &amp;&amp; number_of_tiers == <span class="self">self</span>.tier_thresholds.len()
+<a href=#1783 id=1783 data-nosnippet>1783</a>            &amp;&amp; number_of_tiers == <span class="self">self</span>.tier_rank_multipliers.len()
+<a href=#1784 id=1784 data-nosnippet>1784</a>    }
+<a href=#1785 id=1785 data-nosnippet>1785</a>}
+<a href=#1786 id=1786 data-nosnippet>1786</a>
+<a href=#1787 id=1787 data-nosnippet>1787</a><span class="doccomment">/// Configuration of dApp tiers.
+<a href=#1788 id=1788 data-nosnippet>1788</a></span><span class="attr">#[derive(
+<a href=#1789 id=1789 data-nosnippet>1789</a>    Encode,
+<a href=#1790 id=1790 data-nosnippet>1790</a>    Decode,
+<a href=#1791 id=1791 data-nosnippet>1791</a>    MaxEncodedLen,
+<a href=#1792 id=1792 data-nosnippet>1792</a>    RuntimeDebugNoBound,
+<a href=#1793 id=1793 data-nosnippet>1793</a>    PartialEqNoBound,
+<a href=#1794 id=1794 data-nosnippet>1794</a>    DefaultNoBound,
+<a href=#1795 id=1795 data-nosnippet>1795</a>    EqNoBound,
+<a href=#1796 id=1796 data-nosnippet>1796</a>    CloneNoBound,
+<a href=#1797 id=1797 data-nosnippet>1797</a>    TypeInfo,
+<a href=#1798 id=1798 data-nosnippet>1798</a>)]
+<a href=#1799 id=1799 data-nosnippet>1799</a>#[scale_info(skip_type_params(NT, T, P))]
+<a href=#1800 id=1800 data-nosnippet>1800</a></span><span class="kw">pub struct </span>TiersConfiguration&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; {
+<a href=#1801 id=1801 data-nosnippet>1801</a>    <span class="doccomment">/// Number of slots per tier.
+<a href=#1802 id=1802 data-nosnippet>1802</a>    /// First entry refers to the first tier, and so on.
+<a href=#1803 id=1803 data-nosnippet>1803</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) slots_per_tier: BoundedVec&lt;u16, NT&gt;,
+<a href=#1804 id=1804 data-nosnippet>1804</a>    <span class="doccomment">/// Reward distribution per tier, in percentage.
+<a href=#1805 id=1805 data-nosnippet>1805</a>    /// First entry refers to the first tier, and so on.
+<a href=#1806 id=1806 data-nosnippet>1806</a>    /// The sum of all values must be exactly equal to 1.
+<a href=#1807 id=1807 data-nosnippet>1807</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) reward_portion: BoundedVec&lt;Permill, NT&gt;,
+<a href=#1808 id=1808 data-nosnippet>1808</a>    <span class="doccomment">/// Requirements for entry into each tier.
+<a href=#1809 id=1809 data-nosnippet>1809</a>    /// First entry refers to the first tier, and so on.
+<a href=#1810 id=1810 data-nosnippet>1810</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) tier_thresholds: BoundedVec&lt;Balance, NT&gt;,
+<a href=#1811 id=1811 data-nosnippet>1811</a>    <span class="doccomment">/// Phantom data to keep track of the tier slots function.
+<a href=#1812 id=1812 data-nosnippet>1812</a>    </span><span class="attr">#[codec(skip)]
+<a href=#1813 id=1813 data-nosnippet>1813</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) _phantom: PhantomData&lt;(T, P)&gt;,
+<a href=#1814 id=1814 data-nosnippet>1814</a>}
+<a href=#1815 id=1815 data-nosnippet>1815</a>
+<a href=#1816 id=1816 data-nosnippet>1816</a><span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; TiersConfiguration&lt;NT, T, P&gt; {
+<a href=#1817 id=1817 data-nosnippet>1817</a>    <span class="doccomment">/// Check if parameters are valid.
+<a href=#1818 id=1818 data-nosnippet>1818</a>    </span><span class="kw">pub fn </span>is_valid(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+<a href=#1819 id=1819 data-nosnippet>1819</a>        <span class="kw">let </span>number_of_tiers: usize = NT::get() <span class="kw">as </span>usize;
+<a href=#1820 id=1820 data-nosnippet>1820</a>        number_of_tiers == <span class="self">self</span>.slots_per_tier.len()
+<a href=#1821 id=1821 data-nosnippet>1821</a>            <span class="comment">// All vector length must match number of tiers.
+<a href=#1822 id=1822 data-nosnippet>1822</a>            </span>&amp;&amp; number_of_tiers == <span class="self">self</span>.reward_portion.len()
+<a href=#1823 id=1823 data-nosnippet>1823</a>            &amp;&amp; number_of_tiers == <span class="self">self</span>.tier_thresholds.len()
+<a href=#1824 id=1824 data-nosnippet>1824</a>    }
+<a href=#1825 id=1825 data-nosnippet>1825</a>
+<a href=#1826 id=1826 data-nosnippet>1826</a>    <span class="doccomment">/// Calculate the total number of slots.
+<a href=#1827 id=1827 data-nosnippet>1827</a>    </span><span class="kw">pub fn </span>total_number_of_slots(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u16 {
+<a href=#1828 id=1828 data-nosnippet>1828</a>        <span class="self">self</span>.slots_per_tier.iter().copied().sum()
+<a href=#1829 id=1829 data-nosnippet>1829</a>    }
+<a href=#1830 id=1830 data-nosnippet>1830</a>
+<a href=#1831 id=1831 data-nosnippet>1831</a>    <span class="doccomment">/// Returns the stake thresholds required to enter each tier.
+<a href=#1832 id=1832 data-nosnippet>1832</a>    </span><span class="kw">pub fn </span>tier_thresholds(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>BoundedVec&lt;Balance, NT&gt; {
+<a href=#1833 id=1833 data-nosnippet>1833</a>        <span class="kw-2">&amp;</span><span class="self">self</span>.tier_thresholds
+<a href=#1834 id=1834 data-nosnippet>1834</a>    }
+<a href=#1835 id=1835 data-nosnippet>1835</a>
+<a href=#1836 id=1836 data-nosnippet>1836</a>    <span class="doccomment">/// Returns the number of available slots for each tier.
+<a href=#1837 id=1837 data-nosnippet>1837</a>    </span><span class="kw">pub fn </span>slots_per_tier(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>BoundedVec&lt;u16, NT&gt; {
+<a href=#1838 id=1838 data-nosnippet>1838</a>        <span class="kw-2">&amp;</span><span class="self">self</span>.slots_per_tier
+<a href=#1839 id=1839 data-nosnippet>1839</a>    }
+<a href=#1840 id=1840 data-nosnippet>1840</a>
+<a href=#1841 id=1841 data-nosnippet>1841</a>    <span class="doccomment">/// Returns the reward distribution portion assigned to each tier.
+<a href=#1842 id=1842 data-nosnippet>1842</a>    </span><span class="kw">pub fn </span>reward_portion(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>BoundedVec&lt;Permill, NT&gt; {
+<a href=#1843 id=1843 data-nosnippet>1843</a>        <span class="kw-2">&amp;</span><span class="self">self</span>.reward_portion
+<a href=#1844 id=1844 data-nosnippet>1844</a>    }
+<a href=#1845 id=1845 data-nosnippet>1845</a>
+<a href=#1846 id=1846 data-nosnippet>1846</a>    <span class="doccomment">/// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.
+<a href=#1847 id=1847 data-nosnippet>1847</a>    </span><span class="kw">pub fn </span>calculate_new(
+<a href=#1848 id=1848 data-nosnippet>1848</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#1849 id=1849 data-nosnippet>1849</a>        params: <span class="kw-2">&amp;</span>TierParameters&lt;NT&gt;,
+<a href=#1850 id=1850 data-nosnippet>1850</a>        native_price: FixedU128,
+<a href=#1851 id=1851 data-nosnippet>1851</a>        total_issuance: Balance,
+<a href=#1852 id=1852 data-nosnippet>1852</a>    ) -&gt; <span class="self">Self </span>{
+<a href=#1853 id=1853 data-nosnippet>1853</a>        <span class="comment">// It must always be at least 1 slot.
+<a href=#1854 id=1854 data-nosnippet>1854</a>        </span><span class="kw">let </span>base_number_of_slots = T::number_of_slots(P::get(), params.slot_number_args).max(<span class="number">1</span>);
+<a href=#1855 id=1855 data-nosnippet>1855</a>        <span class="kw">let </span>new_number_of_slots = T::number_of_slots(native_price, params.slot_number_args).max(<span class="number">1</span>);
+<a href=#1856 id=1856 data-nosnippet>1856</a>
+<a href=#1857 id=1857 data-nosnippet>1857</a>        <span class="comment">// Calculate how much each tier gets slots.
+<a href=#1858 id=1858 data-nosnippet>1858</a>        </span><span class="kw">let </span>new_slots_per_tier: Vec&lt;u16&gt; = params
+<a href=#1859 id=1859 data-nosnippet>1859</a>            .slot_distribution
+<a href=#1860 id=1860 data-nosnippet>1860</a>            .clone()
+<a href=#1861 id=1861 data-nosnippet>1861</a>            .into_inner()
+<a href=#1862 id=1862 data-nosnippet>1862</a>            .iter()
+<a href=#1863 id=1863 data-nosnippet>1863</a>            .map(|percent| <span class="kw-2">*</span>percent * new_number_of_slots <span class="kw">as </span>u128)
+<a href=#1864 id=1864 data-nosnippet>1864</a>            .map(|x| x.unique_saturated_into())
+<a href=#1865 id=1865 data-nosnippet>1865</a>            .collect();
+<a href=#1866 id=1866 data-nosnippet>1866</a>        <span class="kw">let </span>new_slots_per_tier =
+<a href=#1867 id=1867 data-nosnippet>1867</a>            BoundedVec::&lt;u16, NT&gt;::try_from(new_slots_per_tier).unwrap_or_default();
+<a href=#1868 id=1868 data-nosnippet>1868</a>
+<a href=#1869 id=1869 data-nosnippet>1869</a>        <span class="comment">// NOTE: even though we could ignore the situation when the new &amp; base slot numbers are equal, it's necessary to re-calculate it since
+<a href=#1870 id=1870 data-nosnippet>1870</a>        // other params related to calculation might have changed.
+<a href=#1871 id=1871 data-nosnippet>1871</a>        </span><span class="kw">let </span>delta_threshold = <span class="kw">if </span>new_number_of_slots &gt;= base_number_of_slots {
+<a href=#1872 id=1872 data-nosnippet>1872</a>            FixedU128::from_rational(
+<a href=#1873 id=1873 data-nosnippet>1873</a>                (new_number_of_slots - base_number_of_slots).into(),
+<a href=#1874 id=1874 data-nosnippet>1874</a>                new_number_of_slots.into(),
+<a href=#1875 id=1875 data-nosnippet>1875</a>            )
+<a href=#1876 id=1876 data-nosnippet>1876</a>        } <span class="kw">else </span>{
+<a href=#1877 id=1877 data-nosnippet>1877</a>            FixedU128::from_rational(
+<a href=#1878 id=1878 data-nosnippet>1878</a>                (base_number_of_slots - new_number_of_slots).into(),
+<a href=#1879 id=1879 data-nosnippet>1879</a>                new_number_of_slots.into(),
+<a href=#1880 id=1880 data-nosnippet>1880</a>            )
+<a href=#1881 id=1881 data-nosnippet>1881</a>        };
+<a href=#1882 id=1882 data-nosnippet>1882</a>
+<a href=#1883 id=1883 data-nosnippet>1883</a>        <span class="comment">// Update tier thresholds.
+<a href=#1884 id=1884 data-nosnippet>1884</a>        // In case number of slots increase, we decrease thresholds required to enter the tier.
+<a href=#1885 id=1885 data-nosnippet>1885</a>        // In case number of slots decrease, we increase the threshold required to enter the tier.
+<a href=#1886 id=1886 data-nosnippet>1886</a>        //
+<a href=#1887 id=1887 data-nosnippet>1887</a>        // According to formula: %delta_threshold = (100% / (100% - delta_%_slots) - 1) * 100%
+<a href=#1888 id=1888 data-nosnippet>1888</a>        //
+<a href=#1889 id=1889 data-nosnippet>1889</a>        // where delta_%_slots is simply: (base_num_slots - new_num_slots) / base_num_slots
+<a href=#1890 id=1890 data-nosnippet>1890</a>        //
+<a href=#1891 id=1891 data-nosnippet>1891</a>        // `base_num_slots` is the number of slots at the base native currency price.
+<a href=#1892 id=1892 data-nosnippet>1892</a>        //
+<a href=#1893 id=1893 data-nosnippet>1893</a>        // When these entries are put into the threshold formula, we get:
+<a href=#1894 id=1894 data-nosnippet>1894</a>        // = 1 / ( 1 - (base_num_slots - new_num_slots) / base_num_slots ) - 1
+<a href=#1895 id=1895 data-nosnippet>1895</a>        // = 1 / ( new / base) - 1
+<a href=#1896 id=1896 data-nosnippet>1896</a>        // = base / new - 1
+<a href=#1897 id=1897 data-nosnippet>1897</a>        // = (base - new) / new
+<a href=#1898 id=1898 data-nosnippet>1898</a>        //
+<a href=#1899 id=1899 data-nosnippet>1899</a>        // This number can be negative. In order to keep all operations in unsigned integer domain,
+<a href=#1900 id=1900 data-nosnippet>1900</a>        // formulas are adjusted like:
+<a href=#1901 id=1901 data-nosnippet>1901</a>        //
+<a href=#1902 id=1902 data-nosnippet>1902</a>        // 1. Number of slots has increased, threshold is expected to decrease
+<a href=#1903 id=1903 data-nosnippet>1903</a>        // %delta_threshold = (new_num_slots - base_num_slots) / new_num_slots
+<a href=#1904 id=1904 data-nosnippet>1904</a>        // new_threshold = base_threshold * (1 - %delta_threshold)
+<a href=#1905 id=1905 data-nosnippet>1905</a>        //
+<a href=#1906 id=1906 data-nosnippet>1906</a>        // 2. Number of slots has decreased, threshold is expected to increase
+<a href=#1907 id=1907 data-nosnippet>1907</a>        // %delta_threshold = (base_num_slots - new_num_slots) / new_num_slots
+<a href=#1908 id=1908 data-nosnippet>1908</a>        // new_threshold = base_threshold * (1 + %delta_threshold)
+<a href=#1909 id=1909 data-nosnippet>1909</a>        //
+<a href=#1910 id=1910 data-nosnippet>1910</a>        </span><span class="kw">let </span>new_tier_thresholds: BoundedVec&lt;Balance, NT&gt; = params
+<a href=#1911 id=1911 data-nosnippet>1911</a>            .tier_thresholds
+<a href=#1912 id=1912 data-nosnippet>1912</a>            .clone()
+<a href=#1913 id=1913 data-nosnippet>1913</a>            .iter()
+<a href=#1914 id=1914 data-nosnippet>1914</a>            .map(|threshold| <span class="kw">match </span>threshold {
+<a href=#1915 id=1915 data-nosnippet>1915</a>                TierThreshold::DynamicPercentage {
+<a href=#1916 id=1916 data-nosnippet>1916</a>                    percentage,
+<a href=#1917 id=1917 data-nosnippet>1917</a>                    minimum_required_percentage,
+<a href=#1918 id=1918 data-nosnippet>1918</a>                    maximum_possible_percentage,
+<a href=#1919 id=1919 data-nosnippet>1919</a>                } =&gt; {
+<a href=#1920 id=1920 data-nosnippet>1920</a>                    <span class="kw">let </span>amount = <span class="kw-2">*</span>percentage * total_issuance;
+<a href=#1921 id=1921 data-nosnippet>1921</a>                    <span class="kw">let </span>adjusted_amount = <span class="kw">if </span>new_number_of_slots &gt;= base_number_of_slots {
+<a href=#1922 id=1922 data-nosnippet>1922</a>                        amount.saturating_sub(delta_threshold.saturating_mul_int(amount))
+<a href=#1923 id=1923 data-nosnippet>1923</a>                    } <span class="kw">else </span>{
+<a href=#1924 id=1924 data-nosnippet>1924</a>                        amount.saturating_add(delta_threshold.saturating_mul_int(amount))
+<a href=#1925 id=1925 data-nosnippet>1925</a>                    };
+<a href=#1926 id=1926 data-nosnippet>1926</a>                    <span class="kw">let </span>minimum_amount = <span class="kw-2">*</span>minimum_required_percentage * total_issuance;
+<a href=#1927 id=1927 data-nosnippet>1927</a>                    <span class="kw">let </span>maximum_amount = <span class="kw-2">*</span>maximum_possible_percentage * total_issuance;
+<a href=#1928 id=1928 data-nosnippet>1928</a>                    adjusted_amount.max(minimum_amount).min(maximum_amount)
+<a href=#1929 id=1929 data-nosnippet>1929</a>                }
+<a href=#1930 id=1930 data-nosnippet>1930</a>                TierThreshold::FixedPercentage {
+<a href=#1931 id=1931 data-nosnippet>1931</a>                    required_percentage,
+<a href=#1932 id=1932 data-nosnippet>1932</a>                } =&gt; <span class="kw-2">*</span>required_percentage * total_issuance,
+<a href=#1933 id=1933 data-nosnippet>1933</a>            })
+<a href=#1934 id=1934 data-nosnippet>1934</a>            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+<a href=#1935 id=1935 data-nosnippet>1935</a>            .try_into()
+<a href=#1936 id=1936 data-nosnippet>1936</a>            .unwrap_or_default();
+<a href=#1937 id=1937 data-nosnippet>1937</a>
+<a href=#1938 id=1938 data-nosnippet>1938</a>        <span class="self">Self </span>{
+<a href=#1939 id=1939 data-nosnippet>1939</a>            slots_per_tier: new_slots_per_tier,
+<a href=#1940 id=1940 data-nosnippet>1940</a>            reward_portion: params.reward_portion.clone(),
+<a href=#1941 id=1941 data-nosnippet>1941</a>            tier_thresholds: new_tier_thresholds,
+<a href=#1942 id=1942 data-nosnippet>1942</a>            _phantom: Default::default(),
+<a href=#1943 id=1943 data-nosnippet>1943</a>        }
+<a href=#1944 id=1944 data-nosnippet>1944</a>    }
+<a href=#1945 id=1945 data-nosnippet>1945</a>}
+<a href=#1946 id=1946 data-nosnippet>1946</a>
+<a href=#1947 id=1947 data-nosnippet>1947</a><span class="doccomment">/// Information about all of the dApps that got into tiers, and tier rewards
+<a href=#1948 id=1948 data-nosnippet>1948</a></span><span class="attr">#[derive(
+<a href=#1949 id=1949 data-nosnippet>1949</a>    Encode,
+<a href=#1950 id=1950 data-nosnippet>1950</a>    Decode,
+<a href=#1951 id=1951 data-nosnippet>1951</a>    MaxEncodedLen,
+<a href=#1952 id=1952 data-nosnippet>1952</a>    RuntimeDebugNoBound,
+<a href=#1953 id=1953 data-nosnippet>1953</a>    PartialEqNoBound,
+<a href=#1954 id=1954 data-nosnippet>1954</a>    DefaultNoBound,
+<a href=#1955 id=1955 data-nosnippet>1955</a>    EqNoBound,
+<a href=#1956 id=1956 data-nosnippet>1956</a>    CloneNoBound,
+<a href=#1957 id=1957 data-nosnippet>1957</a>    TypeInfo,
+<a href=#1958 id=1958 data-nosnippet>1958</a>)]
+<a href=#1959 id=1959 data-nosnippet>1959</a>#[scale_info(skip_type_params(MD, NT))]
+<a href=#1960 id=1960 data-nosnippet>1960</a></span><span class="kw">pub struct </span>DAppTierRewards&lt;MD: Get&lt;u32&gt;, NT: Get&lt;u32&gt;&gt; {
+<a href=#1961 id=1961 data-nosnippet>1961</a>    <span class="doccomment">/// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
+<a href=#1962 id=1962 data-nosnippet>1962</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) dapps: BoundedBTreeMap&lt;DAppId, RankedTier, MD&gt;,
+<a href=#1963 id=1963 data-nosnippet>1963</a>    <span class="doccomment">/// Rewards for each tier. First entry refers to the first tier, and so on.
+<a href=#1964 id=1964 data-nosnippet>1964</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) rewards: BoundedVec&lt;Balance, NT&gt;,
+<a href=#1965 id=1965 data-nosnippet>1965</a>    <span class="doccomment">/// Period during which this struct was created.
+<a href=#1966 id=1966 data-nosnippet>1966</a>    </span><span class="attr">#[codec(compact)]
+<a href=#1967 id=1967 data-nosnippet>1967</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) period: PeriodNumber,
+<a href=#1968 id=1968 data-nosnippet>1968</a>    <span class="doccomment">/// Rank reward for each tier. First entry refers to the first tier, and so on.
+<a href=#1969 id=1969 data-nosnippet>1969</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) rank_rewards: BoundedVec&lt;Balance, NT&gt;,
+<a href=#1970 id=1970 data-nosnippet>1970</a>}
+<a href=#1971 id=1971 data-nosnippet>1971</a>
+<a href=#1972 id=1972 data-nosnippet>1972</a><span class="kw">impl</span>&lt;MD: Get&lt;u32&gt;, NT: Get&lt;u32&gt;&gt; DAppTierRewards&lt;MD, NT&gt; {
+<a href=#1973 id=1973 data-nosnippet>1973</a>    <span class="doccomment">/// Attempt to construct `DAppTierRewards` struct.
+<a href=#1974 id=1974 data-nosnippet>1974</a>    /// If the provided arguments exceed the allowed capacity, return an error.
+<a href=#1975 id=1975 data-nosnippet>1975</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(
+<a href=#1976 id=1976 data-nosnippet>1976</a>        dapps: BTreeMap&lt;DAppId, RankedTier&gt;,
+<a href=#1977 id=1977 data-nosnippet>1977</a>        rewards: Vec&lt;Balance&gt;,
+<a href=#1978 id=1978 data-nosnippet>1978</a>        period: PeriodNumber,
+<a href=#1979 id=1979 data-nosnippet>1979</a>        rank_rewards: Vec&lt;Balance&gt;,
+<a href=#1980 id=1980 data-nosnippet>1980</a>    ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, ()&gt; {
+<a href=#1981 id=1981 data-nosnippet>1981</a>        <span class="kw">let </span>dapps = BoundedBTreeMap::try_from(dapps).map_err(|<span class="kw">_</span>| ())<span class="question-mark">?</span>;
+<a href=#1982 id=1982 data-nosnippet>1982</a>        <span class="kw">let </span>rewards = BoundedVec::try_from(rewards).map_err(|<span class="kw">_</span>| ())<span class="question-mark">?</span>;
+<a href=#1983 id=1983 data-nosnippet>1983</a>        <span class="kw">let </span>rank_rewards = BoundedVec::try_from(rank_rewards).map_err(|<span class="kw">_</span>| ())<span class="question-mark">?</span>;
+<a href=#1984 id=1984 data-nosnippet>1984</a>        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+<a href=#1985 id=1985 data-nosnippet>1985</a>            dapps,
+<a href=#1986 id=1986 data-nosnippet>1986</a>            rewards,
+<a href=#1987 id=1987 data-nosnippet>1987</a>            period,
+<a href=#1988 id=1988 data-nosnippet>1988</a>            rank_rewards,
+<a href=#1989 id=1989 data-nosnippet>1989</a>        })
+<a href=#1990 id=1990 data-nosnippet>1990</a>    }
+<a href=#1991 id=1991 data-nosnippet>1991</a>
+<a href=#1992 id=1992 data-nosnippet>1992</a>    <span class="doccomment">/// Consume reward for the specified dapp id, returning its amount and tier Id.
+<a href=#1993 id=1993 data-nosnippet>1993</a>    /// In case dapp isn't applicable for rewards, or they have already been consumed, returns `None`.
+<a href=#1994 id=1994 data-nosnippet>1994</a>    </span><span class="kw">pub fn </span>try_claim(<span class="kw-2">&amp;mut </span><span class="self">self</span>, dapp_id: DAppId) -&gt; <span class="prelude-ty">Result</span>&lt;(Balance, RankedTier), DAppTierError&gt; {
+<a href=#1995 id=1995 data-nosnippet>1995</a>        <span class="comment">// Check if dApp Id exists.
+<a href=#1996 id=1996 data-nosnippet>1996</a>        </span><span class="kw">let </span>ranked_tier = <span class="self">self
+<a href=#1997 id=1997 data-nosnippet>1997</a>            </span>.dapps
+<a href=#1998 id=1998 data-nosnippet>1998</a>            .remove(<span class="kw-2">&amp;</span>dapp_id)
+<a href=#1999 id=1999 data-nosnippet>1999</a>            .ok_or(DAppTierError::NoDAppInTiers)<span class="question-mark">?</span>;
+<a href=#2000 id=2000 data-nosnippet>2000</a>
+<a href=#2001 id=2001 data-nosnippet>2001</a>        <span class="kw">let </span>(tier_id, rank) = ranked_tier.deconstruct();
+<a href=#2002 id=2002 data-nosnippet>2002</a>        <span class="kw">let </span><span class="kw-2">mut </span>amount = <span class="self">self
+<a href=#2003 id=2003 data-nosnippet>2003</a>            </span>.rewards
+<a href=#2004 id=2004 data-nosnippet>2004</a>            .get(tier_id <span class="kw">as </span>usize)
+<a href=#2005 id=2005 data-nosnippet>2005</a>            .map_or(Balance::zero(), |x| <span class="kw-2">*</span>x);
+<a href=#2006 id=2006 data-nosnippet>2006</a>
+<a href=#2007 id=2007 data-nosnippet>2007</a>        <span class="kw">let </span>reward_per_rank = <span class="self">self
+<a href=#2008 id=2008 data-nosnippet>2008</a>            </span>.rank_rewards
+<a href=#2009 id=2009 data-nosnippet>2009</a>            .get(tier_id <span class="kw">as </span>usize)
+<a href=#2010 id=2010 data-nosnippet>2010</a>            .map_or(Balance::zero(), |x| <span class="kw-2">*</span>x);
+<a href=#2011 id=2011 data-nosnippet>2011</a>
+<a href=#2012 id=2012 data-nosnippet>2012</a>        <span class="kw">let </span>additional_reward = reward_per_rank.saturating_mul(rank.into());
+<a href=#2013 id=2013 data-nosnippet>2013</a>        amount = amount.saturating_add(additional_reward);
+<a href=#2014 id=2014 data-nosnippet>2014</a>
+<a href=#2015 id=2015 data-nosnippet>2015</a>        <span class="prelude-val">Ok</span>((amount, ranked_tier))
+<a href=#2016 id=2016 data-nosnippet>2016</a>    }
+<a href=#2017 id=2017 data-nosnippet>2017</a>}
+<a href=#2018 id=2018 data-nosnippet>2018</a>
+<a href=#2019 id=2019 data-nosnippet>2019</a><span class="attr">#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+<a href=#2020 id=2020 data-nosnippet>2020</a></span><span class="kw">pub enum </span>DAppTierError {
+<a href=#2021 id=2021 data-nosnippet>2021</a>    <span class="doccomment">/// Specified dApp Id doesn't exist in any tier.
+<a href=#2022 id=2022 data-nosnippet>2022</a>    </span>NoDAppInTiers,
+<a href=#2023 id=2023 data-nosnippet>2023</a>    <span class="doccomment">/// Internal, unexpected error occurred.
+<a href=#2024 id=2024 data-nosnippet>2024</a>    </span>InternalError,
+<a href=#2025 id=2025 data-nosnippet>2025</a>}
+<a href=#2026 id=2026 data-nosnippet>2026</a>
+<a href=#2027 id=2027 data-nosnippet>2027</a><span class="doccomment">/// Describes which entries are next in line for cleanup.
+<a href=#2028 id=2028 data-nosnippet>2028</a></span><span class="attr">#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+<a href=#2029 id=2029 data-nosnippet>2029</a></span><span class="kw">pub struct </span>CleanupMarker {
+<a href=#2030 id=2030 data-nosnippet>2030</a>    <span class="doccomment">/// Era reward span index that should be checked &amp; cleaned up next.
+<a href=#2031 id=2031 data-nosnippet>2031</a>    </span><span class="attr">#[codec(compact)]
+<a href=#2032 id=2032 data-nosnippet>2032</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) era_reward_index: EraNumber,
+<a href=#2033 id=2033 data-nosnippet>2033</a>    <span class="doccomment">/// dApp tier rewards index that should be checked &amp; cleaned up next.
+<a href=#2034 id=2034 data-nosnippet>2034</a>    </span><span class="attr">#[codec(compact)]
+<a href=#2035 id=2035 data-nosnippet>2035</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) dapp_tiers_index: EraNumber,
+<a href=#2036 id=2036 data-nosnippet>2036</a>    <span class="doccomment">/// Oldest valid era or earliest era in the oldest valid period.
+<a href=#2037 id=2037 data-nosnippet>2037</a>    </span><span class="attr">#[codec(compact)]
+<a href=#2038 id=2038 data-nosnippet>2038</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) oldest_valid_era: EraNumber,
+<a href=#2039 id=2039 data-nosnippet>2039</a>}
+<a href=#2040 id=2040 data-nosnippet>2040</a>
+<a href=#2041 id=2041 data-nosnippet>2041</a><span class="kw">impl </span>CleanupMarker {
+<a href=#2042 id=2042 data-nosnippet>2042</a>    <span class="doccomment">/// Used to check whether there are any pending cleanups, according to marker values.
+<a href=#2043 id=2043 data-nosnippet>2043</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>has_pending_cleanups(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+<a href=#2044 id=2044 data-nosnippet>2044</a>        <span class="self">self</span>.era_reward_index != <span class="self">self</span>.oldest_valid_era
+<a href=#2045 id=2045 data-nosnippet>2045</a>            || <span class="self">self</span>.dapp_tiers_index != <span class="self">self</span>.oldest_valid_era
+<a href=#2046 id=2046 data-nosnippet>2046</a>    }
+<a href=#2047 id=2047 data-nosnippet>2047</a>}</code></pre></div></section></main></body></html>
