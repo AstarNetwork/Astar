@@ -74,7 +74,6 @@ pub trait WeightInfo {
 	fn on_initialize_build_and_earn_to_build_and_earn() -> Weight;
 	fn dapp_tier_assignment(x: u32, ) -> Weight;
 	fn on_idle_cleanup() -> Weight;
-	fn step() -> Weight;
 	fn set_static_tier_params() -> Weight;
 }
 
@@ -542,17 +541,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(8_352_000, 4254)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
-	}
-	/// Storage: `DappStaking::Ledger` (r:2 w:1)
-	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
-	fn step() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `76`
-		//  Estimated: `6560`
-		// Minimum execution time: 13_041_000 picoseconds.
-		Weight::from_parts(13_375_000, 6560)
-			.saturating_add(T::DbWeight::get().reads(2_u64))
-			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `DappStaking::StaticTierParams` (r:0 w:1)
 	/// Proof: `DappStaking::StaticTierParams` (`max_values`: Some(1), `max_size`: Some(87), added: 582, mode: `MaxEncodedLen`)
@@ -1029,17 +1017,6 @@ impl WeightInfo for () {
 		Weight::from_parts(8_352_000, 4254)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
-	}
-	/// Storage: `DappStaking::Ledger` (r:2 w:1)
-	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
-	fn step() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `76`
-		//  Estimated: `6560`
-		// Minimum execution time: 13_041_000 picoseconds.
-		Weight::from_parts(13_375_000, 6560)
-			.saturating_add(RocksDbWeight::get().reads(2_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `DappStaking::StaticTierParams` (r:0 w:1)
 	/// Proof: `DappStaking::StaticTierParams` (`max_values`: Some(1), `max_size`: Some(87), added: 582, mode: `MaxEncodedLen`)

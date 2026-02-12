@@ -17,7 +17,9 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use astar_primitives::{
-    dapp_staking::{RankedTier, StandardTierSlots, STANDARD_TIER_SLOTS_ARGS},
+    dapp_staking::{
+        RankedTier, StandardTierSlots, FIXED_TIER_SLOTS_ARGS, STANDARD_TIER_SLOTS_ARGS,
+    },
     Balance,
 };
 use frame_support::{assert_ok, parameter_types};
@@ -3487,7 +3489,8 @@ fn tier_params_check_is_ok() {
             },
         ])
         .unwrap(),
-        slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+        slot_number_args: FIXED_TIER_SLOTS_ARGS,
+        tier_rank_multipliers: BoundedVec::try_from(vec![10_000, 24_000, 46_700]).unwrap(),
     };
     assert!(params.is_valid());
 
@@ -3572,6 +3575,26 @@ fn tier_params_check_is_ok() {
     ])
     .unwrap();
     assert!(!invalid_dynamic_params.is_valid());
+
+    // 7th scenario - tier_rank_multipliers length mismatch with number of tiers
+    let mut invalid_tier_points = params.clone();
+    invalid_tier_points.tier_rank_multipliers = BoundedVec::try_from(vec![
+        10_000, 24_000,
+        // Missing 3rd tier multiplier
+    ])
+    .unwrap();
+    assert!(!invalid_tier_points.is_valid());
+
+    // 8th scenario - multiplier is capped
+    let mut valid_tier_points = params.clone();
+    valid_tier_points.tier_rank_multipliers =
+        BoundedVec::try_from(vec![10_000, 100_000, 100_000]).unwrap();
+    assert!(valid_tier_points.is_valid());
+
+    let mut invalid_tier_points = params.clone();
+    invalid_tier_points.tier_rank_multipliers =
+        BoundedVec::try_from(vec![10_000, 100_001, 100_000]).unwrap();
+    assert!(!invalid_tier_points.is_valid());
 }
 
 #[test]
@@ -3614,7 +3637,8 @@ fn tier_configuration_basic_tests() {
             },
         ])
         .unwrap(),
-        slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+        slot_number_args: FIXED_TIER_SLOTS_ARGS,
+        tier_rank_multipliers: BoundedVec::try_from(vec![0, 24_000, 46_700, 0]).unwrap(),
     };
     assert!(params.is_valid(), "Example params must be valid!");
 
@@ -3890,6 +3914,7 @@ fn tier_configuration_calculate_new_with_maximum_threshold() {
         tier_thresholds: tier_thresholds_legacy,
         reward_portion: reward_portion.clone(),
         slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+        tier_rank_multipliers: BoundedVec::try_from(vec![0, 24_000, 46_700, 0]).unwrap(),
     };
 
     let params_with_max = TierParameters::<TiersNum> {
@@ -3897,6 +3922,7 @@ fn tier_configuration_calculate_new_with_maximum_threshold() {
         tier_thresholds: tier_thresholds_with_max,
         reward_portion: reward_portion.clone(),
         slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+        tier_rank_multipliers: BoundedVec::try_from(vec![0, 24_000, 46_700, 0]).unwrap(),
     };
 
     // Create a starting configuration with some values

@@ -37,7 +37,7 @@ pub type PeriodNumber = u32;
 pub type DAppId = u16;
 /// Tier Id type
 pub type TierId = u8;
-// Tier Rank type
+/// Tier Rank type
 pub type Rank = u8;
 
 /// Configuration for cycles, periods, subperiods & eras.
@@ -208,6 +208,8 @@ impl TierSlots for StandardTierSlots {
 /// Standard tier slots arguments.
 /// Initially decided for Astar, during the Tokenomics 2.0 work.
 pub const STANDARD_TIER_SLOTS_ARGS: (u64, u64) = (1000, 50);
+/// Decided for Astar, during the Tokenomics 3.0 revamp.
+pub const FIXED_TIER_SLOTS_ARGS: (u64, u64) = (0, 16);
 
 /// RankedTier is wrapper around u8 to hold both tier and rank. u8 has 2 bytes (8bits) and they're using in this order `0xrank_tier`.
 /// First 4 bits are used to hold rank and second 4 bits are used to hold tier.

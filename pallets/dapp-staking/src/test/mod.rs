@@ -16,7 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-mod migrations;
 pub(crate) mod mock;
 mod testing_utils;
 mod tests;

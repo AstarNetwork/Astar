@@ -87,7 +87,7 @@ pub type AccountLedgerFor<T> = AccountLedger<<T as Config>::MaxUnlockingChunks>;
 
 // Convenience type for `DAppTierRewards` usage.
 pub type DAppTierRewardsFor<T> =
-    DAppTierRewards<<T as Config>::MaxNumberOfContracts, <T as Config>::NumberOfTiers>;
+    DAppTierRewards<<T as Config>::MaxNumberOfContractsLegacy, <T as Config>::NumberOfTiers>;
 
 // Convenience type for `EraRewardSpan` usage.
 pub type EraRewardSpanFor<T> = EraRewardSpan<<T as Config>::EraRewardSpanLength>;
@@ -879,7 +879,7 @@ impl Iterator for EraStakePairIter {
         if self.start_era <= self.end_era {
             let value = (self.start_era, self.amount);
             self.start_era.saturating_inc();
-            return Some(value);
+            Some(value)
         } else {
             None
         }
@@ -1710,6 +1710,15 @@ pub struct TierParameters<NT: Get<u32>> {
     /// This can be made more generic in the future in case more complex equations are required.
     /// But for now this simple tuple serves the purpose.
     pub(crate) slot_number_args: (u64, u64),
+    /// Rank multiplier per tier in bips (100% = 10_000 bips):
+    /// defines how much rank 10 earns relative to rank 0.
+    ///
+    /// Example:
+    /// - `24_000` → rank 10 earns 2.4× rank 0
+    ///   ⇒ per-rank increment = (240% − 100%) / 10 = +14% per rank
+    /// - `10_000` → rank rewards disabled (rank 0..10 all earn the same)
+    /// - `0` → no rewards for all slots
+    pub(crate) tier_rank_multipliers: BoundedVec<u32, NT>,
 }
 
 impl<NT: Get<u32>> TierParameters<NT> {
@@ -1756,10 +1765,22 @@ impl<NT: Get<u32>> TierParameters<NT> {
             }
         }
 
+        // - Tier 0: must be <= 100% (no rank bonus for the top tier)
+        match self.tier_rank_multipliers.first() {
+            Some(m0) if *m0 <= 10_000 => {}
+            _ => return false,
+        }
+
+        // Safety cap
+        if self.tier_rank_multipliers.iter().any(|m| *m > 100_000) {
+            return false;
+        }
+
         let number_of_tiers: usize = NT::get() as usize;
         number_of_tiers == self.reward_portion.len()
             && number_of_tiers == self.slot_distribution.len()
             && number_of_tiers == self.tier_thresholds.len()
+            && number_of_tiers == self.tier_rank_multipliers.len()
     }
 }
 
@@ -1805,6 +1826,21 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
     /// Calculate the total number of slots.
     pub fn total_number_of_slots(&self) -> u16 {
         self.slots_per_tier.iter().copied().sum()
+    }
+
+    /// Returns the stake thresholds required to enter each tier.
+    pub fn tier_thresholds(&self) -> &BoundedVec<Balance, NT> {
+        &self.tier_thresholds
+    }
+
+    /// Returns the number of available slots for each tier.
+    pub fn slots_per_tier(&self) -> &BoundedVec<u16, NT> {
+        &self.slots_per_tier
+    }
+
+    /// Returns the reward distribution portion assigned to each tier.
+    pub fn reward_portion(&self) -> &BoundedVec<Permill, NT> {
+        &self.reward_portion
     }
 
     /// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.

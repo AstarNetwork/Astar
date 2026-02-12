@@ -36,7 +36,7 @@ use sp_std::cell::RefCell;
 
 use astar_primitives::{
     dapp_staking::{
-        Observer as DappStakingObserver, SmartContract, StandardTierSlots, STANDARD_TIER_SLOTS_ARGS,
+        Observer as DappStakingObserver, SmartContract, StandardTierSlots, FIXED_TIER_SLOTS_ARGS,
     },
     Balance, BlockNumber,
 };
@@ -88,8 +88,7 @@ parameter_types! {
 #[derive_impl(pallet_migrations::config_preludes::TestDefaultConfig)]
 impl pallet_migrations::Config for Test {
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations =
-        (crate::migration::LazyMigration<Test, crate::weights::SubstrateWeight<Test>>,);
+    type Migrations = ();
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
     type MaxServiceWeight = MaxServiceWeight;
@@ -225,6 +224,7 @@ impl pallet_dapp_staking::Config for Test {
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
+    type MaxNumberOfContractsLegacy = ConstU32<10>;
     type MaxUnlockingChunks = ConstU32<5>;
     type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
     type UnlockingPeriod = ConstU32<2>;
@@ -341,7 +341,8 @@ impl ExtBuilder {
                     },
                 ])
                 .unwrap(),
-                slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+                slot_number_args: FIXED_TIER_SLOTS_ARGS,
+                tier_rank_multipliers: BoundedVec::try_from(vec![0, 24_000, 46_700, 0]).unwrap(),
             };
 
             let total_issuance = <Test as Config>::Currency::total_issuance();

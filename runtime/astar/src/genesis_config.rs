@@ -17,7 +17,10 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::*;
-use astar_primitives::{evm::EVM_REVERT_CODE, genesis::GenesisAccount, parachain::ASTAR_ID};
+use astar_primitives::{
+    dapp_staking::FIXED_TIER_SLOTS_ARGS, evm::EVM_REVERT_CODE, genesis::GenesisAccount,
+    parachain::ASTAR_ID,
+};
 
 /// Provides the JSON representation of predefined genesis config for given `id`.
 pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
@@ -57,6 +60,9 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
         )
         .map(|x| (x.clone(), 1_000_000_000 * ASTR))
         .collect::<Vec<_>>();
+
+    let slots_per_tier = vec![0, 6, 10, 0];
+    let tier_rank_multipliers: Vec<u32> = vec![0, 24_000, 46_700, 0];
 
     let config = RuntimeGenesisConfig {
         system: Default::default(),
@@ -125,40 +131,37 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
         transaction_payment: Default::default(),
         dapp_staking: DappStakingConfig {
             reward_portion: vec![
-                Permill::from_percent(40),
+                Permill::from_percent(0),
+                Permill::from_percent(70),
                 Permill::from_percent(30),
-                Permill::from_percent(20),
-                Permill::from_percent(10),
+                Permill::from_percent(0),
             ],
             slot_distribution: vec![
-                Permill::from_percent(10),
-                Permill::from_percent(20),
-                Permill::from_percent(30),
-                Permill::from_percent(40),
+                Permill::from_percent(0),
+                Permill::from_parts(375_000), // 37.5%
+                Permill::from_parts(625_000), // 62.5%
+                Permill::from_percent(0),
             ],
-            // percentages below are calculated based on a total issuance at the time when dApp staking v3 was launched (84.3M)
+            // percentages below are calculated based on a total issuance at the time when dApp staking v3 was revamped (8.6B)
             tier_thresholds: vec![
-                TierThreshold::DynamicPercentage {
-                    percentage: Perbill::from_parts(35_700_000), // 3.57%
-                    minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
-                    maximum_possible_percentage: Perbill::from_percent(100),
-                },
-                TierThreshold::DynamicPercentage {
-                    percentage: Perbill::from_parts(8_900_000), // 0.89%
-                    minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
-                    maximum_possible_percentage: Perbill::from_percent(100),
-                },
-                TierThreshold::DynamicPercentage {
-                    percentage: Perbill::from_parts(2_380_000), // 0.238%
-                    minimum_required_percentage: Perbill::from_parts(1_790_000), // 0.179%
-                    maximum_possible_percentage: Perbill::from_percent(100),
+                TierThreshold::FixedPercentage {
+                    required_percentage: Perbill::from_parts(23_200_000), // 2.32%
                 },
                 TierThreshold::FixedPercentage {
-                    required_percentage: Perbill::from_parts(600_000), // 0.06%
+                    required_percentage: Perbill::from_parts(9_300_000), // 0.93%
+                },
+                TierThreshold::FixedPercentage {
+                    required_percentage: Perbill::from_parts(3_500_000), // 0.35%
+                },
+                // Tier 3: unreachable dummy
+                TierThreshold::FixedPercentage {
+                    required_percentage: Perbill::from_parts(0), // 0%
                 },
             ],
-            slots_per_tier: vec![10, 20, 30, 40],
+            slots_per_tier,
+            slot_number_args: FIXED_TIER_SLOTS_ARGS,
             safeguard: Some(false),
+            tier_rank_multipliers,
             ..Default::default()
         },
         inflation: Default::default(),

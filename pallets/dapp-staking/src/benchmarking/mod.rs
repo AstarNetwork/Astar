@@ -21,7 +21,7 @@ use super::{Pallet as DappStaking, *};
 use astar_primitives::Balance;
 use frame_benchmarking::v2::*;
 
-use frame_support::{assert_ok, migrations::SteppedMigration, weights::WeightMeter};
+use frame_support::assert_ok;
 use frame_system::{Pallet as System, RawOrigin};
 use sp_std::prelude::*;
 
@@ -999,7 +999,7 @@ mod benchmarks {
         let snapshot_state = ActiveProtocolState::<T>::get();
 
         // Advance over to the last era of the subperiod, and then again to the last block of that era.
-        advance_to_era::<T>(
+        force_advance_to_era::<T>(
             ActiveProtocolState::<T>::get()
                 .period_info
                 .next_subperiod_start_era
@@ -1177,73 +1177,6 @@ mod benchmarks {
         assert!(
             !DAppTiers::<T>::contains_key(cleanup_marker.dapp_tiers_index),
             "Period end info should have been cleaned up."
-        );
-    }
-
-    /// Benchmark a single step of mbm migration.
-    #[benchmark]
-    fn step() {
-        let alice: T::AccountId = account("alice", 0, 1);
-
-        Ledger::<T>::set(
-            &alice,
-            AccountLedger {
-                locked: 1000,
-                unlocking: vec![
-                    UnlockingChunk {
-                        amount: 100,
-                        unlock_block: 5,
-                    },
-                    UnlockingChunk {
-                        amount: 100,
-                        unlock_block: 20,
-                    },
-                ]
-                .try_into()
-                .unwrap(),
-                staked: Default::default(),
-                staked_future: None,
-                contract_stake_count: 0,
-            },
-        );
-        CurrentEraInfo::<T>::put(EraInfo {
-            total_locked: 1000,
-            unlocking: 200,
-            current_stake_amount: Default::default(),
-            next_stake_amount: Default::default(),
-        });
-
-        System::<T>::set_block_number(10u32.into());
-        let mut meter = WeightMeter::new();
-
-        #[block]
-        {
-            crate::migration::LazyMigration::<T, weights::SubstrateWeight<T>>::step(
-                None, &mut meter,
-            )
-            .unwrap();
-        }
-
-        assert_eq!(
-            Ledger::<T>::get(&alice),
-            AccountLedger {
-                locked: 1000,
-                unlocking: vec![
-                    UnlockingChunk {
-                        amount: 100,
-                        unlock_block: 5, // already unlocked
-                    },
-                    UnlockingChunk {
-                        amount: 100,
-                        unlock_block: 30, // double remaining blocks
-                    },
-                ]
-                .try_into()
-                .unwrap(),
-                staked: Default::default(),
-                staked_future: None,
-                contract_stake_count: 0,
-            }
         );
     }
 

@@ -17,250 +17,421 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use astar_primitives::dapp_staking::FIXED_TIER_SLOTS_ARGS;
 use core::marker::PhantomData;
-use frame_support::{
-    migration::clear_storage_prefix,
-    migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
-    traits::{GetStorageVersion, OnRuntimeUpgrade, UncheckedOnRuntimeUpgrade},
-    weights::WeightMeter,
-};
+use frame_support::traits::UncheckedOnRuntimeUpgrade;
 
 #[cfg(feature = "try-runtime")]
-use sp_std::vec::Vec;
+mod try_runtime_imports {
+    pub use sp_runtime::TryRuntimeError;
+}
 
 #[cfg(feature = "try-runtime")]
-use sp_runtime::TryRuntimeError;
+use try_runtime_imports::*;
 
 /// Exports for versioned migration `type`s for this pallet.
 pub mod versioned_migrations {
     use super::*;
 
-    /// Migration V9 to V10 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
-    /// the migration is only performed when on-chain version is 9.
-    pub type V9ToV10<T, MaxPercentages> = frame_support::migrations::VersionedMigration<
-        9,
-        10,
-        v10::VersionMigrateV9ToV10<T, MaxPercentages>,
-        Pallet<T>,
-        <T as frame_system::Config>::DbWeight,
-    >;
+    /// Migration V10 to V11 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
+    /// the migration is only performed when on-chain version is 10.
+    pub type V10ToV11<T, TierParamsConfig, OldErasVoting, OldErasBnE> =
+        frame_support::migrations::VersionedMigration<
+            10,
+            11,
+            v11::VersionMigrateV10ToV11<T, TierParamsConfig, OldErasVoting, OldErasBnE>,
+            Pallet<T>,
+            <T as frame_system::Config>::DbWeight,
+        >;
 }
 
-mod v10 {
+/// Configuration for V11 tier parameters
+pub trait TierParamsV11Config {
+    fn reward_portion() -> [Permill; 4];
+    fn slot_distribution() -> [Permill; 4];
+    fn tier_thresholds() -> [TierThreshold; 4];
+    fn slot_number_args() -> (u64, u64);
+    fn tier_rank_multipliers() -> [u32; 4];
+}
+
+pub struct DefaultTierParamsV11;
+impl TierParamsV11Config for DefaultTierParamsV11 {
+    fn reward_portion() -> [Permill; 4] {
+        [
+            Permill::from_percent(0),
+            Permill::from_percent(70),
+            Permill::from_percent(30),
+            Permill::from_percent(0),
+        ]
+    }
+
+    fn slot_distribution() -> [Permill; 4] {
+        [
+            Permill::from_percent(0),
+            Permill::from_parts(375_000), // 37.5%
+            Permill::from_parts(625_000), // 62.5%
+            Permill::from_percent(0),
+        ]
+    }
+
+    fn tier_thresholds() -> [TierThreshold; 4] {
+        [
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_parts(23_200_000), // 2.32%
+            },
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_parts(9_300_000), // 0.93%
+            },
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_parts(3_500_000), // 0.35%
+            },
+            // Tier 3: unreachable dummy
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_parts(0), // 0%
+            },
+        ]
+    }
+
+    fn slot_number_args() -> (u64, u64) {
+        FIXED_TIER_SLOTS_ARGS
+    }
+
+    fn tier_rank_multipliers() -> [u32; 4] {
+        [0, 24_000, 46_700, 0]
+    }
+}
+
+mod v11 {
     use super::*;
-    use crate::migration::v9::{
-        TierParameters as TierParametersV9, TierThreshold as TierThresholdV9,
-    };
 
-    pub struct VersionMigrateV9ToV10<T, MaxPercentages>(PhantomData<(T, MaxPercentages)>);
+    pub struct VersionMigrateV10ToV11<T, P, OldErasVoting, OldErasBnE>(
+        PhantomData<(T, P, OldErasVoting, OldErasBnE)>,
+    );
 
-    impl<T: Config, MaxPercentages: Get<[Option<Perbill>; 4]>> UncheckedOnRuntimeUpgrade
-        for VersionMigrateV9ToV10<T, MaxPercentages>
+    impl<T: Config, P: TierParamsV11Config, OldErasVoting: Get<u32>, OldErasBnE: Get<u32>>
+        UncheckedOnRuntimeUpgrade for VersionMigrateV10ToV11<T, P, OldErasVoting, OldErasBnE>
     {
         fn on_runtime_upgrade() -> Weight {
-            let max_percentages = MaxPercentages::get();
+            let old_eras_voting = OldErasVoting::get();
+            let old_eras_bne = OldErasBnE::get();
 
-            // Update static tier parameters with new max thresholds from the runtime configurable param TierThresholds
-            let result = StaticTierParams::<T>::translate::<TierParametersV9<T::NumberOfTiers>, _>(
-                |maybe_old_params| match maybe_old_params {
-                    Some(old_params) => {
-                        let new_tier_thresholds: Vec<TierThreshold> = old_params
-                            .tier_thresholds
-                            .iter()
-                            .enumerate()
-                            .map(|(idx, old_threshold)| {
-                                let maximum_percentage = if idx < max_percentages.len() {
-                                    max_percentages[idx]
-                                } else {
-                                    None
-                                };
-                                map_threshold(old_threshold, maximum_percentage)
-                            })
-                            .collect();
+            let mut reads: u64 = 0;
+            let mut writes: u64 = 0;
 
-                        let tier_thresholds =
-                            BoundedVec::<TierThreshold, T::NumberOfTiers>::try_from(
-                                new_tier_thresholds,
-                            );
+            // 0. Safety: remove excess dApps if count exceeds new limit
+            let current_integrated_dapps = IntegratedDApps::<T>::count();
+            reads += 1;
 
-                        match tier_thresholds {
-                            Ok(tier_thresholds) => Some(TierParameters {
-                                slot_distribution: old_params.slot_distribution,
-                                reward_portion: old_params.reward_portion,
-                                tier_thresholds,
-                                slot_number_args: old_params.slot_number_args,
-                            }),
-                            Err(err) => {
-                                log::error!(
-                                    "Failed to convert TierThresholds parameters: {:?}",
-                                    err
-                                );
-                                None
-                            }
-                        }
-                    }
-                    _ => None,
-                },
+            let max_dapps_allowed = T::MaxNumberOfContracts::get();
+
+            if current_integrated_dapps > max_dapps_allowed {
+                log::warn!(
+                    target: LOG_TARGET,
+                    "Safety net triggered: {} dApps exceed limit of {}. Removing {} excess dApps.",
+                    current_integrated_dapps,
+                    max_dapps_allowed,
+                    current_integrated_dapps - max_dapps_allowed
+                );
+
+                let excess = current_integrated_dapps.saturating_sub(max_dapps_allowed);
+                let victims: Vec<_> = IntegratedDApps::<T>::iter()
+                    .take(excess as usize)
+                    .map(|(contract, dapp_info)| (contract, dapp_info.id))
+                    .collect();
+
+                reads += excess as u64;
+
+                for (contract, dapp_id) in victims {
+                    ContractStake::<T>::remove(&dapp_id);
+                    IntegratedDApps::<T>::remove(&contract);
+                    writes += 2;
+
+                    let current_era = ActiveProtocolState::<T>::get().era;
+                    Pallet::<T>::deposit_event(Event::<T>::DAppUnregistered {
+                        smart_contract: contract,
+                        era: current_era,
+                    });
+                    log::info!(
+                        target: LOG_TARGET,
+                        "Safety net removed dApp ID {} (contract: {:?})",
+                        dapp_id,
+                        core::any::type_name::<T::SmartContract>()
+                    );
+                }
+
+                // ActiveProtocolState::get() for era => 1 read (done once for all events)
+                reads += 1;
+            }
+
+            // 1. Migrate StaticTierParams
+            let reward_portion = BoundedVec::<Permill, T::NumberOfTiers>::truncate_from(
+                P::reward_portion().to_vec(),
+            );
+            let slot_distribution = BoundedVec::<Permill, T::NumberOfTiers>::truncate_from(
+                P::slot_distribution().to_vec(),
+            );
+            let tier_thresholds = BoundedVec::<TierThreshold, T::NumberOfTiers>::truncate_from(
+                P::tier_thresholds().to_vec(),
+            );
+            let tier_rank_multipliers = BoundedVec::<u32, T::NumberOfTiers>::truncate_from(
+                P::tier_rank_multipliers().to_vec(),
             );
 
-            if result.is_err() {
-                log::error!("Failed to translate StaticTierParams from previous V9 type to current V10 type. Check TierParametersV9 decoding.");
-                // Enable maintenance mode.
+            let new_params = TierParameters::<T::NumberOfTiers> {
+                reward_portion,
+                slot_distribution,
+                tier_thresholds,
+                slot_number_args: P::slot_number_args(),
+                tier_rank_multipliers,
+            };
+
+            if !new_params.is_valid() {
+                log::error!(
+                    target: LOG_TARGET,
+                    "New TierParameters validation failed. Enabling maintenance mode."
+                );
+
+                // ActiveProtocolState::mutate => 1 read + 1 write
                 ActiveProtocolState::<T>::mutate(|state| {
                     state.maintenance = true;
                 });
-                log::warn!("Maintenance mode enabled.");
-                return T::DbWeight::get().reads_writes(1, 0);
+                reads += 1;
+                writes += 1;
+
+                return T::DbWeight::get().reads_writes(reads, writes);
             }
 
-            T::DbWeight::get().reads_writes(1, 1)
+            // StaticTierParams::put => 1 write
+            StaticTierParams::<T>::put(new_params);
+            writes += 1;
+            log::info!(target: LOG_TARGET, "StaticTierParams updated successfully");
+
+            // 2. Update ActiveProtocolState in a SINGLE mutate (avoid extra .get() read)
+            // ActiveProtocolState::mutate => 1 read + 1 write
+            ActiveProtocolState::<T>::mutate(|state| {
+                if state.period_info.subperiod == Subperiod::Voting {
+                    let current_block: u32 =
+                        frame_system::Pallet::<T>::block_number().saturated_into();
+
+                    // Old/new voting period lengths (in blocks)
+                    let old_voting_length: u32 =
+                        old_eras_voting.saturating_mul(T::CycleConfiguration::blocks_per_era());
+                    let new_voting_length: u32 = Pallet::<T>::blocks_per_voting_period()
+                        .max(T::CycleConfiguration::blocks_per_era());
+
+                    // Old schedule
+                    let remaining_old: u32 = state.next_era_start.saturating_sub(current_block);
+                    let elapsed: u32 = old_voting_length.saturating_sub(remaining_old);
+
+                    // New schedule
+                    let remaining_new: u32 = new_voting_length.saturating_sub(elapsed);
+
+                    // If new period has already passed (elapsed >= new_voting_length),
+                    // schedule for next block. Otherwise, use the calculated remainder.
+                    state.next_era_start = if remaining_new == 0 {
+                        current_block.saturating_add(1)
+                    } else {
+                        current_block.saturating_add(remaining_new)
+                    };
+
+                    log::info!(
+                        target: LOG_TARGET,
+                        "ActiveProtocolState updated: next_era_start (old_length={}, new_length={}, elapsed={}, remaining_new={})",
+                        old_voting_length,
+                        new_voting_length,
+                        elapsed,
+                        remaining_new
+                    );
+                }
+                if state.period_info.subperiod == Subperiod::Voting {
+                    // Recalculate next_era_start block
+                    let current_block: u32 =
+                        frame_system::Pallet::<T>::block_number().saturated_into();
+                    let new_voting_length: u32 = Pallet::<T>::blocks_per_voting_period()
+                        .max(T::CycleConfiguration::blocks_per_era());
+                    let remaining_old: u32 = state.next_era_start.saturating_sub(current_block);
+                    // Carry over remaining time, but never extend beyond the new voting length.
+                    // If already overdue, schedule for the next block.
+                    let remaining_new: u32 = remaining_old.min(new_voting_length).max(1);
+
+                    state.next_era_start = current_block.saturating_add(remaining_new);
+
+                    log::info!(
+                        target: LOG_TARGET,
+                        "ActiveProtocolState updated: next_era_start (remaining_old={}, remaining_new={})",
+                        remaining_old,
+                        remaining_new
+                    );
+                } else {
+                    // Build&Earn: adjust remainder for next_subperiod_start_era
+                    let new_eras_total: EraNumber =
+                        T::CycleConfiguration::eras_per_build_and_earn_subperiod();
+
+                    // "only the remainder" logic
+                    let current_era: EraNumber = state.era;
+                    let old_end: EraNumber = state.period_info.next_subperiod_start_era;
+
+                    let remaining_old: EraNumber = old_end.saturating_sub(current_era);
+                    let elapsed: EraNumber = old_eras_bne.saturating_sub(remaining_old);
+
+                    let remaining_new: EraNumber = new_eras_total.saturating_sub(elapsed);
+
+                    state.period_info.next_subperiod_start_era =
+                        current_era.saturating_add(remaining_new);
+
+                    log::info!(
+                        target: LOG_TARGET,
+                        "ActiveProtocolState updated: next_subperiod_start_era (remainder-adjusted)"
+                    );
+                }
+            });
+            reads += 1;
+            writes += 1;
+
+            T::DbWeight::get().reads_writes(reads, writes)
         }
 
         #[cfg(feature = "try-runtime")]
         fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
-            let old_params = v9::StaticTierParams::<T>::get().ok_or_else(|| {
-                TryRuntimeError::Other(
-                    "dapp-staking-v3::migration::v10: No old params found for StaticTierParams",
-                )
-            })?;
-            Ok(old_params.encode())
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let current_block: u32 = frame_system::Pallet::<T>::block_number().saturated_into();
+
+            let pre_dapp_count = IntegratedDApps::<T>::count();
+            let max_allowed = T::MaxNumberOfContracts::get();
+
+            log::info!(
+                target: LOG_TARGET,
+                "Pre-upgrade: dApp count={}, max={}, cleanup_needed={}",
+                pre_dapp_count,
+                max_allowed,
+                pre_dapp_count > max_allowed
+            );
+
+            Ok((
+                protocol_state.period_info.subperiod,
+                protocol_state.era,
+                protocol_state.next_era_start,
+                protocol_state.period_info.next_subperiod_start_era,
+                current_block,
+                pre_dapp_count,
+                max_allowed,
+            )
+                .encode())
         }
 
         #[cfg(feature = "try-runtime")]
         fn post_upgrade(data: Vec<u8>) -> Result<(), TryRuntimeError> {
-            // Decode the old values
-            let old_params: TierParametersV9<T::NumberOfTiers> = Decode::decode(&mut &data[..])
-                .map_err(|_| {
-                    TryRuntimeError::Other(
-                        "dapp-staking-v3::migration::v10: Failed to decode old values",
-                    )
-                })?;
+            let (
+                old_subperiod,
+                old_era,
+                old_next_era_start,
+                old_next_subperiod_era,
+                pre_block,
+                pre_dapp_count,
+                max_allowed,
+            ): (Subperiod, EraNumber, u32, EraNumber, u32, u32, u32) =
+                Decode::decode(&mut &data[..])
+                    .map_err(|_| TryRuntimeError::Other("Failed to decode pre-upgrade data"))?;
+            let old_eras_voting = OldErasVoting::get();
+            let old_eras_bne = OldErasBnE::get();
 
-            // Get the new values
-            let new_config = TierConfig::<T>::get();
-            let new_params = StaticTierParams::<T>::get();
-
-            // Verify that new params and new config are valid
-            assert!(new_params.is_valid());
-            assert!(new_config.is_valid());
-
-            // Verify parameters remain unchanged
-            assert_eq!(
-                old_params.slot_distribution, new_params.slot_distribution,
-                "dapp-staking-v3::migration::v10: Slot distribution has changed"
-            );
-            assert_eq!(
-                old_params.reward_portion, new_params.reward_portion,
-                "dapp-staking-v3::migration::v10: Reward portion has changed"
-            );
-            assert_eq!(
-                old_params.tier_thresholds.len(),
-                new_params.tier_thresholds.len(),
-                "dapp-staking-v3::migration::v10: Number of tier thresholds has changed"
-            );
-
-            for (_, (old_threshold, new_threshold)) in old_params
-                .tier_thresholds
-                .iter()
-                .zip(new_params.tier_thresholds.iter())
-                .enumerate()
-            {
-                match (old_threshold, new_threshold) {
-                    (
-                        TierThresholdV9::FixedPercentage {
-                            required_percentage: old_req,
-                        },
-                        TierThreshold::FixedPercentage {
-                            required_percentage: new_req,
-                        },
-                    ) => {
-                        assert_eq!(
-                            old_req, new_req,
-                            "dapp-staking-v3::migration::v10: Fixed percentage changed",
-                        );
-                    }
-                    (
-                        TierThresholdV9::DynamicPercentage {
-                            percentage: old_percentage,
-                            minimum_required_percentage: old_min,
-                        },
-                        TierThreshold::DynamicPercentage {
-                            percentage: new_percentage,
-                            minimum_required_percentage: new_min,
-                            maximum_possible_percentage: _, // We don't verify this as it's new
-                        },
-                    ) => {
-                        assert_eq!(
-                            old_percentage, new_percentage,
-                            "dapp-staking-v3::migration::v10: Percentage changed"
-                        );
-                        assert_eq!(
-                            old_min, new_min,
-                            "dapp-staking-v3::migration::v10: Minimum percentage changed"
-                        );
-                    }
-                    _ => {
-                        return Err(TryRuntimeError::Other(
-                            "dapp-staking-v3::migration::v10: Tier threshold type mismatch",
-                        ));
-                    }
-                }
-            }
-
-            let expected_max_percentages = MaxPercentages::get();
-            for (idx, tier_threshold) in new_params.tier_thresholds.iter().enumerate() {
-                if let TierThreshold::DynamicPercentage {
-                    maximum_possible_percentage,
-                    ..
-                } = tier_threshold
-                {
-                    let expected_maximum_percentage = if idx < expected_max_percentages.len() {
-                        expected_max_percentages[idx]
-                    } else {
-                        None
-                    }
-                    .unwrap_or(Perbill::from_percent(100));
-                    assert_eq!(
-                        *maximum_possible_percentage, expected_maximum_percentage,
-                        "dapp-staking-v3::migration::v10: Max percentage differs from expected",
-                    );
-                }
-            }
-
-            // Verify storage version has been updated
+            // Verify storage version
             ensure!(
-                Pallet::<T>::on_chain_storage_version() >= 10,
-                "dapp-staking-v3::migration::v10: Wrong storage version."
+                Pallet::<T>::on_chain_storage_version() == StorageVersion::new(11),
+                "Storage version should be 11"
             );
 
-            Ok(())
-        }
-    }
+            // 1. Verify cleanup worked
+            let post_dapp_count = IntegratedDApps::<T>::count();
+            log::debug!(
+                "post_dapp_count={}, max_allowed={}",
+                post_dapp_count,
+                max_allowed
+            );
+            ensure!(
+                post_dapp_count <= max_allowed,
+                "dApp count still exceeds limit",
+            );
 
-    pub fn map_threshold(old: &TierThresholdV9, max_percentage: Option<Perbill>) -> TierThreshold {
-        match old {
-            TierThresholdV9::FixedPercentage {
-                required_percentage,
-            } => TierThreshold::FixedPercentage {
-                required_percentage: *required_percentage,
-            },
-            TierThresholdV9::DynamicPercentage {
-                percentage,
-                minimum_required_percentage,
-            } => TierThreshold::DynamicPercentage {
-                percentage: *percentage,
-                minimum_required_percentage: *minimum_required_percentage,
-                maximum_possible_percentage: max_percentage.unwrap_or(Perbill::from_percent(100)), // Default to 100% if not specified,
-            },
+            if pre_dapp_count > max_allowed {
+                let expected_removed = pre_dapp_count - max_allowed;
+                let actual_removed = pre_dapp_count - post_dapp_count;
+                log::debug!(
+                    "Removed {} dApps, expected to remove {}",
+                    actual_removed,
+                    expected_removed
+                );
+                ensure!(
+                    actual_removed == expected_removed,
+                    "Mismatch in the expected dApps to be unregistered"
+                );
+            }
+
+            // 2. Verify new StaticTierParams are valid
+            let new_params = StaticTierParams::<T>::get();
+            ensure!(new_params.is_valid(), "New tier params invalid");
+            ensure!(
+                new_params.reward_portion.as_slice() == P::reward_portion(),
+                "reward_portion mismatch"
+            );
+            ensure!(
+                new_params.tier_rank_multipliers.as_slice() == P::tier_rank_multipliers(),
+                "tier_rank_multipliers mismatch"
+            );
+
+            // 3. Verify ActiveProtocolState update
+            let protocol_state = ActiveProtocolState::<T>::get();
+            ensure!(!protocol_state.maintenance, "Maintenance mode enabled");
+
+            if old_subperiod == Subperiod::Voting {
+                let old_voting_length: u32 =
+                    old_eras_voting.saturating_mul(T::CycleConfiguration::blocks_per_era());
+                let new_voting_length: u32 = Pallet::<T>::blocks_per_voting_period();
+
+                let remaining_old: u32 = old_next_era_start.saturating_sub(pre_block);
+                let elapsed: u32 = old_voting_length.saturating_sub(remaining_old);
+                let remaining_new: u32 = new_voting_length.saturating_sub(elapsed);
+
+                let expected = if remaining_new == 0 {
+                    pre_block.saturating_add(1)
+                } else {
+                    pre_block.saturating_add(remaining_new)
+                };
+
+                ensure!(
+                    protocol_state.next_era_start == expected,
+                    "Voting: next_era_start incorrect"
+                );
+            } else {
+                let new_total: EraNumber =
+                    T::CycleConfiguration::eras_per_build_and_earn_subperiod();
+                let remaining_old: EraNumber = old_next_subperiod_era.saturating_sub(old_era);
+                let elapsed: EraNumber = old_eras_bne.saturating_sub(remaining_old);
+                let remaining_new: EraNumber = new_total.saturating_sub(elapsed);
+                let expected: EraNumber = old_era.saturating_add(remaining_new);
+
+                ensure!(
+                    protocol_state.period_info.next_subperiod_start_era == expected,
+                    "BuildEarn: next_subperiod_start_era incorrect"
+                );
+                ensure!(
+                    old_next_era_start > expected,
+                    "next_era_start did not update as expected"
+                );
+            }
+
+            log::info!(target: LOG_TARGET, "Post-upgrade: All checks passed");
+            Ok(())
         }
     }
 }
 
-mod v9 {
+mod v10 {
     use super::*;
     use frame_support::storage_alias;
 
-    #[derive(Encode, Decode)]
+    /// v10 TierParameters (without tier_rank_multipliers)
+    #[derive(Encode, Decode, Clone)]
     pub struct TierParameters<NT: Get<u32>> {
         pub reward_portion: BoundedVec<Permill, NT>,
         pub slot_distribution: BoundedVec<Permill, NT>,
@@ -268,151 +439,7 @@ mod v9 {
         pub slot_number_args: (u64, u64),
     }
 
-    #[derive(Encode, Decode)]
-    pub enum TierThreshold {
-        FixedPercentage {
-            required_percentage: Perbill,
-        },
-        DynamicPercentage {
-            percentage: Perbill,
-            minimum_required_percentage: Perbill,
-        },
-    }
-
-    /// v9 type for [`crate::StaticTierParams`]
     #[storage_alias]
     pub type StaticTierParams<T: Config> =
-        StorageValue<Pallet<T>, TierParameters<<T as Config>::NumberOfTiers>>;
-}
-
-const PALLET_MIGRATIONS_ID: &[u8; 16] = b"dapp-staking-mbm";
-
-pub struct LazyMigration<T, W: WeightInfo>(PhantomData<(T, W)>);
-
-impl<T: Config, W: WeightInfo> SteppedMigration for LazyMigration<T, W> {
-    type Cursor = <T as frame_system::Config>::AccountId;
-    // Without the explicit length here the construction of the ID would not be infallible.
-    type Identifier = MigrationId<16>;
-
-    /// The identifier of this migration. Which should be globally unique.
-    fn id() -> Self::Identifier {
-        MigrationId {
-            pallet_id: *PALLET_MIGRATIONS_ID,
-            version_from: 0,
-            version_to: 1,
-        }
-    }
-
-    fn step(
-        mut cursor: Option<Self::Cursor>,
-        meter: &mut WeightMeter,
-    ) -> Result<Option<Self::Cursor>, SteppedMigrationError> {
-        let required = W::step();
-        // If there is not enough weight for a single step, return an error. This case can be
-        // problematic if it is the first migration that ran in this block. But there is nothing
-        // that we can do about it here.
-        if meter.remaining().any_lt(required) {
-            return Err(SteppedMigrationError::InsufficientWeight { required });
-        }
-
-        let mut count = 0u32;
-        let mut migrated = 0u32;
-        let current_block_number =
-            frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
-
-        // We loop here to do as much progress as possible per step.
-        loop {
-            if meter.try_consume(required).is_err() {
-                break;
-            }
-
-            let mut iter = if let Some(last_key) = cursor {
-                // If a cursor is provided, start iterating from the stored value
-                // corresponding to the last key processed in the previous step.
-                // Note that this only works if the old and the new map use the same way to hash
-                // storage keys.
-                Ledger::<T>::iter_from(Ledger::<T>::hashed_key_for(last_key))
-            } else {
-                // If no cursor is provided, start iterating from the beginning.
-                Ledger::<T>::iter()
-            };
-
-            // If there's a next item in the iterator, perform the migration.
-            if let Some((ref last_key, mut ledger)) = iter.next() {
-                // inc count
-                count.saturating_inc();
-
-                if ledger.unlocking.is_empty() {
-                    // no unlocking for this account, nothing to update
-                    // Return the processed key as the new cursor.
-                    cursor = Some(last_key.clone());
-                    continue;
-                }
-                for chunk in ledger.unlocking.iter_mut() {
-                    if current_block_number >= chunk.unlock_block {
-                        continue; // chunk already unlocked
-                    }
-                    let remaining_blocks = chunk.unlock_block.saturating_sub(current_block_number);
-                    chunk.unlock_block.saturating_accrue(remaining_blocks);
-                }
-
-                // Override ledger
-                Ledger::<T>::insert(last_key, ledger);
-
-                // inc migrated
-                migrated.saturating_inc();
-
-                // Return the processed key as the new cursor.
-                cursor = Some(last_key.clone())
-            } else {
-                // Signal that the migration is complete (no more items to process).
-                cursor = None;
-                break;
-            }
-        }
-        log::info!(target: LOG_TARGET, "🚚 iterated {count} entries, migrated {migrated}");
-        Ok(cursor)
-    }
-}
-
-/// Double the remaining block for next era start
-pub struct AdjustEraMigration<T>(PhantomData<T>);
-
-impl<T: Config> OnRuntimeUpgrade for AdjustEraMigration<T> {
-    fn on_runtime_upgrade() -> Weight {
-        log::info!("🚚 migrated to async backing, adjust next era start");
-        ActiveProtocolState::<T>::mutate_exists(|maybe| {
-            if let Some(state) = maybe {
-                let current_block_number =
-                    frame_system::Pallet::<T>::block_number().saturated_into::<u32>();
-                let remaining = state.next_era_start.saturating_sub(current_block_number);
-                state.next_era_start.saturating_accrue(remaining);
-            }
-        });
-        T::DbWeight::get().reads_writes(1, 1)
-    }
-}
-
-pub const EXPECTED_PALLET_DAPP_STAKING_VERSION: u16 = 9;
-
-pub struct DappStakingCleanupMigration<T>(PhantomData<T>);
-impl<T: Config> OnRuntimeUpgrade for DappStakingCleanupMigration<T> {
-    fn on_runtime_upgrade() -> Weight {
-        let dapp_staking_storage_version =
-            <Pallet<T> as GetStorageVersion>::on_chain_storage_version();
-        if dapp_staking_storage_version != EXPECTED_PALLET_DAPP_STAKING_VERSION {
-            log::info!("Aborting migration due to unexpected on-chain storage versions for pallet-dapp-staking: {:?}. Expectation was: {:?}.", dapp_staking_storage_version, EXPECTED_PALLET_DAPP_STAKING_VERSION);
-            return T::DbWeight::get().reads(1);
-        }
-
-        let pallet_prefix: &[u8] = b"DappStaking";
-        let result =
-            clear_storage_prefix(pallet_prefix, b"ActiveBonusUpdateState", &[], None, None);
-        log::info!(
-            "cleanup dAppStaking migration result: {:?}",
-            result.deconstruct()
-        );
-
-        T::DbWeight::get().reads_writes(1, 1)
-    }
+        StorageValue<Pallet<T>, TierParameters<<T as Config>::NumberOfTiers>, OptionQuery>;
 }

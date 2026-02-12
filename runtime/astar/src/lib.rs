@@ -471,7 +471,8 @@ impl pallet_dapp_staking::Config for Runtime {
     type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<4>;
-    type MaxNumberOfContracts = ConstU32<500>;
+    type MaxNumberOfContracts = ConstU32<16>;
+    type MaxNumberOfContractsLegacy = ConstU32<500>;
     type MaxUnlockingChunks = ConstU32<8>;
     type MinimumLockedAmount = MinimumStakingAmount;
     type UnlockingPeriod = ConstU32<9>;
@@ -499,15 +500,15 @@ impl pallet_inflation::PayoutPerBlock<Credit<AccountId, Balances>> for Inflation
 pub struct InflationCycleConfig;
 impl CycleConfiguration for InflationCycleConfig {
     fn periods_per_cycle() -> u32 {
-        3
+        1
     }
 
     fn eras_per_voting_subperiod() -> u32 {
-        11
+        1
     }
 
     fn eras_per_build_and_earn_subperiod() -> u32 {
-        111
+        364
     }
 
     fn blocks_per_era() -> BlockNumber {
@@ -1799,7 +1800,14 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased = (
+    pallet_dapp_staking::migration::versioned_migrations::V10ToV11<
+        Runtime,
+        pallet_dapp_staking::migration::DefaultTierParamsV11,
+        ConstU32<11>,
+        ConstU32<111>,
+    >,
+);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
