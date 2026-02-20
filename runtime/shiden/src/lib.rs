@@ -187,7 +187,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("shiden"),
     impl_name: Cow::Borrowed("shiden"),
     authoring_version: 1,
-    spec_version: 2000,
+    spec_version: 2001,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -1319,15 +1319,7 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (
-    pallet_xc_asset_config::migrations::versioned::V4ToV5<Runtime>,
-    pallet_session::migrations::v1::MigrateV0ToV1<
-        Runtime,
-        pallet_session::migrations::v1::InitOffenceSeverity<Runtime>,
-    >,
-    cumulus_pallet_aura_ext::migration::MigrateV0ToV1<Runtime>,
-    pallet_collator_selection::migrations::LastAuthoredBlockCleanup<Runtime>,
-);
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
