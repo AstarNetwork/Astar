@@ -969,6 +969,7 @@ dependencies = [
  "pallet-treasury 37.0.0",
  "pallet-xc-asset-config",
  "parity-scale-codec",
+ "precompile-utils",
  "scale-info",
  "sp-arithmetic",
  "sp-core",
@@ -1035,7 +1036,6 @@ dependencies = [
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dapp-staking",
  "pallet-evm-precompile-dispatch",
- "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
@@ -7871,7 +7871,6 @@ dependencies = [
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dapp-staking",
  "pallet-evm-precompile-dispatch",
- "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
@@ -9975,32 +9974,6 @@ dependencies = [
  "pallet-evm",
  "parity-scale-codec",
  "sp-runtime",
-]
-
-[[package]]
-name = "pallet-evm-precompile-dispatch-lockdrop"
-version = "0.1.0"
-dependencies = [
- "astar-primitives",
- "ethers",
- "fp-evm",
- "frame-support",
- "frame-system",
- "hex-literal",
- "libsecp256k1",
- "log",
- "pallet-balances",
- "pallet-evm",
- "pallet-evm-precompile-dispatch",
- "pallet-timestamp",
- "pallet-utility",
- "parity-scale-codec",
- "precompile-utils",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -16116,7 +16089,6 @@ dependencies = [
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dapp-staking",
  "pallet-evm-precompile-dispatch",
- "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
@@ -16235,7 +16207,6 @@ dependencies = [
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dapp-staking",
  "pallet-evm-precompile-dispatch",
- "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",

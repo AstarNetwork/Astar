@@ -120,7 +120,6 @@ pallet-collator-selection = { workspace = true }
 pallet-dapp-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapp-staking = { workspace = true }
-pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
@@ -183,7 +182,6 @@ std = [
 	"pallet-evm-precompile-bn128/std",
 	"sp-genesis-builder/std",
 	"pallet-evm-precompile-dispatch/std",
-	"pallet-evm-precompile-dispatch-lockdrop/std",
 	"pallet-evm-precompile-ed25519/std",
 	"pallet-evm-precompile-modexp/std",
 	"xcm-runtime-apis/std",

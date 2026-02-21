@@ -18,12 +18,13 @@
 
 use core::marker::PhantomData;
 
-use fp_evm::{ExitError, PrecompileFailure};
+use fp_evm::{ExitError, Precompile, PrecompileFailure, PrecompileHandle, PrecompileResult};
 use frame_support::{
     dispatch::{DispatchClass, GetDispatchInfo, Pays},
     traits::Contains,
 };
 use pallet_evm_precompile_dispatch::DispatchValidateT;
+use precompile_utils::prelude::*;
 
 /// Struct that allows only calls based on `Filter` to pass through.
 pub struct DispatchFilterValidate<RuntimeCall, Filter: Contains<RuntimeCall>>(
@@ -51,5 +52,14 @@ impl<AccountId, RuntimeCall: GetDispatchInfo, Filter: Contains<RuntimeCall>>
                 exit_status: ExitError::Other("call filtered out".into()),
             })
         }
+    }
+}
+
+/// A minimal precompile that always reverts
+pub struct DisabledPrecompile<R>(PhantomData<R>);
+
+impl<R> Precompile for DisabledPrecompile<R> {
+    fn execute(_handle: &mut impl PrecompileHandle) -> PrecompileResult {
+        Err(revert("This precompile has been disabled"))
     }
 }
