@@ -3506,7 +3506,7 @@ fn tier_params_check_is_ok() {
         Permill::from_percent(70),
     ])
     .unwrap();
-    assert!(params.is_valid());
+    assert!(new_params.is_valid());
 
     // 2nd scenario - reward portion is too much
     let mut new_params = params.clone();
