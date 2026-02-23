@@ -71,12 +71,15 @@ use serde::{Deserialize, Serialize};
 use sp_arithmetic::fixed_point::FixedU128;
 use sp_runtime::{
     traits::{CheckedAdd, UniqueSaturatedInto, Zero},
-    FixedPointNumber, Perbill, Permill, Saturating,
+    Perbill, Permill, Saturating,
 };
 pub use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec::Vec};
 
 use astar_primitives::{
-    dapp_staking::{DAppId, EraNumber, PeriodNumber, RankedTier, TierSlots as TierSlotsFunc},
+    dapp_staking::{
+        DAppId, EraNumber, PeriodNumber, RankedTier, TierSlots as TierSlotsFunc,
+        FIXED_TIER_SLOTS_ARGS,
+    },
     Balance, BlockNumber,
 };
 
@@ -1706,9 +1709,10 @@ pub struct TierParameters<NT: Get<u32>> {
     /// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
     pub(crate) tier_thresholds: BoundedVec<TierThreshold, NT>,
-    /// Arguments for the linear equation used to calculate the number of slots.
-    /// This can be made more generic in the future in case more complex equations are required.
-    /// But for now this simple tuple serves the purpose.
+    /// Legacy arguments for the linear equation used to calculate the number of slots.
+    ///
+    /// Kept for storage/config compatibility, but ignored during tier recalculation.
+    /// Tier slot count is derived from `FIXED_TIER_SLOTS_ARGS` in `TiersConfiguration::calculate_new`.
     pub(crate) slot_number_args: (u64, u64),
     /// Rank multiplier per tier in bips (100% = 10_000 bips):
     /// defines how much rank 10 earns relative to rank 0.
@@ -1843,16 +1847,13 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
         &self.reward_portion
     }
 
-    /// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.
-    pub fn calculate_new(
-        &self,
-        params: &TierParameters<NT>,
-        native_price: FixedU128,
-        total_issuance: Balance,
-    ) -> Self {
+    /// Calculate new `TiersConfiguration` based on static tier parameters.
+    ///
+    /// NOTE: Dynamic slot number arguments are intentionally ignored in this flow.
+    /// Tier slot count is always derived from `FIXED_TIER_SLOTS_ARGS`.
+    pub fn calculate_new(&self, params: &TierParameters<NT>, total_issuance: Balance) -> Self {
         // It must always be at least 1 slot.
-        let base_number_of_slots = T::number_of_slots(P::get(), params.slot_number_args).max(1);
-        let new_number_of_slots = T::number_of_slots(native_price, params.slot_number_args).max(1);
+        let number_of_slots = T::number_of_slots(P::get(), FIXED_TIER_SLOTS_ARGS).max(1);
 
         // Calculate how much each tier gets slots.
         let new_slots_per_tier: Vec<u16> = params
@@ -1860,53 +1861,13 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
             .clone()
             .into_inner()
             .iter()
-            .map(|percent| *percent * new_number_of_slots as u128)
+            .map(|percent| *percent * number_of_slots as u128)
             .map(|x| x.unique_saturated_into())
             .collect();
         let new_slots_per_tier =
             BoundedVec::<u16, NT>::try_from(new_slots_per_tier).unwrap_or_default();
 
-        // NOTE: even though we could ignore the situation when the new & base slot numbers are equal, it's necessary to re-calculate it since
-        // other params related to calculation might have changed.
-        let delta_threshold = if new_number_of_slots >= base_number_of_slots {
-            FixedU128::from_rational(
-                (new_number_of_slots - base_number_of_slots).into(),
-                new_number_of_slots.into(),
-            )
-        } else {
-            FixedU128::from_rational(
-                (base_number_of_slots - new_number_of_slots).into(),
-                new_number_of_slots.into(),
-            )
-        };
-
-        // Update tier thresholds.
-        // In case number of slots increase, we decrease thresholds required to enter the tier.
-        // In case number of slots decrease, we increase the threshold required to enter the tier.
-        //
-        // According to formula: %delta_threshold = (100% / (100% - delta_%_slots) - 1) * 100%
-        //
-        // where delta_%_slots is simply: (base_num_slots - new_num_slots) / base_num_slots
-        //
-        // `base_num_slots` is the number of slots at the base native currency price.
-        //
-        // When these entries are put into the threshold formula, we get:
-        // = 1 / ( 1 - (base_num_slots - new_num_slots) / base_num_slots ) - 1
-        // = 1 / ( new / base) - 1
-        // = base / new - 1
-        // = (base - new) / new
-        //
-        // This number can be negative. In order to keep all operations in unsigned integer domain,
-        // formulas are adjusted like:
-        //
-        // 1. Number of slots has increased, threshold is expected to decrease
-        // %delta_threshold = (new_num_slots - base_num_slots) / new_num_slots
-        // new_threshold = base_threshold * (1 - %delta_threshold)
-        //
-        // 2. Number of slots has decreased, threshold is expected to increase
-        // %delta_threshold = (base_num_slots - new_num_slots) / new_num_slots
-        // new_threshold = base_threshold * (1 + %delta_threshold)
-        //
+        // Update tier thresholds using static percentages.
         let new_tier_thresholds: BoundedVec<Balance, NT> = params
             .tier_thresholds
             .clone()
@@ -1918,14 +1879,9 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
                     maximum_possible_percentage,
                 } => {
                     let amount = *percentage * total_issuance;
-                    let adjusted_amount = if new_number_of_slots >= base_number_of_slots {
-                        amount.saturating_sub(delta_threshold.saturating_mul_int(amount))
-                    } else {
-                        amount.saturating_add(delta_threshold.saturating_mul_int(amount))
-                    };
                     let minimum_amount = *minimum_required_percentage * total_issuance;
                     let maximum_amount = *maximum_possible_percentage * total_issuance;
-                    adjusted_amount.max(minimum_amount).min(maximum_amount)
+                    amount.max(minimum_amount).min(maximum_amount)
                 }
                 TierThreshold::FixedPercentage {
                     required_percentage,

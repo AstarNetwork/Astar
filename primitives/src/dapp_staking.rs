@@ -206,8 +206,6 @@ impl TierSlots for StandardTierSlots {
 }
 
 /// Standard tier slots arguments.
-/// Initially decided for Astar, during the Tokenomics 2.0 work.
-pub const STANDARD_TIER_SLOTS_ARGS: (u64, u64) = (1000, 50);
 /// Decided for Astar, during the Tokenomics 3.0 revamp.
 pub const FIXED_TIER_SLOTS_ARGS: (u64, u64) = (0, 16);
 

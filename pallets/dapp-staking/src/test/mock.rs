@@ -97,14 +97,13 @@ impl pallet_migrations::Config for Test {
 pub struct DummyPriceProvider;
 impl PriceProvider for DummyPriceProvider {
     fn average_price() -> FixedU128 {
-        NATIVE_PRICE.with(|v| v.borrow().clone())
+        BaseNativeCurrencyPrice::get()
     }
 }
 
 thread_local! {
     pub(crate) static DOES_PAYOUT_SUCCEED: RefCell<bool> = RefCell::new(false);
     pub(crate) static BLOCK_BEFORE_NEW_ERA: RefCell<EraNumber> = RefCell::new(0);
-    pub(crate) static NATIVE_PRICE: RefCell<FixedU128> = RefCell::new(BaseNativeCurrencyPrice::get());
     pub(crate) static MAX_BONUS_SAFE_MOVES: RefCell<u8> = RefCell::new(0);
 }
 
@@ -354,7 +353,7 @@ impl ExtBuilder {
                 .try_into()
                 .expect("Invalid number of tier thresholds provided.");
 
-            // Init tier config, based on the initial params. Needs to be adjusted to the init price.
+            // Init tier config based on the initial params.
             let init_tier_config = TiersConfiguration::<
                 <Test as Config>::NumberOfTiers,
                 <Test as Config>::TierSlots,
@@ -365,11 +364,7 @@ impl ExtBuilder {
                 tier_thresholds,
                 _phantom: Default::default(),
             }
-            .calculate_new(
-                &tier_params,
-                NATIVE_PRICE.with(|v| v.borrow().clone()),
-                total_issuance,
-            );
+            .calculate_new(&tier_params, total_issuance);
 
             pallet_dapp_staking::StaticTierParams::<Test>::put(tier_params);
             pallet_dapp_staking::TierConfig::<Test>::put(init_tier_config.clone());

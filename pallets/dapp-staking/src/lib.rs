@@ -162,14 +162,9 @@ pub mod pallet {
         /// Used to calculate total number of tier slots for some price.
         type TierSlots: TierSlotFunc;
 
-        /// Base native currency price used to calculate base number of slots.
-        /// This is used to adjust tier configuration, tier thresholds specifically, based on the native token price changes.
+        /// Base native currency price used as a deterministic input for tier slot calculation.
         ///
-        /// When dApp staking thresholds were modeled, a base price was set from which the initial configuration is derived.
-        /// E.g. for a price of 0.05$, we get 100 slots, and certain tier thresholds.
-        /// Using these values as the base, we can adjust the configuration based on the current price.
-        ///
-        /// This is connected with the `TierSlots` associated type, since it's used to calculate the total number of slots for the given price.
+        /// Tier recalculation no longer adjusts with live native price changes.
         #[pallet::constant]
         type BaseNativeCurrencyPrice: Get<FixedU128>;
 
@@ -2178,11 +2173,10 @@ pub mod pallet {
 
             // Re-calculate tier configuration for the upcoming new era
             let tier_params = StaticTierParams::<T>::get();
-            let average_price = T::NativePriceProvider::average_price();
             let total_issuance = T::Currency::total_issuance();
 
             let new_tier_config =
-                TierConfig::<T>::get().calculate_new(&tier_params, average_price, total_issuance);
+                TierConfig::<T>::get().calculate_new(&tier_params, total_issuance);
 
             // Validate new tier configuration
             if new_tier_config.is_valid() {
