@@ -67,13 +67,12 @@ use sp_runtime::{
         DispatchInfoOf, Dispatchable, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-    ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 
 use astar_primitives::{
     dapp_staking::{
         CycleConfiguration, DAppId, EraNumber, PeriodNumber, RankedTier, SmartContract,
-        StandardTierSlots,
     },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     governance::{
@@ -465,10 +464,6 @@ impl pallet_dapp_staking::BenchmarkHelper<SmartContract<AccountId>, AccountId>
     }
 }
 
-parameter_types! {
-    pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
-}
-
 impl pallet_dapp_staking::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -481,8 +476,6 @@ impl pallet_dapp_staking::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
     type AccountCheck = ();
-    type TierSlots = StandardTierSlots;
-    type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<100>;

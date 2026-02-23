@@ -631,10 +631,6 @@ impl pallet_dapp_staking::BenchmarkHelper<MockSmartContract, AccountId>
     }
 }
 
-parameter_types! {
-    pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
-}
-
 impl pallet_dapp_staking::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -647,8 +643,6 @@ impl pallet_dapp_staking::Config for Runtime {
     type CycleConfiguration = DummyCycleConfiguration;
     type Observers = ();
     type AccountCheck = DummyAccountCheck;
-    type TierSlots = astar_primitives::dapp_staking::StandardTierSlots;
-    type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<1>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;

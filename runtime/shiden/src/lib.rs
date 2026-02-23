@@ -70,7 +70,7 @@ use sp_runtime::{
         DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-    ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use xcm::{
     v5::{AssetId as XcmAssetId, Location as XcmLocation},
@@ -85,7 +85,7 @@ use xcm_runtime_apis::{
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, RankedTier, SmartContract, StandardTierSlots,
+        PeriodNumber, RankedTier, SmartContract, FIXED_NUMBER_OF_TIER_SLOTS
     },
     evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler},
     governance::OracleMembershipInst,
@@ -429,7 +429,6 @@ impl DappStakingAccountCheck<AccountId> for AccountCheck {
 
 parameter_types! {
     pub const MinimumStakingAmount: Balance = 50 * SDN;
-    pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
 
 impl pallet_dapp_staking::Config for Runtime {
@@ -444,11 +443,9 @@ impl pallet_dapp_staking::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
     type AccountCheck = AccountCheck;
-    type TierSlots = StandardTierSlots;
-    type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<3>;
-    type MaxNumberOfContracts = ConstU32<16>;
+    type MaxNumberOfContracts = ConstU32<{ FIXED_NUMBER_OF_TIER_SLOTS as u32 }>;
     type MaxNumberOfContractsLegacy = ConstU32<500>;
     type MaxUnlockingChunks = ConstU32<8>;
     type MinimumLockedAmount = MinimumStakingAmount;

@@ -29,15 +29,12 @@ use frame_support::{
     traits::{fungible::Mutate as FunMutate, ConstBool, ConstU128, ConstU32, EitherOfDiverse},
     weights::Weight,
 };
-use sp_arithmetic::fixed_point::FixedU128;
 use sp_io::TestExternalities;
 use sp_runtime::{BuildStorage, Permill};
 use sp_std::cell::RefCell;
 
 use astar_primitives::{
-    dapp_staking::{
-        Observer as DappStakingObserver, SmartContract, StandardTierSlots, FIXED_TIER_SLOTS_ARGS,
-    },
+    dapp_staking::{Observer as DappStakingObserver, SmartContract, FIXED_TIER_SLOTS_ARGS},
     Balance, BlockNumber,
 };
 use frame_system::{EnsureRoot, EnsureSignedBy};
@@ -184,9 +181,6 @@ impl Get<u8> for DynamicMaxBonusSafeMovesPerPeriod {
     }
 }
 
-parameter_types! {
-    pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
-}
 ord_parameter_types! {
     pub const ContractRegisterAccount: AccountId = 1337;
     pub const ContractUnregisterAccount: AccountId = 1779;
@@ -210,8 +204,6 @@ impl pallet_dapp_staking::Config for Test {
     type CycleConfiguration = DummyCycleConfiguration;
     type Observers = DummyDappStakingObserver;
     type AccountCheck = DummyAccountCheck;
-    type TierSlots = StandardTierSlots;
-    type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
@@ -346,15 +338,10 @@ impl ExtBuilder {
                 .expect("Invalid number of tier thresholds provided.");
 
             // Init tier config based on the initial params.
-            let init_tier_config = TiersConfiguration::<
-                <Test as Config>::NumberOfTiers,
-                <Test as Config>::TierSlots,
-                <Test as Config>::BaseNativeCurrencyPrice,
-            > {
+            let init_tier_config = TiersConfiguration::<<Test as Config>::NumberOfTiers> {
                 slots_per_tier: BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap(),
                 reward_portion: tier_params.reward_portion.clone(),
                 tier_thresholds,
-                _phantom: Default::default(),
             }
             .calculate_new(&tier_params, total_issuance);
 

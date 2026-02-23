@@ -42,7 +42,7 @@ use sp_runtime::{
 use astar_primitives::{
     dapp_staking::{
         CycleConfiguration, EraNumber, RankedTier, SmartContractHandle, StakingRewardHandler,
-        TierSlots, FIXED_TIER_SLOTS_ARGS,
+        FIXED_NUMBER_OF_TIER_SLOTS,
     },
     Balance, BlockNumber,
 };
@@ -3402,37 +3402,29 @@ fn base_number_of_slots_is_respected() {
         assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
         run_for_blocks(1);
 
-        let base_native_price = <Test as Config>::BaseNativeCurrencyPrice::get();
-        let slot_limit =
-            <Test as Config>::TierSlots::number_of_slots(base_native_price, FIXED_TIER_SLOTS_ARGS);
-
-        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
-        run_for_blocks(1);
-
-        let expected_number_of_slots = TierConfig::<Test>::get().total_number_of_slots();
+        let config_before = TierConfig::<Test>::get();
         assert_eq!(
-            expected_number_of_slots, slot_limit,
+            config_before.total_number_of_slots(),
+            FIXED_NUMBER_OF_TIER_SLOTS,
             "Number of slots must respect the fixed slot limit."
         );
 
-        let base_thresholds = TierConfig::<Test>::get().tier_thresholds;
-
-        // Mutate slot_number_args and ensure recalculation remains unchanged.
+        // Mutate slot_number_args and ensure full tier config recalculation remains unchanged.
         StaticTierParams::<Test>::mutate(|params| {
             params.slot_number_args = (123, 456);
         });
         assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
         run_for_blocks(1);
 
+        let config_after = TierConfig::<Test>::get();
         assert_eq!(
-            TierConfig::<Test>::get().total_number_of_slots(),
-            expected_number_of_slots,
+            config_after.total_number_of_slots(),
+            FIXED_NUMBER_OF_TIER_SLOTS,
             "Number of slots must remain fixed regardless of slot_number_args."
         );
         assert_eq!(
-            TierConfig::<Test>::get().tier_thresholds,
-            base_thresholds,
-            "Thresholds must remain unchanged regardless of slot_number_args."
+            config_after, config_before,
+            "Tier configuration must remain unchanged regardless of slot_number_args."
         );
     })
 }

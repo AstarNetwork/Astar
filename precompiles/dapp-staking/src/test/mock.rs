@@ -31,7 +31,7 @@ use frame_system::RawOrigin;
 use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
-use sp_arithmetic::{fixed_point::FixedU128, Permill};
+use sp_arithmetic::Permill;
 use sp_core::H160;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -43,7 +43,7 @@ extern crate alloc;
 use astar_primitives::{
     dapp_staking::{
         CycleConfiguration, EraNumber, PeriodNumber, SmartContract, StakingRewardHandler,
-        StandardTierSlots, FIXED_TIER_SLOTS_ARGS,
+        FIXED_TIER_SLOTS_ARGS,
     },
     AccountId, Balance, BlockNumber,
 };
@@ -212,10 +212,6 @@ impl pallet_dapp_staking::BenchmarkHelper<MockSmartContract, AccountId>
     fn set_balance(_account: &AccountId, _amount: Balance) {}
 }
 
-parameter_types! {
-    pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
-}
-
 impl pallet_dapp_staking::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -228,8 +224,6 @@ impl pallet_dapp_staking::Config for Test {
     type CycleConfiguration = DummyCycleConfiguration;
     type Observers = ();
     type AccountCheck = ();
-    type TierSlots = StandardTierSlots;
-    type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;

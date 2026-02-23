@@ -16,17 +16,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use super::{oracle::CurrencyAmount, Balance, BlockNumber};
+use super::{Balance, BlockNumber};
 
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 
 use frame_support::pallet_prelude::{RuntimeDebug, Weight};
 use sp_arithmetic::ArithmeticError;
 use sp_core::{DecodeWithMemTracking, H160};
-use sp_runtime::{
-    traits::{UniqueSaturatedInto, Zero},
-    FixedPointNumber,
-};
+use sp_runtime::traits::Zero;
 use sp_std::hash::Hash;
 
 /// Era number type
@@ -184,30 +181,12 @@ impl<AccountId> AccountCheck<AccountId> for () {
     }
 }
 
-/// Trait for calculating the total number of tier slots for the given price.
-pub trait TierSlots {
-    /// Returns the total number of tier slots for the given price.
-    ///
-    /// # Arguments
-    /// * `price` - price (e.g. moving average over some time period) of the native currency.
-    /// * `args` - arguments, `a` & `b`, for the linear equation `number_of_slots = a * price + b`.
-    ///
-    /// Returns the total number of tier slots.
-    fn number_of_slots(price: CurrencyAmount, args: (u64, u64)) -> u16;
-}
-
-/// Standard tier slots implementation, as proposed in the Tokenomics 2.0 document.
-pub struct StandardTierSlots;
-impl TierSlots for StandardTierSlots {
-    fn number_of_slots(price: CurrencyAmount, args: (u64, u64)) -> u16 {
-        let result: u64 = price.saturating_mul_int(args.0).saturating_add(args.1);
-        result.unique_saturated_into()
-    }
-}
+/// Fixed number of tier slots used by dApp-staking recalculation.
+pub const FIXED_NUMBER_OF_TIER_SLOTS: u16 = 16;
 
 /// Standard tier slots arguments.
 /// Decided for Astar, during the Tokenomics 3.0 revamp.
-pub const FIXED_TIER_SLOTS_ARGS: (u64, u64) = (0, 16);
+pub const FIXED_TIER_SLOTS_ARGS: (u64, u64) = (0, FIXED_NUMBER_OF_TIER_SLOTS as u64);
 
 /// RankedTier is wrapper around u8 to hold both tier and rank. u8 has 2 bytes (8bits) and they're using in this order `0xrank_tier`.
 /// First 4 bits are used to hold rank and second 4 bits are used to hold tier.

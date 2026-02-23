@@ -68,7 +68,6 @@ use core::ops::Deref;
 use frame_support::{pallet_prelude::*, BoundedBTreeMap, BoundedVec, DefaultNoBound};
 use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
-use sp_arithmetic::fixed_point::FixedU128;
 use sp_runtime::{
     traits::{CheckedAdd, UniqueSaturatedInto, Zero},
     Perbill, Permill, Saturating,
@@ -76,10 +75,7 @@ use sp_runtime::{
 pub use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec::Vec};
 
 use astar_primitives::{
-    dapp_staking::{
-        DAppId, EraNumber, PeriodNumber, RankedTier, TierSlots as TierSlotsFunc,
-        FIXED_TIER_SLOTS_ARGS,
-    },
+    dapp_staking::{DAppId, EraNumber, PeriodNumber, RankedTier, FIXED_NUMBER_OF_TIER_SLOTS},
     Balance, BlockNumber,
 };
 
@@ -1712,7 +1708,7 @@ pub struct TierParameters<NT: Get<u32>> {
     /// Legacy arguments for the linear equation used to calculate the number of slots.
     ///
     /// Kept for storage/config compatibility, but ignored during tier recalculation.
-    /// Tier slot count is derived from `FIXED_TIER_SLOTS_ARGS` in `TiersConfiguration::calculate_new`.
+    /// Tier slot count is fixed via `FIXED_NUMBER_OF_TIER_SLOTS` in `TiersConfiguration::calculate_new`.
     pub(crate) slot_number_args: (u64, u64),
     /// Rank multiplier per tier in bips (100% = 10_000 bips):
     /// defines how much rank 10 earns relative to rank 0.
@@ -1800,8 +1796,8 @@ impl<NT: Get<u32>> TierParameters<NT> {
     CloneNoBound,
     TypeInfo,
 )]
-#[scale_info(skip_type_params(NT, T, P))]
-pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> {
+#[scale_info(skip_type_params(NT))]
+pub struct TiersConfiguration<NT: Get<u32>> {
     /// Number of slots per tier.
     /// First entry refers to the first tier, and so on.
     pub(crate) slots_per_tier: BoundedVec<u16, NT>,
@@ -1812,12 +1808,9 @@ pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>>
     /// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
     pub(crate) tier_thresholds: BoundedVec<Balance, NT>,
-    /// Phantom data to keep track of the tier slots function.
-    #[codec(skip)]
-    pub(crate) _phantom: PhantomData<(T, P)>,
 }
 
-impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T, P> {
+impl<NT: Get<u32>> TiersConfiguration<NT> {
     /// Check if parameters are valid.
     pub fn is_valid(&self) -> bool {
         let number_of_tiers: usize = NT::get() as usize;
@@ -1850,10 +1843,9 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
     /// Calculate new `TiersConfiguration` based on static tier parameters.
     ///
     /// NOTE: Dynamic slot number arguments are intentionally ignored in this flow.
-    /// Tier slot count is always derived from `FIXED_TIER_SLOTS_ARGS`.
+    /// Tier slot count is fixed via `FIXED_NUMBER_OF_TIER_SLOTS`.
     pub fn calculate_new(&self, params: &TierParameters<NT>, total_issuance: Balance) -> Self {
-        // It must always be at least 1 slot.
-        let number_of_slots = T::number_of_slots(P::get(), FIXED_TIER_SLOTS_ARGS).max(1);
+        let number_of_slots: u16 = FIXED_NUMBER_OF_TIER_SLOTS;
 
         // Calculate how much each tier gets slots.
         let new_slots_per_tier: Vec<u16> = params
@@ -1895,7 +1887,6 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
             slots_per_tier: new_slots_per_tier,
             reward_portion: params.reward_portion.clone(),
             tier_thresholds: new_tier_thresholds,
-            _phantom: Default::default(),
         }
     }
 }
