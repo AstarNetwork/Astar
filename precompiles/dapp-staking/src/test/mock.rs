@@ -45,7 +45,6 @@ use astar_primitives::{
         CycleConfiguration, EraNumber, PeriodNumber, SmartContract, StakingRewardHandler,
         StandardTierSlots, FIXED_TIER_SLOTS_ARGS,
     },
-    oracle::PriceProvider,
     AccountId, Balance, BlockNumber,
 };
 use pallet_dapp_staking::TierThreshold;
@@ -161,13 +160,6 @@ impl pallet_timestamp::Config for Test {
 
 type MockSmartContract = SmartContract<<Test as frame_system::Config>::AccountId>;
 
-pub struct DummyPriceProvider;
-impl PriceProvider for DummyPriceProvider {
-    fn average_price() -> FixedU128 {
-        FixedU128::from_rational(1, 10)
-    }
-}
-
 pub struct DummyStakingRewardHandler;
 impl StakingRewardHandler<AccountId> for DummyStakingRewardHandler {
     fn staker_and_dapp_reward_pools(_total_staked_value: Balance) -> (Balance, Balance) {
@@ -232,7 +224,6 @@ impl pallet_dapp_staking::Config for Test {
     type ContractRegisterOrigin = frame_system::EnsureRoot<AccountId>;
     type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;
     type CycleConfiguration = DummyCycleConfiguration;
     type Observers = ();

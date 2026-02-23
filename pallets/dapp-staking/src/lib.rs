@@ -60,7 +60,6 @@ use astar_primitives::{
         PeriodNumber, Rank, RankedTier, SmartContractHandle, StakingRewardHandler, TierId,
         TierSlots as TierSlotFunc, FIXED_TIER_SLOTS_ARGS,
     },
-    oracle::PriceProvider,
     Balance, BlockNumber,
 };
 
@@ -143,9 +142,6 @@ pub mod pallet {
 
         /// Privileged origin for managing dApp staking pallet.
         type ManagerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
-
-        /// Used to provide price information about the native token.
-        type NativePriceProvider: PriceProvider;
 
         /// Used to handle reward payouts & reward pool amount fetching.
         type StakingRewardHandler: StakingRewardHandler<Self::AccountId>;

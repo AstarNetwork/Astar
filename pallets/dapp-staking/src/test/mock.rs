@@ -94,13 +94,6 @@ impl pallet_migrations::Config for Test {
     type MaxServiceWeight = MaxServiceWeight;
 }
 
-pub struct DummyPriceProvider;
-impl PriceProvider for DummyPriceProvider {
-    fn average_price() -> FixedU128 {
-        BaseNativeCurrencyPrice::get()
-    }
-}
-
 thread_local! {
     pub(crate) static DOES_PAYOUT_SUCCEED: RefCell<bool> = RefCell::new(false);
     pub(crate) static BLOCK_BEFORE_NEW_ERA: RefCell<EraNumber> = RefCell::new(0);
@@ -213,7 +206,6 @@ impl pallet_dapp_staking::Config for Test {
     >;
     type ManagerOrigin =
         EitherOfDiverse<EnsureRoot<AccountId>, EnsureSignedBy<ManagerAccount, AccountId>>;
-    type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;
     type CycleConfiguration = DummyCycleConfiguration;
     type Observers = DummyDappStakingObserver;

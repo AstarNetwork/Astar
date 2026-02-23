@@ -61,7 +61,6 @@ use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use astar_primitives::{
     dapp_staking::{AccountCheck, CycleConfiguration, SmartContract, StakingRewardHandler},
-    oracle::PriceProvider,
     xcm::{
         AbsoluteAndRelativeReserveProvider, AllowTopLevelPaidExecutionFrom,
         AssetLocationIdConverter, FixedRateOfForeignAsset, ReserveAssetFilter,
@@ -613,13 +612,6 @@ impl StakingRewardHandler<AccountId> for DummyStakingRewardHandler {
     }
 }
 
-pub struct DummyPriceProvider;
-impl PriceProvider for DummyPriceProvider {
-    fn average_price() -> FixedU128 {
-        FixedU128::from_rational(1, 10)
-    }
-}
-
 pub(crate) type MockSmartContract = SmartContract<AccountId>;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -651,7 +643,6 @@ impl pallet_dapp_staking::Config for Runtime {
     type ContractRegisterOrigin = frame_system::EnsureRoot<AccountId>;
     type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;
     type CycleConfiguration = DummyCycleConfiguration;
     type Observers = ();

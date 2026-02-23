@@ -462,7 +462,6 @@ impl pallet_dapp_staking::Config for Runtime {
     type ContractRegisterOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
     type ContractUnregisterOrigin = EnsureRootOrFourFifthsCommunityCouncil;
     type ManagerOrigin = EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil;
-    type NativePriceProvider = PriceAggregator;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
