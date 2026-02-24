@@ -85,7 +85,7 @@ use xcm_runtime_apis::{
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, RankedTier, SmartContract, FIXED_NUMBER_OF_TIER_SLOTS
+        PeriodNumber, RankedTier, SmartContract, FIXED_NUMBER_OF_TIER_SLOTS,
     },
     evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler},
     governance::OracleMembershipInst,
