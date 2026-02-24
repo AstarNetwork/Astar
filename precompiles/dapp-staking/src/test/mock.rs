@@ -31,7 +31,7 @@ use frame_system::RawOrigin;
 use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
-use sp_arithmetic::{fixed_point::FixedU128, Permill};
+use sp_arithmetic::Permill;
 use sp_core::H160;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -43,9 +43,8 @@ extern crate alloc;
 use astar_primitives::{
     dapp_staking::{
         CycleConfiguration, EraNumber, PeriodNumber, SmartContract, StakingRewardHandler,
-        StandardTierSlots, STANDARD_TIER_SLOTS_ARGS,
+        FIXED_TIER_SLOTS_ARGS,
     },
-    oracle::PriceProvider,
     AccountId, Balance, BlockNumber,
 };
 use pallet_dapp_staking::TierThreshold;
@@ -161,13 +160,6 @@ impl pallet_timestamp::Config for Test {
 
 type MockSmartContract = SmartContract<<Test as frame_system::Config>::AccountId>;
 
-pub struct DummyPriceProvider;
-impl PriceProvider for DummyPriceProvider {
-    fn average_price() -> FixedU128 {
-        FixedU128::from_rational(1, 10)
-    }
-}
-
 pub struct DummyStakingRewardHandler;
 impl StakingRewardHandler<AccountId> for DummyStakingRewardHandler {
     fn staker_and_dapp_reward_pools(_total_staked_value: Balance) -> (Balance, Balance) {
@@ -220,10 +212,6 @@ impl pallet_dapp_staking::BenchmarkHelper<MockSmartContract, AccountId>
     fn set_balance(_account: &AccountId, _amount: Balance) {}
 }
 
-parameter_types! {
-    pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
-}
-
 impl pallet_dapp_staking::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -232,13 +220,10 @@ impl pallet_dapp_staking::Config for Test {
     type ContractRegisterOrigin = frame_system::EnsureRoot<AccountId>;
     type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;
     type CycleConfiguration = DummyCycleConfiguration;
     type Observers = ();
     type AccountCheck = ();
-    type TierSlots = StandardTierSlots;
-    type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
@@ -301,7 +286,7 @@ impl ExternalityBuilder {
                         required_percentage: Perbill::from_percent(1),
                     },
                 ],
-                slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+                slot_number_args: FIXED_TIER_SLOTS_ARGS,
                 slots_per_tier: vec![10, 20, 30, 40],
                 safeguard: None,
                 tier_rank_multipliers: vec![10_000u32, 20_000, 20_000, 20_000],

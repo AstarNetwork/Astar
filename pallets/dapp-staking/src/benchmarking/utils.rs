@@ -18,7 +18,10 @@
 
 use super::{Pallet as DappStaking, *};
 
-use astar_primitives::{dapp_staking::FIXED_TIER_SLOTS_ARGS, Balance};
+use astar_primitives::{
+    dapp_staking::{FIXED_NUMBER_OF_TIER_SLOTS, FIXED_TIER_SLOTS_ARGS},
+    Balance,
+};
 
 use frame_system::Pallet as System;
 use sp_arithmetic::Permill;
@@ -116,7 +119,7 @@ pub(super) const UNIT: Balance = 1_000_000_000_000_000_000;
 pub(super) const MIN_TIER_THRESHOLD: Balance = 10 * UNIT;
 
 /// Number of slots in the tier system.
-pub(super) const NUMBER_OF_SLOTS: u32 = 16;
+pub(super) const NUMBER_OF_SLOTS: u32 = FIXED_NUMBER_OF_TIER_SLOTS as u32;
 
 /// Random seed.
 pub(super) const SEED: u32 = 9000;
@@ -207,13 +210,11 @@ pub(super) fn init_tier_settings<T: Config>() {
         .expect("Invalid number of tier thresholds provided.");
 
     // Init tier config, based on the initial params
-    let init_tier_config =
-        TiersConfiguration::<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice> {
-            slots_per_tier: BoundedVec::try_from(vec![0, 6, 10, 0]).unwrap(),
-            reward_portion: tier_params.reward_portion.clone(),
-            tier_thresholds,
-            _phantom: Default::default(),
-        };
+    let init_tier_config = TiersConfiguration::<T::NumberOfTiers> {
+        slots_per_tier: BoundedVec::try_from(vec![0, 6, 10, 0]).unwrap(),
+        reward_portion: tier_params.reward_portion.clone(),
+        tier_thresholds,
+    };
 
     assert!(tier_params.is_valid());
     assert!(init_tier_config.is_valid());

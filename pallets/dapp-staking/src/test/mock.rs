@@ -29,15 +29,12 @@ use frame_support::{
     traits::{fungible::Mutate as FunMutate, ConstBool, ConstU128, ConstU32, EitherOfDiverse},
     weights::Weight,
 };
-use sp_arithmetic::fixed_point::FixedU128;
 use sp_io::TestExternalities;
 use sp_runtime::{BuildStorage, Permill};
 use sp_std::cell::RefCell;
 
 use astar_primitives::{
-    dapp_staking::{
-        Observer as DappStakingObserver, SmartContract, StandardTierSlots, FIXED_TIER_SLOTS_ARGS,
-    },
+    dapp_staking::{Observer as DappStakingObserver, SmartContract, FIXED_TIER_SLOTS_ARGS},
     Balance, BlockNumber,
 };
 use frame_system::{EnsureRoot, EnsureSignedBy};
@@ -94,17 +91,9 @@ impl pallet_migrations::Config for Test {
     type MaxServiceWeight = MaxServiceWeight;
 }
 
-pub struct DummyPriceProvider;
-impl PriceProvider for DummyPriceProvider {
-    fn average_price() -> FixedU128 {
-        NATIVE_PRICE.with(|v| v.borrow().clone())
-    }
-}
-
 thread_local! {
     pub(crate) static DOES_PAYOUT_SUCCEED: RefCell<bool> = RefCell::new(false);
     pub(crate) static BLOCK_BEFORE_NEW_ERA: RefCell<EraNumber> = RefCell::new(0);
-    pub(crate) static NATIVE_PRICE: RefCell<FixedU128> = RefCell::new(BaseNativeCurrencyPrice::get());
     pub(crate) static MAX_BONUS_SAFE_MOVES: RefCell<u8> = RefCell::new(0);
 }
 
@@ -192,9 +181,6 @@ impl Get<u8> for DynamicMaxBonusSafeMovesPerPeriod {
     }
 }
 
-parameter_types! {
-    pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
-}
 ord_parameter_types! {
     pub const ContractRegisterAccount: AccountId = 1337;
     pub const ContractUnregisterAccount: AccountId = 1779;
@@ -214,13 +200,10 @@ impl pallet_dapp_staking::Config for Test {
     >;
     type ManagerOrigin =
         EitherOfDiverse<EnsureRoot<AccountId>, EnsureSignedBy<ManagerAccount, AccountId>>;
-    type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;
     type CycleConfiguration = DummyCycleConfiguration;
     type Observers = DummyDappStakingObserver;
     type AccountCheck = DummyAccountCheck;
-    type TierSlots = StandardTierSlots;
-    type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
@@ -354,22 +337,13 @@ impl ExtBuilder {
                 .try_into()
                 .expect("Invalid number of tier thresholds provided.");
 
-            // Init tier config, based on the initial params. Needs to be adjusted to the init price.
-            let init_tier_config = TiersConfiguration::<
-                <Test as Config>::NumberOfTiers,
-                <Test as Config>::TierSlots,
-                <Test as Config>::BaseNativeCurrencyPrice,
-            > {
+            // Init tier config based on the initial params.
+            let init_tier_config = TiersConfiguration::<<Test as Config>::NumberOfTiers> {
                 slots_per_tier: BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap(),
                 reward_portion: tier_params.reward_portion.clone(),
                 tier_thresholds,
-                _phantom: Default::default(),
             }
-            .calculate_new(
-                &tier_params,
-                NATIVE_PRICE.with(|v| v.borrow().clone()),
-                total_issuance,
-            );
+            .calculate_new(&tier_params, total_issuance);
 
             pallet_dapp_staking::StaticTierParams::<Test>::put(tier_params);
             pallet_dapp_staking::TierConfig::<Test>::put(init_tier_config.clone());

@@ -48,7 +48,6 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::pallet_prelude::*;
-use sp_arithmetic::fixed_point::FixedU128;
 use sp_runtime::{
     traits::{One, Saturating, UniqueSaturatedInto, Zero},
     Perbill, Permill, SaturatedConversion,
@@ -58,9 +57,8 @@ use astar_primitives::{
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver,
         PeriodNumber, Rank, RankedTier, SmartContractHandle, StakingRewardHandler, TierId,
-        TierSlots as TierSlotFunc, FIXED_TIER_SLOTS_ARGS,
+        FIXED_TIER_SLOTS_ARGS,
     },
-    oracle::PriceProvider,
     Balance, BlockNumber,
 };
 
@@ -144,9 +142,6 @@ pub mod pallet {
         /// Privileged origin for managing dApp staking pallet.
         type ManagerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
 
-        /// Used to provide price information about the native token.
-        type NativePriceProvider: PriceProvider;
-
         /// Used to handle reward payouts & reward pool amount fetching.
         type StakingRewardHandler: StakingRewardHandler<Self::AccountId>;
 
@@ -158,20 +153,6 @@ pub mod pallet {
 
         /// Used to check whether an account is allowed to participate in dApp staking.
         type AccountCheck: AccountCheck<Self::AccountId>;
-
-        /// Used to calculate total number of tier slots for some price.
-        type TierSlots: TierSlotFunc;
-
-        /// Base native currency price used to calculate base number of slots.
-        /// This is used to adjust tier configuration, tier thresholds specifically, based on the native token price changes.
-        ///
-        /// When dApp staking thresholds were modeled, a base price was set from which the initial configuration is derived.
-        /// E.g. for a price of 0.05$, we get 100 slots, and certain tier thresholds.
-        /// Using these values as the base, we can adjust the configuration based on the current price.
-        ///
-        /// This is connected with the `TierSlots` associated type, since it's used to calculate the total number of slots for the given price.
-        #[pallet::constant]
-        type BaseNativeCurrencyPrice: Get<FixedU128>;
 
         /// Maximum length of a single era reward span length entry.
         #[pallet::constant]
@@ -502,11 +483,8 @@ pub mod pallet {
 
     /// Tier configuration user for current & preceding eras.
     #[pallet::storage]
-    pub type TierConfig<T: Config> = StorageValue<
-        _,
-        TiersConfiguration<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice>,
-        ValueQuery,
-    >;
+    pub type TierConfig<T: Config> =
+        StorageValue<_, TiersConfiguration<T::NumberOfTiers>, ValueQuery>;
 
     /// Information about which tier a dApp belonged to in a specific era.
     #[pallet::storage]
@@ -619,16 +597,14 @@ pub mod pallet {
                 .try_into()
                 .expect("Invalid number of tier thresholds provided.");
 
-            let tier_config =
-                TiersConfiguration::<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice> {
-                    slots_per_tier: BoundedVec::<u16, T::NumberOfTiers>::try_from(
-                        self.slots_per_tier.clone(),
-                    )
-                    .expect("Invalid number of slots per tier entries provided."),
-                    reward_portion: tier_params.reward_portion.clone(),
-                    tier_thresholds,
-                    _phantom: Default::default(),
-                };
+            let tier_config = TiersConfiguration::<T::NumberOfTiers> {
+                slots_per_tier: BoundedVec::<u16, T::NumberOfTiers>::try_from(
+                    self.slots_per_tier.clone(),
+                )
+                .expect("Invalid number of slots per tier entries provided."),
+                reward_portion: tier_params.reward_portion.clone(),
+                tier_thresholds,
+            };
             assert!(
                 tier_config.is_valid(),
                 "Invalid tier config values provided."
@@ -2178,11 +2154,10 @@ pub mod pallet {
 
             // Re-calculate tier configuration for the upcoming new era
             let tier_params = StaticTierParams::<T>::get();
-            let average_price = T::NativePriceProvider::average_price();
             let total_issuance = T::Currency::total_issuance();
 
             let new_tier_config =
-                TierConfig::<T>::get().calculate_new(&tier_params, average_price, total_issuance);
+                TierConfig::<T>::get().calculate_new(&tier_params, total_issuance);
 
             // Validate new tier configuration
             if new_tier_config.is_valid() {

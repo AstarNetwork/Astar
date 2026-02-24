@@ -17,13 +17,10 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use astar_primitives::{
-    dapp_staking::{
-        RankedTier, StandardTierSlots, FIXED_TIER_SLOTS_ARGS, STANDARD_TIER_SLOTS_ARGS,
-    },
+    dapp_staking::{RankedTier, FIXED_NUMBER_OF_TIER_SLOTS, FIXED_TIER_SLOTS_ARGS},
     Balance,
 };
-use frame_support::{assert_ok, parameter_types};
-use sp_arithmetic::fixed_point::FixedU128;
+use frame_support::assert_ok;
 use sp_runtime::Permill;
 
 use crate::*;
@@ -3508,7 +3505,7 @@ fn tier_params_check_is_ok() {
         Permill::from_percent(70),
     ])
     .unwrap();
-    assert!(params.is_valid());
+    assert!(new_params.is_valid());
 
     // 2nd scenario - reward portion is too much
     let mut new_params = params.clone();
@@ -3599,7 +3596,6 @@ fn tier_params_check_is_ok() {
 
 #[test]
 fn tier_configuration_basic_tests() {
-    // TODO: this should be expanded & improved later
     get_u32_type!(TiersNum, 4);
     let params = TierParameters::<TiersNum> {
         reward_portion: BoundedVec::try_from(vec![
@@ -3617,20 +3613,14 @@ fn tier_configuration_basic_tests() {
         ])
         .unwrap(),
         tier_thresholds: BoundedVec::try_from(vec![
-            TierThreshold::DynamicPercentage {
-                percentage: Perbill::from_percent(12),
-                minimum_required_percentage: Perbill::from_percent(8),
-                maximum_possible_percentage: Perbill::from_percent(100),
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_percent(12),
             },
-            TierThreshold::DynamicPercentage {
-                percentage: Perbill::from_percent(7),
-                minimum_required_percentage: Perbill::from_percent(5),
-                maximum_possible_percentage: Perbill::from_percent(100),
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_percent(7),
             },
-            TierThreshold::DynamicPercentage {
-                percentage: Perbill::from_percent(4),
-                minimum_required_percentage: Perbill::from_percent(3),
-                maximum_possible_percentage: Perbill::from_percent(100),
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_percent(4),
             },
             TierThreshold::FixedPercentage {
                 required_percentage: Perbill::from_percent(3),
@@ -3643,9 +3633,6 @@ fn tier_configuration_basic_tests() {
     assert!(params.is_valid(), "Example params must be valid!");
 
     // Create a configuration with some values
-    parameter_types! {
-        pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
-    }
     let total_issuance: Balance = 9_000_000_000;
     let tier_thresholds = params
         .tier_thresholds
@@ -3655,22 +3642,19 @@ fn tier_configuration_basic_tests() {
         .try_into()
         .expect("Invalid number of tier thresholds provided.");
 
-    let init_config = TiersConfiguration::<TiersNum, StandardTierSlots, BaseNativeCurrencyPrice> {
+    let init_config = TiersConfiguration::<TiersNum> {
         slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
         reward_portion: params.reward_portion.clone(),
         tier_thresholds,
-        _phantom: PhantomData::default(),
     };
     assert!(init_config.is_valid(), "Init config must be valid!");
 
-    // Create a new config, based on a new price
-    let high_price = FixedU128::from_rational(20, 100); // in production will be expressed in USD
-    let new_config = init_config.calculate_new(&params, high_price, total_issuance);
+    let new_config = init_config.calculate_new(&params, total_issuance);
     assert!(new_config.is_valid());
-
-    let low_price = FixedU128::from_rational(1, 100); // in production will be expressed in USD
-    let new_config = init_config.calculate_new(&params, low_price, total_issuance);
-    assert!(new_config.is_valid());
+    assert_eq!(
+        new_config.total_number_of_slots(),
+        FIXED_NUMBER_OF_TIER_SLOTS
+    );
 
     // TODO: expand tests, add more sanity checks (e.g. tier 3 requirement should never be lower than tier 4, etc.)
 }
@@ -3863,38 +3847,15 @@ fn tier_configuration_calculate_new_with_maximum_threshold() {
     ])
     .unwrap();
 
-    // Create tier thresholds (legacy without maximum)
-    let tier_thresholds_legacy = BoundedVec::<TierThreshold, TiersNum>::try_from(vec![
+    // Thresholds with explicit min/max clamping behavior.
+    let tier_thresholds = BoundedVec::<TierThreshold, TiersNum>::try_from(vec![
         TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_percent(4),
-            minimum_required_percentage: Perbill::from_percent(3),
-            maximum_possible_percentage: Perbill::from_percent(100),
-        },
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_percent(3),
-            minimum_required_percentage: Perbill::from_percent(2),
-            maximum_possible_percentage: Perbill::from_percent(100),
-        },
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_percent(2),
-            minimum_required_percentage: Perbill::from_percent(1),
-            maximum_possible_percentage: Perbill::from_percent(100),
-        },
-        TierThreshold::FixedPercentage {
-            required_percentage: Perbill::from_parts(5_000_000), // 0.5%
-        },
-    ])
-    .unwrap();
-
-    // Create tier thresholds (with maximum)
-    let tier_thresholds_with_max = BoundedVec::<TierThreshold, TiersNum>::try_from(vec![
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_percent(4),
+            percentage: Perbill::from_percent(9),
             minimum_required_percentage: Perbill::from_percent(3),
             maximum_possible_percentage: Perbill::from_percent(5),
         },
         TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_percent(3),
+            percentage: Perbill::from_percent(1),
             minimum_required_percentage: Perbill::from_percent(2),
             maximum_possible_percentage: Perbill::from_percent(4),
         },
@@ -3909,78 +3870,47 @@ fn tier_configuration_calculate_new_with_maximum_threshold() {
     ])
     .unwrap();
 
-    let params_legacy = TierParameters::<TiersNum> {
-        slot_distribution: slot_distribution.clone(),
-        tier_thresholds: tier_thresholds_legacy,
-        reward_portion: reward_portion.clone(),
-        slot_number_args: STANDARD_TIER_SLOTS_ARGS,
-        tier_rank_multipliers: BoundedVec::try_from(vec![0, 24_000, 46_700, 0]).unwrap(),
-    };
-
-    let params_with_max = TierParameters::<TiersNum> {
+    let params = TierParameters::<TiersNum> {
         slot_distribution,
-        tier_thresholds: tier_thresholds_with_max,
+        tier_thresholds,
         reward_portion: reward_portion.clone(),
-        slot_number_args: STANDARD_TIER_SLOTS_ARGS,
+        slot_number_args: FIXED_TIER_SLOTS_ARGS,
         tier_rank_multipliers: BoundedVec::try_from(vec![0, 24_000, 46_700, 0]).unwrap(),
     };
 
-    // Create a starting configuration with some values
-    parameter_types! {
-        pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
-    }
+    // Create a starting configuration with placeholder values.
     let total_issuance: Balance = 8_400_000_000;
-    let tier_thresholds = params_legacy
-        .tier_thresholds
-        .iter()
-        .map(|t| t.threshold(total_issuance))
-        .collect::<Vec<Balance>>()
-        .try_into()
-        .expect("Invalid number of tier thresholds provided.");
 
-    let init_config = TiersConfiguration::<TiersNum, StandardTierSlots, BaseNativeCurrencyPrice> {
+    let init_config = TiersConfiguration::<TiersNum> {
         slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
-        reward_portion: reward_portion.clone(),
-        tier_thresholds,
-        _phantom: PhantomData::default(),
+        reward_portion,
+        tier_thresholds: BoundedVec::try_from(vec![0, 0, 0, 0]).unwrap(),
     };
     assert!(init_config.is_valid(), "Init config must be valid!");
 
-    // Test Case: When price decreases significantly, legacy thresholds might exceed the maximum
-    let very_low_price = FixedU128::from_rational(1, 100); // 0.2x base price
+    let new_config = init_config.calculate_new(&params, total_issuance);
 
-    // For legacy parameters (no maximum)
-    let new_config_legacy =
-        init_config.calculate_new(&params_legacy, very_low_price, total_issuance);
-
-    // For parameters with maximum
-    let new_config_with_max =
-        init_config.calculate_new(&params_with_max, very_low_price, total_issuance);
-
-    // Legacy thresholds will be high
-    assert!(new_config_legacy.tier_thresholds[0] > Perbill::from_percent(5) * total_issuance);
-    assert!(new_config_legacy.tier_thresholds[1] > Perbill::from_percent(4) * total_issuance);
-    assert!(new_config_legacy.tier_thresholds[2] > Perbill::from_percent(3) * total_issuance);
+    // Clamped to maximum.
     assert_eq!(
-        new_config_legacy.tier_thresholds[3],
-        Perbill::from_parts(5_000_000) * total_issuance
-    );
-
-    // Maximum thresholds will be capped
-    assert_eq!(
-        new_config_with_max.tier_thresholds[0],
+        new_config.tier_thresholds[0],
         Perbill::from_percent(5) * total_issuance
     );
+
+    // Clamped to minimum.
     assert_eq!(
-        new_config_with_max.tier_thresholds[1],
-        Perbill::from_percent(4) * total_issuance
+        new_config.tier_thresholds[1],
+        Perbill::from_percent(2) * total_issuance
     );
+
+    // Within bounds, unchanged.
     assert_eq!(
-        new_config_with_max.tier_thresholds[2],
-        Perbill::from_percent(3) * total_issuance
+        new_config.tier_thresholds[2],
+        Perbill::from_percent(2) * total_issuance
     );
+
+    // Fixed threshold remains fixed.
     assert_eq!(
-        new_config_with_max.tier_thresholds[3],
+        new_config.tier_thresholds[3],
         Perbill::from_parts(5_000_000) * total_issuance
     );
 }
