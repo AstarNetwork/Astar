@@ -982,7 +982,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "21.0.1"
+version = "21.0.2"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -16060,7 +16060,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "21.0.1"
+version = "21.0.2"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -16185,7 +16185,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "21.0.1"
+version = "21.0.2"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
