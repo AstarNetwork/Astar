@@ -149,7 +149,7 @@ jobs:
 
   docker:
     needs: native-linux
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout the source code
         uses: actions/checkout@v5
@@ -194,7 +194,7 @@ jobs:
 
   publish-release-draft:
     needs: [native-linux, native-macos, docker]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
@@ -240,7 +240,7 @@ jobs:
 
   upload-binaries:
     needs: publish-release-draft
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         os: ["ubuntu", "macOS"]
@@ -282,7 +282,7 @@ jobs:
 
   chain-sync-smoke:
     needs: native-linux
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         chain: ["astar", "shiden", "shibuya"]
@@ -304,7 +304,7 @@ jobs:
 
   zombienet-smoke:
     needs: native-linux
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         chain: ["astar-dev", "shiden-dev", "shibuya-dev"]

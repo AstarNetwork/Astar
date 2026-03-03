@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   check-try-state:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         runtime:
