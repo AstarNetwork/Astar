@@ -15,7 +15,7 @@ jobs:
   fetch-client-info:
     # Only run if workflow_run was successful OR if manually triggered
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       client_tags: ${{ steps.parse-releases.outputs.client_tags }}
       client_asset_urls: ${{ steps.parse-releases.outputs.client_asset_urls }}
@@ -50,7 +50,7 @@ jobs:
     needs: fetch-client-info
     # Only run if workflow_run was successful OR if manually triggered
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:

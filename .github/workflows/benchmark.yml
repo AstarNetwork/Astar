@@ -5,7 +5,7 @@ on:
 jobs:
   check-permission:
     if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/bench')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - name: Check permission
       uses: actions/github-script@v6

@@ -14,7 +14,7 @@ concurrency:
 jobs:
   check-migrations:
     continue-on-error: true
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         runtime:
