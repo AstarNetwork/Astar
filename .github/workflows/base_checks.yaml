@@ -20,6 +20,7 @@ jobs:
 
     - name: Install deps
       run: |
+        sudo apt-get update
         sudo apt -y install protobuf-compiler pkg-config
         if ! command -v sccache; then
             cargo install sccache --locked

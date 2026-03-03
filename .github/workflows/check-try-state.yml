@@ -29,6 +29,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
+          sudo apt-get update
           sudo apt -y install protobuf-compiler jq
 
       - name: Fetch current runtime version for ${{ matrix.runtime.name }}

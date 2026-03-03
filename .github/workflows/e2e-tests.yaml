@@ -26,7 +26,9 @@ jobs:
         cache-dependency-path: e2e-tests/yarn.lock
 
     - name: Install deps
-      run: sudo apt -y install protobuf-compiler
+      run: |
+        sudo apt-get update
+        sudo apt -y install protobuf-compiler
 
     - name: Install & display rust toolchain
       run: rustup show

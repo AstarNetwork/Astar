@@ -43,7 +43,9 @@ jobs:
           ${{ runner.os }}-cargo-
 
     - name: Install deps
-      run: sudo apt -y install protobuf-compiler
+      run: |
+        sudo apt-get update
+        sudo apt -y install protobuf-compiler
 
     - name: Install Tarpaulin
       run: |
