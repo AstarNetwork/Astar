@@ -27,6 +27,11 @@ jobs:
         with:
           node-version: 20.x
 
+      - name: Check if protoc exists
+        run: |
+          which protoc || echo "protoc not found"
+          protoc --version || true
+
       - name: Install system dependencies
         run: |
           sudo apt -y install protobuf-compiler jq
