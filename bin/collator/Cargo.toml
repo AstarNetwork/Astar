@@ -63,8 +63,7 @@ sc-client-db = { workspace = true }
 sc-consensus = { workspace = true }
 sc-consensus-aura = { workspace = true }
 sc-consensus-babe = { workspace = true }
-sc-consensus-grandpa = { workspace = true }
-sc-consensus-manual-seal = { workspace = true, optional = true }
+sc-consensus-manual-seal = { workspace = true }
 sc-executor = { workspace = true }
 sc-network = { workspace = true }
 sc-network-sync = { workspace = true }
@@ -125,6 +124,7 @@ cumulus-client-consensus-aura = { workspace = true }
 cumulus-client-consensus-common = { workspace = true }
 cumulus-client-consensus-proposer = { workspace = true }
 cumulus-client-consensus-relay-chain = { workspace = true }
+cumulus-client-parachain-inherent = { workspace = true, default-features = true }
 cumulus-client-network = { workspace = true }
 cumulus-client-service = { workspace = true }
 cumulus-primitives-aura = { workspace = true }
@@ -210,4 +210,3 @@ try-runtime = [
 	"sp-runtime/try-runtime",
 	"frame-support/try-runtime",
 ]
-manual-seal = ["sc-consensus-manual-seal"]

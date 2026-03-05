@@ -28,9 +28,11 @@ use jsonrpsee::RpcModule;
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 use std::path::Path;
 
+use cumulus_primitives_core::ParaId;
 use sc_client_api::{
     AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider, UsageProvider,
 };
+use sc_consensus_manual_seal::rpc::ManualSealApiServer;
 use sc_network::service::traits::NetworkService;
 use sc_network_sync::SyncingService;
 use sc_rpc::dev::DevApiServer;
@@ -42,6 +44,7 @@ use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
 };
 use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
+use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 use std::sync::Arc;
 use substrate_frame_rpc_system::{System, SystemApiServer};
@@ -178,7 +181,6 @@ pub struct FullDeps<C, P> {
     /// Enable EVM RPC servers
     pub enable_evm_rpc: bool,
     /// Command sink for manual sealing
-    #[cfg(feature = "manual-seal")]
     pub command_sink:
         Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::EngineCommand<Hash>>>,
 }
@@ -247,6 +249,121 @@ where
     Ok(io)
 }
 
+/// Instantiate all RPC extensions and Tracing RPC for local dev mode.
+///
+/// This uses local pending inherent providers to align ETH pending/runtime calls
+/// with local mocked parachain inherent behavior.
+pub fn create_full_local_dev<C, P, BE>(
+    deps: FullDeps<C, P>,
+    subscription_task_executor: SubscriptionTaskExecutor,
+    pubsub_notification_sinks: Arc<
+        fc_mapping_sync::EthereumBlockNotificationSinks<
+            fc_mapping_sync::EthereumBlockNotification<Block>,
+        >,
+    >,
+    local_para_id: ParaId,
+    tracing_config: EvmTracingConfig,
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
+where
+    C: ProvideRuntimeApi<Block>
+        + HeaderBackend<Block>
+        + UsageProvider<Block>
+        + CallApiAt<Block>
+        + AuxStore
+        + StorageProvider<Block, BE>
+        + HeaderMetadata<Block, Error = BlockChainError>
+        + BlockchainEvents<Block>
+        + Send
+        + Sync
+        + 'static,
+    C: sc_client_api::BlockBackend<Block>,
+    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+        + fp_rpc::ConvertTransactionRuntimeApi<Block>
+        + fp_rpc::EthereumRuntimeRPCApi<Block>
+        + BlockBuilder<Block>
+        + AuraApi<Block, AuraId>
+        + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
+        + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
+    P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
+    BE: Backend<Block> + 'static,
+    BE::State: StateBackend<BlakeTwo256>,
+    BE::Blockchain: BlockchainBackend<Block>,
+{
+    let client = Arc::clone(&deps.client);
+    let graph = Arc::clone(&deps.graph);
+
+    let mut io = create_full_rpc_local_dev(
+        deps,
+        subscription_task_executor,
+        pubsub_notification_sinks,
+        local_para_id,
+    )?;
+
+    if tracing_config.enable_txpool {
+        io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
+    }
+
+    if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
+        io.merge(
+            Trace::new(
+                client,
+                trace_filter_requester,
+                tracing_config.trace_filter_max_count,
+            )
+            .into_rpc(),
+        )?;
+    }
+
+    if let Some(debug_requester) = tracing_config.tracing_requesters.debug {
+        io.merge(Debug::new(debug_requester).into_rpc())?;
+    }
+
+    Ok(io)
+}
+
+fn create_full_rpc_local_dev<C, P, BE>(
+    deps: FullDeps<C, P>,
+    subscription_task_executor: SubscriptionTaskExecutor,
+    pubsub_notification_sinks: Arc<
+        fc_mapping_sync::EthereumBlockNotificationSinks<
+            fc_mapping_sync::EthereumBlockNotification<Block>,
+        >,
+    >,
+    local_para_id: ParaId,
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
+where
+    C: ProvideRuntimeApi<Block>
+        + UsageProvider<Block>
+        + HeaderBackend<Block>
+        + CallApiAt<Block>
+        + AuxStore
+        + StorageProvider<Block, BE>
+        + HeaderMetadata<Block, Error = BlockChainError>
+        + BlockchainEvents<Block>
+        + Send
+        + Sync
+        + 'static,
+    C: sc_client_api::BlockBackend<Block>,
+    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+        + fp_rpc::ConvertTransactionRuntimeApi<Block>
+        + fp_rpc::EthereumRuntimeRPCApi<Block>
+        + BlockBuilder<Block>
+        + AuraApi<Block, AuraId>,
+    P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
+    BE: Backend<Block> + 'static,
+    BE::State: StateBackend<BlakeTwo256>,
+    BE::Blockchain: BlockchainBackend<Block>,
+{
+    create_full_rpc_with_pending_provider(
+        deps,
+        subscription_task_executor,
+        pubsub_notification_sinks,
+        |client| crate::local::LocalPendingInherentDataProvider::new(client, local_para_id),
+    )
+}
+
 fn create_full_rpc<C, P, BE>(
     deps: FullDeps<C, P>,
     subscription_task_executor: SubscriptionTaskExecutor,
@@ -280,6 +397,50 @@ where
     BE::State: StateBackend<BlakeTwo256>,
     BE::Blockchain: BlockchainBackend<Block>,
 {
+    create_full_rpc_with_pending_provider(
+        deps,
+        subscription_task_executor,
+        pubsub_notification_sinks,
+        crate::parachain::PendingCrateInherentDataProvider::new,
+    )
+}
+
+fn create_full_rpc_with_pending_provider<C, P, BE, CIDP, F>(
+    deps: FullDeps<C, P>,
+    subscription_task_executor: SubscriptionTaskExecutor,
+    pubsub_notification_sinks: Arc<
+        fc_mapping_sync::EthereumBlockNotificationSinks<
+            fc_mapping_sync::EthereumBlockNotification<Block>,
+        >,
+    >,
+    make_pending_inherent_data_provider: F,
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
+where
+    C: ProvideRuntimeApi<Block>
+        + UsageProvider<Block>
+        + HeaderBackend<Block>
+        + CallApiAt<Block>
+        + AuxStore
+        + StorageProvider<Block, BE>
+        + HeaderMetadata<Block, Error = BlockChainError>
+        + BlockchainEvents<Block>
+        + Send
+        + Sync
+        + 'static,
+    C: sc_client_api::BlockBackend<Block>,
+    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+        + fp_rpc::ConvertTransactionRuntimeApi<Block>
+        + fp_rpc::EthereumRuntimeRPCApi<Block>
+        + BlockBuilder<Block>
+        + AuraApi<Block, AuraId>,
+    P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
+    BE: Backend<Block> + 'static,
+    BE::State: StateBackend<BlakeTwo256>,
+    BE::Blockchain: BlockchainBackend<Block>,
+    CIDP: CreateInherentDataProviders<Block, ()> + Send + Sync + 'static,
+    F: FnOnce(Arc<C>) -> CIDP,
+{
     let mut io = RpcModule::new(());
     let FullDeps {
         client,
@@ -295,7 +456,6 @@ where
         storage_override,
         block_data_cache,
         enable_evm_rpc,
-        #[cfg(feature = "manual-seal")]
         command_sink,
     } = deps;
 
@@ -303,9 +463,7 @@ where
     io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
     io.merge(sc_rpc::dev::Dev::new(client.clone()).into_rpc())?;
 
-    #[cfg(feature = "manual-seal")]
     if let Some(command_sink) = command_sink {
-        use sc_consensus_manual_seal::rpc::ManualSealApiServer;
         io.merge(sc_consensus_manual_seal::rpc::ManualSeal::new(command_sink).into_rpc())?;
     }
 
@@ -332,7 +490,7 @@ where
             // Allow 10x max allowed weight for non-transactional calls
             10,
             None,
-            crate::parachain::PendingCrateInherentDataProvider::new(client.clone()),
+            make_pending_inherent_data_provider(client.clone()),
             Some(Box::new(
                 crate::parachain::AuraConsensusDataProviderFallback::new(client.clone()),
             )),
