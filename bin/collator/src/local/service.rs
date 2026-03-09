@@ -534,8 +534,8 @@ where
             .as_millis() as u64
             / RELAY_CHAIN_SLOT_DURATION_MILLIS;
 
-        let aura = sc_consensus_manual_seal::run_manual_seal(
-            sc_consensus_manual_seal::ManualSealParams {
+        let aura =
+            sc_consensus_manual_seal::run_manual_seal(sc_consensus_manual_seal::ManualSealParams {
                 block_import,
                 env: proposer_factory,
                 client: client.clone(),
@@ -589,8 +589,7 @@ where
                         Ok((timestamp_provider, mocked_parachain))
                     }
                 },
-            },
-        );
+            });
 
         task_manager
             .spawn_essential_handle()
