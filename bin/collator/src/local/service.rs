@@ -24,8 +24,8 @@ use crate::{
 };
 use cumulus_client_parachain_inherent::MockValidationDataInherentDataProvider;
 use cumulus_primitives_core::{
-    relay_chain::{HeadData, UpgradeGoAhead},
-    CollectCollationInfo, ParaId,
+    relay_chain::{well_known_keys, AsyncBackingParams, HeadData, UpgradeGoAhead},
+    AbridgedHostConfiguration, CollectCollationInfo, ParaId,
 };
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
@@ -70,6 +70,22 @@ fn build_local_mock_inherent_data(
     let relay_offset = (relay_slot as u32)
         .saturating_sub(relay_blocks_per_para_block.saturating_mul(current_para_block));
 
+    let local_host_config = AbridgedHostConfiguration {
+        max_code_size: 16 * 1024 * 1024, // 16 MiB (local dev only)
+        max_head_data_size: 1024 * 1024,
+        max_upward_queue_count: 8,
+        max_upward_queue_size: 1024,
+        max_upward_message_size: 256,
+        max_upward_message_num_per_candidate: 5,
+        hrmp_max_message_num_per_candidate: 5,
+        validation_upgrade_cooldown: 6,
+        validation_upgrade_delay: 6,
+        async_backing_params: AsyncBackingParams {
+            allowed_ancestry_len: 0,
+            max_candidate_depth: 0,
+        },
+    };
+
     let mocked_parachain = MockValidationDataInherentDataProvider::<()> {
         current_para_block,
         para_id,
@@ -78,6 +94,10 @@ fn build_local_mock_inherent_data(
         relay_offset,
         para_blocks_per_relay_epoch: 10,
         upgrade_go_ahead,
+        additional_key_values: Some(vec![(
+            well_known_keys::ACTIVE_CONFIG.to_vec(),
+            local_host_config.encode(),
+        )]),
         ..Default::default()
     };
 
