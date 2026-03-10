@@ -43,16 +43,11 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
 use std::{collections::BTreeMap, marker::PhantomData, ops::Sub, sync::Arc, time::Duration};
 
-// Use the same fake runtime API strategy as parachain service so local dev is not
-// tightly coupled to local-runtime API surface (notably EVM tracing feature gates).
 pub use crate::parachain::fake_runtime_api::RuntimeApi;
 
 use astar_primitives::*;
 
 /// Local pending inherent provider for ETH pending RPC in dev mode.
-///
-/// This keeps local pending execution aligned with local manual-seal mocked
-/// parachain inherents while keeping production parachain RPC unchanged.
 pub struct LocalPendingInherentDataProvider<B, C> {
     client: Arc<C>,
     para_id: ParaId,
