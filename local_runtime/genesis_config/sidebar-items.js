@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["default_config","get_preset"]};
