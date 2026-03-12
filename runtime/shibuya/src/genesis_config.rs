@@ -21,6 +21,7 @@ use astar_primitives::{
     dapp_staking::FIXED_TIER_SLOTS_ARGS, evm::EVM_REVERT_CODE, genesis::GenesisAccount,
     parachain::SHIBUYA_ID,
 };
+use sp_core::crypto::Ss58Codec;
 
 /// Provides the JSON representation of predefined genesis config for given `id`.
 pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
@@ -37,6 +38,8 @@ pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
 
 /// Get the default genesis config for the Shibuya runtime.
 pub fn default_config(para_id: u32) -> serde_json::Value {
+    const DEV_EVM_PREFUND_SS58: &str = "5FQedkNQcF2fJPwkB6Z1ZcMgGti4vcJQNs6x85YPv3VhjBBT";
+
     let alice = GenesisAccount::<sr25519::Public>::from_seed("Alice");
     let bob = GenesisAccount::<sr25519::Public>::from_seed("Bob");
     let charlie = GenesisAccount::<sr25519::Public>::from_seed("Charlie");
@@ -49,12 +52,18 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
         .map(|x| x.account_id())
         .collect::<Vec<_>>();
 
+    // Private key: 0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391
+    // H160 public address: 0xaaafB3972B05630fCceE866eC69CdADd9baC2771
+    let dev_evm_prefund_account =
+        AccountId::from_ss58check(DEV_EVM_PREFUND_SS58).expect("Invalid dev EVM prefund SS58");
+
     let balances = accounts
         .iter()
         .chain(
             vec![
                 TreasuryPalletId::get().into_account_truncating(),
                 CommunityTreasuryPalletId::get().into_account_truncating(),
+                dev_evm_prefund_account,
             ]
             .iter(),
         )

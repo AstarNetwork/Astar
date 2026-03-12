@@ -20,7 +20,7 @@
 
 //! Core Astar types.
 //!
-//! These core Astar types are used by the Shiden, Shibuya, Astar and Local runtime.
+//! These core Astar types are used by the Shiden, Shibuya and Astar runtimes.
 pub mod xcm;
 
 /// Checked Ethereum transaction primitives.

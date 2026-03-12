@@ -16,25 +16,34 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use local_runtime::wasm_binary_unwrap;
+use crate::parachain::chain_spec::Extensions;
+use astar_primitives::parachain::SHIBUYA_ID;
 use sc_service::ChainType;
+use shibuya_runtime::wasm_binary_unwrap;
 
 /// Specialized `ChainSpec` for local network.
-pub type ChainSpec = sc_service::GenericChainSpec;
+pub type ChainSpec = sc_service::GenericChainSpec<Extensions>;
 
-/// Development config.
+/// Development config for local parachain-oriented dev mode.
 pub fn development_config() -> ChainSpec {
     let mut properties = serde_json::map::Map::new();
-    properties.insert("tokenSymbol".into(), "LOC".into());
+    properties.insert("tokenSymbol".into(), "SBY".into());
     properties.insert("tokenDecimals".into(), 18.into());
 
-    ChainSpec::builder(wasm_binary_unwrap(), None)
-        .with_name("Development")
-        .with_id("dev")
-        .with_chain_type(ChainType::Development)
-        .with_properties(properties)
-        .with_genesis_config(local_runtime::genesis_config::default_config())
-        .build()
+    ChainSpec::builder(
+        wasm_binary_unwrap(),
+        Extensions {
+            relay_chain: "local".into(),
+            para_id: SHIBUYA_ID,
+            ..Default::default()
+        },
+    )
+    .with_name("Development")
+    .with_id("dev")
+    .with_chain_type(ChainType::Development)
+    .with_properties(properties)
+    .with_genesis_config_preset_name("development")
+    .build()
 }
 
 #[cfg(test)]
