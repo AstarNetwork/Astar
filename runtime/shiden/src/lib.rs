@@ -88,8 +88,7 @@ use astar_primitives::{
         PeriodNumber, RankedTier, SmartContract, FIXED_NUMBER_OF_TIER_SLOTS,
     },
     evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler},
-    governance::OracleMembershipInst,
-    oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
+
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce, UnfreezeChainOnFailedMigration,
 };
@@ -446,7 +445,6 @@ impl pallet_dapp_staking::Config for Runtime {
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<3>;
     type MaxNumberOfContracts = ConstU32<{ FIXED_NUMBER_OF_TIER_SLOTS as u32 }>;
-    type MaxNumberOfContractsLegacy = ConstU32<500>;
     type MaxUnlockingChunks = ConstU32<8>;
     type MinimumLockedAmount = MinimumStakingAmount;
     type UnlockingPeriod = ConstU32<4>;
@@ -1114,94 +1112,6 @@ impl pallet_proxy::Config for Runtime {
 }
 
 parameter_types! {
-    pub const NativeCurrencyId: CurrencyId = CurrencyId::SDN;
-    // Aggregate values for one day.
-    pub const AggregationDuration: BlockNumber = DAYS;
-}
-
-impl pallet_price_aggregator::Config for Runtime {
-    type MaxValuesPerBlock = ConstU32<8>;
-    type ProcessBlockValues = pallet_price_aggregator::MedianBlockValue;
-    type NativeCurrencyId = NativeCurrencyId;
-    // 7 days
-    type CircularBufferLength = ConstU32<7>;
-    type AggregationDuration = AggregationDuration;
-    type WeightInfo = pallet_price_aggregator::weights::SubstrateWeight<Runtime>;
-}
-
-#[cfg(feature = "runtime-benchmarks")]
-pub struct OracleBenchmarkHelper;
-#[cfg(feature = "runtime-benchmarks")]
-impl orml_oracle::BenchmarkHelper<CurrencyId, Price, ConstU32<2>> for OracleBenchmarkHelper {
-    fn get_currency_id_value_pairs() -> sp_runtime::BoundedVec<(CurrencyId, Price), ConstU32<2>> {
-        sp_runtime::BoundedVec::try_from(vec![
-            (CurrencyId::ASTR, Price::from_rational(15, 100)),
-            (CurrencyId::ASTR, Price::from_rational(15, 100)),
-        ])
-        .expect("out of bounds")
-    }
-}
-
-parameter_types! {
-    // Cannot specify `Root` so need to do it like this, unfortunately.
-    pub RootOperatorAccountId: AccountId = AccountId::from([0xffu8; 32]);
-}
-
-impl orml_oracle::Config for Runtime {
-    type OnNewData = PriceAggregator;
-    type CombineData = DummyCombineData<Runtime>;
-    type Time = Timestamp;
-    type OracleKey = CurrencyId;
-    type OracleValue = Price;
-    type RootOperatorAccountId = RootOperatorAccountId;
-    #[cfg(feature = "runtime-benchmarks")]
-    type Members = OracleMembershipWrapper;
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    type Members = OracleMembership;
-    type MaxHasDispatchedSize = ConstU32<8>;
-    type WeightInfo = weights::orml_oracle::SubstrateWeight<Runtime>;
-    #[cfg(feature = "runtime-benchmarks")]
-    type MaxFeedValues = ConstU32<2>;
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    type MaxFeedValues = ConstU32<1>;
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = OracleBenchmarkHelper;
-}
-
-impl pallet_membership::Config<OracleMembershipInst> for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRoot<AccountId>;
-    type RemoveOrigin = EnsureRoot<AccountId>;
-    type SwapOrigin = EnsureRoot<AccountId>;
-    type ResetOrigin = EnsureRoot<AccountId>;
-    type PrimeOrigin = EnsureRoot<AccountId>;
-
-    type MembershipInitialized = ();
-    type MembershipChanged = ();
-    type MaxMembers = ConstU32<16>;
-    type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
-}
-
-/// OracleMembership wrapper used by benchmarks
-#[cfg(feature = "runtime-benchmarks")]
-pub struct OracleMembershipWrapper;
-
-#[cfg(feature = "runtime-benchmarks")]
-impl frame_support::traits::SortedMembers<AccountId> for OracleMembershipWrapper {
-    fn sorted_members() -> Vec<AccountId> {
-        OracleMembership::sorted_members()
-    }
-
-    fn add(account: &AccountId) {
-        use alloc::borrow::ToOwned;
-        frame_support::assert_ok!(OracleMembership::add_member(
-            frame_system::RawOrigin::Root.into(),
-            account.to_owned().into()
-        ));
-    }
-}
-
-parameter_types! {
     pub MbmServiceWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
@@ -1270,13 +1180,8 @@ mod runtime {
     pub type DappStaking = pallet_dapp_staking;
     #[runtime::pallet_index(36)]
     pub type Assets = pallet_assets;
-    #[runtime::pallet_index(37)]
-    pub type PriceAggregator = pallet_price_aggregator;
-    #[runtime::pallet_index(38)]
-    pub type Oracle = orml_oracle;
-    #[runtime::pallet_index(39)]
-    pub type OracleMembership = pallet_membership<Instance1>;
-
+    // skip 37 - price_aggregator previously
+    // skip 38/39 - oracle and oracle_membership previously
     #[runtime::pallet_index(40)]
     pub type Authorship = pallet_authorship;
     #[runtime::pallet_index(41)]
@@ -1356,13 +1261,24 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+parameter_types! {
+    pub const PriceAggregatorPalletStr: &'static str = "PriceAggregator";
+    pub const OraclePalletStr: &'static str = "Oracle";
+    pub const OracleMembershipPalletStr: &'static str = "OracleMembership";
+}
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased = (
+    pallet_dapp_staking::migration::versioned_migrations::V11ToV12<Runtime>,
+    frame_support::migrations::RemovePallet<PriceAggregatorPalletStr, RocksDbWeight>,
+    frame_support::migrations::RemovePallet<OraclePalletStr, RocksDbWeight>,
+    frame_support::migrations::RemovePallet<OracleMembershipPalletStr, RocksDbWeight>,
+);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
@@ -1449,8 +1365,6 @@ mod benches {
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
-        [pallet_price_aggregator, PriceAggregator]
-        [orml_oracle, Oracle]
     );
 }
 

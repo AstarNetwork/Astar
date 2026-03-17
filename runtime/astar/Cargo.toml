@@ -106,7 +106,6 @@ xcm-executor = { workspace = true }
 xcm-runtime-apis = { workspace = true }
 
 # orml dependencies
-orml-oracle = { workspace = true }
 orml-xcm-support = { workspace = true }
 orml-xtokens = { workspace = true }
 
@@ -131,7 +130,6 @@ pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
 pallet-inflation = { workspace = true }
-pallet-price-aggregator = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 
@@ -180,7 +178,6 @@ std = [
 	"moonbeam-rpc-primitives-debug/std",
 	"moonbeam-rpc-primitives-txpool/std",
 	"num_enum/std",
-	"orml-oracle/std",
 	"orml-xcm-support/std",
 	"orml-xtokens/std",
 	"pallet-assets/std",
@@ -217,7 +214,6 @@ std = [
 	"pallet-migrations/std",
 	"pallet-multisig/std",
 	"pallet-preimage/std",
-	"pallet-price-aggregator/std",
 	"pallet-proxy/std",
 	"pallet-scheduler/std",
 	"pallet-session/std",
@@ -275,7 +271,6 @@ runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"orml-oracle/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
@@ -301,7 +296,6 @@ runtime-benchmarks = [
 	"pallet-migrations/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
-	"pallet-price-aggregator/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
@@ -336,7 +330,6 @@ try-runtime = [
 	"frame-system/try-runtime",
 	"frame-try-runtime/try-runtime",
 	"log",
-	"orml-oracle/try-runtime",
 	"orml-xtokens/try-runtime",
 	"pallet-assets/try-runtime",
 	"pallet-aura/try-runtime",
@@ -361,7 +354,6 @@ try-runtime = [
 	"pallet-migrations/try-runtime",
 	"pallet-multisig/try-runtime",
 	"pallet-preimage/try-runtime",
-	"pallet-price-aggregator/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"pallet-session/try-runtime",

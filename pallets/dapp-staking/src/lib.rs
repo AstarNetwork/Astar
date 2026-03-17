@@ -57,7 +57,6 @@ use astar_primitives::{
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver,
         PeriodNumber, Rank, RankedTier, SmartContractHandle, StakingRewardHandler, TierId,
-        FIXED_TIER_SLOTS_ARGS,
     },
     Balance, BlockNumber,
 };
@@ -95,7 +94,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(11);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(12);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -166,11 +165,6 @@ pub mod pallet {
         /// Maximum number of contracts that can be integrated into dApp staking at once.
         #[pallet::constant]
         type MaxNumberOfContracts: Get<u32>;
-
-        /// Legacy bound for backward compatibility with pre-v11 DAppTierRewards.
-        // TODO: Can be removed to use MaxNumberOfContracts only after period 4 periods post-revamp-upgrade.
-        #[pallet::constant]
-        type MaxNumberOfContractsLegacy: Get<u32>;
 
         /// Maximum number of unlocking chunks that can exist per account at a time.
         #[pallet::constant]
@@ -513,7 +507,6 @@ pub mod pallet {
         pub reward_portion: Vec<Permill>,
         pub slot_distribution: Vec<Permill>,
         pub tier_thresholds: Vec<TierThreshold>,
-        pub slot_number_args: (u64, u64),
         pub slots_per_tier: Vec<u16>,
         pub safeguard: Option<bool>,
         pub tier_rank_multipliers: Vec<u32>,
@@ -551,7 +544,6 @@ pub mod pallet {
                         required_percentage: Perbill::zero(),
                     },
                 ],
-                slot_number_args: FIXED_TIER_SLOTS_ARGS,
                 slots_per_tier: vec![100; num_tiers as usize],
                 safeguard: None,
                 tier_rank_multipliers: vec![0u32, 24_000, 46_700, 0],
@@ -577,7 +569,6 @@ pub mod pallet {
                     self.tier_thresholds.clone(),
                 )
                 .expect("Invalid number of tier thresholds provided."),
-                slot_number_args: self.slot_number_args,
                 tier_rank_multipliers: BoundedVec::<u32, T::NumberOfTiers>::try_from(
                     self.tier_rank_multipliers.clone(),
                 )
@@ -1973,7 +1964,7 @@ pub mod pallet {
             // Prepare and return tier & rewards info.
             // In case rewards creation fails, we just write the default value. This should never happen though.
             (
-                DAppTierRewards::<T::MaxNumberOfContractsLegacy, T::NumberOfTiers>::new(
+                DAppTierRewards::<T::MaxNumberOfContracts, T::NumberOfTiers>::new(
                     dapp_tiers,
                     tier_rewards,
                     period,

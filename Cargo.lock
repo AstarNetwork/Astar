@@ -955,7 +955,6 @@ dependencies = [
  "impl-trait-for-tuples",
  "log",
  "once_cell",
- "orml-oracle",
  "orml-traits",
  "pallet-assets",
  "pallet-collective",
@@ -1011,7 +1010,6 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "num_enum 0.5.11",
- "orml-oracle",
  "orml-xcm-support",
  "orml-xtokens",
  "pallet-assets",
@@ -1048,7 +1046,6 @@ dependencies = [
  "pallet-migrations",
  "pallet-multisig",
  "pallet-preimage",
- "pallet-price-aggregator",
  "pallet-proxy",
  "pallet-safe-mode",
  "pallet-scheduler",
@@ -6686,7 +6683,6 @@ dependencies = [
  "hex",
  "libsecp256k1",
  "moonbeam-rpc-primitives-debug",
- "orml-oracle",
  "pallet-assets",
  "pallet-aura",
  "pallet-balances",
@@ -6704,7 +6700,6 @@ dependencies = [
  "pallet-evm-precompile-dispatch",
  "pallet-inflation",
  "pallet-membership",
- "pallet-price-aggregator",
  "pallet-proxy",
  "pallet-safe-mode",
  "pallet-session",
@@ -9041,25 +9036,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "orml-oracle"
-version = "1.4.0"
-source = "git+https://github.com/AstarNetwork/open-runtime-module-library?branch=stable2506#b167585299589570f01ef40dcd68361f5c6cbaa1"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "orml-traits",
- "orml-utilities",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-application-crypto",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "orml-traits"
 version = "1.4.0"
 source = "git+https://github.com/AstarNetwork/open-runtime-module-library?branch=stable2506#b167585299589570f01ef40dcd68361f5c6cbaa1"
@@ -10408,28 +10384,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-price-aggregator"
-version = "0.1.0"
-dependencies = [
- "astar-primitives",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "num-traits",
- "orml-traits",
- "pallet-balances",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-proxy"
 version = "41.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2506#510fed173e7459a3b030cdf20f1021236b367253"
@@ -10756,26 +10710,6 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
-]
-
-[[package]]
-name = "pallet-static-price-provider"
-version = "0.1.0"
-dependencies = [
- "astar-primitives",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-balances",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -15998,7 +15932,6 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "num_enum 0.5.11",
- "orml-oracle",
  "orml-xcm-support",
  "orml-xtokens",
  "pallet-assets",
@@ -16040,7 +15973,6 @@ dependencies = [
  "pallet-migrations",
  "pallet-multisig",
  "pallet-preimage",
- "pallet-price-aggregator",
  "pallet-proxy",
  "pallet-safe-mode",
  "pallet-scheduler",
@@ -16123,7 +16055,6 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "num_enum 0.5.11",
- "orml-oracle",
  "orml-xcm-support",
  "orml-xtokens",
  "pallet-assets",
@@ -16157,7 +16088,6 @@ dependencies = [
  "pallet-message-queue",
  "pallet-migrations",
  "pallet-multisig",
- "pallet-price-aggregator",
  "pallet-proxy",
  "pallet-session",
  "pallet-sudo",

@@ -20,12 +20,11 @@ use crate::AccountId;
 use frame_support::traits::EitherOfDiverse;
 use frame_system::EnsureRoot;
 
-pub type OracleMembershipInst = pallet_membership::Instance1;
 pub type MainCouncilMembershipInst = pallet_membership::Instance2;
 pub type TechnicalCommitteeMembershipInst = pallet_membership::Instance3;
 pub type CommunityCouncilMembershipInst = pallet_membership::Instance4;
 
-// Leaving instance 1 for potentially having an oracle membership collective instance
+// Instance 1 was previously used for OracleMembership (now removed)
 pub type MainCouncilCollectiveInst = pallet_collective::Instance2;
 pub type TechnicalCommitteeCollectiveInst = pallet_collective::Instance3;
 pub type CommunityCouncilCollectiveInst = pallet_collective::Instance4;

@@ -34,7 +34,7 @@ use sp_runtime::{BuildStorage, Permill};
 use sp_std::cell::RefCell;
 
 use astar_primitives::{
-    dapp_staking::{Observer as DappStakingObserver, SmartContract, FIXED_TIER_SLOTS_ARGS},
+    dapp_staking::{Observer as DappStakingObserver, SmartContract},
     Balance, BlockNumber,
 };
 use frame_system::{EnsureRoot, EnsureSignedBy};
@@ -207,7 +207,6 @@ impl pallet_dapp_staking::Config for Test {
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
-    type MaxNumberOfContractsLegacy = ConstU32<10>;
     type MaxUnlockingChunks = ConstU32<5>;
     type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
     type UnlockingPeriod = ConstU32<2>;
@@ -304,27 +303,20 @@ impl ExtBuilder {
                 ])
                 .unwrap(),
                 tier_thresholds: BoundedVec::try_from(vec![
-                    TierThreshold::DynamicPercentage {
-                        percentage: Perbill::from_parts(11_112_000), // 1.1112%
-                        minimum_required_percentage: Perbill::from_parts(8_889_000), // 0.8889%
-                        maximum_possible_percentage: Perbill::from_parts(13_000_000), // 1.3%
+                    TierThreshold::FixedPercentage {
+                        required_percentage: Perbill::from_parts(11_112_000), // 1.1112%
                     },
-                    TierThreshold::DynamicPercentage {
-                        percentage: Perbill::from_parts(5_556_000), // 0.5556%
-                        minimum_required_percentage: Perbill::from_parts(4_400_000), // 0.44%
-                        maximum_possible_percentage: Perbill::from_percent(100),
+                    TierThreshold::FixedPercentage {
+                        required_percentage: Perbill::from_parts(5_556_000), // 0.5556%
                     },
-                    TierThreshold::DynamicPercentage {
-                        percentage: Perbill::from_parts(2_223_000), // 0.2223%
-                        minimum_required_percentage: Perbill::from_parts(2_223_000), // 0.2223%
-                        maximum_possible_percentage: Perbill::from_percent(100),
+                    TierThreshold::FixedPercentage {
+                        required_percentage: Perbill::from_parts(2_223_000), // 0.2223%
                     },
                     TierThreshold::FixedPercentage {
                         required_percentage: Perbill::from_parts(1_667_000), // 0.1667%
                     },
                 ])
                 .unwrap(),
-                slot_number_args: FIXED_TIER_SLOTS_ARGS,
                 tier_rank_multipliers: BoundedVec::try_from(vec![0, 24_000, 46_700, 0]).unwrap(),
             };
 

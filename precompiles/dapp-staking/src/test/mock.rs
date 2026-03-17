@@ -43,7 +43,6 @@ extern crate alloc;
 use astar_primitives::{
     dapp_staking::{
         CycleConfiguration, EraNumber, PeriodNumber, SmartContract, StakingRewardHandler,
-        FIXED_TIER_SLOTS_ARGS,
     },
     AccountId, Balance, BlockNumber,
 };
@@ -227,7 +226,6 @@ impl pallet_dapp_staking::Config for Test {
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
-    type MaxNumberOfContractsLegacy = ConstU32<10>;
     type MaxUnlockingChunks = ConstU32<5>;
     type MinimumLockedAmount = ConstU128<10>;
     type UnlockingPeriod = ConstU32<2>;
@@ -286,7 +284,6 @@ impl ExternalityBuilder {
                         required_percentage: Perbill::from_percent(1),
                     },
                 ],
-                slot_number_args: FIXED_TIER_SLOTS_ARGS,
                 slots_per_tier: vec![10, 20, 30, 40],
                 safeguard: None,
                 tier_rank_multipliers: vec![10_000u32, 20_000, 20_000, 20_000],
