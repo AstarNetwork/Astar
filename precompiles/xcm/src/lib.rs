@@ -748,7 +748,7 @@ where
     }
 
     #[precompile::public(
-        "transfet_multi_assets(((uint8,bytes[]),uint256)[],uint32,(uint8,bytes[]),(uint64,uint64))"
+        "transfer_multi_assets(((uint8,bytes[]),uint256)[],uint32,(uint8,bytes[]),(uint64,uint64))"
     )]
     fn transfer_multi_assets(
         handle: &mut impl PrecompileHandle,
