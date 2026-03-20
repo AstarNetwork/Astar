@@ -17,10 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::*;
-use astar_primitives::{
-    evm::EVM_REVERT_CODE, genesis::GenesisAccount,
-    parachain::ASTAR_ID,
-};
+use astar_primitives::{evm::EVM_REVERT_CODE, genesis::GenesisAccount, parachain::ASTAR_ID};
 
 /// Provides the JSON representation of predefined genesis config for given `id`.
 pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {

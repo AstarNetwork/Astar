@@ -53,7 +53,9 @@ mod v12 {
     /// Old `TierThreshold` enum that includes the removed `DynamicPercentage` variant.
     #[derive(Encode, Decode, Clone)]
     pub enum OldTierThreshold {
-        FixedPercentage { required_percentage: Perbill },
+        FixedPercentage {
+            required_percentage: Perbill,
+        },
         DynamicPercentage {
             percentage: Perbill,
             minimum_required_percentage: Perbill,

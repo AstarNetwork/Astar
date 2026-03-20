@@ -88,7 +88,6 @@ use astar_primitives::{
         PeriodNumber, RankedTier, SmartContract, FIXED_NUMBER_OF_TIER_SLOTS,
     },
     evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler},
-
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce, UnfreezeChainOnFailedMigration,
 };
@@ -185,7 +184,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("shiden"),
     impl_name: Cow::Borrowed("shiden"),
     authoring_version: 1,
-    spec_version: 2101,
+    spec_version: 2102,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,

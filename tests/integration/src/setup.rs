@@ -37,9 +37,7 @@ pub use astar_primitives::governance::{
     CommunityCouncilMembershipInst, MainCouncilCollectiveInst, MainCouncilMembershipInst,
     TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
 };
-pub use astar_primitives::{
-    genesis::GenesisAccount, BlockNumber,
-};
+pub use astar_primitives::{genesis::GenesisAccount, BlockNumber};
 
 #[cfg(feature = "shibuya")]
 pub use shibuya::*;
@@ -101,7 +99,6 @@ pub const BOB: AccountId32 = AccountId32::new([2_u8; 32]);
 pub const CAT: AccountId32 = AccountId32::new([3_u8; 32]);
 
 pub const INITIAL_AMOUNT: u128 = 100_000 * UNIT;
-
 
 pub type SystemError = frame_system::Error<Runtime>;
 use cumulus_pallet_parachain_system::RelaychainDataProvider;

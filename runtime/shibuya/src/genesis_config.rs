@@ -17,10 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::*;
-use astar_primitives::{
-    evm::EVM_REVERT_CODE, genesis::GenesisAccount,
-    parachain::SHIBUYA_ID,
-};
+use astar_primitives::{evm::EVM_REVERT_CODE, genesis::GenesisAccount, parachain::SHIBUYA_ID};
 use sp_core::crypto::Ss58Codec;
 
 /// Provides the JSON representation of predefined genesis config for given `id`.

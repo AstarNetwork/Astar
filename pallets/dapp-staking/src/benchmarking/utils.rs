@@ -18,10 +18,7 @@
 
 use super::{Pallet as DappStaking, *};
 
-use astar_primitives::{
-    dapp_staking::FIXED_NUMBER_OF_TIER_SLOTS,
-    Balance,
-};
+use astar_primitives::{dapp_staking::FIXED_NUMBER_OF_TIER_SLOTS, Balance};
 
 use frame_system::Pallet as System;
 use sp_arithmetic::Permill;
