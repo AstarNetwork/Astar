@@ -42,9 +42,6 @@ mod dapp_staking;
 mod assets_chain_extensions;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod oracle;
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod evm_tracing;
 
 #[cfg(any(feature = "shibuya", feature = "astar"))]

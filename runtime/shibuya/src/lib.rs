@@ -94,10 +94,8 @@ use astar_primitives::{
         EnsureRootOrHalfMainCouncil, EnsureRootOrHalfTechCommitteeOrTwoThirdCouncil,
         EnsureRootOrHalfTechnicalCommittee, EnsureRootOrThreeFourthMainCouncil,
         EnsureRootOrTwoThirdsMainCouncil, MainCouncilCollectiveInst, MainCouncilMembershipInst,
-        MainTreasuryInst, OracleMembershipInst, TechnicalCommitteeCollectiveInst,
-        TechnicalCommitteeMembershipInst,
+        MainTreasuryInst, TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
-    oracle::{CurrencyAmount, CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce, UnfreezeChainOnFailedMigration,
 };
@@ -214,7 +212,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("shibuya"),
     impl_name: Cow::Borrowed("shibuya"),
     authoring_version: 1,
-    spec_version: 2101,
+    spec_version: 2102,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -493,7 +491,6 @@ impl pallet_dapp_staking::Config for Runtime {
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<{ FIXED_NUMBER_OF_TIER_SLOTS as u32 }>;
-    type MaxNumberOfContractsLegacy = ConstU32<500>;
     type MaxUnlockingChunks = ConstU32<8>;
     type MinimumLockedAmount = MinimumStakingAmount;
     type UnlockingPeriod = ConstU32<4>;
@@ -1217,94 +1214,6 @@ impl pallet_unified_accounts::Config for Runtime {
 }
 
 parameter_types! {
-    // Of course it's not true for Shibuya, but SBY is worthless, a test token.
-    pub const NativeCurrencyId: CurrencyId = CurrencyId::ASTR;
-    // Aggregate values for one day.
-    pub const AggregationDuration: BlockNumber = DAYS;
-}
-
-impl pallet_price_aggregator::Config for Runtime {
-    type MaxValuesPerBlock = ConstU32<8>;
-    type ProcessBlockValues = pallet_price_aggregator::MedianBlockValue;
-    type NativeCurrencyId = NativeCurrencyId;
-    // 7 days
-    type CircularBufferLength = ConstU32<7>;
-    type AggregationDuration = AggregationDuration;
-    type WeightInfo = pallet_price_aggregator::weights::SubstrateWeight<Runtime>;
-}
-
-#[cfg(feature = "runtime-benchmarks")]
-pub struct OracleBenchmarkHelper;
-#[cfg(feature = "runtime-benchmarks")]
-impl orml_oracle::BenchmarkHelper<CurrencyId, Price, ConstU32<2>> for OracleBenchmarkHelper {
-    fn get_currency_id_value_pairs() -> sp_runtime::BoundedVec<(CurrencyId, Price), ConstU32<2>> {
-        sp_runtime::BoundedVec::try_from(vec![
-            (CurrencyId::ASTR, Price::from_rational(15, 100)),
-            (CurrencyId::ASTR, Price::from_rational(15, 100)),
-        ])
-        .expect("out of bounds")
-    }
-}
-
-parameter_types! {
-    // Cannot specify `Root` so need to do it like this, unfortunately.
-    pub RootOperatorAccountId: AccountId = AccountId::from([0xffu8; 32]);
-}
-
-impl orml_oracle::Config for Runtime {
-    type OnNewData = PriceAggregator;
-    type CombineData = DummyCombineData<Runtime>;
-    type Time = Timestamp;
-    type OracleKey = CurrencyId;
-    type OracleValue = Price;
-    type RootOperatorAccountId = RootOperatorAccountId;
-    #[cfg(feature = "runtime-benchmarks")]
-    type Members = OracleMembershipWrapper;
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    type Members = OracleMembership;
-    type MaxHasDispatchedSize = ConstU32<8>;
-    type WeightInfo = weights::orml_oracle::SubstrateWeight<Runtime>;
-    #[cfg(feature = "runtime-benchmarks")]
-    type MaxFeedValues = ConstU32<2>;
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    type MaxFeedValues = ConstU32<1>;
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = OracleBenchmarkHelper;
-}
-
-impl pallet_membership::Config<OracleMembershipInst> for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRootOrHalfMainCouncil;
-    type RemoveOrigin = EnsureRootOrHalfMainCouncil;
-    type SwapOrigin = EnsureRootOrHalfMainCouncil;
-    type ResetOrigin = EnsureRootOrHalfMainCouncil;
-    type PrimeOrigin = EnsureRootOrHalfMainCouncil;
-    type MembershipInitialized = ();
-    type MembershipChanged = ();
-    type MaxMembers = ConstU32<16>;
-    type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
-}
-
-/// OracleMembership wrapper used by benchmarks
-#[cfg(feature = "runtime-benchmarks")]
-pub struct OracleMembershipWrapper;
-
-#[cfg(feature = "runtime-benchmarks")]
-impl frame_support::traits::SortedMembers<AccountId> for OracleMembershipWrapper {
-    fn sorted_members() -> Vec<AccountId> {
-        OracleMembership::sorted_members()
-    }
-
-    fn add(account: &AccountId) {
-        use alloc::borrow::ToOwned;
-        frame_support::assert_ok!(OracleMembership::add_member(
-            frame_system::RawOrigin::Root.into(),
-            account.to_owned().into()
-        ));
-    }
-}
-
-parameter_types! {
     pub const CouncilMaxMembers: u32 = 16;
     pub const TechnicalCommitteeMaxMembers: u32 = 8;
     pub const CommunityCouncilMaxMembers: u32 = 16;
@@ -1575,7 +1484,6 @@ impl Contains<RuntimeCall> for SafeModeWhitelistedCalls {
             | RuntimeCall::Proxy(_)
             | RuntimeCall::Multisig(_)
             | RuntimeCall::Preimage(_)
-            | RuntimeCall::Oracle(_)
             | RuntimeCall::Utility(_)
             | RuntimeCall::TxPause(_)
             | RuntimeCall::SafeMode(_) => true,
@@ -1690,13 +1598,8 @@ mod runtime {
     pub type Inflation = pallet_inflation;
     #[runtime::pallet_index(36)]
     pub type Assets = pallet_assets;
-    #[runtime::pallet_index(37)]
-    pub type PriceAggregator = pallet_price_aggregator;
-    #[runtime::pallet_index(38)]
-    pub type Oracle = orml_oracle;
-    #[runtime::pallet_index(39)]
-    pub type OracleMembership = pallet_membership<Instance1>;
-
+    // skip 37 - price_aggregator previously
+    // skip 38/39 - oracle and oracle_membership previously
     #[runtime::pallet_index(40)]
     pub type Authorship = pallet_authorship;
     #[runtime::pallet_index(41)]
@@ -1809,13 +1712,24 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+parameter_types! {
+    pub const PriceAggregatorPalletStr: &'static str = "PriceAggregator";
+    pub const OraclePalletStr: &'static str = "Oracle";
+    pub const OracleMembershipPalletStr: &'static str = "OracleMembership";
+}
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased = (
+    pallet_dapp_staking::migration::versioned_migrations::V11ToV12<Runtime>,
+    frame_support::migrations::RemovePallet<PriceAggregatorPalletStr, RocksDbWeight>,
+    frame_support::migrations::RemovePallet<OraclePalletStr, RocksDbWeight>,
+    frame_support::migrations::RemovePallet<OracleMembershipPalletStr, RocksDbWeight>,
+);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
@@ -1908,9 +1822,7 @@ mod benches {
         [pallet_unified_accounts, UnifiedAccounts]
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
-        [pallet_price_aggregator, PriceAggregator]
         [pallet_collective_proxy, CollectiveProxy]
-        [orml_oracle, Oracle]
         [pallet_tx_pause, TxPause]
         [pallet_safe_mode, SafeMode]
     );

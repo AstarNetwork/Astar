@@ -184,10 +184,6 @@ impl<AccountId> AccountCheck<AccountId> for () {
 /// Fixed number of tier slots used by dApp-staking recalculation.
 pub const FIXED_NUMBER_OF_TIER_SLOTS: u16 = 16;
 
-/// Standard tier slots arguments.
-/// Decided for Astar, during the Tokenomics 3.0 revamp.
-pub const FIXED_TIER_SLOTS_ARGS: (u64, u64) = (0, FIXED_NUMBER_OF_TIER_SLOTS as u64);
-
 /// RankedTier is wrapper around u8 to hold both tier and rank. u8 has 2 bytes (8bits) and they're using in this order `0xrank_tier`.
 /// First 4 bits are used to hold rank and second 4 bits are used to hold tier.
 /// i.e: 0xa1 will hold rank: 10 and tier: 1 (0xa1 & 0xf == 1; 0xa1 >> 4 == 10;)

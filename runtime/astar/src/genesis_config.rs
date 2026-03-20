@@ -17,10 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::*;
-use astar_primitives::{
-    dapp_staking::FIXED_TIER_SLOTS_ARGS, evm::EVM_REVERT_CODE, genesis::GenesisAccount,
-    parachain::ASTAR_ID,
-};
+use astar_primitives::{evm::EVM_REVERT_CODE, genesis::GenesisAccount, parachain::ASTAR_ID};
 
 /// Provides the JSON representation of predefined genesis config for given `id`.
 pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
@@ -159,23 +156,12 @@ pub fn default_config(para_id: u32) -> serde_json::Value {
                 },
             ],
             slots_per_tier,
-            slot_number_args: FIXED_TIER_SLOTS_ARGS,
             safeguard: Some(false),
             tier_rank_multipliers,
             ..Default::default()
         },
         inflation: Default::default(),
-        oracle_membership: OracleMembershipConfig {
-            members: vec![alice.account_id(), bob.account_id()]
-                .try_into()
-                .expect("Assumption is that at least two members will be allowed."),
-            ..Default::default()
-        },
-        price_aggregator: PriceAggregatorConfig {
-            circular_buffer: vec![CurrencyAmount::from_rational(5, 10)]
-                .try_into()
-                .expect("Must work since buffer should have at least a single value."),
-        },
+
         council_membership: CouncilMembershipConfig {
             members: accounts
                 .clone()
