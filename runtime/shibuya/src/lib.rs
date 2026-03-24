@@ -212,7 +212,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("shibuya"),
     impl_name: Cow::Borrowed("shibuya"),
     authoring_version: 1,
-    spec_version: 2102,
+    spec_version: 2101,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -1713,6 +1713,7 @@ pub type Executive = frame_executive::Executive<
 >;
 
 parameter_types! {
+    pub const DappStakingPruneMaxPeriod: u32 = 105;
     pub const PriceAggregatorPalletStr: &'static str = "PriceAggregator";
     pub const OraclePalletStr: &'static str = "Oracle";
     pub const OracleMembershipPalletStr: &'static str = "OracleMembership";
@@ -1725,7 +1726,10 @@ pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased = (
-    pallet_dapp_staking::migration::versioned_migrations::V11ToV12<Runtime>,
+    pallet_dapp_staking::migration::versioned_migrations::V11ToV12<
+        Runtime,
+        DappStakingPruneMaxPeriod,
+    >,
     frame_support::migrations::RemovePallet<PriceAggregatorPalletStr, RocksDbWeight>,
     frame_support::migrations::RemovePallet<OraclePalletStr, RocksDbWeight>,
     frame_support::migrations::RemovePallet<OracleMembershipPalletStr, RocksDbWeight>,

@@ -33,12 +33,12 @@ pub mod versioned_migrations {
     use super::*;
 
     /// Migration V11 to V12:
-    /// - Prune old `PeriodEnd` entries for periods 0..=6
+    /// - Prune old `PeriodEnd` entries up to the given `PruneMaxPeriod` (inclusive)
     /// - Migrate `StaticTierParams` to remove `slot_number_args` and `DynamicPercentage`
-    pub type V11ToV12<T> = frame_support::migrations::VersionedMigration<
+    pub type V11ToV12<T, PruneMaxPeriod> = frame_support::migrations::VersionedMigration<
         11,
         12,
-        v12::VersionMigrateV11ToV12<T>,
+        v12::VersionMigrateV11ToV12<T, PruneMaxPeriod>,
         Pallet<T>,
         <T as frame_system::Config>::DbWeight,
     >;
@@ -46,9 +46,6 @@ pub mod versioned_migrations {
 
 mod v12 {
     use super::*;
-
-    /// Maximum period number to prune (inclusive).
-    const PRUNE_MAX_PERIOD: PeriodNumber = 6;
 
     /// Old `TierThreshold` enum that includes the removed `DynamicPercentage` variant.
     #[derive(Encode, Decode, Clone)]
@@ -73,19 +70,19 @@ mod v12 {
         pub tier_rank_multipliers: BoundedVec<u32, NT>,
     }
 
-    #[frame_support::storage_alias]
-    pub type OldStaticTierParams<T: Config> =
-        StorageValue<Pallet<T>, OldTierParameters<<T as Config>::NumberOfTiers>, OptionQuery>;
+    pub struct VersionMigrateV11ToV12<T, PruneMaxPeriod>(PhantomData<(T, PruneMaxPeriod)>);
 
-    pub struct VersionMigrateV11ToV12<T>(PhantomData<T>);
-
-    impl<T: Config> UncheckedOnRuntimeUpgrade for VersionMigrateV11ToV12<T> {
+    impl<T: Config, PruneMaxPeriod: Get<PeriodNumber>> UncheckedOnRuntimeUpgrade
+        for VersionMigrateV11ToV12<T, PruneMaxPeriod>
+    {
         fn on_runtime_upgrade() -> Weight {
             let mut reads: u64 = 0;
             let mut writes: u64 = 0;
 
-            // 1. Prune old PeriodEnd entries for periods 0..=6
-            for period in 0..=PRUNE_MAX_PERIOD {
+            let prune_max_period = PruneMaxPeriod::get();
+
+            // 1. Prune old PeriodEnd entries up to the configured max period
+            for period in 0..=prune_max_period {
                 reads += 1;
                 if PeriodEnd::<T>::take(period).is_some() {
                     writes += 1;
@@ -99,55 +96,55 @@ mod v12 {
 
             // 2. Migrate StaticTierParams to new shape (remove slot_number_args, convert DynamicPercentage)
             reads += 1;
-            if let Some(old_params) = OldStaticTierParams::<T>::get() {
-                let new_tier_thresholds: Vec<TierThreshold> = old_params
-                    .tier_thresholds
-                    .iter()
-                    .map(|t| match t {
-                        OldTierThreshold::FixedPercentage {
-                            required_percentage,
-                        } => TierThreshold::FixedPercentage {
-                            required_percentage: *required_percentage,
-                        },
-                        OldTierThreshold::DynamicPercentage { percentage, .. } => {
-                            TierThreshold::FixedPercentage {
-                                required_percentage: *percentage,
-                            }
-                        }
-                    })
-                    .collect();
+            let result = StaticTierParams::<T>::translate::<OldTierParameters<T::NumberOfTiers>, _>(
+                |maybe_old_params| match maybe_old_params {
+                    Some(old_params) => {
+                        let new_tier_thresholds: Vec<TierThreshold> = old_params
+                            .tier_thresholds
+                            .iter()
+                            .map(|t| match t {
+                                OldTierThreshold::FixedPercentage {
+                                    required_percentage,
+                                } => TierThreshold::FixedPercentage {
+                                    required_percentage: *required_percentage,
+                                },
+                                OldTierThreshold::DynamicPercentage { percentage, .. } => {
+                                    TierThreshold::FixedPercentage {
+                                        required_percentage: *percentage,
+                                    }
+                                }
+                            })
+                            .collect();
 
-                let new_params = TierParameters::<T::NumberOfTiers> {
-                    reward_portion: old_params.reward_portion,
-                    slot_distribution: old_params.slot_distribution,
-                    tier_thresholds: BoundedVec::truncate_from(new_tier_thresholds),
-                    tier_rank_multipliers: old_params.tier_rank_multipliers,
-                };
+                        Some(TierParameters {
+                            reward_portion: old_params.reward_portion,
+                            slot_distribution: old_params.slot_distribution,
+                            tier_thresholds: BoundedVec::truncate_from(new_tier_thresholds),
+                            tier_rank_multipliers: old_params.tier_rank_multipliers,
+                        })
+                    }
+                    None => None,
+                },
+            );
 
-                if new_params.is_valid() {
-                    StaticTierParams::<T>::put(new_params);
-                    writes += 1;
-                    log::info!(target: LOG_TARGET, "StaticTierParams migrated to v12 successfully");
-                } else {
-                    log::error!(
-                        target: LOG_TARGET,
-                        "New TierParameters validation failed during v12 migration. Enabling maintenance mode."
-                    );
-                    ActiveProtocolState::<T>::mutate(|state| {
-                        state.maintenance = true;
-                    });
-                    reads += 1;
-                    writes += 1;
-                }
-            } else {
-                log::warn!(
+            if result.is_err() {
+                log::error!(
                     target: LOG_TARGET,
-                    "No StaticTierParams found during v12 migration (raw storage empty or decode failed)."
+                    "Failed to translate StaticTierParams from old type to new v12 type. \
+                     Enabling maintenance mode."
+                );
+                ActiveProtocolState::<T>::mutate(|state| {
+                    state.maintenance = true;
+                });
+                reads += 1;
+                writes += 1;
+            } else {
+                writes += 1;
+                log::info!(
+                    target: LOG_TARGET,
+                    "StaticTierParams migrated to v12 successfully"
                 );
             }
-
-            // 3. Clean up raw storage for old StaticTierParams key (same key, already overwritten above)
-            // No additional action needed since StaticTierParams::put already overwrites.
 
             T::DbWeight::get().reads_writes(reads, writes)
         }
@@ -160,6 +157,8 @@ mod v12 {
 
         #[cfg(feature = "try-runtime")]
         fn post_upgrade(_data: Vec<u8>) -> Result<(), TryRuntimeError> {
+            let prune_max_period = PruneMaxPeriod::get();
+
             // Verify storage version
             ensure!(
                 Pallet::<T>::on_chain_storage_version() == StorageVersion::new(12),
@@ -173,8 +172,8 @@ mod v12 {
                 "StaticTierParams invalid after migration"
             );
 
-            // Verify PeriodEnd entries for periods 0..=6 are removed
-            for period in 0..=PRUNE_MAX_PERIOD {
+            // Verify PeriodEnd entries for pruned periods are removed
+            for period in 0..=prune_max_period {
                 ensure!(
                     PeriodEnd::<T>::get(period).is_none(),
                     "PeriodEnd entry should be removed for pruned period"
