@@ -39,7 +39,7 @@ use sp_core::parameter_types;
 use sp_weights::{constants::WEIGHT_REF_TIME_PER_NANOS, Weight};
 
 parameter_types! {
-	/// Weight of executing a NO-OP extrinsic, for example `System::remark`.
+    /// Weight of executing a NO-OP extrinsic, for example `System::remark`.
     /// Calculated by multiplying the *Average* with `1.0` and adding `0`.
     ///
     /// Stats nanoseconds:
@@ -52,8 +52,8 @@ parameter_types! {
     ///   99th: 94_499
     ///   95th: 93_982
     ///   75th: 93_530
-	pub const ExtrinsicBaseWeight: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(93_305), 166);
+    pub const ExtrinsicBaseWeight: Weight =
+        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(93_305), 166);
 }
 
 #[cfg(test)]

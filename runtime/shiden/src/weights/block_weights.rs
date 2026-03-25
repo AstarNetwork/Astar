@@ -39,7 +39,7 @@ use sp_core::parameter_types;
 use sp_weights::{constants::WEIGHT_REF_TIME_PER_NANOS, Weight};
 
 parameter_types! {
-	/// Weight of executing an empty block.
+    /// Weight of executing an empty block.
     /// Calculated by multiplying the *Average* with `1.0` and adding `0`.
     ///
     /// Stats nanoseconds:
@@ -52,8 +52,8 @@ parameter_types! {
     ///   99th: 658_433
     ///   95th: 632_260
     ///   75th: 594_190
-	pub const BlockExecutionWeight: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(589_489), 5_136);
+    pub const BlockExecutionWeight: Weight =
+        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(589_489), 5_136);
 }
 
 #[cfg(test)]
