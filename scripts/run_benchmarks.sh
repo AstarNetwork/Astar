@@ -133,7 +133,7 @@ for chain in ${chains//,/ }; do
         --pallet="$PALLET"
         --extrinsic="*"
         --wasm-execution=compiled
-        --heap-pages=1024
+        --heap-pages=4096
       )
 
       # TODO: Uncomment and reuse output once benchmark command is updated to correctly calculate PoV
