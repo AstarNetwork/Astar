@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2025-12-19 (Y/M/D)
+//! DATE: 2026-03-23 (Y/M/D)
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
 //!
 //! SHORT-NAME: `extrinsic`, LONG-NAME: `ExtrinsicBase`, RUNTIME: `shibuya`
@@ -39,21 +39,21 @@ use sp_core::parameter_types;
 use sp_weights::{constants::WEIGHT_REF_TIME_PER_NANOS, Weight};
 
 parameter_types! {
-    /// Weight of executing a NO-OP extrinsic, for example `System::remark`.
+	/// Weight of executing a NO-OP extrinsic, for example `System::remark`.
     /// Calculated by multiplying the *Average* with `1.0` and adding `0`.
     ///
     /// Stats nanoseconds:
-    ///   Min, Max: 102_600, 105_654
-    ///   Average:  103_603
-    ///   Median:   103_398
-    ///   Std-Dev:  709.04
+    ///   Min, Max: 91_945, 93_657
+    ///   Average:  92_554
+    ///   Median:   92_525
+    ///   Std-Dev:  352.72
     ///
     /// Percentiles nanoseconds:
-    ///   99th: 105_654
-    ///   95th: 105_315
-    ///   75th: 103_976
-    pub const ExtrinsicBaseWeight: Weight =
-        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(103_603), 166);
+    ///   99th: 93_657
+    ///   95th: 93_029
+    ///   75th: 92_775
+	pub const ExtrinsicBaseWeight: Weight =
+		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(92_554), 166);
 }
 
 #[cfg(test)]
