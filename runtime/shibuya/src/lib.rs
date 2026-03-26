@@ -1713,7 +1713,6 @@ pub type Executive = frame_executive::Executive<
 >;
 
 parameter_types! {
-    pub const DappStakingPruneMaxPeriod: u32 = 105;
     pub const PriceAggregatorPalletStr: &'static str = "PriceAggregator";
     pub const OraclePalletStr: &'static str = "Oracle";
     pub const OracleMembershipPalletStr: &'static str = "OracleMembership";
@@ -1726,10 +1725,7 @@ pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased = (
-    pallet_dapp_staking::migration::versioned_migrations::V11ToV12<
-        Runtime,
-        DappStakingPruneMaxPeriod,
-    >,
+    pallet_dapp_staking::migration::versioned_migrations::V11ToV12<Runtime>,
     frame_support::migrations::RemovePallet<PriceAggregatorPalletStr, RocksDbWeight>,
     frame_support::migrations::RemovePallet<OraclePalletStr, RocksDbWeight>,
     frame_support::migrations::RemovePallet<OracleMembershipPalletStr, RocksDbWeight>,

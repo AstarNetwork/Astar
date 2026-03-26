@@ -33,12 +33,11 @@ pub mod versioned_migrations {
     use super::*;
 
     /// Migration V11 to V12:
-    /// - Prune old `PeriodEnd` entries up to the given `PruneMaxPeriod` (inclusive)
     /// - Migrate `StaticTierParams` to remove `slot_number_args` and `DynamicPercentage`
-    pub type V11ToV12<T, PruneMaxPeriod> = frame_support::migrations::VersionedMigration<
+    pub type V11ToV12<T> = frame_support::migrations::VersionedMigration<
         11,
         12,
-        v12::VersionMigrateV11ToV12<T, PruneMaxPeriod>,
+        v12::VersionMigrateV11ToV12<T>,
         Pallet<T>,
         <T as frame_system::Config>::DbWeight,
     >;
@@ -70,31 +69,14 @@ mod v12 {
         pub tier_rank_multipliers: BoundedVec<u32, NT>,
     }
 
-    pub struct VersionMigrateV11ToV12<T, PruneMaxPeriod>(PhantomData<(T, PruneMaxPeriod)>);
+    pub struct VersionMigrateV11ToV12<T>(PhantomData<T>);
 
-    impl<T: Config, PruneMaxPeriod: Get<PeriodNumber>> UncheckedOnRuntimeUpgrade
-        for VersionMigrateV11ToV12<T, PruneMaxPeriod>
-    {
+    impl<T: Config> UncheckedOnRuntimeUpgrade for VersionMigrateV11ToV12<T> {
         fn on_runtime_upgrade() -> Weight {
             let mut reads: u64 = 0;
             let mut writes: u64 = 0;
 
-            let prune_max_period = PruneMaxPeriod::get();
-
-            // 1. Prune old PeriodEnd entries up to the configured max period
-            for period in 0..=prune_max_period {
-                reads += 1;
-                if PeriodEnd::<T>::take(period).is_some() {
-                    writes += 1;
-                    log::info!(
-                        target: LOG_TARGET,
-                        "Pruned PeriodEnd entry for period {}",
-                        period
-                    );
-                }
-            }
-
-            // 2. Migrate StaticTierParams to new shape (remove slot_number_args, convert DynamicPercentage)
+            // Migrate StaticTierParams to new shape (remove slot_number_args, convert DynamicPercentage)
             reads += 1;
             let result = StaticTierParams::<T>::translate::<OldTierParameters<T::NumberOfTiers>, _>(
                 |maybe_old_params| match maybe_old_params {
@@ -157,8 +139,6 @@ mod v12 {
 
         #[cfg(feature = "try-runtime")]
         fn post_upgrade(_data: Vec<u8>) -> Result<(), TryRuntimeError> {
-            let prune_max_period = PruneMaxPeriod::get();
-
             // Verify storage version
             ensure!(
                 Pallet::<T>::on_chain_storage_version() == StorageVersion::new(12),
@@ -172,15 +152,6 @@ mod v12 {
                 "StaticTierParams invalid after migration"
             );
 
-            // Verify PeriodEnd entries for pruned periods are removed
-            for period in 0..=prune_max_period {
-                ensure!(
-                    PeriodEnd::<T>::get(period).is_none(),
-                    "PeriodEnd entry should be removed for pruned period"
-                );
-            }
-
-            log::info!(target: LOG_TARGET, "V11ToV12 post-upgrade: all checks passed");
             Ok(())
         }
     }
