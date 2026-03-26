@@ -18,10 +18,7 @@
 
 use super::{Pallet as DappStaking, *};
 
-use astar_primitives::{
-    dapp_staking::{FIXED_NUMBER_OF_TIER_SLOTS, FIXED_TIER_SLOTS_ARGS},
-    Balance,
-};
+use astar_primitives::{dapp_staking::FIXED_NUMBER_OF_TIER_SLOTS, Balance};
 
 use frame_system::Pallet as System;
 use sp_arithmetic::Permill;
@@ -196,7 +193,6 @@ pub(super) fn init_tier_settings<T: Config>() {
             },
         ])
         .unwrap(),
-        slot_number_args: FIXED_TIER_SLOTS_ARGS,
         tier_rank_multipliers: BoundedVec::try_from(vec![0, 24_000, 46_700, 0]).unwrap(),
     };
 

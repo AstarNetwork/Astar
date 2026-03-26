@@ -29,7 +29,6 @@ cumulus-primitives-parachain-inherent = { workspace = true }
 cumulus-test-relay-sproof-builder = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-orml-oracle = { workspace = true }
 pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
@@ -64,7 +63,6 @@ pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
 pallet-inflation = { workspace = true }
-pallet-price-aggregator = { workspace = true }
 pallet-unified-accounts = { workspace = true }
 precompile-utils = { workspace = true }
 unified-accounts-chain-extension-types = { workspace = true }
@@ -99,7 +97,6 @@ std = [
 	"hex/std",
 	"libsecp256k1/std",
 	"moonbeam-rpc-primitives-debug?/std",
-	"orml-oracle/std",
 	"pallet-assets/std",
 	"pallet-collective/std",
 	"sp-trie/std",
@@ -121,7 +118,6 @@ std = [
 	"pallet-safe-mode/std",
 	"pallet-tx-pause/std",
 	"pallet-membership/std",
-	"pallet-price-aggregator/std",
 	"cumulus-test-relay-sproof-builder/std",
 	"pallet-proxy/std",
 	"pallet-unified-accounts/std",

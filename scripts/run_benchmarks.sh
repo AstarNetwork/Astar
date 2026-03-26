@@ -85,24 +85,6 @@ EXCLUDED_PALLETS=(
   # Pallets without automatic benchmarking
 )
 
-# Load all pallet names in an array.
-ALL_PALLETS=($(
-  "${BENCHMARK_TOOL[@]}" benchmark pallet --list --runtime ./target/release/wbuild/${chain}-runtime/${chain}_runtime.compact.compressed.wasm |\
-    tail -n+2 |\
-    cut -d',' -f1 |\
-    sort |\
-    uniq
-))
-
-# Filter out the excluded pallets by concatenating the arrays and discarding duplicates.
-if [ "$target_pallets" == "" ] || [ "$target_pallets" == "all" ]; then
-    PALLETS=($({ printf '%s\n' "${ALL_PALLETS[@]}" "${EXCLUDED_PALLETS[@]}"; } | sort | uniq -u))
-else
-    PALLETS=($({ printf '%s\n' "${target_pallets//,/ }"; } | sort | uniq -u))
-fi
-
-echo "[+] Benchmarking: ${#PALLETS[@]}"
-
 ERR_RC=0
 ERR_FILES=""
 for chain in ${chains//,/ }; do
@@ -115,6 +97,24 @@ for chain in ${chains//,/ }; do
     rm -f $ERR_FILE
 
     RUNTIME_PATH="./target/release/wbuild/${chain}-runtime/${chain}_runtime.compact.compressed.wasm"
+
+    # Load all pallet names in an array (per-chain).
+    ALL_PALLETS=($(
+      "${BENCHMARK_TOOL[@]}" benchmark pallet --list --runtime "$RUNTIME_PATH" |\
+        tail -n+2 |\
+        cut -d',' -f1 |\
+        sort |\
+        uniq
+    ))
+
+    # Filter out the excluded pallets by concatenating the arrays and discarding duplicates.
+    if [ "$target_pallets" == "" ] || [ "$target_pallets" == "all" ]; then
+        PALLETS=($({ printf '%s\n' "${ALL_PALLETS[@]}" "${EXCLUDED_PALLETS[@]}"; } | sort | uniq -u))
+    else
+        PALLETS=($({ printf '%s\n' "${target_pallets//,/ }"; } | sort | uniq -u))
+    fi
+
+    echo "[+] Benchmarking $chain: ${#PALLETS[@]} pallets"
 
     # Benchmark each pallet.
     for PALLET in "${PALLETS[@]}"; do

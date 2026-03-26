@@ -38,9 +38,6 @@ pub mod dapp_staking;
 /// Useful primitives for testing.
 pub mod testing;
 
-/// Oracle & price primitives.
-pub mod oracle;
-
 /// Governance primitives.
 pub mod governance;
 
