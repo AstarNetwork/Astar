@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["STORAGE_VERSION"],"enum":["Call","Error","Event"],"mod":["dispatchables","storage_types"],"struct":["DefaultActivePrice","Pallet"],"trait":["Config"],"type":["ActivePrice","Module"]};

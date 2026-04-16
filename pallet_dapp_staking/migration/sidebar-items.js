@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["versioned_migrations"],"struct":["DefaultTierParamsV11"],"trait":["TierParamsV11Config"]};
+window.SIDEBAR_ITEMS = {"mod":["versioned_migrations"]};
