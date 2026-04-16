@@ -101,7 +101,6 @@ xcm-executor = { workspace = true }
 xcm-runtime-apis = { workspace = true }
 
 # orml dependencies
-orml-oracle = { workspace = true }
 orml-xcm-support = { workspace = true }
 orml-xtokens = { workspace = true }
 
@@ -125,7 +124,6 @@ pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
 pallet-inflation = { workspace = true }
-pallet-price-aggregator = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 
@@ -206,14 +204,12 @@ std = [
 	"pallet-proxy/std",
 	"pallet-timestamp/std",
 	"pallet-vesting/std",
-	"orml-oracle/std",
 	"sp-offchain/std",
 	"sp-session/std",
 	"pallet-sudo/std",
 	"pallet-transaction-payment/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-xcm/std",
-	"pallet-price-aggregator/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
 	"polkadot-primitives/std",
@@ -274,7 +270,6 @@ runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
-	"pallet-price-aggregator/runtime-benchmarks",
 	"cumulus-primitives-utility/runtime-benchmarks",
 	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
@@ -301,7 +296,6 @@ runtime-benchmarks = [
 	"cumulus-primitives-core/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
-	"orml-oracle/runtime-benchmarks",
 	"xcm/runtime-benchmarks",
 ]
 try-runtime = [
@@ -314,8 +308,6 @@ try-runtime = [
 	"frame-system/try-runtime",
 	"pallet-aura/try-runtime",
 	"pallet-balances/try-runtime",
-	"orml-oracle/try-runtime",
-	"pallet-price-aggregator/try-runtime",
 	"pallet-membership/try-runtime",
 	"pallet-dapp-staking/try-runtime",
 	"pallet-inflation/try-runtime",

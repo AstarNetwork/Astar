@@ -37,9 +37,7 @@ pub use astar_primitives::governance::{
     CommunityCouncilMembershipInst, MainCouncilCollectiveInst, MainCouncilMembershipInst,
     TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
 };
-pub use astar_primitives::{
-    genesis::GenesisAccount, governance::OracleMembershipInst, oracle::Price, BlockNumber,
-};
+pub use astar_primitives::{genesis::GenesisAccount, BlockNumber};
 
 #[cfg(feature = "shibuya")]
 pub use shibuya::*;
@@ -101,8 +99,6 @@ pub const BOB: AccountId32 = AccountId32::new([2_u8; 32]);
 pub const CAT: AccountId32 = AccountId32::new([3_u8; 32]);
 
 pub const INITIAL_AMOUNT: u128 = 100_000 * UNIT;
-
-pub const INIT_PRICE: Price = Price::from_rational(1, 10);
 
 pub type SystemError = frame_system::Error<Runtime>;
 use cumulus_pallet_parachain_system::RelaychainDataProvider;
@@ -179,24 +175,6 @@ impl ExtBuilder {
                 candidacy_bond: 100 * UNIT,
                 desired_candidates: 2,
                 ..Default::default()
-            },
-            &mut t,
-        )
-        .unwrap();
-
-        // Setup initial oracle members
-        <pallet_membership::GenesisConfig<Runtime, OracleMembershipInst> as BuildStorage>::assimilate_storage(
-            &pallet_membership::GenesisConfig::<Runtime, OracleMembershipInst> {
-                members: vec![ALICE, BOB].try_into().expect("Safe to assume at least 2 members are supported."),
-                ..Default::default()
-            },
-            &mut t)
-        .unwrap();
-
-        // Setup initial native currency price
-        <pallet_price_aggregator::GenesisConfig<Runtime> as BuildStorage>::assimilate_storage(
-            &pallet_price_aggregator::GenesisConfig::<Runtime> {
-                circular_buffer: vec![INIT_PRICE].try_into().unwrap(),
             },
             &mut t,
         )

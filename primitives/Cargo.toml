@@ -40,7 +40,6 @@ xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 
 # ORML dependencies
-orml-oracle = { workspace = true }
 orml-traits = { workspace = true }
 
 pallet-contracts = { workspace = true }
@@ -77,7 +76,6 @@ std = [
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
-	"orml-oracle/std",
 	"orml-traits/std",
 	"pallet-xc-asset-config/std",
 	"fp-evm/std",
@@ -102,14 +100,12 @@ runtime-benchmarks = [
 	"pallet-collective/runtime-benchmarks",
 	"pallet-membership/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
-	"orml-oracle/runtime-benchmarks",
 	"xcm/runtime-benchmarks",
 ]
 try-runtime = [
 	"pallet-contracts/try-runtime",
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
-	"orml-oracle/try-runtime",
 	"pallet-assets/try-runtime",
 	"pallet-evm/try-runtime",
 	"pallet-xc-asset-config/try-runtime",

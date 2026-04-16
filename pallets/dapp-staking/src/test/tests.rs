@@ -3409,10 +3409,7 @@ fn base_number_of_slots_is_respected() {
             "Number of slots must respect the fixed slot limit."
         );
 
-        // Mutate slot_number_args and ensure full tier config recalculation remains unchanged.
-        StaticTierParams::<Test>::mutate(|params| {
-            params.slot_number_args = (123, 456);
-        });
+        // Force another era and verify config stays the same.
         assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
         run_for_blocks(1);
 
@@ -3420,11 +3417,11 @@ fn base_number_of_slots_is_respected() {
         assert_eq!(
             config_after.total_number_of_slots(),
             FIXED_NUMBER_OF_TIER_SLOTS,
-            "Number of slots must remain fixed regardless of slot_number_args."
+            "Number of slots must remain fixed."
         );
         assert_eq!(
             config_after, config_before,
-            "Tier configuration must remain unchanged regardless of slot_number_args."
+            "Tier configuration must remain unchanged."
         );
     })
 }
@@ -4137,23 +4134,13 @@ fn set_static_tier_params_invalid_params_fails() {
             Error::<Test>::InvalidTierParams
         );
 
-        // invalid dynamic percentage (min > max)
-        let mut tier_thresholds = tier_params.tier_thresholds.clone().to_vec();
-        tier_thresholds[0] = TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_percent(2),
-            minimum_required_percentage: Perbill::from_percent(5),
-            maximum_possible_percentage: Perbill::from_percent(3),
-        };
-
-        let invalid_min_max_params = TierParameters::<NumberOfTiers> {
-            tier_thresholds: tier_thresholds.try_into().unwrap(),
-            ..tier_params.clone()
-        };
-
-        assert!(!invalid_min_max_params.is_valid(), "Invalid min/max");
+        // invalid tier rank multiplier (tier 0 exceeds 10_000)
+        let mut bad_params = tier_params.clone();
+        bad_params.tier_rank_multipliers[0] = 20_000;
+        assert!(!bad_params.is_valid(), "Invalid tier rank multiplier");
 
         assert_noop!(
-            DappStaking::set_static_tier_params(RuntimeOrigin::root(), invalid_min_max_params),
+            DappStaking::set_static_tier_params(RuntimeOrigin::root(), bad_params),
             Error::<Test>::InvalidTierParams
         );
     })

@@ -86,7 +86,7 @@ pub type AccountLedgerFor<T> = AccountLedger<<T as Config>::MaxUnlockingChunks>;
 
 // Convenience type for `DAppTierRewards` usage.
 pub type DAppTierRewardsFor<T> =
-    DAppTierRewards<<T as Config>::MaxNumberOfContractsLegacy, <T as Config>::NumberOfTiers>;
+    DAppTierRewards<<T as Config>::MaxNumberOfContracts, <T as Config>::NumberOfTiers>;
 
 // Convenience type for `EraRewardSpan` usage.
 pub type EraRewardSpanFor<T> = EraRewardSpan<<T as Config>::EraRewardSpanLength>;
@@ -1651,25 +1651,12 @@ pub enum TierThreshold {
     /// Entry into the tier is mandated by a fixed percentage of the total issuance as staked funds.
     /// This value is constant and does not change between periods.
     FixedPercentage { required_percentage: Perbill },
-    /// Entry into the tier is mandated by a percentage of the total issuance as staked funds.
-    /// This `percentage` can change between periods, but must stay within the defined
-    /// `minimum_required_percentage` and `maximum_possible_percentage`.
-    /// If minimum is greater than maximum, the configuration is invalid.
-    ///
-    /// NOTE: It's up to the user to ensure that minimum_required_percentage is
-    /// less than or equal to maximum_possible_percentage to avoid potential issues.
-    DynamicPercentage {
-        percentage: Perbill,
-        minimum_required_percentage: Perbill,
-        maximum_possible_percentage: Perbill,
-    },
 }
 
 impl TierThreshold {
     /// Return threshold amount for the tier.
     pub fn threshold(&self, total_issuance: Balance) -> Balance {
         match self {
-            Self::DynamicPercentage { percentage, .. } => *percentage * total_issuance,
             Self::FixedPercentage {
                 required_percentage,
             } => *required_percentage * total_issuance,
@@ -1705,11 +1692,6 @@ pub struct TierParameters<NT: Get<u32>> {
     /// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
     pub(crate) tier_thresholds: BoundedVec<TierThreshold, NT>,
-    /// Legacy arguments for the linear equation used to calculate the number of slots.
-    ///
-    /// Kept for storage/config compatibility, but ignored during tier recalculation.
-    /// Tier slot count is fixed via `FIXED_NUMBER_OF_TIER_SLOTS` in `TiersConfiguration::calculate_new`.
-    pub(crate) slot_number_args: (u64, u64),
     /// Rank multiplier per tier in bips (100% = 10_000 bips):
     /// defines how much rank 10 earns relative to rank 0.
     ///
@@ -1749,20 +1731,6 @@ impl<NT: Get<u32>> TierParameters<NT> {
             .is_none()
         {
             return false;
-        }
-
-        // Validate that the minimum percentage is less than or equal to maximum percentage.
-        for threshold in self.tier_thresholds.iter() {
-            if let TierThreshold::DynamicPercentage {
-                minimum_required_percentage,
-                maximum_possible_percentage,
-                ..
-            } = threshold
-            {
-                if minimum_required_percentage > maximum_possible_percentage {
-                    return false;
-                }
-            }
         }
 
         // - Tier 0: must be <= 100% (no rank bonus for the top tier)
@@ -1864,21 +1832,7 @@ impl<NT: Get<u32>> TiersConfiguration<NT> {
             .tier_thresholds
             .clone()
             .iter()
-            .map(|threshold| match threshold {
-                TierThreshold::DynamicPercentage {
-                    percentage,
-                    minimum_required_percentage,
-                    maximum_possible_percentage,
-                } => {
-                    let amount = *percentage * total_issuance;
-                    let minimum_amount = *minimum_required_percentage * total_issuance;
-                    let maximum_amount = *maximum_possible_percentage * total_issuance;
-                    amount.max(minimum_amount).min(maximum_amount)
-                }
-                TierThreshold::FixedPercentage {
-                    required_percentage,
-                } => *required_percentage * total_issuance,
-            })
+            .map(|threshold| threshold.threshold(total_issuance))
             .collect::<Vec<_>>()
             .try_into()
             .unwrap_or_default();

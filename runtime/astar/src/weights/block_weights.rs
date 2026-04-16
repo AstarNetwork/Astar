@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2025-12-19 (Y/M/D)
+//! DATE: 2026-03-23 (Y/M/D)
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
 //!
 //! SHORT-NAME: `block`, LONG-NAME: `BlockExecution`, RUNTIME: `astar`
@@ -43,17 +43,17 @@ parameter_types! {
     /// Calculated by multiplying the *Average* with `1.0` and adding `0`.
     ///
     /// Stats nanoseconds:
-    ///   Min, Max: 708_212, 844_044
-    ///   Average:  761_989
-    ///   Median:   754_226
-    ///   Std-Dev:  30284.39
+    ///   Min, Max: 615_206, 724_092
+    ///   Average:  654_801
+    ///   Median:   656_156
+    ///   Std-Dev:  29311.54
     ///
     /// Percentiles nanoseconds:
-    ///   99th: 844_044
-    ///   95th: 817_447
-    ///   75th: 758_024
+    ///   99th: 724_092
+    ///   95th: 721_515
+    ///   75th: 659_926
     pub const BlockExecutionWeight: Weight =
-        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(761_989), 6_281);
+        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(654_801), 6_010);
 }
 
 #[cfg(test)]

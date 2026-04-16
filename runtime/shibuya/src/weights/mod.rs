@@ -20,7 +20,6 @@ mod block_weights;
 mod extrinsic_weights;
 
 pub mod frame_system_extensions;
-pub mod orml_oracle;
 pub mod pallet_assets;
 pub mod pallet_balances;
 pub mod pallet_dapp_staking;

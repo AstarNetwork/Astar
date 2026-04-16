@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2025-12-19 (Y/M/D)
+//! DATE: 2026-03-25 (Y/M/D)
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
 //!
 //! SHORT-NAME: `extrinsic`, LONG-NAME: `ExtrinsicBase`, RUNTIME: `shiden`
@@ -43,17 +43,17 @@ parameter_types! {
     /// Calculated by multiplying the *Average* with `1.0` and adding `0`.
     ///
     /// Stats nanoseconds:
-    ///   Min, Max: 96_923, 98_777
-    ///   Average:  97_667
-    ///   Median:   97_572
-    ///   Std-Dev:  446.91
+    ///   Min, Max: 92_731, 94_499
+    ///   Average:  93_305
+    ///   Median:   93_222
+    ///   Std-Dev:  365.51
     ///
     /// Percentiles nanoseconds:
-    ///   99th: 98_777
-    ///   95th: 98_414
-    ///   75th: 97_954
+    ///   99th: 94_499
+    ///   95th: 93_982
+    ///   75th: 93_530
     pub const ExtrinsicBaseWeight: Weight =
-        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(97_667), 166);
+        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(93_305), 166);
 }
 
 #[cfg(test)]
