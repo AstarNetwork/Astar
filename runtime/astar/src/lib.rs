@@ -173,6 +173,8 @@ pub const UNINCLUDED_SEGMENT_CAPACITY: u32 = 3;
 pub const BLOCK_PROCESSING_VELOCITY: u32 = 1;
 /// Relay chain slot duration, in milliseconds.
 pub const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6000;
+/// Relay chain best block offset to build blocks on.
+const RELAY_PARENT_OFFSET: u32 = 0;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -544,7 +546,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ConsensusHook = ConsensusHook;
     type SelectCore = cumulus_pallet_parachain_system::DefaultCoreSelector<Runtime>;
     type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
-    type RelayParentOffset = ConstU32<0>;
+    type RelayParentOffset = ConstU32<RELAY_PARENT_OFFSET>;
 }
 
 type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
@@ -1948,6 +1950,18 @@ impl_runtime_apis! {
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
             ParachainSystem::collect_collation_info(header)
+        }
+    }
+
+    impl cumulus_primitives_core::RelayParentOffsetApi<Block> for Runtime {
+        fn relay_parent_offset() -> u32 {
+            RELAY_PARENT_OFFSET
+        }
+    }
+
+    impl cumulus_primitives_core::GetCoreSelectorApi<Block> for Runtime {
+        fn core_selector() -> (cumulus_primitives_core::CoreSelector, cumulus_primitives_core::ClaimQueueOffset) {
+            ParachainSystem::core_selector()
         }
     }
 

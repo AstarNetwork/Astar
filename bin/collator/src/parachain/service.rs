@@ -20,8 +20,10 @@
 
 use astar_primitives::*;
 use cumulus_client_cli::CollatorOptions;
-use cumulus_client_consensus_aura::collators::lookahead::{self as aura, Params as AuraParams};
-use cumulus_client_consensus_common::ParachainBlockImport;
+use cumulus_client_consensus_aura::collators::slot_based::{
+    self as aura, Params as AuraParams, SlotBasedBlockImport, SlotBasedBlockImportHandle,
+};
+use cumulus_client_consensus_common::ParachainBlockImport as TParachainBlockImport;
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use cumulus_client_service::{
     prepare_node_config, start_relay_chain_tasks, BuildNetworkParams, DARecoveryProfile,
@@ -34,7 +36,7 @@ use cumulus_primitives_core::{
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node_with_rpc;
-use fc_consensus::FrontierBlockImport;
+use fc_consensus::FrontierBlockImport as TFrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_storage::StorageOverrideHandler;
 use futures::StreamExt;
@@ -82,6 +84,15 @@ pub type ParachainExecutor = WasmExecutor<HostFunctions>;
 type FullClient =
     TFullClient<Block, crate::parachain::fake_runtime_api::RuntimeApi, ParachainExecutor>;
 
+/// Frontier block import, wrapping the inner client.
+type FrontierBlockImportType = TFrontierBlockImport<Block, Arc<FullClient>, FullClient>;
+
+/// Slot-based block import sitting on top of Frontier.
+type SlotBasedImport = SlotBasedBlockImport<Block, FrontierBlockImportType, FullClient>;
+
+/// The full parachain block-import.
+type ParachainBlockImport = TParachainBlockImport<Block, SlotBasedImport, TFullBackend<Block>>;
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -97,11 +108,8 @@ pub fn new_partial(
         sc_consensus::DefaultImportQueue<Block>,
         sc_transaction_pool::TransactionPoolHandle<Block, FullClient>,
         (
-            ParachainBlockImport<
-                Block,
-                FrontierBlockImport<Block, Arc<FullClient>, FullClient>,
-                TFullBackend<Block>,
-            >,
+            ParachainBlockImport,
+            SlotBasedBlockImportHandle<Block>,
             Option<Telemetry>,
             Option<TelemetryWorkerHandle>,
             Arc<fc_db::Backend<Block, FullClient>>,
@@ -167,10 +175,12 @@ pub fn new_partial(
         config,
         evm_tracing_config,
     )?);
-    let frontier_block_import = FrontierBlockImport::new(client.clone(), client.clone());
 
-    let parachain_block_import: ParachainBlockImport<_, _, _> =
-        ParachainBlockImport::new(frontier_block_import, backend.clone());
+    let frontier_block_import = TFrontierBlockImport::new(client.clone(), client.clone());
+    let (slot_based_block_import, slot_based_import_handle) =
+        SlotBasedBlockImport::new(frontier_block_import, client.clone());
+    let parachain_block_import: ParachainBlockImport =
+        ParachainBlockImport::new(slot_based_block_import, backend.clone());
 
     let import_queue = build_import_queue(
         client.clone(),
@@ -190,6 +200,7 @@ pub fn new_partial(
         select_chain: (),
         other: (
             parachain_block_import,
+            slot_based_import_handle,
             telemetry,
             telemetry_worker_handle,
             frontier_backend,
@@ -278,7 +289,14 @@ where
         select_chain: _,
         import_queue,
         transaction_pool,
-        other: (parachain_block_import, mut telemetry, telemetry_worker_handle, frontier_backend),
+        other:
+            (
+                parachain_block_import,
+                block_import_handle,
+                mut telemetry,
+                telemetry_worker_handle,
+                frontier_backend,
+            ),
     } = new_partial(&parachain_config, &additional_config.evm_tracing_config)?;
 
     let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -540,6 +558,7 @@ where
             client.clone(),
             backend,
             parachain_block_import,
+            block_import_handle,
             prometheus_registry.as_ref(),
             telemetry.map(|t| t.handle()),
             &mut task_manager,
@@ -560,11 +579,7 @@ where
 /// Starts with relay-chain verifier until aura becomes available.
 pub fn build_import_queue(
     client: Arc<FullClient>,
-    block_import: ParachainBlockImport<
-        Block,
-        FrontierBlockImport<Block, Arc<FullClient>, FullClient>,
-        TFullBackend<Block>,
-    >,
+    block_import: ParachainBlockImport,
     config: &Configuration,
     telemetry_handle: Option<TelemetryHandle>,
     task_manager: &TaskManager,
@@ -627,11 +642,8 @@ pub fn build_import_queue(
 fn start_aura_consensus(
     client: Arc<FullClient>,
     backend: Arc<TFullBackend<Block>>,
-    parachain_block_import: ParachainBlockImport<
-        Block,
-        FrontierBlockImport<Block, Arc<FullClient>, FullClient>,
-        TFullBackend<Block>,
-    >,
+    block_import: ParachainBlockImport,
+    block_import_handle: SlotBasedBlockImportHandle<Block>,
     prometheus_registry: Option<&Registry>,
     telemetry: Option<TelemetryHandle>,
     task_manager: &TaskManager,
@@ -656,10 +668,6 @@ fn start_aura_consensus(
         additional_config.proposer_soft_deadline_percent,
     ));
 
-    let overseer_handle = relay_chain_interface
-        .overseer_handle()
-        .map_err(|e| sc_service::Error::Application(Box::new(e)))?;
-
     let announce_block = {
         let sync_service = sync_oracle.clone();
         Arc::new(move |hash, data| sync_service.announce_block(hash, data))
@@ -674,7 +682,7 @@ fn start_aura_consensus(
 
     let params = AuraParams {
         create_inherent_data_providers: move |_, ()| async move { Ok(()) },
-        block_import: parachain_block_import.clone(),
+        block_import,
         para_client: client.clone(),
         para_backend: backend,
         relay_client: relay_chain_interface.clone(),
@@ -690,20 +698,23 @@ fn start_aura_consensus(
         keystore,
         collator_key,
         para_id,
-        overseer_handle,
+        slot_offset: Duration::from_secs(1),
         relay_chain_slot_duration: Duration::from_secs(6),
         proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
         collator_service,
         authoring_duration: Duration::from_millis(2000),
         reinitialize: false,
+        block_import_handle,
+        spawner: task_manager.spawn_handle(),
         // If necessary, AdditionalConfig CLI params could be extend to make it configurable.
         // However, it will be removed once https://github.com/paritytech/polkadot-sdk/issues/6020 is fixed.
         max_pov_percentage: None, // default is 85%
+        export_pov: None,
     };
 
     let fut = async move {
         wait_for_aura(client).await;
-        aura::run::<Block, AuraPair, _, _, _, _, _, _, _, _>(params).await
+        aura::run::<Block, AuraPair, _, _, _, _, _, _, _, _, _>(params);
     };
 
     task_manager

@@ -73,6 +73,18 @@ impl_runtime_apis! {
         }
     }
 
+    impl cumulus_primitives_core::RelayParentOffsetApi<Block> for Runtime {
+        fn relay_parent_offset() -> u32 {
+            unimplemented!()
+        }
+    }
+
+    impl cumulus_primitives_core::GetCoreSelectorApi<Block> for Runtime {
+        fn core_selector() -> (cumulus_primitives_core::CoreSelector, cumulus_primitives_core::ClaimQueueOffset) {
+            unimplemented!()
+        }
+    }
+
     impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
         fn slot_duration() -> sp_consensus_aura::SlotDuration {
             unimplemented!()
