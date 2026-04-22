@@ -718,7 +718,7 @@ fn start_aura_consensus(
     };
 
     task_manager
-        .spawn_essential_handle()
+        .spawn_handle()
         .spawn("aura", None, fut);
     Ok(())
 }
