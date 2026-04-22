@@ -717,9 +717,7 @@ fn start_aura_consensus(
         aura::run::<Block, AuraPair, _, _, _, _, _, _, _, _, _>(params);
     };
 
-    task_manager
-        .spawn_essential_handle()
-        .spawn("aura", None, fut);
+    task_manager.spawn_handle().spawn("aura", None, fut);
     Ok(())
 }
 
