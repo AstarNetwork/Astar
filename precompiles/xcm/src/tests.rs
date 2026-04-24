@@ -59,8 +59,8 @@ mod xcm_old_interface_test {
                         assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
                         amounts: vec![42000u64.into()].into(),
                         recipient_account_id: H256::repeat_byte(0xF1),
-                        is_relay: true,
-                        parachain_id: 0.into(),
+                        is_relay: false,
+                        parachain_id: 1000.into(),
                         fee_index: 2.into(),
                     },
                 )
@@ -138,8 +138,8 @@ mod xcm_old_interface_test {
                         assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
                         amounts: vec![42000u64.into()].into(),
                         recipient_account_id: H256::repeat_byte(0xF1),
-                        is_relay: true,
-                        parachain_id: 0.into(),
+                        is_relay: false,
+                        parachain_id: 1000.into(),
                         fee_index: 0.into(),
                     },
                 )
@@ -183,6 +183,29 @@ mod xcm_old_interface_test {
     }
 
     #[test]
+    fn assets_withdraw_dot_to_relay_reverts() {
+        ExtBuilder.build().execute_with(|| {
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    PrecompileCall::assets_withdraw_native_v1 {
+                        assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(), // DOT
+                        amounts: vec![42000u64.into()].into(),
+                        recipient_account_id: H256::repeat_byte(0xF1),
+                        is_relay: true,
+                        parachain_id: 0.into(),
+                        fee_index: 0.into(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_reverts(|output| {
+                    output == b"DOT cannot be sent directly to the relay. Route via AssetHub (parachain 1000)."
+                });
+        });
+    }
+
+    #[test]
     fn remote_transact_works() {
         ExtBuilder.build().execute_with(|| {
             // SS58
@@ -222,8 +245,8 @@ mod xcm_old_interface_test {
                         assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
                         amounts: vec![U256::from(42000u64)].into(),
                         recipient_account_id: H256::repeat_byte(0xF1),
-                        is_relay: true,
-                        parachain_id: 0.into(),
+                        is_relay: false,
+                        parachain_id: 1000.into(),
                         fee_index: 0.into(),
                     },
                 )
@@ -239,8 +262,8 @@ mod xcm_old_interface_test {
                         assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
                         amounts: vec![U256::from(42000u64)].into(),
                         recipient_account_id: Address::from(H160::repeat_byte(0xDE)),
-                        is_relay: true,
-                        parachain_id: 0.into(),
+                        is_relay: false,
+                        parachain_id: 1000.into(),
                         fee_index: 0.into(),
                     },
                 )
@@ -252,14 +275,14 @@ mod xcm_old_interface_test {
                     location,
                     Location {
                         parents: 1,
-                        interior: Here
+                        interior: Parachain(1000).into()
                     }
                 );
 
                 let non_native_asset = Asset {
                     fun: Fungible(42000),
                     id: xcm::v5::AssetId::from(Location {
-                        parents: 0,
+                        parents: 1,
                         interior: Here,
                     }),
                 };

@@ -40,15 +40,13 @@ use sp_core::{ConstU32, DecodeWithMemTracking, H160};
 use sp_runtime::{traits::IdentityLookup, BuildStorage};
 use sp_std::cell::RefCell;
 
-use astar_primitives::xcm::AllowTopLevelPaidExecutionFrom;
+use astar_primitives::xcm::{AllowTopLevelPaidExecutionFrom, AbsoluteAndRelativeReserveProvider};
 use xcm::prelude::XcmVersion;
 use xcm_builder::{
     test_utils::TransactAsset, AllowKnownQueryResponses, AllowSubscriptionsFrom, FixedWeightBounds,
     SignedToAccountId32, TakeWeightCredit,
 };
 use xcm_executor::XcmExecutor;
-// orml imports
-use orml_traits::location::{RelativeReserveProvider, Reserve};
 use orml_xcm_support::DisabledParachainFee;
 
 pub type AccountId = TestAccount;
@@ -189,23 +187,6 @@ impl sp_runtime::traits::Convert<AccountId, Location> for AccountIdToLocation {
             id: account.into(),
         }
         .into()
-    }
-}
-
-/// `Asset` reserve location provider. It's based on `RelativeReserveProvider` and in
-/// addition will convert self absolute location to relative location.
-pub struct AbsoluteAndRelativeReserveProvider<AbsoluteLocation>(PhantomData<AbsoluteLocation>);
-impl<AbsoluteLocation: Get<Location>> Reserve
-    for AbsoluteAndRelativeReserveProvider<AbsoluteLocation>
-{
-    fn reserve(asset: &Asset) -> Option<Location> {
-        RelativeReserveProvider::reserve(asset).map(|reserve_location| {
-            if reserve_location == AbsoluteLocation::get() {
-                Location::here()
-            } else {
-                reserve_location
-            }
-        })
     }
 }
 

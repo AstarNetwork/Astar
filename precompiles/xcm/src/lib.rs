@@ -196,6 +196,8 @@ where
             .map(Into::into)
             .collect::<Vec<Asset>>();
 
+        Self::ensure_dot_transfer_policy(&assets, &destination)?;
+
         log::trace!(target: "xcm-precompile:assets_withdraw", "Processed arguments: assets {:?}, destination: {:?}", assets, destination);
 
         // Build call with origin.
@@ -363,6 +365,7 @@ where
             .map(Into::into)
             .collect::<Vec<Asset>>();
 
+        Self::ensure_dot_transfer_policy(&assets, &destination)?;
         log::trace!(target: "xcm-precompile:assets_reserve_transfer", "Processed arguments: assets {:?}, destination: {:?}", assets, destination);
 
         // Build call with origin.
@@ -802,6 +805,41 @@ where
         RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call, 0)?;
 
         Ok(true)
+    }
+
+    /// Enforces DOT transfer routing policy.
+    ///
+    /// Currently prevents direct DOT transfers to the relay chain,
+    /// requiring routing through AssetHub (parachain 1000).
+    fn ensure_dot_transfer_policy(
+        assets: &[Asset],
+        destination: &Location,
+    ) -> EvmResult<()> {
+        let dest_chain = {
+            let mut d = destination.clone();
+            // Remove the final interior junction (the beneficiary AccountId32 / AccountKey20)
+            // to get just the chain root, e.g. (1, Here) or (1, Parachain(1000)).
+            d.interior.take_last();
+            d
+        };
+
+        if dest_chain != Location::parent() {
+            return Ok(());
+        }
+
+        let deprecated_dot_location = Location::new(1, Junctions::Here);
+
+        for asset in assets {
+            let AssetId(location) = &asset.id;
+            if location == &deprecated_dot_location {
+                return Err(revert(
+                    "DOT cannot be sent directly to the relay. \
+                 Route via AssetHub (parachain 1000).",
+                ));
+            }
+        }
+
+        Ok(())
     }
 }
 
