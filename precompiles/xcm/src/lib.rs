@@ -811,10 +811,7 @@ where
     ///
     /// Currently prevents direct DOT transfers to the relay chain,
     /// requiring routing through AssetHub (parachain 1000).
-    fn ensure_dot_transfer_policy(
-        assets: &[Asset],
-        destination: &Location,
-    ) -> EvmResult<()> {
+    fn ensure_dot_transfer_policy(assets: &[Asset], destination: &Location) -> EvmResult<()> {
         let dest_chain = {
             let mut d = destination.clone();
             // Remove the final interior junction (the beneficiary AccountId32 / AccountKey20)

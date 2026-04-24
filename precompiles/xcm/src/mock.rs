@@ -40,14 +40,14 @@ use sp_core::{ConstU32, DecodeWithMemTracking, H160};
 use sp_runtime::{traits::IdentityLookup, BuildStorage};
 use sp_std::cell::RefCell;
 
-use astar_primitives::xcm::{AllowTopLevelPaidExecutionFrom, AbsoluteAndRelativeReserveProvider};
+use astar_primitives::xcm::{AbsoluteAndRelativeReserveProvider, AllowTopLevelPaidExecutionFrom};
+use orml_xcm_support::DisabledParachainFee;
 use xcm::prelude::XcmVersion;
 use xcm_builder::{
     test_utils::TransactAsset, AllowKnownQueryResponses, AllowSubscriptionsFrom, FixedWeightBounds,
     SignedToAccountId32, TakeWeightCredit,
 };
 use xcm_executor::XcmExecutor;
-use orml_xcm_support::DisabledParachainFee;
 
 pub type AccountId = TestAccount;
 pub type AssetId = u128;
