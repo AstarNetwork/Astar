@@ -165,14 +165,15 @@ pub const DAYS: BlockNumber = HOURS * 24;
 
 /// Maximum number of blocks simultaneously accepted by the Runtime, not yet included into the
 /// relay chain.
-pub const UNINCLUDED_SEGMENT_CAPACITY: u32 = 3;
+pub const UNINCLUDED_SEGMENT_CAPACITY: u32 =
+    (2 + RELAY_PARENT_OFFSET) * BLOCK_PROCESSING_VELOCITY + 1;
 /// How many parachain blocks are processed by the relay chain per parent. Limits the number of
 /// blocks authored per slot.
 pub const BLOCK_PROCESSING_VELOCITY: u32 = 1;
 /// Relay chain slot duration, in milliseconds.
 pub const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6000;
 /// Relay chain best block offset to build blocks on.
-const RELAY_PARENT_OFFSET: u32 = 0;
+const RELAY_PARENT_OFFSET: u32 = 1;
 
 impl AddressToAssetId<AssetId> for Runtime {
     fn address_to_asset_id(address: H160) -> Option<AssetId> {
@@ -554,6 +555,7 @@ parameter_types! {
     pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
     pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
     pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
+    pub const RelayParentOffset: u32 = RELAY_PARENT_OFFSET;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -570,7 +572,8 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ConsensusHook = ConsensusHook;
     type SelectCore = cumulus_pallet_parachain_system::DefaultCoreSelector<Runtime>;
     type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
-    type RelayParentOffset = ConstU32<RELAY_PARENT_OFFSET>;
+    // TODO: Set offset to RelayParentOffset once the majority of collators have migrated to slot_based
+    type RelayParentOffset = ConstU32<0>;
 }
 
 type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
@@ -1714,24 +1717,13 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-parameter_types! {
-    pub const PriceAggregatorPalletStr: &'static str = "PriceAggregator";
-    pub const OraclePalletStr: &'static str = "Oracle";
-    pub const OracleMembershipPalletStr: &'static str = "OracleMembership";
-}
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (
-    pallet_dapp_staking::migration::versioned_migrations::V11ToV12<Runtime>,
-    frame_support::migrations::RemovePallet<PriceAggregatorPalletStr, RocksDbWeight>,
-    frame_support::migrations::RemovePallet<OraclePalletStr, RocksDbWeight>,
-    frame_support::migrations::RemovePallet<OracleMembershipPalletStr, RocksDbWeight>,
-);
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
@@ -1980,7 +1972,7 @@ impl_runtime_apis! {
 
     impl cumulus_primitives_core::RelayParentOffsetApi<Block> for Runtime {
         fn relay_parent_offset() -> u32 {
-            RELAY_PARENT_OFFSET
+            RelayParentOffset::get()
         }
     }
 
