@@ -173,7 +173,7 @@ pub const BLOCK_PROCESSING_VELOCITY: u32 = 1;
 /// Relay chain slot duration, in milliseconds.
 pub const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6000;
 /// Relay chain best block offset to build blocks on.
-const RELAY_PARENT_OFFSET: u32 = 1;
+const RELAY_PARENT_OFFSET: u32 = 2;
 
 impl AddressToAssetId<AssetId> for Runtime {
     fn address_to_asset_id(address: H160) -> Option<AssetId> {
