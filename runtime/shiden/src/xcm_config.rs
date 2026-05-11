@@ -173,7 +173,6 @@ impl SafeCallFilter {
             | RuntimeCall::Vesting(..)
             | RuntimeCall::DappStaking(..)
             | RuntimeCall::Assets(..)
-            | RuntimeCall::PolkadotXcm(..)
             | RuntimeCall::Session(..)
             | RuntimeCall::Proxy(
                 pallet_proxy::Call::add_proxy { .. }
@@ -189,6 +188,10 @@ impl SafeCallFilter {
                 pallet_multisig::Call::approve_as_multi { .. }
                 | pallet_multisig::Call::cancel_as_multi { .. },
             ) => true,
+            RuntimeCall::PolkadotXcm(call) => !matches!(
+                call,
+                pallet_xcm::Call::send { .. } | pallet_xcm::Call::execute { .. }
+            ),
             _ => false,
         }
     }
@@ -314,7 +317,7 @@ impl pallet_xcm::Config for Runtime {
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 
     type RuntimeEvent = RuntimeEvent;
-    type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+    type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, ()>;
     type XcmRouter = XcmRouter;
     type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type XcmExecuteFilter = Nothing;
