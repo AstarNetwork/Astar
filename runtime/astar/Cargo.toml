@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "22.0.2"
+version = "22.0.3"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
