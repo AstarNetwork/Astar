@@ -171,227 +171,230 @@
 <a href=#171 id=171 data-nosnippet>171</a>            | RuntimeCall::Vesting(..)
 <a href=#172 id=172 data-nosnippet>172</a>            | RuntimeCall::DappStaking(..)
 <a href=#173 id=173 data-nosnippet>173</a>            | RuntimeCall::Assets(..)
-<a href=#174 id=174 data-nosnippet>174</a>            | RuntimeCall::PolkadotXcm(..)
-<a href=#175 id=175 data-nosnippet>175</a>            | RuntimeCall::Session(..)
-<a href=#176 id=176 data-nosnippet>176</a>            | RuntimeCall::Proxy(
-<a href=#177 id=177 data-nosnippet>177</a>                pallet_proxy::Call::add_proxy { .. }
-<a href=#178 id=178 data-nosnippet>178</a>                | pallet_proxy::Call::remove_proxy { .. }
-<a href=#179 id=179 data-nosnippet>179</a>                | pallet_proxy::Call::remove_proxies { .. }
-<a href=#180 id=180 data-nosnippet>180</a>                | pallet_proxy::Call::create_pure { .. }
-<a href=#181 id=181 data-nosnippet>181</a>                | pallet_proxy::Call::kill_pure { .. }
-<a href=#182 id=182 data-nosnippet>182</a>                | pallet_proxy::Call::announce { .. }
-<a href=#183 id=183 data-nosnippet>183</a>                | pallet_proxy::Call::remove_announcement { .. }
-<a href=#184 id=184 data-nosnippet>184</a>                | pallet_proxy::Call::reject_announcement { .. },
-<a href=#185 id=185 data-nosnippet>185</a>            )
-<a href=#186 id=186 data-nosnippet>186</a>            | RuntimeCall::Multisig(
-<a href=#187 id=187 data-nosnippet>187</a>                pallet_multisig::Call::approve_as_multi { .. }
-<a href=#188 id=188 data-nosnippet>188</a>                | pallet_multisig::Call::cancel_as_multi { .. },
-<a href=#189 id=189 data-nosnippet>189</a>            ) =&gt; <span class="bool-val">true</span>,
-<a href=#190 id=190 data-nosnippet>190</a>            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
-<a href=#191 id=191 data-nosnippet>191</a>        }
-<a href=#192 id=192 data-nosnippet>192</a>    }
-<a href=#193 id=193 data-nosnippet>193</a>    <span class="doccomment">/// Checks whether composite call is allowed to be executed via `Transact` XCM instruction.
-<a href=#194 id=194 data-nosnippet>194</a>    ///
-<a href=#195 id=195 data-nosnippet>195</a>    /// Each composite call's subcalls are checked against base call filter. No nesting of composite calls is allowed.
-<a href=#196 id=196 data-nosnippet>196</a>    </span><span class="kw">pub fn </span>allow_composite_call(call: <span class="kw-2">&amp;</span>RuntimeCall) -&gt; bool {
-<a href=#197 id=197 data-nosnippet>197</a>        <span class="kw">match </span>call {
-<a href=#198 id=198 data-nosnippet>198</a>            RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. }) =&gt; {
-<a href=#199 id=199 data-nosnippet>199</a>                <span class="self">Self</span>::allow_base_call(call)
-<a href=#200 id=200 data-nosnippet>200</a>            }
-<a href=#201 id=201 data-nosnippet>201</a>            RuntimeCall::Proxy(pallet_proxy::Call::proxy_announced { call, .. }) =&gt; {
+<a href=#174 id=174 data-nosnippet>174</a>            | RuntimeCall::Session(..)
+<a href=#175 id=175 data-nosnippet>175</a>            | RuntimeCall::Proxy(
+<a href=#176 id=176 data-nosnippet>176</a>                pallet_proxy::Call::add_proxy { .. }
+<a href=#177 id=177 data-nosnippet>177</a>                | pallet_proxy::Call::remove_proxy { .. }
+<a href=#178 id=178 data-nosnippet>178</a>                | pallet_proxy::Call::remove_proxies { .. }
+<a href=#179 id=179 data-nosnippet>179</a>                | pallet_proxy::Call::create_pure { .. }
+<a href=#180 id=180 data-nosnippet>180</a>                | pallet_proxy::Call::kill_pure { .. }
+<a href=#181 id=181 data-nosnippet>181</a>                | pallet_proxy::Call::announce { .. }
+<a href=#182 id=182 data-nosnippet>182</a>                | pallet_proxy::Call::remove_announcement { .. }
+<a href=#183 id=183 data-nosnippet>183</a>                | pallet_proxy::Call::reject_announcement { .. },
+<a href=#184 id=184 data-nosnippet>184</a>            )
+<a href=#185 id=185 data-nosnippet>185</a>            | RuntimeCall::Multisig(
+<a href=#186 id=186 data-nosnippet>186</a>                pallet_multisig::Call::approve_as_multi { .. }
+<a href=#187 id=187 data-nosnippet>187</a>                | pallet_multisig::Call::cancel_as_multi { .. },
+<a href=#188 id=188 data-nosnippet>188</a>            ) =&gt; <span class="bool-val">true</span>,
+<a href=#189 id=189 data-nosnippet>189</a>            RuntimeCall::PolkadotXcm(call) =&gt; !<span class="macro">matches!</span>(
+<a href=#190 id=190 data-nosnippet>190</a>                call,
+<a href=#191 id=191 data-nosnippet>191</a>                pallet_xcm::Call::send { .. } | pallet_xcm::Call::execute { .. }
+<a href=#192 id=192 data-nosnippet>192</a>            ),
+<a href=#193 id=193 data-nosnippet>193</a>            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+<a href=#194 id=194 data-nosnippet>194</a>        }
+<a href=#195 id=195 data-nosnippet>195</a>    }
+<a href=#196 id=196 data-nosnippet>196</a>    <span class="doccomment">/// Checks whether composite call is allowed to be executed via `Transact` XCM instruction.
+<a href=#197 id=197 data-nosnippet>197</a>    ///
+<a href=#198 id=198 data-nosnippet>198</a>    /// Each composite call's subcalls are checked against base call filter. No nesting of composite calls is allowed.
+<a href=#199 id=199 data-nosnippet>199</a>    </span><span class="kw">pub fn </span>allow_composite_call(call: <span class="kw-2">&amp;</span>RuntimeCall) -&gt; bool {
+<a href=#200 id=200 data-nosnippet>200</a>        <span class="kw">match </span>call {
+<a href=#201 id=201 data-nosnippet>201</a>            RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. }) =&gt; {
 <a href=#202 id=202 data-nosnippet>202</a>                <span class="self">Self</span>::allow_base_call(call)
 <a href=#203 id=203 data-nosnippet>203</a>            }
-<a href=#204 id=204 data-nosnippet>204</a>            RuntimeCall::Utility(pallet_utility::Call::batch { calls, .. }) =&gt; {
-<a href=#205 id=205 data-nosnippet>205</a>                calls.iter().all(|call| <span class="self">Self</span>::allow_base_call(call))
+<a href=#204 id=204 data-nosnippet>204</a>            RuntimeCall::Proxy(pallet_proxy::Call::proxy_announced { call, .. }) =&gt; {
+<a href=#205 id=205 data-nosnippet>205</a>                <span class="self">Self</span>::allow_base_call(call)
 <a href=#206 id=206 data-nosnippet>206</a>            }
-<a href=#207 id=207 data-nosnippet>207</a>            RuntimeCall::Utility(pallet_utility::Call::batch_all { calls, .. }) =&gt; {
+<a href=#207 id=207 data-nosnippet>207</a>            RuntimeCall::Utility(pallet_utility::Call::batch { calls, .. }) =&gt; {
 <a href=#208 id=208 data-nosnippet>208</a>                calls.iter().all(|call| <span class="self">Self</span>::allow_base_call(call))
 <a href=#209 id=209 data-nosnippet>209</a>            }
-<a href=#210 id=210 data-nosnippet>210</a>            RuntimeCall::Utility(pallet_utility::Call::as_derivative { call, .. }) =&gt; {
-<a href=#211 id=211 data-nosnippet>211</a>                <span class="self">Self</span>::allow_base_call(call)
+<a href=#210 id=210 data-nosnippet>210</a>            RuntimeCall::Utility(pallet_utility::Call::batch_all { calls, .. }) =&gt; {
+<a href=#211 id=211 data-nosnippet>211</a>                calls.iter().all(|call| <span class="self">Self</span>::allow_base_call(call))
 <a href=#212 id=212 data-nosnippet>212</a>            }
-<a href=#213 id=213 data-nosnippet>213</a>            RuntimeCall::Multisig(pallet_multisig::Call::as_multi_threshold_1 { call, .. }) =&gt; {
+<a href=#213 id=213 data-nosnippet>213</a>            RuntimeCall::Utility(pallet_utility::Call::as_derivative { call, .. }) =&gt; {
 <a href=#214 id=214 data-nosnippet>214</a>                <span class="self">Self</span>::allow_base_call(call)
 <a href=#215 id=215 data-nosnippet>215</a>            }
-<a href=#216 id=216 data-nosnippet>216</a>            RuntimeCall::Multisig(pallet_multisig::Call::as_multi { call, .. }) =&gt; {
+<a href=#216 id=216 data-nosnippet>216</a>            RuntimeCall::Multisig(pallet_multisig::Call::as_multi_threshold_1 { call, .. }) =&gt; {
 <a href=#217 id=217 data-nosnippet>217</a>                <span class="self">Self</span>::allow_base_call(call)
 <a href=#218 id=218 data-nosnippet>218</a>            }
-<a href=#219 id=219 data-nosnippet>219</a>            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
-<a href=#220 id=220 data-nosnippet>220</a>        }
-<a href=#221 id=221 data-nosnippet>221</a>    }
-<a href=#222 id=222 data-nosnippet>222</a>}
-<a href=#223 id=223 data-nosnippet>223</a>
-<a href=#224 id=224 data-nosnippet>224</a><span class="kw">impl </span>Contains&lt;RuntimeCall&gt; <span class="kw">for </span>SafeCallFilter {
-<a href=#225 id=225 data-nosnippet>225</a>    <span class="kw">fn </span>contains(call: <span class="kw-2">&amp;</span>RuntimeCall) -&gt; bool {
-<a href=#226 id=226 data-nosnippet>226</a>        <span class="self">Self</span>::allow_base_call(call) || <span class="self">Self</span>::allow_composite_call(call)
-<a href=#227 id=227 data-nosnippet>227</a>    }
-<a href=#228 id=228 data-nosnippet>228</a>}
-<a href=#229 id=229 data-nosnippet>229</a>
-<a href=#230 id=230 data-nosnippet>230</a><span class="kw">pub type </span>XcmBarrier = TrailingSetTopicAsId&lt;(
-<a href=#231 id=231 data-nosnippet>231</a>    TakeWeightCredit,
-<a href=#232 id=232 data-nosnippet>232</a>    <span class="comment">// Expected responses are OK.
-<a href=#233 id=233 data-nosnippet>233</a>    </span>AllowKnownQueryResponses&lt;PolkadotXcm&gt;,
-<a href=#234 id=234 data-nosnippet>234</a>    <span class="comment">// Allow XCMs with some computed origins to pass through.
-<a href=#235 id=235 data-nosnippet>235</a>    </span>WithComputedOrigin&lt;
-<a href=#236 id=236 data-nosnippet>236</a>        (
-<a href=#237 id=237 data-nosnippet>237</a>            <span class="comment">// If the message is one that immediately attempts to pay for execution, then allow it.
-<a href=#238 id=238 data-nosnippet>238</a>            </span>AllowTopLevelPaidExecutionFrom&lt;Everything&gt;,
-<a href=#239 id=239 data-nosnippet>239</a>            <span class="comment">// Subscriptions for version tracking are OK.
-<a href=#240 id=240 data-nosnippet>240</a>            </span>AllowSubscriptionsFrom&lt;ParentRelayOrSiblingParachains&gt;,
-<a href=#241 id=241 data-nosnippet>241</a>        ),
-<a href=#242 id=242 data-nosnippet>242</a>        UniversalLocation,
-<a href=#243 id=243 data-nosnippet>243</a>        ConstU32&lt;<span class="number">8</span>&gt;,
-<a href=#244 id=244 data-nosnippet>244</a>    &gt;,
-<a href=#245 id=245 data-nosnippet>245</a>    <span class="comment">// Parent and its plurality get free execution
-<a href=#246 id=246 data-nosnippet>246</a>    </span>AllowUnpaidExecutionFrom&lt;ParentOrParentsPlurality&gt;,
-<a href=#247 id=247 data-nosnippet>247</a>)&gt;;
-<a href=#248 id=248 data-nosnippet>248</a>
-<a href=#249 id=249 data-nosnippet>249</a><span class="comment">// Used to handle XCM fee deposit into treasury account
-<a href=#250 id=250 data-nosnippet>250</a></span><span class="kw">pub type </span>AstarXcmFungibleFeeHandler = XcmFungibleFeeHandler&lt;
-<a href=#251 id=251 data-nosnippet>251</a>    AccountId,
-<a href=#252 id=252 data-nosnippet>252</a>    ConvertedConcreteId&lt;AssetId, Balance, AstarAssetLocationIdConverter, JustTry&gt;,
-<a href=#253 id=253 data-nosnippet>253</a>    Assets,
-<a href=#254 id=254 data-nosnippet>254</a>    TreasuryAccountId,
-<a href=#255 id=255 data-nosnippet>255</a>&gt;;
-<a href=#256 id=256 data-nosnippet>256</a>
-<a href=#257 id=257 data-nosnippet>257</a><span class="kw">pub struct </span>XcmConfig;
-<a href=#258 id=258 data-nosnippet>258</a><span class="kw">impl </span>xcm_executor::Config <span class="kw">for </span>XcmConfig {
-<a href=#259 id=259 data-nosnippet>259</a>    <span class="kw">type </span>RuntimeCall = RuntimeCall;
-<a href=#260 id=260 data-nosnippet>260</a>    <span class="kw">type </span>XcmSender = XcmRouter;
-<a href=#261 id=261 data-nosnippet>261</a>    <span class="kw">type </span>AssetTransactor = AssetTransactors;
-<a href=#262 id=262 data-nosnippet>262</a>    <span class="kw">type </span>OriginConverter = XcmOriginToTransactDispatchOrigin;
-<a href=#263 id=263 data-nosnippet>263</a>    <span class="kw">type </span>IsReserve = ReserveAssetFilter;
-<a href=#264 id=264 data-nosnippet>264</a>    <span class="kw">type </span>IsTeleporter = ();
-<a href=#265 id=265 data-nosnippet>265</a>    <span class="kw">type </span>UniversalLocation = UniversalLocation;
-<a href=#266 id=266 data-nosnippet>266</a>    <span class="kw">type </span>Barrier = XcmBarrier;
-<a href=#267 id=267 data-nosnippet>267</a>    <span class="kw">type </span>Weigher = Weigher;
-<a href=#268 id=268 data-nosnippet>268</a>    <span class="kw">type </span>Trader = (
-<a href=#269 id=269 data-nosnippet>269</a>        UsingComponents&lt;XcmWeightToFee, AstarLocation, AccountId, Balances, DealWithFees&gt;,
-<a href=#270 id=270 data-nosnippet>270</a>        FixedRateOfForeignAsset&lt;XcAssetConfig, AstarXcmFungibleFeeHandler&gt;,
-<a href=#271 id=271 data-nosnippet>271</a>    );
-<a href=#272 id=272 data-nosnippet>272</a>    <span class="kw">type </span>ResponseHandler = PolkadotXcm;
-<a href=#273 id=273 data-nosnippet>273</a>    <span class="kw">type </span>AssetTrap = PolkadotXcm;
-<a href=#274 id=274 data-nosnippet>274</a>    <span class="kw">type </span>AssetClaims = PolkadotXcm;
-<a href=#275 id=275 data-nosnippet>275</a>    <span class="kw">type </span>SubscriptionService = PolkadotXcm;
-<a href=#276 id=276 data-nosnippet>276</a>
-<a href=#277 id=277 data-nosnippet>277</a>    <span class="kw">type </span>PalletInstancesInfo = AllPalletsWithSystem;
-<a href=#278 id=278 data-nosnippet>278</a>    <span class="kw">type </span>MaxAssetsIntoHolding = ConstU32&lt;<span class="number">64</span>&gt;;
-<a href=#279 id=279 data-nosnippet>279</a>    <span class="kw">type </span>AssetLocker = ();
-<a href=#280 id=280 data-nosnippet>280</a>    <span class="kw">type </span>AssetExchanger = ();
-<a href=#281 id=281 data-nosnippet>281</a>    <span class="kw">type </span>FeeManager = ();
-<a href=#282 id=282 data-nosnippet>282</a>    <span class="kw">type </span>MessageExporter = ();
-<a href=#283 id=283 data-nosnippet>283</a>    <span class="kw">type </span>UniversalAliases = Nothing;
-<a href=#284 id=284 data-nosnippet>284</a>    <span class="kw">type </span>CallDispatcher = WithOriginFilter&lt;SafeCallFilter&gt;;
-<a href=#285 id=285 data-nosnippet>285</a>    <span class="kw">type </span>SafeCallFilter = SafeCallFilter;
-<a href=#286 id=286 data-nosnippet>286</a>    <span class="kw">type </span>Aliasers = Nothing;
-<a href=#287 id=287 data-nosnippet>287</a>    <span class="kw">type </span>TransactionalProcessor = FrameTransactionalProcessor;
-<a href=#288 id=288 data-nosnippet>288</a>
-<a href=#289 id=289 data-nosnippet>289</a>    <span class="kw">type </span>HrmpNewChannelOpenRequestHandler = ();
-<a href=#290 id=290 data-nosnippet>290</a>    <span class="kw">type </span>HrmpChannelAcceptedHandler = ();
-<a href=#291 id=291 data-nosnippet>291</a>    <span class="kw">type </span>HrmpChannelClosingHandler = ();
-<a href=#292 id=292 data-nosnippet>292</a>    <span class="kw">type </span>XcmRecorder = PolkadotXcm;
-<a href=#293 id=293 data-nosnippet>293</a>    <span class="kw">type </span>XcmEventEmitter = PolkadotXcm;
-<a href=#294 id=294 data-nosnippet>294</a>}
-<a href=#295 id=295 data-nosnippet>295</a>
-<a href=#296 id=296 data-nosnippet>296</a><span class="doccomment">/// Local origins on this chain are allowed to dispatch XCM sends/executions.
-<a href=#297 id=297 data-nosnippet>297</a></span><span class="kw">pub type </span>LocalOriginToLocation = SignedToAccountId32&lt;RuntimeOrigin, AccountId, RelayNetwork&gt;;
+<a href=#219 id=219 data-nosnippet>219</a>            RuntimeCall::Multisig(pallet_multisig::Call::as_multi { call, .. }) =&gt; {
+<a href=#220 id=220 data-nosnippet>220</a>                <span class="self">Self</span>::allow_base_call(call)
+<a href=#221 id=221 data-nosnippet>221</a>            }
+<a href=#222 id=222 data-nosnippet>222</a>            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+<a href=#223 id=223 data-nosnippet>223</a>        }
+<a href=#224 id=224 data-nosnippet>224</a>    }
+<a href=#225 id=225 data-nosnippet>225</a>}
+<a href=#226 id=226 data-nosnippet>226</a>
+<a href=#227 id=227 data-nosnippet>227</a><span class="kw">impl </span>Contains&lt;RuntimeCall&gt; <span class="kw">for </span>SafeCallFilter {
+<a href=#228 id=228 data-nosnippet>228</a>    <span class="kw">fn </span>contains(call: <span class="kw-2">&amp;</span>RuntimeCall) -&gt; bool {
+<a href=#229 id=229 data-nosnippet>229</a>        <span class="self">Self</span>::allow_base_call(call) || <span class="self">Self</span>::allow_composite_call(call)
+<a href=#230 id=230 data-nosnippet>230</a>    }
+<a href=#231 id=231 data-nosnippet>231</a>}
+<a href=#232 id=232 data-nosnippet>232</a>
+<a href=#233 id=233 data-nosnippet>233</a><span class="kw">pub type </span>XcmBarrier = TrailingSetTopicAsId&lt;(
+<a href=#234 id=234 data-nosnippet>234</a>    TakeWeightCredit,
+<a href=#235 id=235 data-nosnippet>235</a>    <span class="comment">// Expected responses are OK.
+<a href=#236 id=236 data-nosnippet>236</a>    </span>AllowKnownQueryResponses&lt;PolkadotXcm&gt;,
+<a href=#237 id=237 data-nosnippet>237</a>    <span class="comment">// Allow XCMs with some computed origins to pass through.
+<a href=#238 id=238 data-nosnippet>238</a>    </span>WithComputedOrigin&lt;
+<a href=#239 id=239 data-nosnippet>239</a>        (
+<a href=#240 id=240 data-nosnippet>240</a>            <span class="comment">// If the message is one that immediately attempts to pay for execution, then allow it.
+<a href=#241 id=241 data-nosnippet>241</a>            </span>AllowTopLevelPaidExecutionFrom&lt;Everything&gt;,
+<a href=#242 id=242 data-nosnippet>242</a>            <span class="comment">// Subscriptions for version tracking are OK.
+<a href=#243 id=243 data-nosnippet>243</a>            </span>AllowSubscriptionsFrom&lt;ParentRelayOrSiblingParachains&gt;,
+<a href=#244 id=244 data-nosnippet>244</a>        ),
+<a href=#245 id=245 data-nosnippet>245</a>        UniversalLocation,
+<a href=#246 id=246 data-nosnippet>246</a>        ConstU32&lt;<span class="number">8</span>&gt;,
+<a href=#247 id=247 data-nosnippet>247</a>    &gt;,
+<a href=#248 id=248 data-nosnippet>248</a>    <span class="comment">// Parent and its plurality get free execution
+<a href=#249 id=249 data-nosnippet>249</a>    </span>AllowUnpaidExecutionFrom&lt;ParentOrParentsPlurality&gt;,
+<a href=#250 id=250 data-nosnippet>250</a>)&gt;;
+<a href=#251 id=251 data-nosnippet>251</a>
+<a href=#252 id=252 data-nosnippet>252</a><span class="comment">// Used to handle XCM fee deposit into treasury account
+<a href=#253 id=253 data-nosnippet>253</a></span><span class="kw">pub type </span>AstarXcmFungibleFeeHandler = XcmFungibleFeeHandler&lt;
+<a href=#254 id=254 data-nosnippet>254</a>    AccountId,
+<a href=#255 id=255 data-nosnippet>255</a>    ConvertedConcreteId&lt;AssetId, Balance, AstarAssetLocationIdConverter, JustTry&gt;,
+<a href=#256 id=256 data-nosnippet>256</a>    Assets,
+<a href=#257 id=257 data-nosnippet>257</a>    TreasuryAccountId,
+<a href=#258 id=258 data-nosnippet>258</a>&gt;;
+<a href=#259 id=259 data-nosnippet>259</a>
+<a href=#260 id=260 data-nosnippet>260</a><span class="kw">pub struct </span>XcmConfig;
+<a href=#261 id=261 data-nosnippet>261</a><span class="kw">impl </span>xcm_executor::Config <span class="kw">for </span>XcmConfig {
+<a href=#262 id=262 data-nosnippet>262</a>    <span class="kw">type </span>RuntimeCall = RuntimeCall;
+<a href=#263 id=263 data-nosnippet>263</a>    <span class="kw">type </span>XcmSender = XcmRouter;
+<a href=#264 id=264 data-nosnippet>264</a>    <span class="kw">type </span>AssetTransactor = AssetTransactors;
+<a href=#265 id=265 data-nosnippet>265</a>    <span class="kw">type </span>OriginConverter = XcmOriginToTransactDispatchOrigin;
+<a href=#266 id=266 data-nosnippet>266</a>    <span class="kw">type </span>IsReserve = ReserveAssetFilter;
+<a href=#267 id=267 data-nosnippet>267</a>    <span class="kw">type </span>IsTeleporter = ();
+<a href=#268 id=268 data-nosnippet>268</a>    <span class="kw">type </span>UniversalLocation = UniversalLocation;
+<a href=#269 id=269 data-nosnippet>269</a>    <span class="kw">type </span>Barrier = XcmBarrier;
+<a href=#270 id=270 data-nosnippet>270</a>    <span class="kw">type </span>Weigher = Weigher;
+<a href=#271 id=271 data-nosnippet>271</a>    <span class="kw">type </span>Trader = (
+<a href=#272 id=272 data-nosnippet>272</a>        UsingComponents&lt;XcmWeightToFee, AstarLocation, AccountId, Balances, DealWithFees&gt;,
+<a href=#273 id=273 data-nosnippet>273</a>        FixedRateOfForeignAsset&lt;XcAssetConfig, AstarXcmFungibleFeeHandler&gt;,
+<a href=#274 id=274 data-nosnippet>274</a>    );
+<a href=#275 id=275 data-nosnippet>275</a>    <span class="kw">type </span>ResponseHandler = PolkadotXcm;
+<a href=#276 id=276 data-nosnippet>276</a>    <span class="kw">type </span>AssetTrap = PolkadotXcm;
+<a href=#277 id=277 data-nosnippet>277</a>    <span class="kw">type </span>AssetClaims = PolkadotXcm;
+<a href=#278 id=278 data-nosnippet>278</a>    <span class="kw">type </span>SubscriptionService = PolkadotXcm;
+<a href=#279 id=279 data-nosnippet>279</a>
+<a href=#280 id=280 data-nosnippet>280</a>    <span class="kw">type </span>PalletInstancesInfo = AllPalletsWithSystem;
+<a href=#281 id=281 data-nosnippet>281</a>    <span class="kw">type </span>MaxAssetsIntoHolding = ConstU32&lt;<span class="number">64</span>&gt;;
+<a href=#282 id=282 data-nosnippet>282</a>    <span class="kw">type </span>AssetLocker = ();
+<a href=#283 id=283 data-nosnippet>283</a>    <span class="kw">type </span>AssetExchanger = ();
+<a href=#284 id=284 data-nosnippet>284</a>    <span class="kw">type </span>FeeManager = ();
+<a href=#285 id=285 data-nosnippet>285</a>    <span class="kw">type </span>MessageExporter = ();
+<a href=#286 id=286 data-nosnippet>286</a>    <span class="kw">type </span>UniversalAliases = Nothing;
+<a href=#287 id=287 data-nosnippet>287</a>    <span class="kw">type </span>CallDispatcher = WithOriginFilter&lt;SafeCallFilter&gt;;
+<a href=#288 id=288 data-nosnippet>288</a>    <span class="kw">type </span>SafeCallFilter = SafeCallFilter;
+<a href=#289 id=289 data-nosnippet>289</a>    <span class="kw">type </span>Aliasers = Nothing;
+<a href=#290 id=290 data-nosnippet>290</a>    <span class="kw">type </span>TransactionalProcessor = FrameTransactionalProcessor;
+<a href=#291 id=291 data-nosnippet>291</a>
+<a href=#292 id=292 data-nosnippet>292</a>    <span class="kw">type </span>HrmpNewChannelOpenRequestHandler = ();
+<a href=#293 id=293 data-nosnippet>293</a>    <span class="kw">type </span>HrmpChannelAcceptedHandler = ();
+<a href=#294 id=294 data-nosnippet>294</a>    <span class="kw">type </span>HrmpChannelClosingHandler = ();
+<a href=#295 id=295 data-nosnippet>295</a>    <span class="kw">type </span>XcmRecorder = PolkadotXcm;
+<a href=#296 id=296 data-nosnippet>296</a>    <span class="kw">type </span>XcmEventEmitter = PolkadotXcm;
+<a href=#297 id=297 data-nosnippet>297</a>}
 <a href=#298 id=298 data-nosnippet>298</a>
-<a href=#299 id=299 data-nosnippet>299</a><span class="doccomment">/// The means for routing XCM messages which are not for local execution into the right message
-<a href=#300 id=300 data-nosnippet>300</a>/// queues.
-<a href=#301 id=301 data-nosnippet>301</a></span><span class="kw">pub type </span>XcmRouter = (
-<a href=#302 id=302 data-nosnippet>302</a>    <span class="comment">// Two routers - use UMP to communicate with the relay chain:
-<a href=#303 id=303 data-nosnippet>303</a>    </span>cumulus_primitives_utility::ParentAsUmp&lt;ParachainSystem, PolkadotXcm, ()&gt;,
-<a href=#304 id=304 data-nosnippet>304</a>    <span class="comment">// ..and XCMP to communicate with the sibling chains.
-<a href=#305 id=305 data-nosnippet>305</a>    </span>XcmpQueue,
-<a href=#306 id=306 data-nosnippet>306</a>);
-<a href=#307 id=307 data-nosnippet>307</a>
-<a href=#308 id=308 data-nosnippet>308</a><span class="kw">pub type </span>Weigher =
-<a href=#309 id=309 data-nosnippet>309</a>    WeightInfoBounds&lt;weights::xcm::XcmWeight&lt;Runtime, RuntimeCall&gt;, RuntimeCall, MaxInstructions&gt;;
+<a href=#299 id=299 data-nosnippet>299</a><span class="doccomment">/// Local origins on this chain are allowed to dispatch XCM sends/executions.
+<a href=#300 id=300 data-nosnippet>300</a></span><span class="kw">pub type </span>LocalOriginToLocation = SignedToAccountId32&lt;RuntimeOrigin, AccountId, RelayNetwork&gt;;
+<a href=#301 id=301 data-nosnippet>301</a>
+<a href=#302 id=302 data-nosnippet>302</a><span class="doccomment">/// The means for routing XCM messages which are not for local execution into the right message
+<a href=#303 id=303 data-nosnippet>303</a>/// queues.
+<a href=#304 id=304 data-nosnippet>304</a></span><span class="kw">pub type </span>XcmRouter = (
+<a href=#305 id=305 data-nosnippet>305</a>    <span class="comment">// Two routers - use UMP to communicate with the relay chain:
+<a href=#306 id=306 data-nosnippet>306</a>    </span>cumulus_primitives_utility::ParentAsUmp&lt;ParachainSystem, PolkadotXcm, ()&gt;,
+<a href=#307 id=307 data-nosnippet>307</a>    <span class="comment">// ..and XCMP to communicate with the sibling chains.
+<a href=#308 id=308 data-nosnippet>308</a>    </span>XcmpQueue,
+<a href=#309 id=309 data-nosnippet>309</a>);
 <a href=#310 id=310 data-nosnippet>310</a>
-<a href=#311 id=311 data-nosnippet>311</a><span class="kw">impl </span>pallet_xcm::Config <span class="kw">for </span>Runtime {
-<a href=#312 id=312 data-nosnippet>312</a>    <span class="kw">const </span>VERSION_DISCOVERY_QUEUE_SIZE: u32 = <span class="number">100</span>;
+<a href=#311 id=311 data-nosnippet>311</a><span class="kw">pub type </span>Weigher =
+<a href=#312 id=312 data-nosnippet>312</a>    WeightInfoBounds&lt;weights::xcm::XcmWeight&lt;Runtime, RuntimeCall&gt;, RuntimeCall, MaxInstructions&gt;;
 <a href=#313 id=313 data-nosnippet>313</a>
-<a href=#314 id=314 data-nosnippet>314</a>    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-<a href=#315 id=315 data-nosnippet>315</a>    <span class="kw">type </span>SendXcmOrigin = EnsureXcmOrigin&lt;RuntimeOrigin, LocalOriginToLocation&gt;;
-<a href=#316 id=316 data-nosnippet>316</a>    <span class="kw">type </span>XcmRouter = XcmRouter;
-<a href=#317 id=317 data-nosnippet>317</a>    <span class="kw">type </span>ExecuteXcmOrigin = EnsureXcmOrigin&lt;RuntimeOrigin, LocalOriginToLocation&gt;;
-<a href=#318 id=318 data-nosnippet>318</a>    <span class="kw">type </span>XcmExecuteFilter = Nothing;
-<a href=#319 id=319 data-nosnippet>319</a>    <span class="kw">type </span>XcmExecutor = XcmExecutor&lt;XcmConfig&gt;;
-<a href=#320 id=320 data-nosnippet>320</a>    <span class="kw">type </span>XcmTeleportFilter = Nothing;
-<a href=#321 id=321 data-nosnippet>321</a>    <span class="kw">type </span>XcmReserveTransferFilter = Everything;
-<a href=#322 id=322 data-nosnippet>322</a>    <span class="kw">type </span>Weigher = Weigher;
-<a href=#323 id=323 data-nosnippet>323</a>    <span class="kw">type </span>UniversalLocation = UniversalLocation;
-<a href=#324 id=324 data-nosnippet>324</a>    <span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
-<a href=#325 id=325 data-nosnippet>325</a>    <span class="kw">type </span>RuntimeCall = RuntimeCall;
-<a href=#326 id=326 data-nosnippet>326</a>    <span class="kw">type </span>AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion; <span class="comment">// TODO:OR should we keep this at 2?
-<a href=#327 id=327 data-nosnippet>327</a>
-<a href=#328 id=328 data-nosnippet>328</a>    </span><span class="kw">type </span>Currency = Balances;
-<a href=#329 id=329 data-nosnippet>329</a>    <span class="kw">type </span>CurrencyMatcher = ();
-<a href=#330 id=330 data-nosnippet>330</a>    <span class="kw">type </span>TrustedLockers = ();
-<a href=#331 id=331 data-nosnippet>331</a>    <span class="kw">type </span>SovereignAccountOf = LocationToAccountId;
-<a href=#332 id=332 data-nosnippet>332</a>    <span class="kw">type </span>MaxLockers = ConstU32&lt;<span class="number">0</span>&gt;;
-<a href=#333 id=333 data-nosnippet>333</a>    <span class="kw">type </span>WeightInfo = weights::pallet_xcm::SubstrateWeight&lt;Runtime&gt;;
-<a href=#334 id=334 data-nosnippet>334</a>    <span class="kw">type </span>MaxRemoteLockConsumers = ConstU32&lt;<span class="number">0</span>&gt;;
-<a href=#335 id=335 data-nosnippet>335</a>    <span class="kw">type </span>RemoteLockConsumerIdentifier = ();
-<a href=#336 id=336 data-nosnippet>336</a>    <span class="kw">type </span>AdminOrigin = EnsureRoot&lt;AccountId&gt;;
-<a href=#337 id=337 data-nosnippet>337</a>    <span class="kw">type </span>AuthorizedAliasConsideration = Disabled;
-<a href=#338 id=338 data-nosnippet>338</a>}
-<a href=#339 id=339 data-nosnippet>339</a>
-<a href=#340 id=340 data-nosnippet>340</a><span class="kw">impl </span>cumulus_pallet_xcm::Config <span class="kw">for </span>Runtime {
-<a href=#341 id=341 data-nosnippet>341</a>    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-<a href=#342 id=342 data-nosnippet>342</a>    <span class="kw">type </span>XcmExecutor = XcmExecutor&lt;XcmConfig&gt;;
-<a href=#343 id=343 data-nosnippet>343</a>}
-<a href=#344 id=344 data-nosnippet>344</a>
-<a href=#345 id=345 data-nosnippet>345</a><span class="kw">impl </span>cumulus_pallet_xcmp_queue::Config <span class="kw">for </span>Runtime {
-<a href=#346 id=346 data-nosnippet>346</a>    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-<a href=#347 id=347 data-nosnippet>347</a>    <span class="kw">type </span>ChannelInfo = ParachainSystem;
-<a href=#348 id=348 data-nosnippet>348</a>    <span class="kw">type </span>VersionWrapper = PolkadotXcm;
-<a href=#349 id=349 data-nosnippet>349</a>    <span class="kw">type </span>XcmpQueue = TransformOrigin&lt;MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling&gt;;
-<a href=#350 id=350 data-nosnippet>350</a>    <span class="kw">type </span>MaxInboundSuspended = ConstU32&lt;<span class="number">1_000</span>&gt;;
-<a href=#351 id=351 data-nosnippet>351</a>    <span class="kw">type </span>MaxActiveOutboundChannels = ConstU32&lt;<span class="number">128</span>&gt;;
-<a href=#352 id=352 data-nosnippet>352</a>    <span class="kw">type </span>MaxPageSize = ConstU32&lt;{ <span class="number">128 </span>* <span class="number">1024 </span>}&gt;;
-<a href=#353 id=353 data-nosnippet>353</a>    <span class="kw">type </span>ControllerOrigin = EnsureRoot&lt;AccountId&gt;;
-<a href=#354 id=354 data-nosnippet>354</a>    <span class="kw">type </span>ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-<a href=#355 id=355 data-nosnippet>355</a>    <span class="kw">type </span>PriceForSiblingDelivery = NoPriceForMessageDelivery&lt;ParaId&gt;;
-<a href=#356 id=356 data-nosnippet>356</a>    <span class="kw">type </span>WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight&lt;Runtime&gt;;
-<a href=#357 id=357 data-nosnippet>357</a>}
-<a href=#358 id=358 data-nosnippet>358</a>
-<a href=#359 id=359 data-nosnippet>359</a><span class="macro">parameter_types!</span> {
-<a href=#360 id=360 data-nosnippet>360</a>    <span class="doccomment">/// The absolute location in perspective of the whole network.
-<a href=#361 id=361 data-nosnippet>361</a>    </span><span class="kw">pub </span>AstarLocationAbsolute: Location = Location {
-<a href=#362 id=362 data-nosnippet>362</a>        parents: <span class="number">1</span>,
-<a href=#363 id=363 data-nosnippet>363</a>        interior: Parachain(ParachainInfo::parachain_id().into()).into()
-<a href=#364 id=364 data-nosnippet>364</a>
-<a href=#365 id=365 data-nosnippet>365</a>    };
-<a href=#366 id=366 data-nosnippet>366</a>    <span class="doccomment">/// Max asset types for one cross-chain transfer. `2` covers all current use cases.
-<a href=#367 id=367 data-nosnippet>367</a>    /// Can be updated with extra test cases in the future if needed.
-<a href=#368 id=368 data-nosnippet>368</a>    </span><span class="kw">pub const </span>MaxAssetsForTransfer: usize = <span class="number">2</span>;
-<a href=#369 id=369 data-nosnippet>369</a>}
-<a href=#370 id=370 data-nosnippet>370</a>
-<a href=#371 id=371 data-nosnippet>371</a><span class="doccomment">/// Convert `AssetId` to optional `Location`. The impl is a wrapper
-<a href=#372 id=372 data-nosnippet>372</a>/// on `ShidenAssetLocationIdConverter`.
-<a href=#373 id=373 data-nosnippet>373</a></span><span class="kw">pub struct </span>AssetIdConvert;
-<a href=#374 id=374 data-nosnippet>374</a><span class="kw">impl </span>Convert&lt;AssetId, <span class="prelude-ty">Option</span>&lt;Location&gt;&gt; <span class="kw">for </span>AssetIdConvert {
-<a href=#375 id=375 data-nosnippet>375</a>    <span class="kw">fn </span>convert(asset_id: AssetId) -&gt; <span class="prelude-ty">Option</span>&lt;Location&gt; {
-<a href=#376 id=376 data-nosnippet>376</a>        AstarAssetLocationIdConverter::convert_back(<span class="kw-2">&amp;</span>asset_id)
-<a href=#377 id=377 data-nosnippet>377</a>    }
-<a href=#378 id=378 data-nosnippet>378</a>}
-<a href=#379 id=379 data-nosnippet>379</a>
-<a href=#380 id=380 data-nosnippet>380</a><span class="kw">impl </span>orml_xtokens::Config <span class="kw">for </span>Runtime {
-<a href=#381 id=381 data-nosnippet>381</a>    <span class="kw">type </span>Balance = Balance;
-<a href=#382 id=382 data-nosnippet>382</a>    <span class="kw">type </span>CurrencyId = AssetId;
-<a href=#383 id=383 data-nosnippet>383</a>    <span class="kw">type </span>CurrencyIdConvert = AssetIdConvert;
-<a href=#384 id=384 data-nosnippet>384</a>    <span class="kw">type </span>AccountIdToLocation = AccountIdToMultiLocation;
-<a href=#385 id=385 data-nosnippet>385</a>    <span class="kw">type </span>SelfLocation = AstarLocation;
-<a href=#386 id=386 data-nosnippet>386</a>    <span class="kw">type </span>XcmExecutor = XcmExecutor&lt;XcmConfig&gt;;
-<a href=#387 id=387 data-nosnippet>387</a>    <span class="kw">type </span>Weigher = Weigher;
-<a href=#388 id=388 data-nosnippet>388</a>    <span class="kw">type </span>BaseXcmWeight = UnitWeightCost;
-<a href=#389 id=389 data-nosnippet>389</a>    <span class="kw">type </span>UniversalLocation = UniversalLocation;
-<a href=#390 id=390 data-nosnippet>390</a>    <span class="kw">type </span>MaxAssetsForTransfer = MaxAssetsForTransfer;
-<a href=#391 id=391 data-nosnippet>391</a>    <span class="comment">// Default impl. Refer to `orml-xtokens` docs for more details.
-<a href=#392 id=392 data-nosnippet>392</a>    </span><span class="kw">type </span>MinXcmFee = DisabledParachainFee;
-<a href=#393 id=393 data-nosnippet>393</a>    <span class="kw">type </span>LocationsFilter = Everything;
-<a href=#394 id=394 data-nosnippet>394</a>    <span class="kw">type </span>ReserveProvider = AbsoluteAndRelativeReserveProvider&lt;AstarLocationAbsolute&gt;;
-<a href=#395 id=395 data-nosnippet>395</a>    <span class="kw">type </span>RateLimiter = ();
-<a href=#396 id=396 data-nosnippet>396</a>    <span class="kw">type </span>RateLimiterId = ();
-<a href=#397 id=397 data-nosnippet>397</a>}</code></pre></div></section></main></body></html>
+<a href=#314 id=314 data-nosnippet>314</a><span class="kw">impl </span>pallet_xcm::Config <span class="kw">for </span>Runtime {
+<a href=#315 id=315 data-nosnippet>315</a>    <span class="kw">const </span>VERSION_DISCOVERY_QUEUE_SIZE: u32 = <span class="number">100</span>;
+<a href=#316 id=316 data-nosnippet>316</a>
+<a href=#317 id=317 data-nosnippet>317</a>    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+<a href=#318 id=318 data-nosnippet>318</a>    <span class="kw">type </span>SendXcmOrigin = EnsureXcmOrigin&lt;RuntimeOrigin, ()&gt;;
+<a href=#319 id=319 data-nosnippet>319</a>    <span class="kw">type </span>XcmRouter = XcmRouter;
+<a href=#320 id=320 data-nosnippet>320</a>    <span class="kw">type </span>ExecuteXcmOrigin = EnsureXcmOrigin&lt;RuntimeOrigin, LocalOriginToLocation&gt;;
+<a href=#321 id=321 data-nosnippet>321</a>    <span class="kw">type </span>XcmExecuteFilter = Nothing;
+<a href=#322 id=322 data-nosnippet>322</a>    <span class="kw">type </span>XcmExecutor = XcmExecutor&lt;XcmConfig&gt;;
+<a href=#323 id=323 data-nosnippet>323</a>    <span class="kw">type </span>XcmTeleportFilter = Nothing;
+<a href=#324 id=324 data-nosnippet>324</a>    <span class="kw">type </span>XcmReserveTransferFilter = Everything;
+<a href=#325 id=325 data-nosnippet>325</a>    <span class="kw">type </span>Weigher = Weigher;
+<a href=#326 id=326 data-nosnippet>326</a>    <span class="kw">type </span>UniversalLocation = UniversalLocation;
+<a href=#327 id=327 data-nosnippet>327</a>    <span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
+<a href=#328 id=328 data-nosnippet>328</a>    <span class="kw">type </span>RuntimeCall = RuntimeCall;
+<a href=#329 id=329 data-nosnippet>329</a>    <span class="kw">type </span>AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion; <span class="comment">// TODO:OR should we keep this at 2?
+<a href=#330 id=330 data-nosnippet>330</a>
+<a href=#331 id=331 data-nosnippet>331</a>    </span><span class="kw">type </span>Currency = Balances;
+<a href=#332 id=332 data-nosnippet>332</a>    <span class="kw">type </span>CurrencyMatcher = ();
+<a href=#333 id=333 data-nosnippet>333</a>    <span class="kw">type </span>TrustedLockers = ();
+<a href=#334 id=334 data-nosnippet>334</a>    <span class="kw">type </span>SovereignAccountOf = LocationToAccountId;
+<a href=#335 id=335 data-nosnippet>335</a>    <span class="kw">type </span>MaxLockers = ConstU32&lt;<span class="number">0</span>&gt;;
+<a href=#336 id=336 data-nosnippet>336</a>    <span class="kw">type </span>WeightInfo = weights::pallet_xcm::SubstrateWeight&lt;Runtime&gt;;
+<a href=#337 id=337 data-nosnippet>337</a>    <span class="kw">type </span>MaxRemoteLockConsumers = ConstU32&lt;<span class="number">0</span>&gt;;
+<a href=#338 id=338 data-nosnippet>338</a>    <span class="kw">type </span>RemoteLockConsumerIdentifier = ();
+<a href=#339 id=339 data-nosnippet>339</a>    <span class="kw">type </span>AdminOrigin = EnsureRoot&lt;AccountId&gt;;
+<a href=#340 id=340 data-nosnippet>340</a>    <span class="kw">type </span>AuthorizedAliasConsideration = Disabled;
+<a href=#341 id=341 data-nosnippet>341</a>}
+<a href=#342 id=342 data-nosnippet>342</a>
+<a href=#343 id=343 data-nosnippet>343</a><span class="kw">impl </span>cumulus_pallet_xcm::Config <span class="kw">for </span>Runtime {
+<a href=#344 id=344 data-nosnippet>344</a>    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+<a href=#345 id=345 data-nosnippet>345</a>    <span class="kw">type </span>XcmExecutor = XcmExecutor&lt;XcmConfig&gt;;
+<a href=#346 id=346 data-nosnippet>346</a>}
+<a href=#347 id=347 data-nosnippet>347</a>
+<a href=#348 id=348 data-nosnippet>348</a><span class="kw">impl </span>cumulus_pallet_xcmp_queue::Config <span class="kw">for </span>Runtime {
+<a href=#349 id=349 data-nosnippet>349</a>    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+<a href=#350 id=350 data-nosnippet>350</a>    <span class="kw">type </span>ChannelInfo = ParachainSystem;
+<a href=#351 id=351 data-nosnippet>351</a>    <span class="kw">type </span>VersionWrapper = PolkadotXcm;
+<a href=#352 id=352 data-nosnippet>352</a>    <span class="kw">type </span>XcmpQueue = TransformOrigin&lt;MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling&gt;;
+<a href=#353 id=353 data-nosnippet>353</a>    <span class="kw">type </span>MaxInboundSuspended = ConstU32&lt;<span class="number">1_000</span>&gt;;
+<a href=#354 id=354 data-nosnippet>354</a>    <span class="kw">type </span>MaxActiveOutboundChannels = ConstU32&lt;<span class="number">128</span>&gt;;
+<a href=#355 id=355 data-nosnippet>355</a>    <span class="kw">type </span>MaxPageSize = ConstU32&lt;{ <span class="number">128 </span>* <span class="number">1024 </span>}&gt;;
+<a href=#356 id=356 data-nosnippet>356</a>    <span class="kw">type </span>ControllerOrigin = EnsureRoot&lt;AccountId&gt;;
+<a href=#357 id=357 data-nosnippet>357</a>    <span class="kw">type </span>ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
+<a href=#358 id=358 data-nosnippet>358</a>    <span class="kw">type </span>PriceForSiblingDelivery = NoPriceForMessageDelivery&lt;ParaId&gt;;
+<a href=#359 id=359 data-nosnippet>359</a>    <span class="kw">type </span>WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight&lt;Runtime&gt;;
+<a href=#360 id=360 data-nosnippet>360</a>}
+<a href=#361 id=361 data-nosnippet>361</a>
+<a href=#362 id=362 data-nosnippet>362</a><span class="macro">parameter_types!</span> {
+<a href=#363 id=363 data-nosnippet>363</a>    <span class="doccomment">/// The absolute location in perspective of the whole network.
+<a href=#364 id=364 data-nosnippet>364</a>    </span><span class="kw">pub </span>AstarLocationAbsolute: Location = Location {
+<a href=#365 id=365 data-nosnippet>365</a>        parents: <span class="number">1</span>,
+<a href=#366 id=366 data-nosnippet>366</a>        interior: Parachain(ParachainInfo::parachain_id().into()).into()
+<a href=#367 id=367 data-nosnippet>367</a>
+<a href=#368 id=368 data-nosnippet>368</a>    };
+<a href=#369 id=369 data-nosnippet>369</a>    <span class="doccomment">/// Max asset types for one cross-chain transfer. `2` covers all current use cases.
+<a href=#370 id=370 data-nosnippet>370</a>    /// Can be updated with extra test cases in the future if needed.
+<a href=#371 id=371 data-nosnippet>371</a>    </span><span class="kw">pub const </span>MaxAssetsForTransfer: usize = <span class="number">2</span>;
+<a href=#372 id=372 data-nosnippet>372</a>}
+<a href=#373 id=373 data-nosnippet>373</a>
+<a href=#374 id=374 data-nosnippet>374</a><span class="doccomment">/// Convert `AssetId` to optional `Location`. The impl is a wrapper
+<a href=#375 id=375 data-nosnippet>375</a>/// on `ShidenAssetLocationIdConverter`.
+<a href=#376 id=376 data-nosnippet>376</a></span><span class="kw">pub struct </span>AssetIdConvert;
+<a href=#377 id=377 data-nosnippet>377</a><span class="kw">impl </span>Convert&lt;AssetId, <span class="prelude-ty">Option</span>&lt;Location&gt;&gt; <span class="kw">for </span>AssetIdConvert {
+<a href=#378 id=378 data-nosnippet>378</a>    <span class="kw">fn </span>convert(asset_id: AssetId) -&gt; <span class="prelude-ty">Option</span>&lt;Location&gt; {
+<a href=#379 id=379 data-nosnippet>379</a>        AstarAssetLocationIdConverter::convert_back(<span class="kw-2">&amp;</span>asset_id)
+<a href=#380 id=380 data-nosnippet>380</a>    }
+<a href=#381 id=381 data-nosnippet>381</a>}
+<a href=#382 id=382 data-nosnippet>382</a>
+<a href=#383 id=383 data-nosnippet>383</a><span class="kw">impl </span>orml_xtokens::Config <span class="kw">for </span>Runtime {
+<a href=#384 id=384 data-nosnippet>384</a>    <span class="kw">type </span>Balance = Balance;
+<a href=#385 id=385 data-nosnippet>385</a>    <span class="kw">type </span>CurrencyId = AssetId;
+<a href=#386 id=386 data-nosnippet>386</a>    <span class="kw">type </span>CurrencyIdConvert = AssetIdConvert;
+<a href=#387 id=387 data-nosnippet>387</a>    <span class="kw">type </span>AccountIdToLocation = AccountIdToMultiLocation;
+<a href=#388 id=388 data-nosnippet>388</a>    <span class="kw">type </span>SelfLocation = AstarLocation;
+<a href=#389 id=389 data-nosnippet>389</a>    <span class="kw">type </span>XcmExecutor = XcmExecutor&lt;XcmConfig&gt;;
+<a href=#390 id=390 data-nosnippet>390</a>    <span class="kw">type </span>Weigher = Weigher;
+<a href=#391 id=391 data-nosnippet>391</a>    <span class="kw">type </span>BaseXcmWeight = UnitWeightCost;
+<a href=#392 id=392 data-nosnippet>392</a>    <span class="kw">type </span>UniversalLocation = UniversalLocation;
+<a href=#393 id=393 data-nosnippet>393</a>    <span class="kw">type </span>MaxAssetsForTransfer = MaxAssetsForTransfer;
+<a href=#394 id=394 data-nosnippet>394</a>    <span class="comment">// Default impl. Refer to `orml-xtokens` docs for more details.
+<a href=#395 id=395 data-nosnippet>395</a>    </span><span class="kw">type </span>MinXcmFee = DisabledParachainFee;
+<a href=#396 id=396 data-nosnippet>396</a>    <span class="kw">type </span>LocationsFilter = Everything;
+<a href=#397 id=397 data-nosnippet>397</a>    <span class="kw">type </span>ReserveProvider = AbsoluteAndRelativeReserveProvider&lt;AstarLocationAbsolute&gt;;
+<a href=#398 id=398 data-nosnippet>398</a>    <span class="kw">type </span>RateLimiter = ();
+<a href=#399 id=399 data-nosnippet>399</a>    <span class="kw">type </span>RateLimiterId = ();
+<a href=#400 id=400 data-nosnippet>400</a>}</code></pre></div></section></main></body></html>
