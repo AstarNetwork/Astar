@@ -19,9 +19,13 @@
 use crate::setup::*;
 
 use cumulus_primitives_core::Unlimited;
-use sp_runtime::traits::{BlakeTwo256, Hash, Zero};
+use sp_runtime::{
+    traits::{BlakeTwo256, Hash, Zero},
+    DispatchError,
+};
 use xcm::{
     v5::{
+        prelude::ClearOrigin,
         Asset as XcmAsset, AssetId as XcmAssetId, Fungibility,
         Junction::{self, *},
         Junctions::*,
@@ -342,4 +346,107 @@ fn trusted_api_is_teleport_is_ok() {
             Ok(false)
         );
     })
+}
+
+#[test]
+fn signed_origin_cannot_send_xcm_to_parent() {
+    new_test_ext().execute_with(|| {
+        let dest: Location = Parent.into();
+        let msg: Xcm<()> = Xcm(vec![ClearOrigin]);
+
+        // Signed origin: must be rejected with BadOrigin.
+        assert_noop!(
+            PolkadotXcm::send(
+                RuntimeOrigin::signed(ALICE.clone()),
+                Box::new(VersionedLocation::V5(dest.clone())),
+                Box::new(VersionedXcm::V5(msg.clone())),
+            ),
+            DispatchError::BadOrigin
+        );
+
+        // Root origin still allowed (governance / runtime-internal use).
+        assert_ok!(PolkadotXcm::force_xcm_version(
+            RuntimeOrigin::root(),
+            Box::new(Parent.into()),
+            xcm::v5::VERSION
+        ));
+        assert_ok!(PolkadotXcm::send(
+            RuntimeOrigin::root(),
+            Box::new(VersionedLocation::V5(dest)),
+            Box::new(VersionedXcm::V5(msg)),
+        ));
+    });
+}
+
+#[cfg(any(feature = "astar", feature = "shiden"))]
+#[test]
+fn xcm_transact_cannot_invoke_pallet_xcm_send_or_execute() {
+    use cumulus_primitives_core::{InstructionError, XcmError::Barrier};
+    use frame_support::traits::Contains;
+    use parity_scale_codec::Encode;
+    use xcm::v5::{
+        prelude::{OriginKind, Transact},
+        ExecuteXcm,
+    };
+    use xcm_config::SafeCallFilter;
+    use xcm_executor::{traits::WeightBounds, XcmExecutor};
+
+    new_test_ext().execute_with(|| {
+        // pallet_xcm::send
+        let inner_send = RuntimeCall::PolkadotXcm(pallet_xcm::Call::<Runtime>::send {
+            dest: Box::new(VersionedLocation::V5(Parent.into())),
+            message: Box::new(VersionedXcm::V5(Xcm(vec![ClearOrigin]))),
+        });
+        assert!(
+            !SafeCallFilter::contains(&inner_send),
+            "SafeCallFilter must reject nested PolkadotXcm::send"
+        );
+
+        // pallet_xcm::execute
+        let inner_execute = RuntimeCall::PolkadotXcm(pallet_xcm::Call::<Runtime>::execute {
+            message: Box::new(VersionedXcm::V5(Xcm::<RuntimeCall>(vec![ClearOrigin]))),
+            max_weight: Weight::from_parts(1_000_000_000, 64 * 1024),
+        });
+        assert!(
+            !SafeCallFilter::contains(&inner_execute),
+            "SafeCallFilter must reject nested PolkadotXcm::execute"
+        );
+
+        // sanity
+        let benign = RuntimeCall::System(frame_system::Call::<Runtime>::remark {
+            remark: vec![0u8; 8],
+        });
+        assert!(
+            SafeCallFilter::contains(&benign),
+            "SafeCallFilter must keep allowing benign calls"
+        );
+
+        // recursively pallet_xcm::send via `Transact` through the executor is blocked
+        let mut transact_xcm: Xcm<RuntimeCall> = Xcm(vec![Transact {
+            origin_kind: OriginKind::SovereignAccount,
+            fallback_max_weight: None,
+            call: inner_send.encode().into(),
+        }]);
+        let weight = <xcm_config::XcmConfig as xcm_executor::Config>::Weigher::weight(
+            &mut transact_xcm,
+            Weight::from_parts(1_000_000_000, 64 * 1024),
+        )
+        .expect("weigh");
+
+        let outcome = XcmExecutor::<xcm_config::XcmConfig>::prepare_and_execute(
+            Location::new(1, [Parachain(1000)]),
+            transact_xcm,
+            &mut Default::default(),
+            weight,
+            Weight::zero(),
+        );
+
+        assert_eq!(
+            outcome.ensure_complete(),
+            Err(InstructionError {
+                index: 0,
+                error: Barrier,
+            })
+        );
+    });
 }
