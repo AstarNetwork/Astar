@@ -206,7 +206,7 @@ jobs:
           echo "── Genesis keys in plain spec ──"
           jq '.genesis.runtimeGenesis | keys' astar-plain.json
 
-          python3 patch_spec.py \
+          python3 patch_astar_sudo_spec.py \
             astar-plain.json \
             "$SUDO_WASM" \
             astar-patched.json \
