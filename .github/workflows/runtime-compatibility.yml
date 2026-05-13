@@ -128,7 +128,7 @@ jobs:
       #   3. Generate a chain spec from a temporary collator built from that same
       #      source — this guarantees the genesis schema is always up-to-date and
       #      no manual field injection is required.
-      #   4. Patch ONLY the sudo key (via jq) and replace the runtime WASM.
+      #   4. Patch ONLY the sudo key and replace the runtime WASM.
       # ─────────────────────────────────────────────────────────────────────────
       - name: Fetch Astar on-chain specVersion
         id: fetch-spec-version
@@ -175,10 +175,6 @@ jobs:
           sudo apt-get install -y protobuf-compiler
           protoc --version
 
-      # Build both:
-      #   • astar-runtime  with astar-sudo  →  the WASM that goes into the test
-      #   • astar-collator (no extra flags)  →  used only to generate a spec whose
-      #     genesis schema matches this exact runtime version
       - name: Build astar-runtime (sudo feature)
         if: matrix.chain == 'astar'
         working-directory: runtime-src
