@@ -179,15 +179,11 @@ jobs:
       #   • astar-runtime  with astar-sudo  →  the WASM that goes into the test
       #   • astar-collator (no extra flags)  →  used only to generate a spec whose
       #     genesis schema matches this exact runtime version
-      - name: Build astar-runtime (sudo feature) and temporary collator
+      - name: Build astar-runtime (sudo feature)
         if: matrix.chain == 'astar'
         working-directory: runtime-src
         run: |
-          # Runtime WASM with sudo re-enabled
-          cargo build --release -p astar-runtime --features on-chain-release-build,astar-sudo
-
-          # Temporary collator — only needed for `build-spec`; not used in the test
-          cargo build --release -p astar-collator
+          cargo build --release -p astar-collator --features astar-sudo
 
       - name: Generate spec from matching runtime, patch sudo key and WASM
         if: matrix.chain == 'astar'
@@ -197,27 +193,30 @@ jobs:
           SUDO_WASM:     ${{ github.workspace }}/runtime-src/target/release/wbuild/astar-runtime/astar_runtime.compact.compressed.wasm
           ALICE:         "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
         run: |
-          # ── 1. Generate plain spec from the matching collator ─────────────────
-          # Because the collator was built from the same branch as the runtime,
-          # the genesis schema is guaranteed to include every pallet and field
-          # that the sudo-enabled runtime expects. No manual patching needed.
+          # 1. Generate plain spec
           "$TMP_COLLATOR" build-spec --chain astar-dev > astar-plain.json
 
-          echo "── Genesis keys in plain spec ──"
-          jq '.genesis.runtimeGenesis | keys' astar-plain.json
-
+          # 2. Patch sudo + WASM
           python3 patch_astar_sudo_spec.py \
             astar-plain.json \
             "$SUDO_WASM" \
             astar-patched.json \
             "$ALICE"
 
+          # 3. Convert patched spec -> raw spec
+          "$TMP_COLLATOR" build-spec \
+            --chain astar-patched.json \
+            --raw \
+            > astar-raw.json
+
+          echo "✅ Generated astar-raw.json"
+
       # ── Run the actual compatibility test ─────────────────────────────────────
       - name: Run compatibility test
         working-directory: ${{ env.ZOMBIENET_DIR }}
         run: |
           if [ "${{ matrix.chain }}" = "astar" ]; then
-            export CHAIN="./astar-patched.json"
+            export CHAIN="./astar-raw.json"
           else
             export CHAIN="${{ matrix.chain }}-dev"
           fi
