@@ -27,22 +27,22 @@ jobs:
 
           # Get latest 2 client tags (v*.*.* format)
           CLIENT_TAGS_ARRAY=($(echo "$RELEASES" | jq -r '[.[] | select(.tag_name | test("^v\\d+\\.\\d+\\.\\d+$")) | .tag_name] | .[0:2] | .[]'))
-          
+
           declare -a CLIENT_TAGS=()
           declare -a CLIENT_ASSET_URLS=()
-          
+
           for i in {0..1}; do
             CLIENT_TAG="${CLIENT_TAGS_ARRAY[i]}"
             ASSET_NAME="astar-collator-${CLIENT_TAG}-ubuntu-x86_64.tar.gz"
             CLIENT_ASSET_URL=$(curl -s "https://api.github.com/repos/AstarNetwork/Astar/releases/tags/${CLIENT_TAG}" | \
               jq -r --arg name "$ASSET_NAME" '.assets[] | select(.name == $name) | .browser_download_url')
-          
+
             CLIENT_TAGS[i]="$CLIENT_TAG"
             CLIENT_ASSET_URLS[i]="$CLIENT_ASSET_URL"
-          
+
             echo "Client $((i+1)): ${CLIENT_TAG} -> ${CLIENT_ASSET_URL}"
           done
-          
+
           echo "client_tags=${CLIENT_TAGS[*]}" >> $GITHUB_OUTPUT
           echo "client_asset_urls=${CLIENT_ASSET_URLS[*]}" >> $GITHUB_OUTPUT
 
@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        chain: [ "astar", "shiden", "shibuya" ]
+        chain: ["astar", "shiden", "shibuya"]
     env:
       ZOMBIENET_DIR: third-party/zombienet
       CLIENT_TAGS: ${{ needs.fetch-client-info.outputs.client_tags }}
@@ -88,23 +88,21 @@ jobs:
         run: |
           CLIENT_TAGS_ARRAY=($CLIENT_TAGS)
           CLIENT_URLS_ARRAY=($CLIENT_ASSET_URLS)
-          
+
           for i in {0..1}; do
             CLIENT_NUM=$((i + 1))
             CLIENT_TAG="${CLIENT_TAGS_ARRAY[i]}"
             CLIENT_URL="${CLIENT_URLS_ARRAY[i]}"
-          
+
             echo "Setting up client ${CLIENT_TAG}"
             curl -L -o "astar-collator-${CLIENT_NUM}.tar.gz" "${CLIENT_URL}"
             tar -xzf "astar-collator-${CLIENT_NUM}.tar.gz"
             mv astar-collator ${{ env.ZOMBIENET_DIR }}/astar-collator-${CLIENT_NUM}
             chmod +x ${{ env.ZOMBIENET_DIR }}/astar-collator-${CLIENT_NUM}
             rm "astar-collator-${CLIENT_NUM}.tar.gz"
-          
-            # Verification
+
             echo "Client ${CLIENT_NUM} version (${CLIENT_TAG}):"
             ${{ env.ZOMBIENET_DIR }}/astar-collator-${CLIENT_NUM} --version || echo "Version check failed"
-            echo ""
           done
 
       - name: Prepare runtime for upgrade test
@@ -115,7 +113,7 @@ jobs:
             mv "$RUNTIME_FILE" runtime.compact.compressed.wasm
             echo "✅ Renamed runtime: $(basename "$RUNTIME_FILE") → runtime.compact.compressed.wasm"
           else
-            echo "❌ No runtime file found matching pattern '${{ matrix.chain }}_runtime.compact.compressed.wasm'"
+            echo "❌ No runtime file matching '${{ matrix.chain }}_runtime.compact.compressed.wasm'"
             exit 1
           fi
 
@@ -123,11 +121,102 @@ jobs:
         working-directory: ${{ env.ZOMBIENET_DIR }}
         run: ./setup.sh
 
-      - name: Run compatibility test
+      # ── Astar-only: sudo patch ────────────────────────────────────────────────
+      # Sudo pallet was removed from the Astar runtime. We:
+      #   1. Fetch the on-chain specVersion so we clone the exact matching branch.
+      #   2. Build astar-runtime with the `astar-sudo` feature (re-adds pallet-sudo).
+      #   3. Generate a chain spec from a temporary collator built from that same
+      #      source — this guarantees the genesis schema is always up-to-date and
+      #      no manual field injection is required.
+      #   4. Patch ONLY the sudo key and replace the runtime WASM.
+      # ─────────────────────────────────────────────────────────────────────────
+      - name: Fetch Astar on-chain specVersion
+        id: fetch-spec-version
+        if: matrix.chain == 'astar'
+        run: |
+          SPEC_VERSION=$(curl -sX POST -H "Content-Type: application/json" \
+            -d '{"jsonrpc":"2.0","id":1,"method":"state_getRuntimeVersion","params":[]}' \
+            https://rpc.astar.network | jq '.result.specVersion')
+          if [ -z "$SPEC_VERSION" ] || [ "$SPEC_VERSION" = "null" ]; then
+            echo "::error::Failed to fetch Astar specVersion from RPC"
+            exit 1
+          fi
+          echo "Astar on-chain specVersion: ${SPEC_VERSION}"
+          echo "spec_version=${SPEC_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Checkout runtime source at matching specVersion
+        if: matrix.chain == 'astar'
+        run: |
+          git clone --depth 1 \
+            --branch "runtime-${{ steps.fetch-spec-version.outputs.spec_version }}" \
+            https://github.com/AstarNetwork/Astar.git runtime-src
+
+      - name: Install Rust toolchain
+        if: matrix.chain == 'astar'
+        run: |
+          cd runtime-src
+          rustup show
+          rustup target add wasm32-unknown-unknown
+
+      - name: Cache Rust build artifacts
+        if: matrix.chain == 'astar'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            runtime-src/target
+          key: astar-sudo-build-${{ steps.fetch-spec-version.outputs.spec_version }}
+
+      - name: Install protobuf compiler
+        if: matrix.chain == 'astar'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          protoc --version
+
+      - name: Build astar-runtime (sudo feature)
+        if: matrix.chain == 'astar'
+        working-directory: runtime-src
+        run: |
+          cargo build --release -p astar-collator --features astar-sudo
+
+      - name: Generate spec from matching runtime, patch sudo key and WASM
+        if: matrix.chain == 'astar'
         working-directory: ${{ env.ZOMBIENET_DIR }}
         env:
-          CHAIN: ${{ matrix.chain }}-dev
+          TMP_COLLATOR: ${{ github.workspace }}/runtime-src/target/release/astar-collator
+          SUDO_WASM:     ${{ github.workspace }}/runtime-src/target/release/wbuild/astar-runtime/astar_runtime.compact.compressed.wasm
+          ALICE:         "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
         run: |
+          # 1. Generate plain spec
+          "$TMP_COLLATOR" build-spec --chain astar-dev > astar-plain.json
+
+          # 2. Patch sudo + WASM
+          python3 patch_astar_sudo_spec.py \
+            astar-plain.json \
+            "$SUDO_WASM" \
+            astar-patched.json \
+            "$ALICE"
+
+          # 3. Convert patched spec -> raw spec
+          "$TMP_COLLATOR" build-spec \
+            --chain astar-patched.json \
+            --raw \
+            > astar-raw.json
+
+          echo "✅ Generated astar-raw.json"
+
+      # ── Run the actual compatibility test ─────────────────────────────────────
+      - name: Run compatibility test
+        working-directory: ${{ env.ZOMBIENET_DIR }}
+        run: |
+          if [ "${{ matrix.chain }}" = "astar" ]; then
+            export CHAIN="./astar-raw.json"
+          else
+            export CHAIN="${{ matrix.chain }}-dev"
+          fi
+
           version=$(cat "${{ matrix.chain }}-srtool-digest.json" | jq -r '.version')
           echo "🧪 Testing ${{ matrix.chain }}-runtime v${version} compatibility with mixed client versions"
           echo "  - Collator1: $(echo $CLIENT_TAGS | cut -d' ' -f1)"
