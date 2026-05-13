@@ -130,53 +130,6 @@ jobs:
       #      no manual field injection is required.
       #   4. Patch ONLY the sudo key (via jq) and replace the runtime WASM.
       # ─────────────────────────────────────────────────────────────────────────
-
-      - name: Create patch script
-        if: matrix.chain == 'astar'
-        working-directory: ${{ env.ZOMBIENET_DIR }}
-        run: |
-          printf '%s\n' \
-          'import json
-          import sys
-          from pathlib import Path
-          
-          plain_path = Path(sys.argv[1])
-          wasm_path = Path(sys.argv[2])
-          out_path = Path(sys.argv[3])
-          alice = sys.argv[4]
-          
-          spec = json.loads(plain_path.read_text())
-          runtime_genesis = spec["genesis"]["runtimeGenesis"]
-          
-          if "patch" in runtime_genesis:
-              key = "patch"
-          elif "config" in runtime_genesis:
-              key = "config"
-          else:
-              raise Exception("unknown runtimeGenesis layout")
-          
-          runtime_genesis[key].setdefault("sudo", {})
-          runtime_genesis[key]["sudo"]["key"] = alice
-          
-          runtime_genesis["code"] = "0x" + wasm_path.read_bytes().hex()
-          
-          spec["name"] = "Astar Mainnet Runtime Local"
-          spec["id"] = "astar-mainnet-runtime-local"
-          spec["chainType"] = "Local"
-          
-          out_path.write_text(json.dumps(spec))
-          ' > patch_spec.py
-
-      - name: Generate patched spec
-        if: matrix.chain == 'astar'
-        working-directory: ${{ env.ZOMBIENET_DIR }}
-        run: |
-          python3 patch_spec.py \
-            astar-plain.json \
-            "SUDO_WASM" \
-            astar-patched.json \
-            "ALICE"
-
       - name: Fetch Astar on-chain specVersion
         id: fetch-spec-version
         if: matrix.chain == 'astar'
@@ -253,41 +206,11 @@ jobs:
           echo "── Genesis keys in plain spec ──"
           jq '.genesis.runtimeGenesis | keys' astar-plain.json
 
-          python3 - astar-plain.json "$SUDO_WASM" astar-patched.json "$ALICE" <<'PY'
-              import json
-              import sys
-              from pathlib import Path
-
-              plain_path = Path(sys.argv[1])
-              wasm_path = Path(sys.argv[2])
-              out_path = Path(sys.argv[3])
-              alice = sys.argv[4]
-
-              spec = json.loads(plain_path.read_text())
-              runtime_genesis = spec["genesis"]["runtimeGenesis"]
-            
-              # Detect patch/config layout
-              if "patch" in runtime_genesis:
-                key = "patch"
-              elif "config" in runtime_genesis:
-                key = "config"
-              else:
-                raise Exception("unknown runtimeGenesis layout")
-
-              # Inject sudo key
-              runtime_genesis[key].setdefault("sudo", {})
-              runtime_genesis[key]["sudo"]["key"] = alice
-
-              # Inject runtime WASM
-              runtime_genesis["code"] = "0x" + wasm_path.read_bytes().hex()
-
-              # Metadata
-              spec["name"] = "Astar Mainnet Runtime Local"
-              spec["id"] = "astar-mainnet-runtime-local"
-              spec["chainType"] = "Local"
-
-              out_path.write_text(json.dumps(spec))
-              PY
+          python3 patch_spec.py \
+            astar-plain.json \
+            "$SUDO_WASM" \
+            astar-patched.json \
+            "$ALICE"
 
       # ── Run the actual compatibility test ─────────────────────────────────────
       - name: Run compatibility test
