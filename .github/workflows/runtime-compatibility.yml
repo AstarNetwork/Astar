@@ -169,6 +169,13 @@ jobs:
             runtime-src/target
           key: astar-sudo-build-${{ steps.fetch-spec-version.outputs.spec_version }}
 
+      - name: Install protobuf compiler
+        if: matrix.chain == 'astar'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          protoc --version
+
       # Build both:
       #   • astar-runtime  with astar-sudo  →  the WASM that goes into the test
       #   • astar-collator (no extra flags)  →  used only to generate a spec whose
