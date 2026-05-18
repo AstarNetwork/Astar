@@ -16,6 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+mod relay_sproof_builder;
+pub use relay_sproof_builder::RelayStateSproofBuilder;
+
 use frame_support::{traits::fungible::Inspect, weights::Weight};
 use pallet_contracts::Code;
 use pallet_contracts_uapi::ReturnFlags;

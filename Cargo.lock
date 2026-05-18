@@ -836,6 +836,7 @@ version = "5.49.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
+ "astar-test-utils",
  "async-trait",
  "clap",
  "cumulus-client-cli",
@@ -1098,13 +1099,21 @@ dependencies = [
 name = "astar-test-utils"
 version = "0.1.0"
 dependencies = [
+ "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "pallet-contracts",
  "pallet-contracts-uapi",
  "parity-scale-codec",
+ "polkadot-primitives",
  "scale-info",
+ "sp-consensus-babe",
+ "sp-core",
+ "sp-io",
+ "sp-keyring",
  "sp-runtime",
+ "sp-state-machine",
+ "sp-trie",
 ]
 
 [[package]]

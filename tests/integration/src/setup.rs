@@ -29,7 +29,7 @@ pub use sp_runtime::{AccountId32, Digest, DigestItem, MultiAddress};
 
 use cumulus_primitives_core::{relay_chain::HeadData, PersistedValidationData};
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
-use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+use astar_test_utils::RelayStateSproofBuilder;
 use sp_consensus_aura::{Slot, SlotDuration, AURA_ENGINE_ID};
 
 #[cfg(any(feature = "shibuya", feature = "astar"))]
@@ -268,7 +268,15 @@ fn set_validation_data() {
         ),
         ..Default::default()
     };
-    let (relay_parent_storage_root, relay_chain_state) = sproof_builder.into_state_root_and_proof();
+
+    #[cfg(feature = "shibuya")]
+    let relay_parent_offset = shibuya_runtime::RelayParentOffset::get();
+    #[cfg(feature = "shiden")]
+    let relay_parent_offset = shiden_runtime::RelayParentOffset::get();
+    #[cfg(feature = "astar")]
+    let relay_parent_offset = astar_runtime::RelayParentOffset::get();
+
+    let (relay_parent_storage_root, relay_chain_state, relay_parent_descendants) = sproof_builder.into_state_root_proof_and_descendants(relay_parent_offset.into());
     let para_inherent_data = ParachainInherentData {
         validation_data: PersistedValidationData {
             parent_head,
@@ -279,7 +287,7 @@ fn set_validation_data() {
         relay_chain_state,
         downward_messages: Default::default(),
         horizontal_messages: Default::default(),
-        relay_parent_descendants: Default::default(),
+        relay_parent_descendants,
         collator_peer_id: Default::default(),
     };
 

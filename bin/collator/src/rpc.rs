@@ -28,7 +28,7 @@ use jsonrpsee::RpcModule;
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 use std::path::Path;
 
-use cumulus_primitives_core::ParaId;
+use cumulus_primitives_core::{ParaId, RelayParentOffsetApi};
 use sc_client_api::{
     AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider, UsageProvider,
 };
@@ -216,7 +216,8 @@ where
         + BlockBuilder<Block>
         + AuraApi<Block, AuraId>
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
-        + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
+        + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>
+        + RelayParentOffsetApi<Block>,
     P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
@@ -284,7 +285,8 @@ where
         + BlockBuilder<Block>
         + AuraApi<Block, AuraId>
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
-        + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
+        + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>
+        + RelayParentOffsetApi<Block>,
     P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
@@ -350,7 +352,8 @@ where
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>
-        + AuraApi<Block, AuraId>,
+        + AuraApi<Block, AuraId>
+        + RelayParentOffsetApi<Block>,
     P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
@@ -391,7 +394,8 @@ where
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>
-        + AuraApi<Block, AuraId>,
+        + AuraApi<Block, AuraId>
+        + RelayParentOffsetApi<Block>,
     P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
@@ -433,7 +437,8 @@ where
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>
-        + AuraApi<Block, AuraId>,
+        + AuraApi<Block, AuraId>
+        + RelayParentOffsetApi<Block>,
     P: TransactionPool<Block = Block, Hash = HashFor<Block>> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,

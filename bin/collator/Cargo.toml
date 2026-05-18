@@ -157,6 +157,8 @@ moonbeam-primitives-ext = { workspace = true }
 moonbeam-rpc-debug = { workspace = true }
 moonbeam-rpc-trace = { workspace = true }
 
+astar-test-utils = { workspace = true }
+
 [build-dependencies]
 polkadot-cli = { workspace = true, optional = true }
 sc-cli = { workspace = true, optional = true }
