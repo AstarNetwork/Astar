@@ -17,10 +17,10 @@
 extern crate alloc;
 
 use alloc::collections::btree_map::BTreeMap;
-use parity_scale_codec::{Decode, Encode};
 use cumulus_primitives_core::{
     relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
 };
+use parity_scale_codec::{Decode, Encode};
 use polkadot_primitives::{Header, UpgradeGoAhead};
 use sp_consensus_babe::{
     digests::{CompatibleDigestItem, PreDigest, PrimaryPreDigest},
@@ -112,7 +112,10 @@ impl RelayStateSproofBuilder {
             in_index.insert(idx, sender);
         }
 
-        self.upsert_channel(relay_chain::HrmpChannelId { sender, recipient: self.para_id })
+        self.upsert_channel(relay_chain::HrmpChannelId {
+            sender,
+            recipient: self.para_id,
+        })
     }
 
     /// Returns a mutable reference to HRMP channel metadata for a channel (`self.para_id`,
@@ -127,20 +130,25 @@ impl RelayStateSproofBuilder {
             in_index.insert(idx, recipient);
         }
 
-        self.upsert_channel(relay_chain::HrmpChannelId { sender: self.para_id, recipient })
+        self.upsert_channel(relay_chain::HrmpChannelId {
+            sender: self.para_id,
+            recipient,
+        })
     }
 
     /// Creates a new default entry in the hrmp channels mapping if not exists, and returns mutable
     /// reference to it.
     fn upsert_channel(&mut self, id: relay_chain::HrmpChannelId) -> &mut AbridgedHrmpChannel {
-        self.hrmp_channels.entry(id).or_insert_with(|| AbridgedHrmpChannel {
-            max_capacity: 0,
-            max_total_size: 0,
-            max_message_size: 0,
-            msg_count: 0,
-            total_size: 0,
-            mqc_head: None,
-        })
+        self.hrmp_channels
+            .entry(id)
+            .or_insert_with(|| AbridgedHrmpChannel {
+                max_capacity: 0,
+                max_total_size: 0,
+                max_message_size: 0,
+                msg_count: 0,
+                total_size: 0,
+                mqc_head: None,
+            })
     }
 
     /// Build sproof and generate relay parent descendants with the configured authorities.
@@ -149,7 +157,11 @@ impl RelayStateSproofBuilder {
     pub fn into_state_root_proof_and_descendants(
         self,
         relay_parent_offset: u64,
-    ) -> (polkadot_primitives::Hash, sp_state_machine::StorageProof, Vec<Header>) {
+    ) -> (
+        polkadot_primitives::Hash,
+        sp_state_machine::StorageProof,
+        Vec<Header>,
+    ) {
         let authorities = generate_authority_pairs(self.num_authorities);
         let (state_root, proof) = self.into_state_root_and_proof();
         let descendants =
@@ -190,7 +202,10 @@ impl RelayStateSproofBuilder {
                 backend.insert(vec![(None, vec![(key, Some(value))])], state_version);
             };
 
-            insert(relay_chain::well_known_keys::ACTIVE_CONFIG.to_vec(), self.host_config.encode());
+            insert(
+                relay_chain::well_known_keys::ACTIVE_CONFIG.to_vec(),
+                self.host_config.encode(),
+            );
             if let Some(dmq_mqc_head) = self.dmq_mqc_head {
                 insert(
                     relay_chain::well_known_keys::dmq_mqc_head(self.para_id),
@@ -198,7 +213,10 @@ impl RelayStateSproofBuilder {
                 );
             }
             if let Some(para_head) = self.included_para_head {
-                insert(relay_chain::well_known_keys::para_head(self.para_id), para_head.encode());
+                insert(
+                    relay_chain::well_known_keys::para_head(self.para_id),
+                    para_head.encode(),
+                );
             }
             if let Some(relay_dispatch_queue_remaining_capacity) =
                 self.relay_dispatch_queue_remaining_capacity
@@ -207,7 +225,7 @@ impl RelayStateSproofBuilder {
                     relay_chain::well_known_keys::relay_dispatch_queue_remaining_capacity(
                         self.para_id,
                     )
-                        .key,
+                    .key,
                     relay_dispatch_queue_remaining_capacity.encode(),
                 );
             }
@@ -238,14 +256,23 @@ impl RelayStateSproofBuilder {
                 );
             }
             for (channel, metadata) in self.hrmp_channels {
-                insert(relay_chain::well_known_keys::hrmp_channels(channel), metadata.encode());
+                insert(
+                    relay_chain::well_known_keys::hrmp_channels(channel),
+                    metadata.encode(),
+                );
             }
-            insert(relay_chain::well_known_keys::EPOCH_INDEX.to_vec(), self.current_epoch.encode());
+            insert(
+                relay_chain::well_known_keys::EPOCH_INDEX.to_vec(),
+                self.current_epoch.encode(),
+            );
             insert(
                 relay_chain::well_known_keys::ONE_EPOCH_AGO_RANDOMNESS.to_vec(),
                 self.randomness.encode(),
             );
-            insert(relay_chain::well_known_keys::CURRENT_SLOT.to_vec(), self.current_slot.encode());
+            insert(
+                relay_chain::well_known_keys::CURRENT_SLOT.to_vec(),
+                self.current_slot.encode(),
+            );
 
             for (key, value) in self.additional_key_values {
                 insert(key, value);
@@ -260,7 +287,9 @@ impl RelayStateSproofBuilder {
 
 /// Generate a vector of AuthorityPairs
 pub fn generate_authority_pairs(num_authorities: u64) -> Vec<AuthorityPair> {
-    (0..num_authorities).map(|i| AuthorityPair::from_seed(&[i as u8; 32])).collect()
+    (0..num_authorities)
+        .map(|i| AuthorityPair::from_seed(&[i as u8; 32]))
+        .collect()
 }
 
 /// Convert AuthorityPair to (AuthorityId, BabeAuthorityWeight)
@@ -321,7 +350,9 @@ pub fn build_relay_parent_descendants(
 
         // Sign and seal the header
         let signature = authorities[authority_index as usize].sign(header.hash().as_bytes());
-        header.digest_mut().push(DigestItem::babe_seal(signature.into()));
+        header
+            .digest_mut()
+            .push(DigestItem::babe_seal(signature.into()));
 
         previous_hash = Some(header.hash());
         headers.push(header);
@@ -408,19 +439,19 @@ mod tests {
         let pre_digest_data = match digest_item {
             DigestItem::PreRuntime(id, data) if id == &sp_consensus_babe::BABE_ENGINE_ID => {
                 PreDigest::decode(&mut &data[..]).unwrap()
-            },
+            }
             _ => panic!("Expected a BABE pre-digest"),
         };
 
         match pre_digest_data {
             PreDigest::Primary(PrimaryPreDigest {
-                                   authority_index: auth_idx,
-                                   slot,
-                                   vrf_signature: _,
-                               }) => {
+                authority_index: auth_idx,
+                slot,
+                vrf_signature: _,
+            }) => {
                 assert_eq!(auth_idx, authority_index);
                 assert_eq!(slot, relay_chain::Slot::from(block_number));
-            },
+            }
             _ => panic!("Expected a Primary PreDigest"),
         }
     }

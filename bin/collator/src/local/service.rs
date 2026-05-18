@@ -18,17 +18,28 @@
 
 //! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
+pub use crate::parachain::fake_runtime_api::RuntimeApi;
 use crate::{
     evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig},
     rpc::tracing,
 };
+use astar_test_utils::RelayStateSproofBuilder;
 use cumulus_client_parachain_inherent::MockXcmConfig;
-use cumulus_primitives_core::{relay_chain, relay_chain::{well_known_keys, AsyncBackingParams, HeadData, UpgradeGoAhead}, AbridgedHostConfiguration, CollectCollationInfo, InboundHrmpMessage, ParaId, RelayParentOffsetApi};
+use cumulus_primitives_aura::Slot;
+use cumulus_primitives_core::{
+    relay_chain,
+    relay_chain::{well_known_keys, AsyncBackingParams, HeadData, UpgradeGoAhead},
+    AbridgedHostConfiguration, CollectCollationInfo, InboundHrmpMessage, ParaId,
+    RelayParentOffsetApi,
+};
+use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_storage::StorageOverrideHandler;
 use futures::{FutureExt, StreamExt};
 use parity_scale_codec::Encode;
+use polkadot_core_primitives::InboundDownwardMessage;
+use polkadot_primitives::PersistedValidationData;
 use sc_client_api::{Backend, BlockchainEvents};
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::NetworkBackend;
@@ -37,15 +48,9 @@ use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+use sp_inherents::{InherentData, InherentDataProvider};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
 use std::{collections::BTreeMap, marker::PhantomData, ops::Sub, sync::Arc, time::Duration};
-use cumulus_primitives_aura::Slot;
-use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
-use polkadot_core_primitives::InboundDownwardMessage;
-use polkadot_primitives::PersistedValidationData;
-use sp_inherents::{InherentData, InherentDataProvider};
-use astar_test_utils::RelayStateSproofBuilder;
-pub use crate::parachain::fake_runtime_api::RuntimeApi;
 
 use astar_primitives::*;
 
@@ -109,15 +114,18 @@ impl GenerateRandomness<u64> for () {
 }
 
 #[async_trait::async_trait]
-impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider for MockValidationDataInherentDataProvider<R>
+impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider
+    for MockValidationDataInherentDataProvider<R>
 {
     async fn provide_inherent_data(
         &self,
         inherent_data: &mut InherentData,
     ) -> Result<(), sp_inherents::Error> {
         // Use the "sproof" (spoof proof) builder to build valid mock state root and proof.
-        let mut sproof_builder =
-            RelayStateSproofBuilder { para_id: self.para_id, ..Default::default() };
+        let mut sproof_builder = RelayStateSproofBuilder {
+            para_id: self.para_id,
+            ..Default::default()
+        };
 
         // Calculate the mocked relay block based on the current para block
         let relay_parent_number =
@@ -129,7 +137,10 @@ impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider for MockVali
         let mut downward_messages = Vec::new();
         let mut dmq_mqc = MessageQueueChain::new(self.xcm_config.starting_dmq_mqc_head);
         for msg in &self.raw_downward_messages {
-            let wrapped = InboundDownwardMessage { sent_at: relay_parent_number, msg: msg.clone() };
+            let wrapped = InboundDownwardMessage {
+                sent_at: relay_parent_number,
+                msg: msg.clone(),
+            };
 
             dmq_mqc.extend_downward(&wrapped);
             downward_messages.push(wrapped);
@@ -140,9 +151,15 @@ impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider for MockVali
         // Begin by collecting them into a Map
         let mut horizontal_messages = BTreeMap::<ParaId, Vec<InboundHrmpMessage>>::new();
         for (para_id, msg) in &self.raw_horizontal_messages {
-            let wrapped = InboundHrmpMessage { sent_at: relay_parent_number, data: msg.clone() };
+            let wrapped = InboundHrmpMessage {
+                sent_at: relay_parent_number,
+                data: msg.clone(),
+            };
 
-            horizontal_messages.entry(*para_id).or_default().push(wrapped);
+            horizontal_messages
+                .entry(*para_id)
+                .or_default()
+                .push(wrapped);
         }
 
         // Now iterate again, updating the heads as we go
@@ -168,8 +185,9 @@ impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider for MockVali
             (self.current_para_block / self.para_blocks_per_relay_epoch).into()
         };
         // Randomness is set by randomness generator
-        sproof_builder.randomness =
-            self.relay_randomness_config.generate_randomness(self.current_para_block.into());
+        sproof_builder.randomness = self
+            .relay_randomness_config
+            .generate_randomness(self.current_para_block.into());
 
         if let Some(key_values) = &self.additional_key_values {
             sproof_builder.additional_key_values = key_values.clone()
@@ -178,7 +196,8 @@ impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider for MockVali
         // Inject current para block head, if any
         sproof_builder.included_para_head = self.current_para_block_head.clone();
 
-        let (relay_parent_storage_root, proof, relay_parent_descendants) = sproof_builder.into_state_root_proof_and_descendants(self.relay_parent_offset.into());
+        let (relay_parent_storage_root, proof, relay_parent_descendants) =
+            sproof_builder.into_state_root_proof_and_descendants(self.relay_parent_offset.into());
         let parachain_inherent_data = ParachainInherentData {
             validation_data: PersistedValidationData {
                 parent_head: Default::default(),
@@ -193,7 +212,9 @@ impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider for MockVali
             collator_peer_id: None,
         };
 
-        parachain_inherent_data.provide_inherent_data(inherent_data).await
+        parachain_inherent_data
+            .provide_inherent_data(inherent_data)
+            .await
     }
 
     // Copied from the real implementation
@@ -218,8 +239,10 @@ fn build_local_mock_inherent_data(
     sp_timestamp::InherentDataProvider,
     MockValidationDataInherentDataProvider<()>,
 ) {
-    let relay_offset = relay_parent_offset.saturating_add((relay_slot as u32)
-        .saturating_sub(relay_blocks_per_para_block.saturating_mul(current_para_block)));
+    let relay_offset = relay_parent_offset.saturating_add(
+        (relay_slot as u32)
+            .saturating_sub(relay_blocks_per_para_block.saturating_mul(current_para_block)),
+    );
 
     let local_host_config = AbridgedHostConfiguration {
         max_code_size: 16 * 1024 * 1024, // 16 MiB (local dev only)
@@ -747,7 +770,8 @@ where
                         );
 
                         let current_para_block_head = Some(current_para_head.encode().into());
-                        let relay_parent_offset = client.runtime_api().relay_parent_offset(parent_hash)?;
+                        let relay_parent_offset =
+                            client.runtime_api().relay_parent_offset(parent_hash)?;
 
                         let (timestamp_provider, mocked_parachain) = build_local_mock_inherent_data(
                             para_id,
