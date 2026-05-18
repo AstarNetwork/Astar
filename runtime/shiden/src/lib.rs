@@ -165,7 +165,7 @@ pub const BLOCK_PROCESSING_VELOCITY: u32 = 1;
 /// Relay chain slot duration, in milliseconds.
 pub const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6000;
 /// Relay chain best block offset to build blocks on.
-const RELAY_PARENT_OFFSET: u32 = 2;
+const RELAY_PARENT_OFFSET: u32 = 0;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -187,7 +187,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("shiden"),
     impl_name: Cow::Borrowed("shiden"),
     authoring_version: 1,
-    spec_version: 2203,
+    spec_version: 2204,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -525,8 +525,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ConsensusHook = ConsensusHook;
     type SelectCore = cumulus_pallet_parachain_system::DefaultCoreSelector<Runtime>;
     type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
-    // TODO: Set offset to RelayParentOffset once the majority of collators have migrated to slot_based
-    type RelayParentOffset = ConstU32<0>;
+    type RelayParentOffset = RelayParentOffset;
 }
 
 type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
@@ -1277,12 +1276,7 @@ parameter_types! {
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (
-    pallet_dapp_staking::migration::versioned_migrations::V11ToV12<Runtime>,
-    frame_support::migrations::RemovePallet<PriceAggregatorPalletStr, RocksDbWeight>,
-    frame_support::migrations::RemovePallet<OraclePalletStr, RocksDbWeight>,
-    frame_support::migrations::RemovePallet<OracleMembershipPalletStr, RocksDbWeight>,
-);
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);

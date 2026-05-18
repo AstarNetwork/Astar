@@ -18,8 +18,9 @@
 
 //! Utility for the upgrade from shell to a parachain runtime that implements Aura.
 use astar_primitives::*;
+use astar_test_utils::RelayStateSproofBuilder;
 use cumulus_primitives_core::relay_chain::PersistedValidationData;
-use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+use cumulus_primitives_core::RelayParentOffsetApi;
 use fc_rpc::pending::ConsensusDataProvider;
 use sc_client_api::{AuxStore, UsageProvider};
 use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams};
@@ -148,7 +149,7 @@ impl<B, C> CreateInherentDataProviders<B, ()> for PendingCrateInherentDataProvid
 where
     B: BlockT,
     C: AuxStore + ProvideRuntimeApi<B> + UsageProvider<B> + Send + Sync,
-    C::Api: AuraApi<B, AuraId>,
+    C::Api: AuraApi<B, AuraId> + RelayParentOffsetApi<B>,
 {
     type InherentDataProviders = (
         sp_consensus_aura::inherents::InherentDataProvider,
@@ -183,8 +184,22 @@ where
         // Create a dummy parachain inherent data provider which is required to pass
         // the checks by the para chain system. We use dummy values because in the 'pending context'
         // neither do we have access to the real values nor do we need them.
-        let (relay_parent_storage_root, relay_chain_state) =
-            RelayStateSproofBuilder::default().into_state_root_and_proof();
+        let (relay_parent_storage_root, relay_chain_state, relay_parent_descendants) = if self
+            .client
+            .runtime_api()
+            .has_api::<dyn RelayParentOffsetApi<B>>(parent)
+            .unwrap_or(false)
+        {
+            let offset = self
+                .client
+                .runtime_api()
+                .relay_parent_offset(parent)
+                .expect("API present, call should succeed; qed");
+            RelayStateSproofBuilder::default().into_state_root_proof_and_descendants(offset.into())
+        } else {
+            let (root, proof) = RelayStateSproofBuilder::default().into_state_root_and_proof();
+            (root, proof, Default::default())
+        };
         let vfp = PersistedValidationData {
             // This is a hack to make `cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases`
             // happy. Relay parent number can't be bigger than u32::MAX.
@@ -198,7 +213,7 @@ where
                 relay_chain_state,
                 downward_messages: Default::default(),
                 horizontal_messages: Default::default(),
-                relay_parent_descendants: Default::default(),
+                relay_parent_descendants,
                 collator_peer_id: Default::default(),
             };
         Ok((slot, timestamp, parachain_inherent_data))

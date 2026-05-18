@@ -175,7 +175,7 @@ pub const BLOCK_PROCESSING_VELOCITY: u32 = 1;
 /// Relay chain slot duration, in milliseconds.
 pub const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6000;
 /// Relay chain best block offset to build blocks on.
-const RELAY_PARENT_OFFSET: u32 = 2;
+const RELAY_PARENT_OFFSET: u32 = 0;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -197,7 +197,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("astar"),
     impl_name: Cow::Borrowed("astar"),
     authoring_version: 1,
-    spec_version: 2203,
+    spec_version: 2204,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -548,8 +548,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ConsensusHook = ConsensusHook;
     type SelectCore = cumulus_pallet_parachain_system::DefaultCoreSelector<Runtime>;
     type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
-    // TODO: Set offset to RelayParentOffset once the majority of collators have migrated to slot_based
-    type RelayParentOffset = ConstU32<0>;
+    type RelayParentOffset = RelayParentOffset;
 }
 
 type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<

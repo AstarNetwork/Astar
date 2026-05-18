@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "22.0.3"
+version = "22.0.4"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true

@@ -836,6 +836,7 @@ version = "5.49.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
+ "astar-test-utils",
  "async-trait",
  "clap",
  "cumulus-client-cli",
@@ -979,7 +980,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "22.0.3"
+version = "22.0.4"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -1098,13 +1099,21 @@ dependencies = [
 name = "astar-test-utils"
 version = "0.1.0"
 dependencies = [
+ "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "pallet-contracts",
  "pallet-contracts-uapi",
  "parity-scale-codec",
+ "polkadot-primitives",
  "scale-info",
+ "sp-consensus-babe",
+ "sp-core",
+ "sp-io",
+ "sp-keyring",
  "sp-runtime",
+ "sp-state-machine",
+ "sp-trie",
 ]
 
 [[package]]
@@ -15901,7 +15910,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "22.0.3"
+version = "22.0.4"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -16024,7 +16033,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "22.0.3"
+version = "22.0.4"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",

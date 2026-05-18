@@ -18,20 +18,28 @@
 
 //! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
+pub use crate::parachain::fake_runtime_api::RuntimeApi;
 use crate::{
     evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig},
     rpc::tracing,
 };
-use cumulus_client_parachain_inherent::MockValidationDataInherentDataProvider;
+use astar_test_utils::RelayStateSproofBuilder;
+use cumulus_client_parachain_inherent::MockXcmConfig;
+use cumulus_primitives_aura::Slot;
 use cumulus_primitives_core::{
+    relay_chain,
     relay_chain::{well_known_keys, AsyncBackingParams, HeadData, UpgradeGoAhead},
-    AbridgedHostConfiguration, CollectCollationInfo, ParaId,
+    AbridgedHostConfiguration, CollectCollationInfo, InboundHrmpMessage, ParaId,
+    RelayParentOffsetApi,
 };
+use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_storage::StorageOverrideHandler;
 use futures::{FutureExt, StreamExt};
 use parity_scale_codec::Encode;
+use polkadot_core_primitives::InboundDownwardMessage;
+use polkadot_primitives::PersistedValidationData;
 use sc_client_api::{Backend, BlockchainEvents};
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::NetworkBackend;
@@ -40,10 +48,9 @@ use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+use sp_inherents::{InherentData, InherentDataProvider};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
 use std::{collections::BTreeMap, marker::PhantomData, ops::Sub, sync::Arc, time::Duration};
-
-pub use crate::parachain::fake_runtime_api::RuntimeApi;
 
 use astar_primitives::*;
 
@@ -56,19 +63,187 @@ pub struct LocalPendingInherentDataProvider<B, C> {
 
 const RELAY_CHAIN_SLOT_DURATION_MILLIS: u64 = 6000;
 
+/// Inherent data provider that supplies mocked validation data.
+/// TODO: Use it from PolkadotSDK again after stable2512 uplift
+#[derive(Default)]
+pub struct MockValidationDataInherentDataProvider<R = ()> {
+    /// The current block number of the local block chain (the parachain).
+    pub current_para_block: u32,
+    /// The parachain ID of the parachain for that the inherent data is created.
+    pub para_id: ParaId,
+    /// The current block head data of the local block chain (the parachain).
+    pub current_para_block_head: Option<cumulus_primitives_core::relay_chain::HeadData>,
+    /// The relay block in which this parachain appeared to start. This will be the relay block
+    /// number in para block #P1.
+    pub relay_offset: u32,
+    /// The relay parent offset that determines how many relay parent descendants are required.
+    pub relay_parent_offset: u32,
+    /// The number of relay blocks that elapses between each parablock. Probably set this to 1 or 2
+    /// to simulate optimistic or realistic relay chain behavior.
+    pub relay_blocks_per_para_block: u32,
+    /// Number of parachain blocks per relay chain epoch
+    /// Mock epoch is computed by dividing `current_para_block` by this value.
+    pub para_blocks_per_relay_epoch: u32,
+    /// Function to mock BABE one epoch ago randomness.
+    pub relay_randomness_config: R,
+    /// XCM messages and associated configuration information.
+    pub xcm_config: MockXcmConfig,
+    /// Inbound downward XCM messages to be injected into the block.
+    pub raw_downward_messages: Vec<Vec<u8>>,
+    /// Inbound Horizontal messages sorted by channel.
+    pub raw_horizontal_messages: Vec<(ParaId, Vec<u8>)>,
+    /// Additional key-value pairs that should be injected.
+    pub additional_key_values: Option<Vec<(Vec<u8>, Vec<u8>)>>,
+    /// Whether upgrade go ahead should be set.
+    pub upgrade_go_ahead: Option<UpgradeGoAhead>,
+}
+
+/// Something that can generate randomness.
+pub trait GenerateRandomness<I> {
+    /// Generate the randomness using the given `input`.
+    fn generate_randomness(&self, input: I) -> relay_chain::Hash;
+}
+
+impl GenerateRandomness<u64> for () {
+    /// Default implementation uses relay epoch as randomness value
+    /// A more seemingly random implementation may hash the relay epoch instead
+    fn generate_randomness(&self, input: u64) -> relay_chain::Hash {
+        let mut mock_randomness: [u8; 32] = [0u8; 32];
+        mock_randomness[..8].copy_from_slice(&input.to_be_bytes());
+        mock_randomness.into()
+    }
+}
+
+#[async_trait::async_trait]
+impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider
+    for MockValidationDataInherentDataProvider<R>
+{
+    async fn provide_inherent_data(
+        &self,
+        inherent_data: &mut InherentData,
+    ) -> Result<(), sp_inherents::Error> {
+        // Use the "sproof" (spoof proof) builder to build valid mock state root and proof.
+        let mut sproof_builder = RelayStateSproofBuilder {
+            para_id: self.para_id,
+            ..Default::default()
+        };
+
+        // Calculate the mocked relay block based on the current para block
+        let relay_parent_number =
+            self.relay_offset + self.relay_blocks_per_para_block * self.current_para_block;
+        sproof_builder.current_slot = Slot::from(relay_parent_number as u64);
+
+        sproof_builder.upgrade_go_ahead = self.upgrade_go_ahead;
+        // Process the downward messages and set up the correct head
+        let mut downward_messages = Vec::new();
+        let mut dmq_mqc = MessageQueueChain::new(self.xcm_config.starting_dmq_mqc_head);
+        for msg in &self.raw_downward_messages {
+            let wrapped = InboundDownwardMessage {
+                sent_at: relay_parent_number,
+                msg: msg.clone(),
+            };
+
+            dmq_mqc.extend_downward(&wrapped);
+            downward_messages.push(wrapped);
+        }
+        sproof_builder.dmq_mqc_head = Some(dmq_mqc.head());
+
+        // Process the hrmp messages and set up the correct heads
+        // Begin by collecting them into a Map
+        let mut horizontal_messages = BTreeMap::<ParaId, Vec<InboundHrmpMessage>>::new();
+        for (para_id, msg) in &self.raw_horizontal_messages {
+            let wrapped = InboundHrmpMessage {
+                sent_at: relay_parent_number,
+                data: msg.clone(),
+            };
+
+            horizontal_messages
+                .entry(*para_id)
+                .or_default()
+                .push(wrapped);
+        }
+
+        // Now iterate again, updating the heads as we go
+        for (para_id, messages) in &horizontal_messages {
+            let mut channel_mqc = MessageQueueChain::new(
+                *self
+                    .xcm_config
+                    .starting_hrmp_mqc_heads
+                    .get(para_id)
+                    .unwrap_or(&relay_chain::Hash::default()),
+            );
+            for message in messages {
+                channel_mqc.extend_hrmp(message);
+            }
+            sproof_builder.upsert_inbound_channel(*para_id).mqc_head = Some(channel_mqc.head());
+        }
+
+        // Epoch is set equal to current para block / blocks per epoch
+        sproof_builder.current_epoch = if self.para_blocks_per_relay_epoch == 0 {
+            // do not divide by 0 => set epoch to para block number
+            self.current_para_block.into()
+        } else {
+            (self.current_para_block / self.para_blocks_per_relay_epoch).into()
+        };
+        // Randomness is set by randomness generator
+        sproof_builder.randomness = self
+            .relay_randomness_config
+            .generate_randomness(self.current_para_block.into());
+
+        if let Some(key_values) = &self.additional_key_values {
+            sproof_builder.additional_key_values = key_values.clone()
+        }
+
+        // Inject current para block head, if any
+        sproof_builder.included_para_head = self.current_para_block_head.clone();
+
+        let (relay_parent_storage_root, proof, relay_parent_descendants) =
+            sproof_builder.into_state_root_proof_and_descendants(self.relay_parent_offset.into());
+        let parachain_inherent_data = ParachainInherentData {
+            validation_data: PersistedValidationData {
+                parent_head: Default::default(),
+                relay_parent_storage_root,
+                relay_parent_number,
+                max_pov_size: Default::default(),
+            },
+            downward_messages,
+            horizontal_messages,
+            relay_chain_state: proof,
+            relay_parent_descendants,
+            collator_peer_id: None,
+        };
+
+        parachain_inherent_data
+            .provide_inherent_data(inherent_data)
+            .await
+    }
+
+    // Copied from the real implementation
+    async fn try_handle_error(
+        &self,
+        _: &sp_inherents::InherentIdentifier,
+        _: &[u8],
+    ) -> Option<Result<(), sp_inherents::Error>> {
+        None
+    }
+}
+
 fn build_local_mock_inherent_data(
     para_id: ParaId,
     current_para_block: u32,
     current_para_block_head: Option<HeadData>,
     relay_blocks_per_para_block: u32,
     relay_slot: u64,
+    relay_parent_offset: u32,
     upgrade_go_ahead: Option<UpgradeGoAhead>,
 ) -> (
     sp_timestamp::InherentDataProvider,
     MockValidationDataInherentDataProvider<()>,
 ) {
-    let relay_offset = (relay_slot as u32)
-        .saturating_sub(relay_blocks_per_para_block.saturating_mul(current_para_block));
+    let relay_offset = relay_parent_offset.saturating_add(
+        (relay_slot as u32)
+            .saturating_sub(relay_blocks_per_para_block.saturating_mul(current_para_block)),
+    );
 
     let local_host_config = AbridgedHostConfiguration {
         max_code_size: 16 * 1024 * 1024, // 16 MiB (local dev only)
@@ -92,6 +267,7 @@ fn build_local_mock_inherent_data(
         current_para_block_head,
         relay_blocks_per_para_block,
         relay_offset,
+        relay_parent_offset,
         para_blocks_per_relay_epoch: 10,
         upgrade_go_ahead,
         additional_key_values: Some(vec![(
@@ -123,7 +299,8 @@ impl<B, C> sp_inherents::CreateInherentDataProviders<B, ()>
     for LocalPendingInherentDataProvider<B, C>
 where
     B: BlockT,
-    C: HeaderBackend<B> + Send + Sync,
+    C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
+    C::Api: RelayParentOffsetApi<B>,
 {
     type InherentDataProviders = (
         sp_timestamp::InherentDataProvider,
@@ -132,7 +309,7 @@ where
 
     async fn create_inherent_data_providers(
         &self,
-        _parent: B::Hash,
+        parent: B::Hash,
         _extra_args: (),
     ) -> Result<Self::InherentDataProviders, Box<dyn std::error::Error + Send + Sync>> {
         let relay_slot = std::time::SystemTime::now()
@@ -143,7 +320,7 @@ where
 
         let current_para_block = self
             .client
-            .header(_parent)?
+            .header(parent)?
             .map(|header| {
                 UniqueSaturatedInto::<u32>::unique_saturated_into(*header.number())
                     .saturating_add(1)
@@ -152,8 +329,10 @@ where
 
         let current_para_block_head = self
             .client
-            .header(_parent)?
+            .header(parent)?
             .map(|header| header.encode().into());
+
+        let relay_parent_offset = self.client.runtime_api().relay_parent_offset(parent)?;
 
         let (timestamp_provider, mocked_parachain) = build_local_mock_inherent_data(
             self.para_id,
@@ -161,6 +340,7 @@ where
             current_para_block_head,
             1,
             relay_slot,
+            relay_parent_offset,
             None,
         );
 
@@ -591,6 +771,8 @@ where
                         );
 
                         let current_para_block_head = Some(current_para_head.encode().into());
+                        let relay_parent_offset =
+                            client.runtime_api().relay_parent_offset(parent_hash)?;
 
                         let (timestamp_provider, mocked_parachain) = build_local_mock_inherent_data(
                             para_id,
@@ -598,6 +780,7 @@ where
                             current_para_block_head,
                             relay_blocks_per_para_block,
                             target_relay_slot,
+                            relay_parent_offset,
                             should_send_go_ahead.then_some(UpgradeGoAhead::GoAhead),
                         );
 

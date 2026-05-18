@@ -21,6 +21,16 @@ pallet-contracts = { workspace = true }
 pallet-contracts-uapi = { workspace = true }
 sp-runtime = { workspace = true }
 
+# Sproof functionality
+cumulus-primitives-core = { workspace = true }
+polkadot-primitives = { workspace = true }
+sp-consensus-babe = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-keyring = { workspace = true }
+sp-state-machine = { workspace = true }
+sp-trie = { workspace = true }
+
 [features]
 default = ["std"]
 std = [
@@ -30,4 +40,13 @@ std = [
 	"pallet-contracts/std",
 	"scale-info/std",
 	"sp-runtime/std",
+	"cumulus-primitives-core/std",
+	"polkadot-primitives/std",
+	"sp-consensus-babe/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-state-machine/std",
+	"sp-keyring/std",
+	"sp-runtime/std",
+	"sp-trie/std",
 ]
