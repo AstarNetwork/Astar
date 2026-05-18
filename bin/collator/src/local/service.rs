@@ -64,6 +64,7 @@ pub struct LocalPendingInherentDataProvider<B, C> {
 const RELAY_CHAIN_SLOT_DURATION_MILLIS: u64 = 6000;
 
 /// Inherent data provider that supplies mocked validation data.
+/// TODO: Use it from PolkadotSDK again after stable2512 uplift
 #[derive(Default)]
 pub struct MockValidationDataInherentDataProvider<R = ()> {
     /// The current block number of the local block chain (the parachain).
