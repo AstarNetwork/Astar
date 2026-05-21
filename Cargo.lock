@@ -821,16 +821,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
-name = "assets-chain-extension-types"
-version = "0.1.0"
-dependencies = [
- "num_enum 0.5.11",
- "parity-scale-codec",
- "scale-info",
- "sp-runtime",
-]
-
-[[package]]
 name = "astar-collator"
 version = "5.49.1"
 dependencies = [
@@ -1017,7 +1007,6 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-chain-extension-assets",
  "pallet-collator-selection 4.0.0",
  "pallet-collective",
  "pallet-collective-proxy",
@@ -1417,17 +1406,6 @@ dependencies = [
  "http 0.2.12",
  "log",
  "url",
-]
-
-[[package]]
-name = "atty"
-version = "0.2.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
-dependencies = [
- "hermit-abi 0.1.19",
- "libc",
- "winapi",
 ]
 
 [[package]]
@@ -4065,19 +4043,6 @@ dependencies = [
 
 [[package]]
 name = "env_logger"
-version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a12e6657c4c97ebab115a42dcee77225f7f482cdd841cf7088c657a42e9e00e7"
-dependencies = [
- "atty",
- "humantime",
- "log",
- "regex",
- "termcolor",
-]
-
-[[package]]
-name = "env_logger"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4cd405aab171cb85d6735e5c8d9db038c17d3ca007a4d2c25f337935c3d90580"
@@ -5982,15 +5947,6 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "hermit-abi"
-version = "0.1.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
-dependencies = [
- "libc",
-]
-
-[[package]]
-name = "hermit-abi"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d231dfb89cfffdbc30e7fc41579ed6066ad03abda9e567ccafae602b97ec5024"
@@ -6675,7 +6631,6 @@ dependencies = [
 name = "integration-tests"
 version = "0.1.0"
 dependencies = [
- "assets-chain-extension-types",
  "astar-primitives",
  "astar-runtime",
  "astar-test-utils",
@@ -9360,28 +9315,6 @@ dependencies = [
  "sp-arithmetic",
  "sp-core",
  "sp-runtime",
-]
-
-[[package]]
-name = "pallet-chain-extension-assets"
-version = "0.1.0"
-dependencies = [
- "assets-chain-extension-types",
- "env_logger 0.9.3",
- "frame-support",
- "frame-system",
- "log",
- "num-traits",
- "pallet-assets",
- "pallet-balances",
- "pallet-contracts",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -15946,7 +15879,6 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-chain-extension-assets",
  "pallet-chain-extension-unified-accounts",
  "pallet-collator-selection 4.0.0",
  "pallet-collective",
@@ -16069,7 +16001,6 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-chain-extension-assets",
  "pallet-collator-selection 4.0.0",
  "pallet-contracts",
  "pallet-dapp-staking",

@@ -140,9 +140,6 @@ moonbeam-evm-tracer = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
 
-# chain-extensions
-pallet-chain-extension-assets = { workspace = true }
-
 # benchmarking
 array-bytes = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
@@ -189,7 +186,6 @@ std = [
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
-	"pallet-chain-extension-assets/std",
 	"pallet-chain-extension-unified-accounts/std",
 	"pallet-collator-selection/std",
 	"pallet-collective-proxy/std",
@@ -287,7 +283,6 @@ runtime-benchmarks = [
 	"orml-xtokens/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
-	"pallet-chain-extension-assets/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-collective-proxy/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
@@ -350,7 +345,6 @@ try-runtime = [
 	"pallet-aura/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",
-	"pallet-chain-extension-assets/try-runtime",
 	"pallet-collator-selection/try-runtime",
 	"pallet-collective-proxy/try-runtime",
 	"pallet-collective/try-runtime",

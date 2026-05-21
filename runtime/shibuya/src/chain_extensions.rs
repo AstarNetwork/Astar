@@ -19,22 +19,14 @@
 use super::{Runtime, UnifiedAccounts};
 
 /// Registered WASM contracts chain extensions.
-pub use pallet_chain_extension_assets::AssetsExtension;
+pub use pallet_chain_extension_unified_accounts::UnifiedAccountsExtension;
 use pallet_contracts::chain_extension::RegisteredChainExtension;
 
-pub use pallet_chain_extension_unified_accounts::UnifiedAccountsExtension;
-
 // Following impls defines chain extension IDs.
-
-impl RegisteredChainExtension<Runtime> for AssetsExtension<Runtime> {
-    const ID: u16 = 02;
-}
 
 impl RegisteredChainExtension<Runtime> for UnifiedAccountsExtension<Runtime, UnifiedAccounts> {
     const ID: u16 = 03;
 }
 
-pub type ShibuyaChainExtensions<Runtime, UnifiedAccounts> = (
-    AssetsExtension<Runtime>,
-    UnifiedAccountsExtension<Runtime, UnifiedAccounts>,
-);
+pub type ShibuyaChainExtensions<Runtime, UnifiedAccounts> =
+    UnifiedAccountsExtension<Runtime, UnifiedAccounts>;

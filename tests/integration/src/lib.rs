@@ -39,9 +39,6 @@ mod unified_accounts;
 mod dapp_staking;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod assets_chain_extensions;
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod evm_tracing;
 
 #[cfg(any(feature = "shibuya", feature = "astar"))]
