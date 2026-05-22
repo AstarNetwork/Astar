@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["LOG_TARGET"],"enum":["Command","Outcome"],"macro":["handle_result","selector_bytes"]};
