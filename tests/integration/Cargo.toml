@@ -55,7 +55,6 @@ xcm-executor = { workspace = true }
 xcm-runtime-apis = { workspace = true }
 
 # astar dependencies
-assets-chain-extension-types = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-collective-proxy = { workspace = true }
 pallet-dapp-staking = { workspace = true }
@@ -87,7 +86,6 @@ std = [
 	"shiden-runtime/std",
 	"astar-primitives/std",
 	"astar-test-utils/std",
-	"assets-chain-extension-types/std",
 	"pallet-collective-proxy/std",
 	"ethereum?/std",
 	"fp-evm/std",

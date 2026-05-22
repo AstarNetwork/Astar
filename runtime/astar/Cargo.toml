@@ -141,9 +141,6 @@ moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
 precompile-utils = { workspace = true }
 
-# chain-extensions
-pallet-chain-extension-assets = { workspace = true }
-
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 
@@ -184,7 +181,6 @@ std = [
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
-	"pallet-chain-extension-assets/std",
 	"pallet-collator-selection/std",
 	"pallet-collective-proxy/std",
 	"pallet-collective/std",
@@ -276,7 +272,6 @@ runtime-benchmarks = [
 	"pallet-balances/runtime-benchmarks",
 	"pallet-safe-mode/runtime-benchmarks",
 	"pallet-tx-pause/runtime-benchmarks",
-	"pallet-chain-extension-assets/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-collective-proxy/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
@@ -337,7 +332,6 @@ try-runtime = [
 	"pallet-tx-pause/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",
-	"pallet-chain-extension-assets/try-runtime",
 	"pallet-collator-selection/try-runtime",
 	"pallet-collective-proxy/try-runtime",
 	"pallet-collective/try-runtime",

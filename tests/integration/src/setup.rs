@@ -363,6 +363,7 @@ pub fn init_env_logger() {
 
 /// Deploy a WASM contract via ALICE as origin. (The code is in `../ink-contracts/`.)
 /// Assumption: Contract constructor is called "new" and take no arguments
+#[allow(dead_code)]
 pub fn deploy_wasm_contract(name: &str) -> AccountId32 {
     let (address, _) = astar_test_utils::deploy_wasm_contract::<Runtime>(
         name,
@@ -379,6 +380,7 @@ pub fn deploy_wasm_contract(name: &str) -> AccountId32 {
 }
 
 /// Call a wasm smart contract method
+#[allow(dead_code)]
 pub fn call_wasm_contract_method<V: Decode>(
     origin: AccountId,
     contract_id: AccountId,
