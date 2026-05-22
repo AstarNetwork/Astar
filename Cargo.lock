@@ -6653,7 +6653,6 @@ dependencies = [
  "pallet-collective",
  "pallet-collective-proxy",
  "pallet-contracts",
- "pallet-contracts-uapi",
  "pallet-dapp-staking",
  "pallet-democracy",
  "pallet-ethereum",
@@ -6675,7 +6674,6 @@ dependencies = [
  "sha3",
  "shibuya-runtime",
  "shiden-runtime",
- "smallvec",
  "sp-consensus-aura",
  "sp-core",
  "sp-io",
@@ -15741,7 +15739,6 @@ dependencies = [
 name = "shibuya-runtime"
 version = "22.0.4"
 dependencies = [
- "array-bytes 6.2.3",
  "astar-primitives",
  "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
@@ -15764,7 +15761,6 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal",
  "log",
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",

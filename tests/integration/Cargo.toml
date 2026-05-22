@@ -15,7 +15,6 @@ env_logger = { workspace = true }
 hex = { workspace = true }
 parity-scale-codec = { workspace = true }
 sha3 = { workspace = true }
-smallvec = { workspace = true }
 
 # frontier
 fp-evm = { workspace = true }
@@ -33,7 +32,6 @@ pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-collective = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-contracts-uapi = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-proxy = { workspace = true }

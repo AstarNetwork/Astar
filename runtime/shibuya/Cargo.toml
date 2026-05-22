@@ -12,7 +12,6 @@ workspace = true
 
 [dependencies]
 # third-party dependencies
-hex-literal = { workspace = true }
 log = { workspace = true, optional = true }
 num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
@@ -137,7 +136,6 @@ moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
 
 # benchmarking
-array-bytes = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-system-benchmarking = { workspace = true, optional = true }
 
