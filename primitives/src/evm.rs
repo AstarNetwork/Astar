@@ -67,7 +67,6 @@ where
     }
 }
 
-
 /// Wrapper around the `EvmFungibleAdapter` from the `pallet-evm`.
 ///
 /// While it provides most of the functionality we need,

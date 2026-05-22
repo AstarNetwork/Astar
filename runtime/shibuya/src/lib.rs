@@ -914,7 +914,6 @@ impl pallet_dynamic_evm_base_fee::Config for Runtime {
     type WeightInfo = pallet_dynamic_evm_base_fee::weights::SubstrateWeight<Runtime>;
 }
 
-
 /// Current approximation of the gas/s consumption considering
 /// EVM execution over compiled WASM (on 4.4Ghz CPU).
 /// Given the 500ms Weight, from which 75% only are used for transactions,
