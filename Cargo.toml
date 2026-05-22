@@ -11,8 +11,6 @@ members = [
 	"pallets/*",
 	"precompiles/*",
 	"primitives",
-	"chain-extensions/unified-accounts",
-	"chain-extensions/types/*",
 	"vendor/evm-tracing",
 	"vendor/primitives/debug",
 	"vendor/primitives/evm-tracing-events",
@@ -318,7 +316,6 @@ pallet-xc-asset-config = { path = "./pallets/xc-asset-config", default-features 
 pallet-ethereum-checked = { path = "./pallets/ethereum-checked", default-features = false }
 pallet-inflation = { path = "./pallets/inflation", default-features = false }
 pallet-dynamic-evm-base-fee = { path = "./pallets/dynamic-evm-base-fee", default-features = false }
-pallet-unified-accounts = { path = "./pallets/unified-accounts", default-features = false }
 astar-xcm-benchmarks = { path = "./pallets/astar-xcm-benchmarks", default-features = false }
 pallet-collective-proxy = { path = "./pallets/collective-proxy", default-features = false }
 vesting-mbm = { path = "./pallets/vesting-mbm", default-features = false }
@@ -335,12 +332,9 @@ pallet-evm-precompile-sr25519 = { path = "./precompiles/sr25519", default-featur
 pallet-evm-precompile-substrate-ecdsa = { path = "./precompiles/substrate-ecdsa", default-features = false }
 pallet-evm-precompile-xcm = { path = "./precompiles/xcm", default-features = false }
 pallet-evm-precompile-dapp-staking = { path = "./precompiles/dapp-staking", default-features = false }
-pallet-evm-precompile-unified-accounts = { path = "./precompiles/unified-accounts", default-features = false }
 pallet-evm-precompile-dispatch-lockdrop = { path = "./precompiles/dispatch-lockdrop", default-features = false }
 
-pallet-chain-extension-unified-accounts = { path = "./chain-extensions/unified-accounts", default-features = false }
 
-unified-accounts-chain-extension-types = { path = "./chain-extensions/types/unified-accounts", default-features = false }
 
 shibuya-runtime = { path = "./runtime/shibuya", default-features = false }
 shiden-runtime = { path = "./runtime/shiden", default-features = false }

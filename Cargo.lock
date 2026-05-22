@@ -6645,7 +6645,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex",
- "libsecp256k1",
  "moonbeam-rpc-primitives-debug",
  "pallet-assets",
  "pallet-aura",
@@ -6669,7 +6668,6 @@ dependencies = [
  "pallet-session",
  "pallet-timestamp",
  "pallet-tx-pause",
- "pallet-unified-accounts",
  "pallet-utility",
  "pallet-xcm",
  "parity-scale-codec",
@@ -6686,7 +6684,6 @@ dependencies = [
  "sp-trie",
  "staging-xcm",
  "staging-xcm-executor",
- "unified-accounts-chain-extension-types",
  "xcm-runtime-apis",
 ]
 
@@ -9318,26 +9315,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-chain-extension-unified-accounts"
-version = "0.1.0"
-dependencies = [
- "astar-primitives",
- "frame-support",
- "frame-system",
- "log",
- "num-traits",
- "pallet-contracts",
- "pallet-evm",
- "pallet-unified-accounts",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
- "sp-std",
- "unified-accounts-chain-extension-types",
-]
-
-[[package]]
 name = "pallet-child-bounties"
 version = "40.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2506#510fed173e7459a3b030cdf20f1021236b367253"
@@ -9905,35 +9882,6 @@ dependencies = [
  "pallet-balances",
  "pallet-evm",
  "pallet-timestamp",
- "parity-scale-codec",
- "precompile-utils",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-evm-precompile-unified-accounts"
-version = "0.1.0"
-dependencies = [
- "astar-primitives",
- "derive_more 0.99.20",
- "ethers",
- "fp-evm",
- "frame-support",
- "frame-system",
- "hex",
- "hex-literal",
- "libsecp256k1",
- "log",
- "num_enum 0.5.11",
- "pallet-balances",
- "pallet-evm",
- "pallet-timestamp",
- "pallet-unified-accounts",
  "parity-scale-codec",
  "precompile-utils",
  "scale-info",
@@ -10794,31 +10742,6 @@ dependencies = [
  "parity-scale-codec",
  "polkadot-sdk-frame",
  "scale-info",
-]
-
-[[package]]
-name = "pallet-unified-accounts"
-version = "0.1.0"
-dependencies = [
- "astar-primitives",
- "ethers",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "hex",
- "libsecp256k1",
- "log",
- "pallet-balances",
- "pallet-ethereum",
- "pallet-evm",
- "pallet-timestamp",
- "parity-scale-codec",
- "precompile-utils",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -15879,7 +15802,6 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-chain-extension-unified-accounts",
  "pallet-collator-selection 4.0.0",
  "pallet-collective",
  "pallet-collective-proxy",
@@ -15903,7 +15825,6 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-evm-precompile-sr25519",
  "pallet-evm-precompile-substrate-ecdsa",
- "pallet-evm-precompile-unified-accounts",
  "pallet-evm-precompile-xcm",
  "pallet-identity",
  "pallet-inflation",
@@ -15923,7 +15844,6 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury 37.0.0",
  "pallet-tx-pause",
- "pallet-unified-accounts",
  "pallet-utility",
  "pallet-vesting",
  "pallet-xc-asset-config",
@@ -18731,17 +18651,6 @@ name = "unicode_categories"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39ec24b3121d976906ece63c9daad25b85969647682eee313cb5779fdd69e14e"
-
-[[package]]
-name = "unified-accounts-chain-extension-types"
-version = "0.1.0"
-dependencies = [
- "num_enum 0.5.11",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
-]
 
 [[package]]
 name = "universal-hash"

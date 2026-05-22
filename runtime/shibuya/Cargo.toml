@@ -112,7 +112,6 @@ orml-xtokens = { workspace = true }
 # Astar pallets
 astar-primitives = { workspace = true }
 astar-xcm-benchmarks = { workspace = true, optional = true }
-pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-collective-proxy = { workspace = true }
 pallet-dapp-staking = { workspace = true }
@@ -123,10 +122,8 @@ pallet-evm-precompile-dapp-staking = { workspace = true }
 pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
-pallet-evm-precompile-unified-accounts = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
 pallet-inflation = { workspace = true }
-pallet-unified-accounts = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 pallet-xcm-benchmarks = { workspace = true, optional = true }
@@ -186,7 +183,6 @@ std = [
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
-	"pallet-chain-extension-unified-accounts/std",
 	"pallet-collator-selection/std",
 	"pallet-collective-proxy/std",
 	"pallet-collective/std",
@@ -209,7 +205,6 @@ std = [
 	"pallet-evm-precompile-simple/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
-	"pallet-evm-precompile-unified-accounts/std",
 	"pallet-evm-precompile-xcm/std",
 	"pallet-evm/std",
 	"pallet-identity/std",
@@ -230,7 +225,6 @@ std = [
 	"pallet-transaction-payment/std",
 	"pallet-treasury/std",
 	"pallet-tx-pause/std",
-	"pallet-unified-accounts/std",
 	"pallet-utility/std",
 	"pallet-vesting/std",
 	"pallet-xc-asset-config/std",
@@ -311,7 +305,6 @@ runtime-benchmarks = [
 	"pallet-transaction-payment/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
 	"pallet-tx-pause/runtime-benchmarks",
-	"pallet-unified-accounts/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
@@ -373,7 +366,6 @@ try-runtime = [
 	"pallet-transaction-payment/try-runtime",
 	"pallet-treasury/try-runtime",
 	"pallet-tx-pause/try-runtime",
-	"pallet-unified-accounts/try-runtime",
 	"pallet-utility/try-runtime",
 	"pallet-vesting/try-runtime",
 	"pallet-xc-asset-config/try-runtime",

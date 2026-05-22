@@ -119,7 +119,6 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-mod chain_extensions;
 pub mod genesis_config;
 mod precompiles;
 pub mod xcm_config;
@@ -131,8 +130,6 @@ pub type ShibuyaAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcA
 
 pub use precompiles::{ShibuyaPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = ShibuyaPrecompiles<Runtime, ShibuyaAssetLocationIdConverter>;
-
-use chain_extensions::ShibuyaChainExtensions;
 
 /// Constant values used within the runtime.
 pub const MICROSBY: Balance = 1_000_000_000_000;
@@ -307,7 +304,7 @@ impl frame_system::Config for Runtime {
     /// The aggregated dispatch type that is available for extrinsics.
     type RuntimeCall = RuntimeCall;
     /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-    type Lookup = (AccountIdLookup<AccountId, ()>, UnifiedAccounts);
+    type Lookup = AccountIdLookup<AccountId, ()>;
     /// The nonce type for storing how many extrinsics an account has signed.
     type Nonce = Nonce;
     /// The type for blocks.
@@ -330,7 +327,7 @@ impl frame_system::Config for Runtime {
     type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
-    type OnKilledAccount = pallet_unified_accounts::KillAccountMapping<Self>;
+    type OnKilledAccount = ();
     type DbWeight = RocksDbWeight;
     type BaseCallFilter = BaseCallFilter;
     type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
@@ -776,7 +773,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 5];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = ShibuyaChainExtensions<Self, UnifiedAccounts>;
+    type ChainExtension = ();
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
@@ -921,7 +918,7 @@ impl pallet_ethereum_checked::Config for Runtime {
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
     type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
-    type AddressMapper = UnifiedAccounts;
+    type AddressMapper = HashedDefaultMappings<BlakeTwo256>;
     type XcmTransactOrigin = pallet_ethereum_checked::EnsureXcmEthereumTx<AccountId>;
     type WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight<Runtime>;
 }
@@ -973,7 +970,7 @@ impl pallet_evm::Config for Runtime {
     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Runtime>;
     type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
-    type AddressMapping = UnifiedAccounts;
+    type AddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
     type Currency = Balances;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = Precompiles;
@@ -1202,19 +1199,6 @@ impl pallet_message_queue::Config for Runtime {
     type MaxStale = ConstU32<8>;
     type ServiceWeight = MessageQueueServiceWeight;
     type IdleMaxServiceWeight = MessageQueueServiceWeight;
-}
-
-parameter_types! {
-    // 2 storage items with values 20 and 32
-    pub const AccountMappingStorageFee: u128 = deposit(2, 32 + 20);
-}
-
-impl pallet_unified_accounts::Config for Runtime {
-    type Currency = Balances;
-    type DefaultMappings = HashedDefaultMappings<BlakeTwo256>;
-    type ChainId = EVMChainId;
-    type AccountMappingStorageFee = AccountMappingStorageFee;
-    type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
 }
 
 parameter_types! {
@@ -1639,8 +1623,7 @@ mod runtime {
     pub type EVMChainId = pallet_evm_chain_id;
     #[runtime::pallet_index(64)]
     pub type EthereumChecked = pallet_ethereum_checked;
-    #[runtime::pallet_index(65)]
-    pub type UnifiedAccounts = pallet_unified_accounts;
+    // skip 65 - pallet_unified_accounts previously
 
     #[runtime::pallet_index(70)]
     pub type Contracts = pallet_contracts;
@@ -1721,8 +1704,14 @@ pub type Executive = frame_executive::Executive<
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
+parameter_types! {
+    pub const UnifiedAccountsPalletName: &'static str = "UnifiedAccounts";
+}
+
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased = (
+    frame_support::migrations::RemovePallet<UnifiedAccountsPalletName, RocksDbWeight>,
+);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
@@ -1812,7 +1801,6 @@ mod benches {
         [pallet_xcm, PalletXcmExtrinsicsBenchmark::<Runtime>]
         [pallet_ethereum_checked, EthereumChecked]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
-        [pallet_unified_accounts, UnifiedAccounts]
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
         [pallet_collective_proxy, CollectiveProxy]

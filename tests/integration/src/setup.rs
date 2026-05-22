@@ -23,7 +23,7 @@ pub use frame_support::{
     traits::{OnFinalize, OnIdle, OnInitialize},
     weights::{Weight, WeightToFee as WeightToFeeT},
 };
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::Encode;
 pub use sp_core::{sr25519, Get, Pair, H160};
 pub use sp_runtime::{AccountId32, Digest, DigestItem, MultiAddress};
 
@@ -43,35 +43,10 @@ pub use astar_primitives::{genesis::GenesisAccount, BlockNumber};
 pub use shibuya::*;
 #[cfg(feature = "shibuya")]
 mod shibuya {
-    use super::*;
     pub use shibuya_runtime::*;
 
     /// 1 SBY.
     pub const UNIT: Balance = SBY;
-
-    pub fn alith_secret_key() -> libsecp256k1::SecretKey {
-        libsecp256k1::SecretKey::parse(&sp_io::hashing::keccak_256(b"Alith")).unwrap()
-    }
-
-    /// H160 address mapped to `ALICE`.
-    pub fn alith() -> H160 {
-        UnifiedAccounts::eth_address(&alith_secret_key())
-    }
-
-    /// Build the signature payload for given native account and eth private key
-    fn get_evm_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8; 65] {
-        // sign the payload
-        UnifiedAccounts::eth_sign_prehash(&UnifiedAccounts::build_signing_payload(who), secret)
-    }
-
-    /// Create the mappings for the accounts
-    pub fn connect_accounts(who: &AccountId32, secret: &libsecp256k1::SecretKey) {
-        assert_ok!(UnifiedAccounts::claim_evm_address(
-            RuntimeOrigin::signed(who.clone()),
-            UnifiedAccounts::eth_address(secret),
-            get_evm_signature(who, secret)
-        ));
-    }
 }
 
 #[cfg(feature = "shiden")]
@@ -359,41 +334,4 @@ pub fn expect_events(e: Vec<RuntimeEvent>) {
 #[allow(dead_code)]
 pub fn init_env_logger() {
     let _ = env_logger::builder().is_test(true).try_init();
-}
-
-/// Deploy a WASM contract via ALICE as origin. (The code is in `../ink-contracts/`.)
-/// Assumption: Contract constructor is called "new" and take no arguments
-#[allow(dead_code)]
-pub fn deploy_wasm_contract(name: &str) -> AccountId32 {
-    let (address, _) = astar_test_utils::deploy_wasm_contract::<Runtime>(
-        name,
-        ALICE,
-        0,
-        Weight::from_parts(10_000_000_000, 1024 * 1024),
-        None,
-        hex::decode("9bae9d5e").expect("invalid data hex"),
-    );
-
-    // On instantiation, the contract got existential deposit.
-    assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
-    address
-}
-
-/// Call a wasm smart contract method
-#[allow(dead_code)]
-pub fn call_wasm_contract_method<V: Decode>(
-    origin: AccountId,
-    contract_id: AccountId,
-    data: Vec<u8>,
-) -> V {
-    let (value, _, _) = astar_test_utils::call_wasm_contract_method::<Runtime, V>(
-        origin,
-        contract_id,
-        0,
-        Weight::from_parts(10_000_000_000, 1024 * 1024),
-        None,
-        data,
-        false,
-    );
-    value
 }
