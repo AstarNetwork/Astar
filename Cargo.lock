@@ -6657,7 +6657,6 @@ dependencies = [
  "pallet-dapp-staking",
  "pallet-democracy",
  "pallet-ethereum",
- "pallet-ethereum-checked",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-dispatch",
@@ -9631,31 +9630,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-version",
-]
-
-[[package]]
-name = "pallet-ethereum-checked"
-version = "0.1.0"
-dependencies = [
- "astar-primitives",
- "ethereum",
- "ethereum-types 0.15.1",
- "fp-ethereum",
- "fp-evm",
- "fp-rpc",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "hex",
- "pallet-balances",
- "pallet-ethereum",
- "pallet-evm",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -15810,7 +15784,6 @@ dependencies = [
  "pallet-democracy",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
- "pallet-ethereum-checked",
  "pallet-evm",
  "pallet-evm-chain-id",
  "pallet-evm-precompile-assets-erc20",

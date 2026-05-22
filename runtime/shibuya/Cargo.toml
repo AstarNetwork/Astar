@@ -116,7 +116,6 @@ pallet-collator-selection = { workspace = true }
 pallet-collective-proxy = { workspace = true }
 pallet-dapp-staking = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
-pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapp-staking = { workspace = true }
 pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
@@ -190,7 +189,6 @@ std = [
 	"pallet-dapp-staking/std",
 	"pallet-democracy/std",
 	"pallet-dynamic-evm-base-fee/std",
-	"pallet-ethereum-checked/std",
 	"pallet-ethereum/std",
 	"pallet-evm-chain-id/std",
 	"pallet-evm-precompile-assets-erc20/std",
@@ -284,7 +282,6 @@ runtime-benchmarks = [
 	"pallet-dapp-staking/runtime-benchmarks",
 	"pallet-democracy/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
-	"pallet-ethereum-checked/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-evm-precompile-assets-erc20/runtime-benchmarks",
 	"pallet-evm-precompile-dapp-staking/runtime-benchmarks",
@@ -345,7 +342,6 @@ try-runtime = [
 	"pallet-dapp-staking/try-runtime",
 	"pallet-democracy/try-runtime",
 	"pallet-dynamic-evm-base-fee/try-runtime",
-	"pallet-ethereum-checked/try-runtime",
 	"pallet-ethereum/try-runtime",
 	"pallet-evm-chain-id/try-runtime",
 	"pallet-evm/try-runtime",

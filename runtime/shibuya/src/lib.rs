@@ -86,7 +86,7 @@ use astar_primitives::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
         PeriodNumber, RankedTier, SmartContract, FIXED_NUMBER_OF_TIER_SLOTS,
     },
-    evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler, HashedDefaultMappings},
+    evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler},
     governance::{
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
@@ -215,7 +215,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_version: 2204,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 3,
+    transaction_version: 4,
     system_version: 1,
 };
 
@@ -914,14 +914,6 @@ impl pallet_dynamic_evm_base_fee::Config for Runtime {
     type WeightInfo = pallet_dynamic_evm_base_fee::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_ethereum_checked::Config for Runtime {
-    type ReservedXcmpWeight = ReservedXcmpWeight;
-    type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
-    type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
-    type AddressMapper = HashedDefaultMappings<BlakeTwo256>;
-    type XcmTransactOrigin = pallet_ethereum_checked::EnsureXcmEthereumTx<AccountId>;
-    type WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight<Runtime>;
-}
 
 /// Current approximation of the gas/s consumption considering
 /// EVM execution over compiled WASM (on 4.4Ghz CPU).
@@ -1621,8 +1613,7 @@ mod runtime {
     pub type DynamicEvmBaseFee = pallet_dynamic_evm_base_fee;
     #[runtime::pallet_index(63)]
     pub type EVMChainId = pallet_evm_chain_id;
-    #[runtime::pallet_index(64)]
-    pub type EthereumChecked = pallet_ethereum_checked;
+    // skip 64 - pallet_ethereum_checked previously
     // skip 65 - pallet_unified_accounts previously
 
     #[runtime::pallet_index(70)]
@@ -1706,11 +1697,13 @@ pub type Migrations = (Unreleased, Permanent);
 
 parameter_types! {
     pub const UnifiedAccountsPalletName: &'static str = "UnifiedAccounts";
+    pub const EthereumCheckedPalletName: &'static str = "EthereumChecked";
 }
 
 /// Unreleased migrations. Add new ones here:
 pub type Unreleased = (
     frame_support::migrations::RemovePallet<UnifiedAccountsPalletName, RocksDbWeight>,
+    frame_support::migrations::RemovePallet<EthereumCheckedPalletName, RocksDbWeight>,
 );
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
@@ -1799,7 +1792,6 @@ mod benches {
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PalletXcmExtrinsicsBenchmark::<Runtime>]
-        [pallet_ethereum_checked, EthereumChecked]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
