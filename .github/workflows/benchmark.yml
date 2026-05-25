@@ -111,8 +111,9 @@ jobs:
         rustup +stable component add rust-src
 
     # TODO: Should be moved below the `rustup show` once the defined toolchain works.
+    # TODO: --rev must match the polkadot-sdk commit pinned for sp-storage in Cargo.lock. Could be removed after uplift.
     - name: Install frame-omni bencher tool
-      run: cargo +stable install --git https://github.com/paritytech/polkadot-sdk frame-omni-bencher --profile=production --locked
+      run: cargo +stable install --git https://github.com/paritytech/polkadot-sdk --rev 510fed173e7459a3b030cdf20f1021236b367253 frame-omni-bencher --profile=production --locked
 
     - name: Checkout the source code
       uses: actions/checkout@v3
