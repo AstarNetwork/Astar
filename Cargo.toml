@@ -333,8 +333,6 @@ pallet-evm-precompile-xcm = { path = "./precompiles/xcm", default-features = fal
 pallet-evm-precompile-dapp-staking = { path = "./precompiles/dapp-staking", default-features = false }
 pallet-evm-precompile-dispatch-lockdrop = { path = "./precompiles/dispatch-lockdrop", default-features = false }
 
-
-
 shibuya-runtime = { path = "./runtime/shibuya", default-features = false }
 shiden-runtime = { path = "./runtime/shiden", default-features = false }
 astar-runtime = { path = "./runtime/astar", default-features = false }
