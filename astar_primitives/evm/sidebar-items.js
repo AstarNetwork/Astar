@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["EVM_REVERT_CODE"],"enum":["UnifiedAddress"],"struct":["EVMFungibleAdapterWrapper","EvmRevertCodeHandler","H160","H256","HashedDefaultMappings","U256"],"trait":["Hasher","UnifiedAddressMapper"],"type":["EvmAddress"]};
+window.SIDEBAR_ITEMS = {"constant":["EVM_REVERT_CODE"],"struct":["EVMFungibleAdapterWrapper","EvmRevertCodeHandler","H160","H256","U256"],"type":["EvmAddress"]};

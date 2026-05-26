@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["claim_default_evm_address","claim_evm_address"]};
