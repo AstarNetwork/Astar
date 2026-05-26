@@ -13,10 +13,8 @@ workspace = true
 [dependencies]
 env_logger = { workspace = true }
 hex = { workspace = true }
-libsecp256k1 = { workspace = true, features = ["hmac", "static-context"] }
 parity-scale-codec = { workspace = true }
 sha3 = { workspace = true }
-smallvec = { workspace = true }
 
 # frontier
 fp-evm = { workspace = true }
@@ -34,7 +32,6 @@ pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-collective = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-contracts-uapi = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-proxy = { workspace = true }
@@ -58,13 +55,10 @@ xcm-runtime-apis = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-collective-proxy = { workspace = true }
 pallet-dapp-staking = { workspace = true }
-pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
 pallet-inflation = { workspace = true }
-pallet-unified-accounts = { workspace = true }
 precompile-utils = { workspace = true }
-unified-accounts-chain-extension-types = { workspace = true }
 
 astar-primitives = { workspace = true }
 astar-runtime = { workspace = true, optional = true }
@@ -93,7 +87,6 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"hex/std",
-	"libsecp256k1/std",
 	"moonbeam-rpc-primitives-debug?/std",
 	"pallet-assets/std",
 	"pallet-collective/std",
@@ -108,7 +101,6 @@ std = [
 	"pallet-timestamp/std",
 	"pallet-dapp-staking/std",
 	"pallet-ethereum?/std",
-	"pallet-ethereum-checked/std",
 	"pallet-evm/std",
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-dispatch/std",
@@ -118,7 +110,6 @@ std = [
 	"pallet-membership/std",
 	"cumulus-test-relay-sproof-builder/std",
 	"pallet-proxy/std",
-	"pallet-unified-accounts/std",
 	"pallet-utility/std",
 	"pallet-xcm/std",
 	"parity-scale-codec/std",
@@ -128,7 +119,6 @@ std = [
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"unified-accounts-chain-extension-types/std",
 	"xcm/std",
 	"xcm-runtime-apis/std",
 	"xcm-executor/std",

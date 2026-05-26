@@ -23,9 +23,6 @@
 //! These core Astar types are used by the Shiden, Shibuya and Astar runtimes.
 pub mod xcm;
 
-/// Checked Ethereum transaction primitives.
-pub mod ethereum_checked;
-
 /// EVM primitives.
 pub mod evm;
 
