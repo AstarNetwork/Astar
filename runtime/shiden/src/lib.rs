@@ -162,7 +162,7 @@ pub const BLOCK_PROCESSING_VELOCITY: u32 = 1;
 /// Relay chain slot duration, in milliseconds.
 pub const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6000;
 /// Relay chain best block offset to build blocks on.
-const RELAY_PARENT_OFFSET: u32 = 0;
+const RELAY_PARENT_OFFSET: u32 = 1;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -184,7 +184,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("shiden"),
     impl_name: Cow::Borrowed("shiden"),
     authoring_version: 1,
-    spec_version: 2204,
+    spec_version: 2205,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
