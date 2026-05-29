@@ -172,7 +172,7 @@ pub const BLOCK_PROCESSING_VELOCITY: u32 = 1;
 /// Relay chain slot duration, in milliseconds.
 pub const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6000;
 /// Relay chain best block offset to build blocks on.
-const RELAY_PARENT_OFFSET: u32 = 0;
+const RELAY_PARENT_OFFSET: u32 = 1;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -194,7 +194,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("astar"),
     impl_name: Cow::Borrowed("astar"),
     authoring_version: 1,
-    spec_version: 2204,
+    spec_version: 2205,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -1695,24 +1695,13 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-parameter_types! {
-    pub const PriceAggregatorPalletStr: &'static str = "PriceAggregator";
-    pub const OraclePalletStr: &'static str = "Oracle";
-    pub const OracleMembershipPalletStr: &'static str = "OracleMembership";
-}
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (
-    pallet_dapp_staking::migration::versioned_migrations::V11ToV12<Runtime>,
-    frame_support::migrations::RemovePallet<PriceAggregatorPalletStr, RocksDbWeight>,
-    frame_support::migrations::RemovePallet<OraclePalletStr, RocksDbWeight>,
-    frame_support::migrations::RemovePallet<OracleMembershipPalletStr, RocksDbWeight>,
-);
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
