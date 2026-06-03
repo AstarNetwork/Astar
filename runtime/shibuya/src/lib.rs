@@ -48,7 +48,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot, EnsureSigned, EnsureWithSuccess,
+    EnsureNever, EnsureRoot, EnsureSigned, EnsureWithSuccess,
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
@@ -789,8 +789,8 @@ impl pallet_contracts::Config for Runtime {
     type Environment = ();
     type Migrations = ();
     type Xcm = ();
-    type UploadOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
-    type InstantiateOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
+    type UploadOrigin = EnsureNever<<Self as frame_system::Config>::AccountId>;
+    type InstantiateOrigin = EnsureNever<<Self as frame_system::Config>::AccountId>;
     type ApiVersion = ();
     type MaxTransientStorageSize = ConstU32<{ 1 * 1024 * 1024 }>;
 }
