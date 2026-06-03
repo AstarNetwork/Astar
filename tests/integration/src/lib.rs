@@ -30,6 +30,9 @@ mod proxy;
 mod assets;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
+mod contracts;
+
+#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod dispatch_precompile_filter;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
