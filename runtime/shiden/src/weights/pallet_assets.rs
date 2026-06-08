@@ -585,4 +585,11 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for SubstrateWeight<T> {
 			.saturating_add(Weight::from_parts(0, 3625))
 			.saturating_add(T::DbWeight::get().reads(1))
 	}
+	/// Stub weight for `set_reserves`; benchmarks not yet regenerated.
+	fn set_reserves(n: u32) -> Weight {
+		Weight::from_parts(30_000_000, 3675)
+			.saturating_add(Weight::from_parts(200_000, 0).saturating_mul(n.into()))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
 }

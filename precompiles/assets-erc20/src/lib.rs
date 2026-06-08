@@ -36,7 +36,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use fp_evm::{ExitError, PrecompileHandle};
+use fp_evm::PrecompileHandle;
 use frame_support::{
     dispatch::{GetDispatchInfo, PostDispatchInfo},
     traits::{

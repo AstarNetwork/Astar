@@ -347,18 +347,22 @@ mod xcm_old_interface_test {
                 .execute_returns(true);
 
             for (location, Xcm(instructions)) in take_sent_xcm() {
+                // xtokens now routes native-token-to-relay-chain transfers through Asset Hub
+                // (ORML xtokens chain_part change: (1, non-Parachain) → Asset Hub)
                 assert_eq!(
                     location,
                     Location {
                         parents: 1,
-                        interior: Here
+                        interior: Parachain(1000).into()
                     }
                 );
 
+                // native_asset reanchored to Asset Hub's perspective:
+                // from AssetHub, parachain 123's native token is at parents=1, Parachain(123)
                 let native_asset = Asset {
                     fun: Fungible(42000),
                     id: xcm::v5::AssetId::from(Location {
-                        parents: 0,
+                        parents: 1,
                         interior: Parachain(123).into(),
                     }),
                 };

@@ -54,8 +54,8 @@ fn create_funded_user<T: Config>(
     balance_factor: u32,
 ) -> T::AccountId {
     let user = account(string, n, SEED);
-    let balance = T::Currency::minimum_balance() * balance_factor.into();
-    let _ = T::Currency::make_free_balance_be(&user, balance);
+    let balance = <T as pallet::Config>::Currency::minimum_balance() * balance_factor.into();
+    let _ = <T as pallet::Config>::Currency::make_free_balance_be(&user, balance);
     user
 }
 
@@ -102,7 +102,10 @@ fn register_candidates<T: Config>(count: u32) {
     let gov_origin = T::GovernanceOrigin::try_successful_origin().unwrap();
 
     for who in candidates {
-        T::Currency::make_free_balance_be(&who, <CandidacyBond<T>>::get() * 2u32.into());
+        <T as pallet::Config>::Currency::make_free_balance_be(
+            &who,
+            <CandidacyBond<T>>::get() * 2u32.into(),
+        );
         <CollatorSelection<T>>::apply_for_candidacy(RawOrigin::Signed(who.clone()).into()).unwrap();
         <CollatorSelection<T>>::approve_application(gov_origin.clone(), who).unwrap();
     }
@@ -177,7 +180,7 @@ benchmarks! {
     }
 
     set_candidacy_bond {
-        let bond: BalanceOf<T> = T::Currency::minimum_balance() * 10u32.into();
+        let bond: BalanceOf<T> = <T as pallet::Config>::Currency::minimum_balance() * 10u32.into();
         let origin = T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
     }: {
         assert_ok!(
@@ -198,11 +201,11 @@ benchmarks! {
     }
 
     apply_for_candidacy {
-        <CandidacyBond<T>>::put(T::Currency::minimum_balance());
+        <CandidacyBond<T>>::put(<T as pallet::Config>::Currency::minimum_balance());
 
         let caller: T::AccountId = whitelisted_caller();
-        let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
-        T::Currency::make_free_balance_be(&caller, bond);
+        let bond: BalanceOf<T> = <T as pallet::Config>::Currency::minimum_balance() * 2u32.into();
+        <T as pallet::Config>::Currency::make_free_balance_be(&caller, bond);
 
         <session::Pallet<T>>::set_keys(
             RawOrigin::Signed(caller.clone()).into(),
@@ -217,11 +220,11 @@ benchmarks! {
 
     // worst case is when called by signed origin
     close_application {
-        <CandidacyBond<T>>::put(T::Currency::minimum_balance());
+        <CandidacyBond<T>>::put(<T as pallet::Config>::Currency::minimum_balance());
 
         let caller: T::AccountId = whitelisted_caller();
-        let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
-        T::Currency::make_free_balance_be(&caller, bond);
+        let bond: BalanceOf<T> = <T as pallet::Config>::Currency::minimum_balance() * 2u32.into();
+        <T as pallet::Config>::Currency::make_free_balance_be(&caller, bond);
 
         <session::Pallet<T>>::set_keys(
             RawOrigin::Signed(caller.clone()).into(),
@@ -243,7 +246,7 @@ benchmarks! {
     approve_application {
         let c in 1 .. T::MaxCandidates::get();
 
-        <CandidacyBond<T>>::put(T::Currency::minimum_balance());
+        <CandidacyBond<T>>::put(<T as pallet::Config>::Currency::minimum_balance());
         <DesiredCandidates<T>>::put(c + 1);
 
         register_validators::<T>(c);
@@ -251,8 +254,8 @@ benchmarks! {
 
         let origin = T::GovernanceOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
         let caller: T::AccountId = whitelisted_caller();
-        let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
-        T::Currency::make_free_balance_be(&caller, bond);
+        let bond: BalanceOf<T> = <T as pallet::Config>::Currency::minimum_balance() * 2u32.into();
+        <T as pallet::Config>::Currency::make_free_balance_be(&caller, bond);
 
         <session::Pallet<T>>::set_keys(
             RawOrigin::Signed(caller.clone()).into(),
@@ -274,7 +277,7 @@ benchmarks! {
     // worse case is the last candidate kicking.
     kick_candidate {
         let c in (T::MinCandidates::get() + 1) .. T::MaxCandidates::get();
-        <CandidacyBond<T>>::put(T::Currency::minimum_balance());
+        <CandidacyBond<T>>::put(<T as pallet::Config>::Currency::minimum_balance());
         <DesiredCandidates<T>>::put(c);
 
         register_validators::<T>(c);
@@ -295,7 +298,7 @@ benchmarks! {
     // worse case is the last candidate leaving.
     leave_intent {
         let c in (T::MinCandidates::get() + 1) .. T::MaxCandidates::get();
-        <CandidacyBond<T>>::put(T::Currency::minimum_balance());
+        <CandidacyBond<T>>::put(<T as pallet::Config>::Currency::minimum_balance());
         <DesiredCandidates<T>>::put(c);
 
         register_validators::<T>(c);
@@ -311,7 +314,7 @@ benchmarks! {
     withdraw_bond {
         use frame_support::traits::{EstimateNextSessionRotation, Hooks};
 
-        <CandidacyBond<T>>::put(T::Currency::minimum_balance());
+        <CandidacyBond<T>>::put(<T as pallet::Config>::Currency::minimum_balance());
         <DesiredCandidates<T>>::put(T::MinCandidates::get() + 1);
         register_validators::<T>(T::MinCandidates::get() + 1);
         register_candidates::<T>(T::MinCandidates::get() + 1);
@@ -321,7 +324,7 @@ benchmarks! {
         assert_ok!(CollatorSelection::<T>::leave_intent(RawOrigin::Signed(leaving.clone()).into()));
         let session_length = <T as session::Config>::NextSessionRotation::average_session_length();
         session::Pallet::<T>::on_initialize(session_length);
-        assert_eq!(<NonCandidates<T>>::get(&leaving), Some((1u32, T::Currency::minimum_balance())));
+        assert_eq!(<NonCandidates<T>>::get(&leaving), Some((1u32, <T as pallet::Config>::Currency::minimum_balance())));
     }: _(RawOrigin::Signed(leaving.clone()))
     verify {
         assert_eq!(<NonCandidates<T>>::get(&leaving), None);
@@ -329,20 +332,20 @@ benchmarks! {
 
     // worse case is paying a non-existing candidate account.
     note_author {
-        <CandidacyBond<T>>::put(T::Currency::minimum_balance());
-        T::Currency::make_free_balance_be(
+        <CandidacyBond<T>>::put(<T as pallet::Config>::Currency::minimum_balance());
+        <T as pallet::Config>::Currency::make_free_balance_be(
             &<CollatorSelection<T>>::account_id(),
-            T::Currency::minimum_balance() * 4u32.into(),
+            <T as pallet::Config>::Currency::minimum_balance() * 4u32.into(),
         );
         let author = account("author", 0, SEED);
         let new_block: BlockNumberFor<T> = 10u32.into();
 
         frame_system::Pallet::<T>::set_block_number(new_block);
-        assert!(T::Currency::free_balance(&author) == 0u32.into());
+        assert!(<T as pallet::Config>::Currency::free_balance(&author) == 0u32.into());
     }: {
         <CollatorSelection<T> as EventHandler<_, _>>::note_author(author.clone())
     } verify {
-        assert!(T::Currency::free_balance(&author) > 0u32.into());
+        assert!(<T as pallet::Config>::Currency::free_balance(&author) > 0u32.into());
         assert_eq!(frame_system::Pallet::<T>::block_number(), new_block);
     }
 
@@ -351,7 +354,7 @@ benchmarks! {
         let r in 1 .. T::MaxCandidates::get();
         let c in 1 .. T::MaxCandidates::get();
 
-        <CandidacyBond<T>>::put(T::Currency::minimum_balance());
+        <CandidacyBond<T>>::put(<T as pallet::Config>::Currency::minimum_balance());
         <DesiredCandidates<T>>::put(c);
         frame_system::Pallet::<T>::set_block_number(0u32.into());
 

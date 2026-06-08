@@ -39,7 +39,7 @@ use frame_system::{
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_runtime::{
     traits::{AccountIdConversion, Convert, IdentityLookup, MaybeEquivalence},
-    AccountId32, FixedU128, Perbill, RuntimeDebug,
+    AccountId32, Perbill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 

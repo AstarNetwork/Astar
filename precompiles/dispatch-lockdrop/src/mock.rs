@@ -26,7 +26,7 @@ use frame_support::{
 pub use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
-use sp_core::{keccak_256, H160};
+use sp_core::{keccak_256, H160, U256};
 use sp_runtime::{
     traits::{ConstU32, IdentityLookup},
     AccountId32,
@@ -124,6 +124,7 @@ impl pallet_timestamp::Config for TestRuntime {
 parameter_types! {
     pub const PrecompilesValue: TestPrecompileSet<TestRuntime> =
         TestPrecompileSet(PhantomData);
+    pub TransactionGasLimit: Option<U256> = Some(fp_evm::MAX_TRANSACTION_GAS_LIMIT);
     pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
@@ -169,6 +170,7 @@ impl pallet_evm::Config for TestRuntime {
     type GasLimitStorageGrowthRatio = ConstU64<0>;
     type CreateOriginFilter = ();
     type CreateInnerOriginFilter = ();
+    type TransactionGasLimit = TransactionGasLimit;
 }
 
 impl pallet_utility::Config for TestRuntime {

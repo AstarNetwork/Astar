@@ -20,7 +20,8 @@
 
 use fc_rpc::{
     Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
-    EthPubSubApiServer, Net, NetApiServer, TxPool, TxPoolApiServer, Web3, Web3ApiServer,
+    EthPubSubApiServer, LogsJournal, Net, NetApiServer, TxPool, TxPoolApiServer, Web3,
+    Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_storage::{StorageOverride, StorageOverrideHandler};
@@ -238,6 +239,7 @@ where
                 client,
                 trace_filter_requester,
                 tracing_config.trace_filter_max_count,
+                500u32, // max_block_range for trace_filter requests
             )
             .into_rpc(),
         )?;
@@ -312,6 +314,7 @@ where
                 client,
                 trace_filter_requester,
                 tracing_config.trace_filter_max_count,
+                500u32, // max_block_range for trace_filter requests
             )
             .into_rpc(),
         )?;
@@ -482,7 +485,6 @@ where
         Eth::<_, _, _, _, _, _, ()>::new(
             client.clone(),
             pool.clone(),
-            graph.clone(),
             no_tx_converter,
             sync.clone(),
             Default::default(),
@@ -494,6 +496,7 @@ where
             fee_history_limit,
             // Allow 10x max allowed weight for non-transactional calls
             10,
+            false, // rpc_allow_unprotected_txs: reject pre-EIP-155 txs via RPC
             None,
             make_pending_inherent_data_provider(client.clone()),
             Some(Box::new(
@@ -507,6 +510,13 @@ where
     let max_past_logs: u32 = 10_000;
     let max_block_range: u32 = 1024;
     let max_stored_filters: usize = 500;
+
+    let logs_journal = Arc::new(LogsJournal::new::<Block>(
+        subscription_task_executor.clone(),
+        storage_override.clone(),
+        pubsub_notification_sinks.clone(),
+    ));
+
     io.merge(
         EthFilter::new(
             client.clone(),
@@ -517,6 +527,7 @@ where
             max_past_logs,
             max_block_range,
             block_data_cache,
+            logs_journal.clone(),
         )
         .into_rpc(),
     )?;
@@ -533,6 +544,7 @@ where
             subscription_task_executor,
             storage_override,
             pubsub_notification_sinks,
+            logs_journal,
         )
         .into_rpc(),
     )?;

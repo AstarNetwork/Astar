@@ -350,4 +350,14 @@ impl<T: frame_system::Config> pallet_xcm::WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(18_446_744_073_709_551_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 	}
+	/// Storage: `Benchmark::Override` (r:0 w:0)
+	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	fn weigh_message() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
+		Weight::from_parts(18_446_744_073_709_551_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+	}
 }

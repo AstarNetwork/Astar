@@ -44,7 +44,7 @@ impl_runtime_apis! {
             unimplemented!()
         }
 
-        fn execute_block(_block: Block) {
+        fn execute_block(_block: <Block as BlockT>::LazyBlock) {
             unimplemented!()
         }
 
@@ -79,12 +79,6 @@ impl_runtime_apis! {
         }
     }
 
-    impl cumulus_primitives_core::GetCoreSelectorApi<Block> for Runtime {
-        fn core_selector() -> (cumulus_primitives_core::CoreSelector, cumulus_primitives_core::ClaimQueueOffset) {
-            unimplemented!()
-        }
-    }
-
     impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
         fn slot_duration() -> sp_consensus_aura::SlotDuration {
             unimplemented!()
@@ -114,7 +108,7 @@ impl_runtime_apis! {
             unimplemented!()
         }
 
-        fn check_inherents(_block: Block, _data: InherentData) -> CheckInherentsResult {
+        fn check_inherents(_block: <Block as BlockT>::LazyBlock, _data: InherentData) -> CheckInherentsResult {
             unimplemented!()
         }
     }
@@ -315,7 +309,7 @@ impl_runtime_apis! {
             unimplemented!()
         }
 
-        fn execute_block(_block: Block, _state_root_check: bool, _signature_check: bool, _select: frame_try_runtime::TryStateSelect) -> Weight {
+        fn execute_block(_block: <Block as BlockT>::LazyBlock, _state_root_check: bool, _signature_check: bool, _select: frame_try_runtime::TryStateSelect) -> Weight {
             unimplemented!()
         }
     }

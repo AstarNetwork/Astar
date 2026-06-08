@@ -307,6 +307,7 @@ where
 parameter_types! {
     pub const PrecompilesValue: TestPrecompileSet<Runtime> =
         TestPrecompileSet(PhantomData);
+    pub TransactionGasLimit: Option<U256> = Some(fp_evm::MAX_TRANSACTION_GAS_LIMIT);
     pub WeightPerGas: Weight = Weight::from_parts(1,0);
 }
 
@@ -334,6 +335,7 @@ impl pallet_evm::Config for Runtime {
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     type GasLimitStorageGrowthRatio = ConstU64<0>;
     type Timestamp = Timestamp;
+    type TransactionGasLimit = TransactionGasLimit;
     type CreateOriginFilter = ();
     type CreateInnerOriginFilter = ();
 }

@@ -43,7 +43,7 @@ use futures::StreamExt;
 use sc_client_api::BlockchainEvents;
 use sc_consensus::{import_queue::BasicQueue, ImportQueue};
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
-use sc_network::{config::NetworkBackendType, NetworkBackend, NetworkBlock};
+use sc_network::{config::NetworkBackendType, NetworkBackend, NetworkBlock, PeerId};
 use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -390,6 +390,7 @@ where
                     b.clone(),
                     3,
                     0,
+                    None,
                     fc_mapping_sync::SyncStrategy::Parachain,
                     sync_service.clone(),
                     pubsub_notification_sinks.clone(),
@@ -508,6 +509,7 @@ where
         sync_service: sync_service.clone(),
         tx_handler_controller,
         telemetry: telemetry.as_mut(),
+        tracing_execute_block: None,
     })?;
 
     if let Some(hwbench) = additional_config.hwbench.clone() {
@@ -568,6 +570,7 @@ where
             keystore_container.keystore(),
             para_id,
             collator_key.expect("Command line arguments do not allow this. qed"),
+            network.local_peer_id(),
             additional_config,
         )?;
     }
@@ -653,6 +656,7 @@ fn start_aura_consensus(
     keystore: KeystorePtr,
     para_id: ParaId,
     collator_key: CollatorPair,
+    collator_peer_id: PeerId,
     additional_config: AdditionalConfig,
 ) -> Result<(), sc_service::Error> {
     let mut proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
@@ -697,15 +701,16 @@ fn start_aura_consensus(
         },
         keystore,
         collator_key,
+        collator_peer_id,
         para_id,
         slot_offset: Duration::from_secs(1),
         relay_chain_slot_duration: Duration::from_secs(6),
-        proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
+        proposer: proposer_factory,
         collator_service,
         authoring_duration: Duration::from_millis(2000),
         reinitialize: false,
         block_import_handle,
-        spawner: task_manager.spawn_handle(),
+        spawner: task_manager.spawn_essential_handle(),
         // If necessary, AdditionalConfig CLI params could be extend to make it configurable.
         // However, it will be removed once https://github.com/paritytech/polkadot-sdk/issues/6020 is fixed.
         max_pov_percentage: None, // default is 85%

@@ -76,10 +76,12 @@ where
             let (trace_filter_task, trace_filter_requester) = CacheTask::create(
                 Arc::clone(&params.client),
                 Arc::clone(&params.substrate_backend),
-                core::time::Duration::from_secs(rpc_config.ethapi_trace_cache_duration),
+                // Cache size in bytes (replaces the previous duration-based eviction)
+                20_000_000u64,
                 Arc::clone(&permit_pool),
                 Arc::clone(&params.storage_override),
                 prometheus,
+                params.task_manager.spawn_handle(),
             );
             (Some(trace_filter_task), Some(trace_filter_requester))
         } else {

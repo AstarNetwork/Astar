@@ -27,9 +27,11 @@ use parity_scale_codec::Encode;
 pub use sp_core::{sr25519, Get, Pair, H160};
 pub use sp_runtime::{AccountId32, Digest, DigestItem, MultiAddress};
 
-use astar_test_utils::RelayStateSproofBuilder;
+use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+use cumulus_pallet_parachain_system::parachain_inherent::{
+    BasicParachainInherentData, InboundMessagesData,
+};
 use cumulus_primitives_core::{relay_chain::HeadData, PersistedValidationData};
-use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use sp_consensus_aura::{Slot, SlotDuration, AURA_ENGINE_ID};
 
 #[cfg(any(feature = "shibuya", feature = "astar"))]
@@ -253,7 +255,7 @@ fn set_validation_data() {
 
     let (relay_parent_storage_root, relay_chain_state, relay_parent_descendants) =
         sproof_builder.into_state_root_proof_and_descendants(relay_parent_offset.into());
-    let para_inherent_data = ParachainInherentData {
+    let basic_inherent_data = BasicParachainInherentData {
         validation_data: PersistedValidationData {
             parent_head,
             relay_parent_number: RelaychainDataProvider::<Runtime>::current_block_number() + 1,
@@ -261,15 +263,15 @@ fn set_validation_data() {
             max_pov_size: polkadot_primitives::MAX_POV_SIZE,
         },
         relay_chain_state,
-        downward_messages: Default::default(),
-        horizontal_messages: Default::default(),
         relay_parent_descendants,
         collator_peer_id: Default::default(),
     };
+    let inbound_messages_data = InboundMessagesData::new(Default::default(), Default::default());
 
     assert_ok!(ParachainSystem::set_validation_data(
         RuntimeOrigin::none(),
-        para_inherent_data
+        basic_inherent_data,
+        inbound_messages_data,
     ));
 }
 

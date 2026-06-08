@@ -570,7 +570,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     // Shibuya is subject to relay changes so we don't enforce increasing relay number
     type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::AnyRelayNumber;
     type ConsensusHook = ConsensusHook;
-    type SelectCore = cumulus_pallet_parachain_system::DefaultCoreSelector<Runtime>;
     type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
     type RelayParentOffset = RelayParentOffset;
 }
@@ -615,6 +614,8 @@ impl pallet_session::Config for Runtime {
     type Keys = SessionKeys;
     type DisablingStrategy = ();
     type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
+    type Currency = Balances;
+    type KeyDeposit = ();
 }
 
 parameter_types! {
@@ -719,6 +720,7 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
+    type ReserveData = ();
     type CallbackHandle = EvmRevertCodeHandler<Self, Self>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = astar_primitives::benchmarks::AssetsBenchmarkHelper;
@@ -955,6 +957,7 @@ parameter_types! {
     /// max_gas_limit = max_tx_ref_time / WEIGHT_PER_GAS = max_pov_size * gas_limit_pov_size_ratio
     /// gas_limit_pov_size_ratio = ceil((max_tx_ref_time / WEIGHT_PER_GAS) / max_pov_size)
     pub const GasLimitPovSizeRatio: u64 = 8;
+    pub TransactionGasLimit: Option<U256> = Some(fp_evm::MAX_TRANSACTION_GAS_LIMIT);
 }
 
 impl pallet_evm::Config for Runtime {
@@ -981,6 +984,7 @@ impl pallet_evm::Config for Runtime {
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     // gas based storage limit not enabled
     type GasLimitStorageGrowthRatio = ConstU64<0>;
+    type TransactionGasLimit = TransactionGasLimit;
     type CreateOriginFilter = ();
     type CreateInnerOriginFilter = ();
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
@@ -998,6 +1002,7 @@ impl pallet_ethereum::Config for Runtime {
     type PostLogContent = PostBlockAndTxnHashes;
     // Maximum length (in bytes) of revert message to include in Executed event
     type ExtraDataLength = ConstU32<30>;
+    type AllowUnprotectedTxs = ConstBool<false>;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -1809,7 +1814,7 @@ impl_runtime_apis! {
             VERSION
         }
 
-        fn execute_block(block: Block) {
+        fn execute_block(block: <Block as BlockT>::LazyBlock) {
             Executive::execute_block(block)
         }
 
@@ -1864,7 +1869,7 @@ impl_runtime_apis! {
             data.create_extrinsics()
         }
 
-        fn check_inherents(block: Block, data: InherentData) -> CheckInherentsResult {
+        fn check_inherents(block: <Block as BlockT>::LazyBlock, data: InherentData) -> CheckInherentsResult {
             data.check_extrinsics(&block)
         }
     }
@@ -1954,12 +1959,6 @@ impl_runtime_apis! {
     impl cumulus_primitives_core::RelayParentOffsetApi<Block> for Runtime {
         fn relay_parent_offset() -> u32 {
             RelayParentOffset::get()
-        }
-    }
-
-    impl cumulus_primitives_core::GetCoreSelectorApi<Block> for Runtime {
-        fn core_selector() -> (cumulus_primitives_core::CoreSelector, cumulus_primitives_core::ClaimQueueOffset) {
-            ParachainSystem::core_selector()
         }
     }
 
@@ -2354,8 +2353,9 @@ impl_runtime_apis! {
             PolkadotXcm::query_xcm_weight(message)
         }
 
-        fn query_delivery_fees(destination: VersionedLocation, message: VersionedXcm<()>) -> Result<VersionedAssets, XcmPaymentApiError> {
-            PolkadotXcm::query_delivery_fees(destination, message)
+        fn query_delivery_fees(destination: VersionedLocation, message: VersionedXcm<()>, asset_id: VersionedAssetId) -> Result<VersionedAssets, XcmPaymentApiError> {
+            type AssetExchanger = <xcm_config::XcmConfig as xcm_executor::Config>::AssetExchanger;
+            PolkadotXcm::query_delivery_fees::<AssetExchanger>(destination, message, asset_id)
         }
     }
 
@@ -2365,7 +2365,7 @@ impl_runtime_apis! {
         }
 
         fn dry_run_xcm(origin_location: VersionedLocation, xcm: VersionedXcm<RuntimeCall>) -> Result<XcmDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
-            PolkadotXcm::dry_run_xcm::<Runtime, xcm_config::XcmRouter, RuntimeCall, xcm_config::XcmConfig>(origin_location, xcm)
+            PolkadotXcm::dry_run_xcm::<xcm_config::XcmRouter>(origin_location, xcm)
         }
     }
 
@@ -2851,7 +2851,7 @@ impl_runtime_apis! {
         }
 
         fn execute_block(
-            block: Block,
+            block: <Block as BlockT>::LazyBlock,
             state_root_check: bool,
             signature_check: bool,
             select: frame_try_runtime::TryStateSelect

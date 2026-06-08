@@ -18,9 +18,9 @@
 
 //! Utility for the upgrade from shell to a parachain runtime that implements Aura.
 use astar_primitives::*;
-use astar_test_utils::RelayStateSproofBuilder;
 use cumulus_primitives_core::relay_chain::PersistedValidationData;
 use cumulus_primitives_core::RelayParentOffsetApi;
+use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use fc_rpc::pending::ConsensusDataProvider;
 use sc_client_api::{AuxStore, UsageProvider};
 use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams};
