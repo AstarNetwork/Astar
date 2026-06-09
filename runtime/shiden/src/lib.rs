@@ -522,8 +522,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ConsensusHook = ConsensusHook;
     type SelectCore = cumulus_pallet_parachain_system::DefaultCoreSelector<Runtime>;
     type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
-    // TODO: Set offset to RelayParentOffset once the majority of collators have migrated to slot_based
-    type RelayParentOffset = ConstU32<0>;
+    type RelayParentOffset = RelayParentOffset;
 }
 
 type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
