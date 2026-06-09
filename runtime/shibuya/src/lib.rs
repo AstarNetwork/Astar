@@ -215,7 +215,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("shibuya"),
     impl_name: Cow::Borrowed("shibuya"),
     authoring_version: 1,
-    spec_version: 2205,
+    spec_version: 2207,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 4,
@@ -1697,16 +1697,8 @@ pub type Executive = frame_executive::Executive<
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
-parameter_types! {
-    pub const UnifiedAccountsPalletName: &'static str = "UnifiedAccounts";
-    pub const EthereumCheckedPalletName: &'static str = "EthereumChecked";
-}
-
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (
-    frame_support::migrations::RemovePallet<UnifiedAccountsPalletName, RocksDbWeight>,
-    frame_support::migrations::RemovePallet<EthereumCheckedPalletName, RocksDbWeight>,
-);
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
