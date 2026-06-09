@@ -580,13 +580,7 @@ where
                     b.clone(),
                     3,
                     0,
-                    config.state_pruning.clone().and_then(|mode| {
-                        if let PruningMode::Constrained(c) = mode {
-                            c.max_blocks.map(u64::from)
-                        } else {
-                            None
-                        }
-                    }),
+                    None,
                     fc_mapping_sync::SyncStrategy::Parachain,
                     sync_service.clone(),
                     pubsub_notification_sinks.clone(),
