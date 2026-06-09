@@ -50,7 +50,7 @@ use precompile_utils::{
     testing::{AddressInPrefixedSet, MockAccount},
 };
 
-use sp_core::{ConstU32, H160, U256};
+use sp_core::{ConstU32, H160};
 use sp_runtime::{traits::IdentityLookup, BuildStorage};
 
 pub type AccountId = MockAccount;
@@ -120,7 +120,6 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
     pub const PrecompilesValue: Erc20AssetsPrecompileSet<Runtime> =
         Erc20AssetsPrecompileSet(PhantomData);
-    pub TransactionGasLimit: Option<U256> = Some(fp_evm::MAX_TRANSACTION_GAS_LIMIT);
     pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
@@ -150,7 +149,7 @@ impl pallet_evm::Config for Runtime {
     type GasLimitStorageGrowthRatio = ConstU64<0>;
     type CreateOriginFilter = ();
     type CreateInnerOriginFilter = ();
-    type TransactionGasLimit = TransactionGasLimit;
+    type TransactionGasLimit = ();
 }
 
 // These parameters dont matter much as this will only be called by root with the forced arguments

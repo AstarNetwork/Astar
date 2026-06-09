@@ -927,7 +927,9 @@ parameter_types! {
     /// max_gas_limit = max_tx_ref_time / WEIGHT_PER_GAS = max_pov_size * gas_limit_pov_size_ratio
     /// gas_limit_pov_size_ratio = ceil((max_tx_ref_time / WEIGHT_PER_GAS) / max_pov_size)
     pub const GasLimitPovSizeRatio: u64 = 8;
-    pub TransactionGasLimit: Option<U256> = Some(fp_evm::MAX_TRANSACTION_GAS_LIMIT);
+    /// Maximum gas allowed per transaction (EIP-7825). Set above the EIP-7825 default
+    /// of 16,777,216 to accommodate large contract deployments and complex calls.
+    pub TransactionGasLimit: Option<U256> = Some(U256::from(35_000_000));
 }
 
 impl pallet_evm::Config for Runtime {

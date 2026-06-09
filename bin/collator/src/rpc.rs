@@ -64,6 +64,7 @@ type HashFor<Block> = <Block as BlockT>::Hash;
 pub struct EvmTracingConfig {
     pub tracing_requesters: tracing::RpcRequesters,
     pub trace_filter_max_count: u32,
+    pub trace_filter_max_block_range: u32,
     pub enable_txpool: bool,
 }
 
@@ -239,7 +240,7 @@ where
                 client,
                 trace_filter_requester,
                 tracing_config.trace_filter_max_count,
-                500u32, // max_block_range for trace_filter requests
+                tracing_config.trace_filter_max_block_range,
             )
             .into_rpc(),
         )?;
@@ -314,7 +315,7 @@ where
                 client,
                 trace_filter_requester,
                 tracing_config.trace_filter_max_count,
-                500u32, // max_block_range for trace_filter requests
+                tracing_config.trace_filter_max_block_range,
             )
             .into_rpc(),
         )?;

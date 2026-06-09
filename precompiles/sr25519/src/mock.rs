@@ -31,7 +31,7 @@ use serde::{Deserialize, Serialize};
 use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
-use sp_core::{DecodeWithMemTracking, H160, U256};
+use sp_core::{DecodeWithMemTracking, H160};
 use sp_runtime::{traits::IdentityLookup, BuildStorage};
 
 pub type AccountId = TestAccount;
@@ -159,7 +159,6 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
     pub const PrecompilesValue: TestPrecompileSet<Runtime> =
         TestPrecompileSet(PhantomData);
-    pub TransactionGasLimit: Option<U256> = Some(fp_evm::MAX_TRANSACTION_GAS_LIMIT);
     pub const WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
@@ -189,7 +188,7 @@ impl pallet_evm::Config for Runtime {
     type GasLimitStorageGrowthRatio = ConstU64<0>;
     type CreateOriginFilter = ();
     type CreateInnerOriginFilter = ();
-    type TransactionGasLimit = TransactionGasLimit;
+    type TransactionGasLimit = ();
 }
 
 // Configure a mock runtime to test the pallet.

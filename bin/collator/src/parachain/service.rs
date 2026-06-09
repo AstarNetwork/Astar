@@ -25,6 +25,7 @@ use cumulus_client_consensus_aura::collators::slot_based::{
 };
 use cumulus_client_consensus_common::ParachainBlockImport as TParachainBlockImport;
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
+use cumulus_client_service::ParachainTracingExecuteBlock;
 use cumulus_client_service::{
     prepare_node_config, start_relay_chain_tasks, BuildNetworkParams, DARecoveryProfile,
     StartRelayChainTasksParams,
@@ -41,6 +42,7 @@ use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_storage::StorageOverrideHandler;
 use futures::StreamExt;
 use sc_client_api::BlockchainEvents;
+use sc_client_db::PruningMode;
 use sc_consensus::{import_queue::BasicQueue, ImportQueue};
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::{config::NetworkBackendType, NetworkBackend, NetworkBlock, PeerId};
@@ -390,7 +392,13 @@ where
                     b.clone(),
                     3,
                     0,
-                    None,
+                    parachain_config.state_pruning.clone().and_then(|mode| {
+                        if let PruningMode::Constrained(c) = mode {
+                            c.max_blocks.map(u64::from)
+                        } else {
+                            None
+                        }
+                    }),
                     fc_mapping_sync::SyncStrategy::Parachain,
                     sync_service.clone(),
                     pubsub_notification_sinks.clone(),
@@ -459,6 +467,9 @@ where
         let rpc_config = crate::rpc::EvmTracingConfig {
             tracing_requesters,
             trace_filter_max_count: additional_config.evm_tracing_config.ethapi_trace_max_count,
+            trace_filter_max_block_range: additional_config
+                .evm_tracing_config
+                .trace_filter_max_block_range,
             enable_txpool: ethapi_cmd.contains(&EthApiCmd::TxPool),
         };
         let sync = sync_service.clone();
@@ -509,7 +520,7 @@ where
         sync_service: sync_service.clone(),
         tx_handler_controller,
         telemetry: telemetry.as_mut(),
-        tracing_execute_block: None,
+        tracing_execute_block: Some(Arc::new(ParachainTracingExecuteBlock::new(client.clone()))),
     })?;
 
     if let Some(hwbench) = additional_config.hwbench.clone() {

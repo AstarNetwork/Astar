@@ -27,11 +27,11 @@ use parity_scale_codec::Encode;
 pub use sp_core::{sr25519, Get, Pair, H160};
 pub use sp_runtime::{AccountId32, Digest, DigestItem, MultiAddress};
 
-use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use cumulus_pallet_parachain_system::parachain_inherent::{
     BasicParachainInherentData, InboundMessagesData,
 };
 use cumulus_primitives_core::{relay_chain::HeadData, PersistedValidationData};
+use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use sp_consensus_aura::{Slot, SlotDuration, AURA_ENGINE_ID};
 
 #[cfg(any(feature = "shibuya", feature = "astar"))]

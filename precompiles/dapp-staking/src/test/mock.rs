@@ -123,7 +123,6 @@ pub type PrecompileCall = DappStakingV3PrecompileCall<Test>;
 
 parameter_types! {
     pub PrecompilesValue: DappStakingPrecompile<Test> = DappStakingPrecompile(Default::default());
-    pub TransactionGasLimit: Option<U256> = Some(fp_evm::MAX_TRANSACTION_GAS_LIMIT);
     pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
@@ -149,7 +148,7 @@ impl pallet_evm::Config for Test {
     type GasLimitPovSizeRatio = ConstU64<4>;
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     type GasLimitStorageGrowthRatio = ConstU64<0>;
-    type TransactionGasLimit = TransactionGasLimit;
+    type TransactionGasLimit = ();
     type CreateOriginFilter = ();
     type CreateInnerOriginFilter = ();
 }

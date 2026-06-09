@@ -79,9 +79,12 @@ pub struct FrontierConfig {
     /// A request asking for more or an unbounded one going over this limit will both return an
     /// error.
     pub ethapi_trace_max_count: u32,
-    /// Duration (in seconds) after which the cache of `trace_filter` for a given block will be
-    /// discarded.
-    pub ethapi_trace_cache_duration: u64,
+    /// Size in bytes of the LRU cache used by `trace_filter` to store pre-computed block traces.
+    /// Oldest entries are evicted when this budget is exceeded.
+    pub ethapi_trace_cache_size: u64,
+    /// Maximum number of blocks a single `trace_filter` request may span.
+    /// Requests with a wider range are rejected to prevent runaway memory use.
+    pub trace_filter_max_block_range: u32,
     /// Size in bytes of the LRU cache for block data.
     pub eth_log_block_cache: usize,
     /// Size in bytes of the LRU cache for transactions statuses data.
@@ -117,10 +120,16 @@ pub struct EthApiOptions {
     #[clap(long, default_value = "500")]
     pub ethapi_trace_max_count: u32,
 
-    /// Duration (in seconds) after which the cache of `trace_filter` for a given block will be
-    /// discarded.
-    #[clap(long, default_value = "300")]
-    pub ethapi_trace_cache_duration: u64,
+    /// Size in bytes of the LRU cache used by `trace_filter` to store pre-computed block traces.
+    /// Oldest entries are evicted when this budget is exceeded.
+    /// Default value is 100 MB.
+    #[clap(long, default_value = "104857600")]
+    pub ethapi_trace_cache_size: u64,
+
+    /// Maximum number of blocks a single `trace_filter` request may span.
+    /// Requests wider than this are rejected with an error.
+    #[clap(long, default_value = "1024")]
+    pub trace_filter_max_block_range: u32,
 
     /// Size in bytes of the LRU cache for block data.
     #[clap(long, default_value = "300000000")]
@@ -183,7 +192,8 @@ impl EthApiOptions {
             ethapi: self.ethapi.clone(),
             ethapi_max_permits: self.ethapi_max_permits,
             ethapi_trace_max_count: self.ethapi_trace_max_count,
-            ethapi_trace_cache_duration: self.ethapi_trace_cache_duration,
+            ethapi_trace_cache_size: self.ethapi_trace_cache_size,
+            trace_filter_max_block_range: self.trace_filter_max_block_range,
             eth_log_block_cache: self.eth_log_block_cache,
             eth_statuses_cache: self.eth_statuses_cache,
             max_past_logs: self.max_past_logs,

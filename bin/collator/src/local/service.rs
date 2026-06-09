@@ -23,7 +23,6 @@ use crate::{
     evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig},
     rpc::tracing,
 };
-use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use cumulus_client_parachain_inherent::MockXcmConfig;
 use cumulus_primitives_aura::Slot;
 use cumulus_primitives_core::{
@@ -33,6 +32,7 @@ use cumulus_primitives_core::{
     RelayParentOffsetApi,
 };
 use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
+use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_storage::StorageOverrideHandler;
@@ -41,6 +41,7 @@ use parity_scale_codec::Encode;
 use polkadot_core_primitives::InboundDownwardMessage;
 use polkadot_primitives::PersistedValidationData;
 use sc_client_api::{Backend, BlockchainEvents};
+use sc_client_db::PruningMode;
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::NetworkBackend;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
@@ -579,7 +580,13 @@ where
                     b.clone(),
                     3,
                     0,
-                    None,
+                    config.state_pruning.clone().and_then(|mode| {
+                        if let PruningMode::Constrained(c) = mode {
+                            c.max_blocks.map(u64::from)
+                        } else {
+                            None
+                        }
+                    }),
                     fc_mapping_sync::SyncStrategy::Parachain,
                     sync_service.clone(),
                     pubsub_notification_sinks.clone(),
@@ -689,6 +696,7 @@ where
                 crate::rpc::EvmTracingConfig {
                     tracing_requesters: tracing_requesters.clone(),
                     trace_filter_max_count: evm_tracing_config.ethapi_trace_max_count,
+                    trace_filter_max_block_range: evm_tracing_config.trace_filter_max_block_range,
                     enable_txpool: ethapi_cmd.contains(&EthApiCmd::TxPool),
                 },
             )
