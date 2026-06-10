@@ -41,7 +41,6 @@ use parity_scale_codec::Encode;
 use polkadot_core_primitives::InboundDownwardMessage;
 use polkadot_primitives::PersistedValidationData;
 use sc_client_api::{Backend, BlockchainEvents};
-use sc_client_db::PruningMode;
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::NetworkBackend;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};

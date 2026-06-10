@@ -86,7 +86,7 @@ use astar_primitives::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
         PeriodNumber, RankedTier, SmartContract, FIXED_NUMBER_OF_TIER_SLOTS,
     },
-    evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler},
+    evm::{EVMFungibleAdapterWrapper, EvmRevertCodeHandler, TX_MAX_GAS_LIMIT},
     governance::{
         CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
@@ -959,7 +959,7 @@ parameter_types! {
     pub const GasLimitPovSizeRatio: u64 = 8;
     /// Maximum gas allowed per transaction (EIP-7825). Set above the EIP-7825 default
     /// of 16,777,216 to accommodate large contract deployments and complex calls.
-    pub TransactionGasLimit: Option<U256> = Some(U256::from(35_000_000));
+    pub TransactionGasLimit: Option<U256> = Some(U256::from(TX_MAX_GAS_LIMIT));
 }
 
 impl pallet_evm::Config for Runtime {
