@@ -23,7 +23,6 @@ use crate::{
     evm_tracing_types::{EthApi as EthApiCmd, FrontierConfig},
     rpc::tracing,
 };
-use astar_test_utils::RelayStateSproofBuilder;
 use cumulus_client_parachain_inherent::MockXcmConfig;
 use cumulus_primitives_aura::Slot;
 use cumulus_primitives_core::{
@@ -33,6 +32,7 @@ use cumulus_primitives_core::{
     RelayParentOffsetApi,
 };
 use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
+use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_storage::StorageOverrideHandler;
@@ -64,7 +64,7 @@ pub struct LocalPendingInherentDataProvider<B, C> {
 const RELAY_CHAIN_SLOT_DURATION_MILLIS: u64 = 6000;
 
 /// Inherent data provider that supplies mocked validation data.
-/// TODO: Use it from PolkadotSDK again after stable2512 uplift
+/// TODO: Use it from PolkadotSDK again after stable2603 uplift
 #[derive(Default)]
 pub struct MockValidationDataInherentDataProvider<R = ()> {
     /// The current block number of the local block chain (the parachain).
@@ -579,6 +579,7 @@ where
                     b.clone(),
                     3,
                     0,
+                    None,
                     fc_mapping_sync::SyncStrategy::Parachain,
                     sync_service.clone(),
                     pubsub_notification_sinks.clone(),
@@ -688,6 +689,7 @@ where
                 crate::rpc::EvmTracingConfig {
                     tracing_requesters: tracing_requesters.clone(),
                     trace_filter_max_count: evm_tracing_config.ethapi_trace_max_count,
+                    trace_filter_max_block_range: evm_tracing_config.trace_filter_max_block_range,
                     enable_txpool: ethapi_cmd.contains(&EthApiCmd::TxPool),
                 },
             )
@@ -708,6 +710,7 @@ where
         sync_service: sync_service.clone(),
         config,
         telemetry: telemetry.as_mut(),
+        tracing_execute_block: None,
     })?;
 
     if role.is_authority() {

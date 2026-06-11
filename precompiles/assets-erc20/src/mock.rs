@@ -149,6 +149,7 @@ impl pallet_evm::Config for Runtime {
     type GasLimitStorageGrowthRatio = ConstU64<0>;
     type CreateOriginFilter = ();
     type CreateInnerOriginFilter = ();
+    type TransactionGasLimit = ();
 }
 
 // These parameters dont matter much as this will only be called by root with the forced arguments

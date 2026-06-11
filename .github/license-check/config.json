@@ -8,7 +8,6 @@
             "pallets/custom-signatures/**",
             "precompiles/utils/**",
             "precompiles/utils_v2/**",
-            "tests/utils/src/relay_sproof_builder.rs",
             "vendor/**"
         ],
         "license": "./.github/license-check/headers/HEADER-GNUv3"

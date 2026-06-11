@@ -334,6 +334,7 @@ impl pallet_evm::Config for Runtime {
     type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
     type GasLimitStorageGrowthRatio = ConstU64<0>;
     type Timestamp = Timestamp;
+    type TransactionGasLimit = ();
     type CreateOriginFilter = ();
     type CreateInnerOriginFilter = ();
 }

@@ -31,10 +31,10 @@ use xcm::{
         Junctions::*,
         Location, Parent, Xcm, VERSION as V_5,
     },
-    VersionedAsset, VersionedLocation, VersionedXcm,
+    VersionedAsset, VersionedAssetId, VersionedLocation, VersionedXcm,
 };
 use xcm_runtime_apis::dry_run::runtime_decl_for_dry_run_api::DryRunApiV2;
-use xcm_runtime_apis::fees::runtime_decl_for_xcm_payment_api::XcmPaymentApiV1;
+use xcm_runtime_apis::fees::runtime_decl_for_xcm_payment_api::XcmPaymentApiV2;
 use xcm_runtime_apis::trusted_query::runtime_decl_for_trusted_query_api::TrustedQueryApiV1;
 
 /// Register an asset into `pallet-assets` instance, and register as as cross-chain asset.
@@ -199,8 +199,10 @@ fn query_delivery_fees_is_ok() {
             .build();
 
         // TODO: this is something we should revisit
+        let asset_id = VersionedAssetId::V5(xcm::v5::AssetId(xcm::v5::Location::here()));
         assert!(
-            Runtime::query_delivery_fees(location, VersionedXcm::V5(xcm_sequence)).is_err(),
+            Runtime::query_delivery_fees(location, VersionedXcm::V5(xcm_sequence), asset_id)
+                .is_err(),
             "At the moment, `PriceForMessageDelivery` is not implemented."
         );
     })

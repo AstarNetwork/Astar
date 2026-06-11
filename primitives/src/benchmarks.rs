@@ -26,11 +26,14 @@ use xcm::prelude::*;
 pub struct AssetsBenchmarkHelper;
 
 #[cfg(feature = "runtime-benchmarks")]
-impl<AssetIdParameter: From<u128>> pallet_assets::BenchmarkHelper<AssetIdParameter>
+impl<AssetIdParameter: From<u128>> pallet_assets::BenchmarkHelper<AssetIdParameter, ()>
     for AssetsBenchmarkHelper
 {
     fn create_asset_id_parameter(id: u32) -> AssetIdParameter {
         AssetId::from(id).into()
+    }
+    fn create_reserve_id_parameter(_: u32) -> () {
+        ()
     }
 }
 

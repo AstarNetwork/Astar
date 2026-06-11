@@ -39,6 +39,10 @@ pub type EvmAddress = H160;
 /// Revert opt code. It's inserted at the precompile addresses, to make them functional in EVM.
 pub const EVM_REVERT_CODE: &[u8] = &[0x60, 0x00, 0x60, 0x00, 0xfd];
 
+/// Maximum gas allowed per transaction (EIP-7825). Substrate enforces a maximum of 65% of the block
+/// gas limit (39 million gas for Astar), so we enforce a cap close to that value.
+pub const TX_MAX_GAS_LIMIT: u64 = 35_000_000;
+
 /// Handler for automatic revert code registration.
 ///
 /// When an asset is created, it automatically becomes available to the EVM via an `ERC20-like` interface.

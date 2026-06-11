@@ -169,6 +169,7 @@ impl pallet_evm::Config for TestRuntime {
     type GasLimitStorageGrowthRatio = ConstU64<0>;
     type CreateOriginFilter = ();
     type CreateInnerOriginFilter = ();
+    type TransactionGasLimit = ();
 }
 
 impl pallet_utility::Config for TestRuntime {

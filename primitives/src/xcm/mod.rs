@@ -46,7 +46,7 @@ use xcm_builder::{CreateMatcher, MatchXcm, TakeRevenue};
 use xcm_executor::traits::{MatchesFungibles, Properties, ShouldExecute, WeightTrader};
 
 // ORML imports
-use orml_traits::location::{RelativeReserveProvider, Reserve};
+use orml_traits::location::Reserve;
 
 use pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 
@@ -271,14 +271,25 @@ impl Convert<AccountId, Location> for AccountIdToMultiLocation {
     }
 }
 
-/// `Asset` reserve location provider. It's based on `RelativeReserveProvider` and in
-/// addition will convert self absolute location to relative location.
+/// `Asset` reserve location provider.
+/// Converts self absolute location to relative location.
 pub struct AbsoluteAndRelativeReserveProvider<AbsoluteLocation>(PhantomData<AbsoluteLocation>);
 impl<AbsoluteLocation: Get<Location>> Reserve
     for AbsoluteAndRelativeReserveProvider<AbsoluteLocation>
 {
     fn reserve(asset: &Asset) -> Option<Location> {
-        let reserve_location = RelativeReserveProvider::reserve(asset)?;
+        // Local/native assets (parents==0, no Parachain junction) → Here.
+        // Parent relay chain, sibling or child parachains → their chain prefix.
+        let reserve_location = {
+            let AssetId(location) = &asset.id;
+            match (location.parents, location.first_interior()) {
+                (1, Some(Parachain(id))) => Some(Location::new(1, [Parachain(*id)])),
+                (1, _) => Some(Location::parent()),
+                (0, Some(Parachain(id))) => Some(Location::new(0, [Parachain(*id)])),
+                (0, _) => Some(Location::here()), // local asset, no chain prefix
+                _ => None,
+            }
+        }?;
 
         if reserve_location == AbsoluteLocation::get() {
             return Some(Location::here());
