@@ -277,7 +277,9 @@ fn build_local_mock_inherent_data(
         ..Default::default()
     };
 
-    let timestamp = relay_slot.saturating_mul(RELAY_CHAIN_SLOT_DURATION_MILLIS);
+    let timestamp = relay_slot
+        .saturating_add(u64::from(relay_parent_offset))
+        .saturating_mul(RELAY_CHAIN_SLOT_DURATION_MILLIS);
     let timestamp_provider = sp_timestamp::InherentDataProvider::new(timestamp.into());
 
     (timestamp_provider, mocked_parachain)
