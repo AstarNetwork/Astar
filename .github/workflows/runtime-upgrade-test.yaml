@@ -109,7 +109,7 @@ jobs:
           })
 
     - name: Checkout the source code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v5
       with:
         ref: ${{ steps.get-branch-sha.outputs.sha }}
         submodules: true
@@ -127,9 +127,9 @@ jobs:
       run: cargo build -p ${{ steps.test-input.outputs.runtime }}-runtime --release --locked
 
     - name: Setup node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
-        node-version: 22.x
+        node-version: 24.x
         cache: 'yarn'
         cache-dependency-path: tests/e2e/yarn.lock
 

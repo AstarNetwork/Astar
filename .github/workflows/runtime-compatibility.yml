@@ -61,7 +61,7 @@ jobs:
       CLIENT_ASSET_URLS: ${{ needs.fetch-client-info.outputs.client_asset_urls }}
     steps:
       - name: Checkout the source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Determine workflow run ID
         id: determine-run-id

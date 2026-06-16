@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install deps
         run: sudo apt -y install protobuf-compiler libclang-dev
@@ -31,9 +31,9 @@ jobs:
         run: git clone https://github.com/AstarNetwork/frontier-tests.git --depth 1
 
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 18.x
+          node-version: 24.x
           cache: "npm"
           cache-dependency-path: frontier-tests/package-lock.json
 

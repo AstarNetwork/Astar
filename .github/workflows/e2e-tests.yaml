@@ -13,15 +13,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the source code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Clone e2e-tests
       run: git clone https://github.com/AstarNetwork/e2e-tests.git --depth 1
 
     - name: Setup node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
-        node-version: 20.x
+        node-version: 24.x
         cache: 'yarn'
         cache-dependency-path: e2e-tests/yarn.lock
 

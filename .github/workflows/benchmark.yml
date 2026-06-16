@@ -116,7 +116,7 @@ jobs:
       run: cargo +stable install --git https://github.com/paritytech/polkadot-sdk --rev 510fed173e7459a3b030cdf20f1021236b367253 frame-omni-bencher --profile=production --locked
 
     - name: Checkout the source code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v5
       with:
         ref: ${{ steps.get_branch_sha.outputs.sha }}
         submodules: true
