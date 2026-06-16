@@ -60,7 +60,7 @@ jobs:
         run: rustup target list --installed
 
       - name: Cache cargo dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/bin/

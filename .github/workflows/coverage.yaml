@@ -32,7 +32,7 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v5
       with:
         path: |
           ~/.cargo/registry
@@ -75,7 +75,7 @@ jobs:
         path: code-coverage-results.md
 
     - name: Archive code coverage results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: code-coverage-report
         path: cobertura.xml
