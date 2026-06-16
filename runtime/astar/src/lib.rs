@@ -1708,7 +1708,10 @@ pub type Executive = frame_executive::Executive<
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased = (
+    cumulus_pallet_xcmp_queue::migration::v6::MigrateV5ToV6<Runtime>,
+    cumulus_pallet_xcmp_queue::migration::v7::MigrateV6ToV7<Runtime>,
+);
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
