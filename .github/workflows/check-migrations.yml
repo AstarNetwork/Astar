@@ -23,12 +23,12 @@ jobs:
           - { name: shibuya, endpoint: SHIBUYA_RUNTIME_ENDPOINT }
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 20.x
+          node-version: 24.x
 
       - name: Install deps
         run: sudo apt -y install protobuf-compiler
