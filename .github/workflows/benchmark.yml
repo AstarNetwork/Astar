@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check permission
-      uses: actions/github-script@v6
+      uses: actions/github-script@v8
       with:
         result-encoding: string
         script: |
@@ -35,7 +35,7 @@ jobs:
     steps:
     - name: Validate and set inputs
       id: bench-input
-      uses: actions/github-script@v6
+      uses: actions/github-script@v8
       with:
         result-encoding: string
         script: |
@@ -61,7 +61,7 @@ jobs:
 
     - name: Get branch and sha
       id: get_branch_sha
-      uses: actions/github-script@v6
+      uses: actions/github-script@v8
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
         result-encoding: string
@@ -76,7 +76,7 @@ jobs:
           core.setOutput("sha", pull_request.data.head.sha)
 
     - name: Post starting comment
-      uses: actions/github-script@v6
+      uses: actions/github-script@v8
       env:
         MESSAGE: |
           Benchmarks job is scheduled at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}.
@@ -133,14 +133,14 @@ jobs:
         chmod +x ./scripts/run_benchmarks.sh
         ./scripts/run_benchmarks.sh -o ./benchmark-results -c ${{ steps.bench-input.outputs.chain }} -p ${{ steps.bench-input.outputs.pallets }}
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: benchmark-results
         path: ./benchmark-results
 
     - name: Post success comment
       if: ${{ success() }}
-      uses: actions/github-script@v6
+      uses: actions/github-script@v8
       env:
         MESSAGE: |
           Benchmarks have been finished.
@@ -158,7 +158,7 @@ jobs:
 
     - name: Post failure comment
       if: ${{ failure() }}
-      uses: actions/github-script@v6
+      uses: actions/github-script@v8
       env:
         MESSAGE: |
           Benchmark job failed.
