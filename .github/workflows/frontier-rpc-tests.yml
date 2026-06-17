@@ -33,7 +33,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v6
         with:
-          node-version: 24.x
+          node-version: 22.x
           cache: "npm"
           cache-dependency-path: frontier-tests/package-lock.json
 
