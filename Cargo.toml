@@ -261,6 +261,7 @@ parachain-info = { package = "staging-parachain-info", git = "https://github.com
 parachains-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512", default-features = false }
 
 # (native)
+cumulus-client-bootnodes = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
 cumulus-client-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
 cumulus-client-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
 cumulus-client-consensus-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
@@ -271,9 +272,7 @@ cumulus-client-collator = { git = "https://github.com/paritytech/polkadot-sdk", 
 cumulus-client-consensus-proposer = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
 cumulus-client-parachain-inherent = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
 cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
-cumulus-relay-chain-inprocess-interface = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
 cumulus-relay-chain-interface = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
-cumulus-relay-chain-minimal-node = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
 cumulus-relay-chain-rpc-interface = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
 cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
 
