@@ -35,7 +35,7 @@ use cumulus_primitives_core::{
     relay_chain::{CollatorPair, ValidationCode},
     ParaId,
 };
-use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_interface::RelayChainInterface;
 use fc_consensus::FrontierBlockImport as TFrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_storage::StorageOverrideHandler;
@@ -476,6 +476,14 @@ where
         })
     };
 
+    // Extract values needed after `parachain_config` is moved into `spawn_tasks`.
+    let parachain_advertise_non_global_ips = parachain_config.network.allow_non_globals_in_dht;
+    let parachain_fork_id = parachain_config
+        .chain_spec
+        .fork_id()
+        .map(ToString::to_string);
+    let parachain_public_addresses = parachain_config.network.public_addresses.clone();
+
     // Spawn basic services.
     sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         rpc_builder: rpc_extensions_builder,
@@ -546,13 +554,10 @@ where
         relay_chain_network,
         request_receiver: paranode_rx,
         parachain_network: network.clone(),
-        advertise_non_global_ips: parachain_config.network.allow_non_globals_in_dht,
+        advertise_non_global_ips: parachain_advertise_non_global_ips,
         parachain_genesis_hash: client.chain_info().genesis_hash.as_ref().to_vec(),
-        parachain_fork_id: parachain_config
-            .chain_spec
-            .fork_id()
-            .map(ToString::to_string),
-        parachain_public_addresses: parachain_config.network.public_addresses.clone(),
+        parachain_fork_id,
+        parachain_public_addresses,
     });
 
     if is_authority {
