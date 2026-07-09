@@ -19,6 +19,7 @@
 //! Parachain Service and ServiceFactory implementation.
 
 use astar_primitives::*;
+use cumulus_client_bootnodes::{start_bootnode_tasks, StartBootnodeTasksParams};
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_aura::collators::slot_based::{
     self as aura, Params as AuraParams, SlotBasedBlockImport, SlotBasedBlockImportHandle,
@@ -34,9 +35,7 @@ use cumulus_primitives_core::{
     relay_chain::{CollatorPair, ValidationCode},
     ParaId,
 };
-use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
-use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node_with_rpc;
+use cumulus_relay_chain_interface::RelayChainInterface;
 use fc_consensus::FrontierBlockImport as TFrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fc_storage::StorageOverrideHandler;
@@ -212,42 +211,6 @@ pub fn new_partial(
     Ok(params)
 }
 
-async fn build_relay_chain_interface(
-    polkadot_config: Configuration,
-    parachain_config: &Configuration,
-    telemetry_worker_handle: Option<TelemetryWorkerHandle>,
-    task_manager: &mut TaskManager,
-    collator_options: CollatorOptions,
-    hwbench: Option<sc_sysinfo::HwBench>,
-) -> RelayChainResult<(
-    Arc<(dyn RelayChainInterface + 'static)>,
-    Option<CollatorPair>,
-)> {
-    let result = if let cumulus_client_cli::RelayChainMode::ExternalRpc(rpc_target_urls) =
-        collator_options.relay_chain_mode
-    {
-        build_minimal_relay_chain_node_with_rpc(
-            polkadot_config,
-            parachain_config.prometheus_registry(),
-            task_manager,
-            rpc_target_urls,
-        )
-        .await
-    } else {
-        build_inprocess_relay_chain(
-            polkadot_config,
-            parachain_config,
-            telemetry_worker_handle,
-            task_manager,
-            hwbench,
-        )
-    };
-
-    // Extract only the first two elements from the 4-tuple
-    result
-        .map(|(relay_chain_interface, collator_pair, _, _)| (relay_chain_interface, collator_pair))
-}
-
 #[derive(Clone)]
 /// To add additional config to start_xyz_node functions
 pub struct AdditionalConfig {
@@ -314,16 +277,23 @@ where
             .map(|cfg| &cfg.registry),
     );
 
-    let (relay_chain_interface, collator_key) = build_relay_chain_interface(
-        polkadot_config,
-        &parachain_config,
-        telemetry_worker_handle,
-        &mut task_manager,
-        collator_options.clone(),
-        additional_config.hwbench.clone(),
-    )
-    .await
-    .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
+    // Extract relay_chain_fork_id before polkadot_config is moved into the builder.
+    let relay_chain_fork_id = polkadot_config
+        .chain_spec
+        .fork_id()
+        .map(ToString::to_string);
+
+    let (relay_chain_interface, collator_key, relay_chain_network, paranode_rx) =
+        cumulus_client_service::build_relay_chain_interface(
+            polkadot_config,
+            &parachain_config,
+            telemetry_worker_handle,
+            &mut task_manager,
+            collator_options.clone(),
+            additional_config.hwbench.clone(),
+        )
+        .await
+        .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
     let is_authority = parachain_config.role.is_authority();
     let import_queue_service = import_queue.service();
@@ -506,6 +476,14 @@ where
         })
     };
 
+    // Extract values needed after `parachain_config` is moved into `spawn_tasks`.
+    let parachain_advertise_non_global_ips = parachain_config.network.allow_non_globals_in_dht;
+    let parachain_fork_id = parachain_config
+        .chain_spec
+        .fork_id()
+        .map(ToString::to_string);
+    let parachain_public_addresses = parachain_config.network.public_addresses.clone();
+
     // Spawn basic services.
     sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         rpc_builder: rpc_extensions_builder,
@@ -565,6 +543,22 @@ where
         },
         prometheus_registry: prometheus_registry.as_ref(),
     })?;
+
+    start_bootnode_tasks(StartBootnodeTasksParams {
+        embedded_dht_bootnode: collator_options.embedded_dht_bootnode,
+        dht_bootnode_discovery: collator_options.dht_bootnode_discovery,
+        para_id,
+        task_manager: &mut task_manager,
+        relay_chain_interface: relay_chain_interface.clone(),
+        relay_chain_fork_id,
+        relay_chain_network,
+        request_receiver: paranode_rx,
+        parachain_network: network.clone(),
+        advertise_non_global_ips: parachain_advertise_non_global_ips,
+        parachain_genesis_hash: client.chain_info().genesis_hash.as_ref().to_vec(),
+        parachain_fork_id,
+        parachain_public_addresses,
+    });
 
     if is_authority {
         start_aura_consensus(
