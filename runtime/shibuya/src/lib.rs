@@ -171,7 +171,7 @@ pub const BLOCK_PROCESSING_VELOCITY: u32 = 1;
 pub const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6000;
 /// Relay chain best block offset to build blocks on.
 #[cfg(not(feature = "runtime-benchmarks"))]
-const RELAY_PARENT_OFFSET: u32 = 2;
+const RELAY_PARENT_OFFSET: u32 = 0;
 #[cfg(feature = "runtime-benchmarks")]
 const RELAY_PARENT_OFFSET: u32 = 0;
 
