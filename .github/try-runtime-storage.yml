@@ -1,6 +1,6 @@
 System:
   $removePrefix: ["Account"]
 Balances:
-  $removePrefix: ["Locks", "Freezes"]
+  $removePrefix: ["Account", "Locks", "Freezes", "Holds", "Reserves"]
 EVM:
   $removePrefix: ["AccountCodes", "AccountStorages"]
