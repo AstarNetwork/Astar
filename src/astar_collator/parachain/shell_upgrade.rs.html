@@ -18,9 +18,9 @@
 <a href=#18 id=18 data-nosnippet>18</a>
 <a href=#19 id=19 data-nosnippet>19</a></span><span class="doccomment">//! Utility for the upgrade from shell to a parachain runtime that implements Aura.
 <a href=#20 id=20 data-nosnippet>20</a></span><span class="kw">use </span>astar_primitives::<span class="kw-2">*</span>;
-<a href=#21 id=21 data-nosnippet>21</a><span class="kw">use </span>astar_test_utils::RelayStateSproofBuilder;
-<a href=#22 id=22 data-nosnippet>22</a><span class="kw">use </span>cumulus_primitives_core::relay_chain::PersistedValidationData;
-<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use </span>cumulus_primitives_core::RelayParentOffsetApi;
+<a href=#21 id=21 data-nosnippet>21</a><span class="kw">use </span>cumulus_primitives_core::relay_chain::PersistedValidationData;
+<a href=#22 id=22 data-nosnippet>22</a><span class="kw">use </span>cumulus_primitives_core::RelayParentOffsetApi;
+<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use </span>cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 <a href=#24 id=24 data-nosnippet>24</a><span class="kw">use </span>fc_rpc::pending::ConsensusDataProvider;
 <a href=#25 id=25 data-nosnippet>25</a><span class="kw">use </span>sc_client_api::{AuxStore, UsageProvider};
 <a href=#26 id=26 data-nosnippet>26</a><span class="kw">use </span>sc_consensus::{import_queue::Verifier <span class="kw">as </span>VerifierT, BlockImportParams};

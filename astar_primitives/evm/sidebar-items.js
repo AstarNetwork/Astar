@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["EVM_REVERT_CODE"],"struct":["EVMFungibleAdapterWrapper","EvmRevertCodeHandler","H160","H256","U256"],"type":["EvmAddress"]};
+window.SIDEBAR_ITEMS = {"constant":["EVM_REVERT_CODE","TX_MAX_GAS_LIMIT"],"struct":["EVMFungibleAdapterWrapper","EvmRevertCodeHandler","H160","H256","U256"],"type":["EvmAddress"]};
