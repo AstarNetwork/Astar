@@ -4352,6 +4352,7 @@ dependencies = [
  "parity-db 0.5.5",
  "parity-scale-codec",
  "parking_lot 0.12.5",
+ "rocksdb",
  "sc-client-api",
  "sc-client-db",
  "smallvec",
