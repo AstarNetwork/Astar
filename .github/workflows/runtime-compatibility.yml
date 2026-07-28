@@ -10,6 +10,14 @@ on:
         description: 'Workflow run ID to download artifacts from'
         required: true
         type: string
+      client_old:
+        description: 'Incumbent client tag (leave blank for latest release)'
+        required: false
+        type: string
+      client_new:
+        description: 'Uplift client tag (leave blank for second-latest release)'
+        required: false
+        type: string
 
 jobs:
   fetch-client-info:
@@ -20,30 +28,38 @@ jobs:
       client_tags: ${{ steps.parse-releases.outputs.client_tags }}
       client_asset_urls: ${{ steps.parse-releases.outputs.client_asset_urls }}
     steps:
-      - name: Fetch and parse client releases
+      - name: Resolve client release tags
         id: parse-releases
+        env:
+          INPUT_OLD: ${{ github.event.inputs.client_old }}
+          INPUT_NEW: ${{ github.event.inputs.client_new }}
         run: |
-          RELEASES=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
+          if [ -n "$INPUT_OLD" ] && [ -n "$INPUT_NEW" ]; then
+            CLIENT_TAGS_ARRAY=("$INPUT_OLD" "$INPUT_NEW")
+            echo "Using pinned client tags: ${CLIENT_TAGS_ARRAY[*]}"
+          else
+            echo "No pinned tags — falling back to the two most recent releases."
+            RELEASES=$(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases)
+            CLIENT_TAGS_ARRAY=($(echo "$RELEASES" | jq -r '[.[] | select(.tag_name | test("^v\\d+\\.\\d+\\.\\d+$")) | .tag_name] | .[0:2] | .[]'))
+          fi
 
-          # Get latest 2 client tags (v*.*.* format)
-          CLIENT_TAGS_ARRAY=($(echo "$RELEASES" | jq -r '[.[] | select(.tag_name | test("^v\\d+\\.\\d+\\.\\d+$")) | .tag_name] | .[0:2] | .[]'))
+          if [ "${CLIENT_TAGS_ARRAY[0]}" = "${CLIENT_TAGS_ARRAY[1]}" ]; then
+            echo "::error::client_old and client_new resolve to the same tag (${CLIENT_TAGS_ARRAY[0]}); nothing to test."
+            exit 1
+          fi
 
-          declare -a CLIENT_TAGS=()
           declare -a CLIENT_ASSET_URLS=()
-
-          for i in {0..1}; do
+          for i in 0 1; do
             CLIENT_TAG="${CLIENT_TAGS_ARRAY[i]}"
             ASSET_NAME="astar-collator-${CLIENT_TAG}-ubuntu-x86_64.tar.gz"
-            CLIENT_ASSET_URL=$(curl -s "https://api.github.com/repos/AstarNetwork/Astar/releases/tags/${CLIENT_TAG}" | \
-              jq -r --arg name "$ASSET_NAME" '.assets[] | select(.name == $name) | .browser_download_url')
-
-            CLIENT_TAGS[i]="$CLIENT_TAG"
+            CLIENT_ASSET_URL=$(curl -sf "https://api.github.com/repos/AstarNetwork/Astar/releases/tags/${CLIENT_TAG}" \
+              | jq -er --arg name "$ASSET_NAME" '.assets[] | select(.name == $name) | .browser_download_url') \
+              || { echo "::error::no asset ${ASSET_NAME} for tag ${CLIENT_TAG}"; exit 1; }
             CLIENT_ASSET_URLS[i]="$CLIENT_ASSET_URL"
-
             echo "Client $((i+1)): ${CLIENT_TAG} -> ${CLIENT_ASSET_URL}"
           done
 
-          echo "client_tags=${CLIENT_TAGS[*]}" >> $GITHUB_OUTPUT
+          echo "client_tags=${CLIENT_TAGS_ARRAY[*]}" >> $GITHUB_OUTPUT
           echo "client_asset_urls=${CLIENT_ASSET_URLS[*]}" >> $GITHUB_OUTPUT
 
   runtime-compatibility-test:
@@ -102,8 +118,17 @@ jobs:
             rm "astar-collator-${CLIENT_NUM}.tar.gz"
 
             echo "Client ${CLIENT_NUM} version (${CLIENT_TAG}):"
-            ${{ env.ZOMBIENET_DIR }}/astar-collator-${CLIENT_NUM} --version || echo "Version check failed"
+            ${{ env.ZOMBIENET_DIR }}/astar-collator-${CLIENT_NUM} --version
           done
+
+          V1=$(${{ env.ZOMBIENET_DIR }}/astar-collator-1 --version)
+          V2=$(${{ env.ZOMBIENET_DIR }}/astar-collator-2 --version)
+          if [ "$V1" = "$V2" ]; then
+            echo "::error::both collator binaries report the same version ($V1); the mixed-client test would be vacuous."
+            exit 1
+          fi
+          echo "collator1=$V1"
+          echo "collator2=$V2"
 
       - name: Prepare runtime for upgrade test
         working-directory: ${{ env.ZOMBIENET_DIR }}
@@ -192,12 +217,15 @@ jobs:
           # 1. Generate plain spec
           "$TMP_COLLATOR" build-spec --chain astar-dev > astar-plain.json
 
-          # 2. Patch sudo + WASM
+          # 2. Patch sudo key, WASM, and (crucially, since the spec is raw)
+          #    session keys + invulnerables for zombienet's collator names.
           python3 patch_astar_sudo_spec.py \
             astar-plain.json \
             "$SUDO_WASM" \
             astar-patched.json \
-            "$ALICE"
+            "$ALICE" \
+            "$TMP_COLLATOR" \
+            collator1 collator2
 
           # 3. Convert patched spec -> raw spec
           "$TMP_COLLATOR" build-spec \

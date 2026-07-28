@@ -4309,7 +4309,7 @@ dependencies = [
 [[package]]
 name = "fc-api"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "async-trait",
  "fp-storage",
@@ -4321,7 +4321,7 @@ dependencies = [
 [[package]]
 name = "fc-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "async-trait",
  "fp-consensus",
@@ -4337,7 +4337,7 @@ dependencies = [
 [[package]]
 name = "fc-db"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "async-trait",
  "ethereum",
@@ -4352,6 +4352,7 @@ dependencies = [
  "parity-db 0.5.5",
  "parity-scale-codec",
  "parking_lot 0.12.5",
+ "rocksdb",
  "sc-client-api",
  "sc-client-db",
  "smallvec",
@@ -4367,7 +4368,7 @@ dependencies = [
 [[package]]
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "ethereum-types 0.15.1",
  "fc-db",
@@ -4391,7 +4392,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "ethereum",
  "ethereum-types 0.15.1",
@@ -4445,7 +4446,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc-core"
 version = "1.1.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "ethereum",
  "ethereum-types 0.15.1",
@@ -4461,7 +4462,7 @@ dependencies = [
 [[package]]
 name = "fc-storage"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "ethereum",
  "ethereum-types 0.15.1",
@@ -4643,7 +4644,7 @@ dependencies = [
 [[package]]
 name = "fp-account"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "hex",
  "impl-serde 0.5.0",
@@ -4661,7 +4662,7 @@ dependencies = [
 [[package]]
 name = "fp-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "ethereum",
  "parity-scale-codec",
@@ -4672,7 +4673,7 @@ dependencies = [
 [[package]]
 name = "fp-ethereum"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "ethereum",
  "ethereum-types 0.15.1",
@@ -4684,7 +4685,7 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "environmental",
  "evm",
@@ -4700,7 +4701,7 @@ dependencies = [
 [[package]]
 name = "fp-rpc"
 version = "3.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "ethereum",
  "ethereum-types 0.15.1",
@@ -4716,7 +4717,7 @@ dependencies = [
 [[package]]
 name = "fp-self-contained"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -4728,7 +4729,7 @@ dependencies = [
 [[package]]
 name = "fp-storage"
 version = "2.0.0"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -9165,7 +9166,7 @@ dependencies = [
 [[package]]
 name = "pallet-ethereum"
 version = "4.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "environmental",
  "ethereum",
@@ -9189,7 +9190,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "6.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "cumulus-primitives-storage-weight-reclaim",
  "environmental",
@@ -9214,7 +9215,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-chain-id"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -9251,7 +9252,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "fp-evm",
 ]
@@ -9259,7 +9260,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "fp-evm",
  "sp-core",
@@ -9297,7 +9298,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -9335,7 +9336,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "ed25519-dalek",
  "fp-evm",
@@ -9344,7 +9345,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "fp-evm",
  "num",
@@ -9353,7 +9354,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -9364,7 +9365,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "fp-evm",
  "ripemd",
@@ -11993,7 +11994,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "derive_more 1.0.0",
  "environmental",
@@ -12022,7 +12023,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#67947565a4c856517b63ed42328382ad75514dba"
+source = "git+https://github.com/AstarNetwork/frontier?branch=stable2512#d6b461923536bf7eef94de7c271c1e7c875b3bba"
 dependencies = [
  "case",
  "num_enum",
