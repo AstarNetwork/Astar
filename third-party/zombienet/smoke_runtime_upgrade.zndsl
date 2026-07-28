@@ -1,4 +1,4 @@
-Description: Runtime Upgrade Test
+Description: Runtime Upgrade Test (mixed client fleet)
 Network: ./smoke_runtime_upgrade.toml
 Creds: config
 
@@ -6,13 +6,15 @@ alice: is up
 collator1: is up
 collator2: is up
 
-## test the block height
+## chain is producing blocks under both client versions
 collator1: reports block height is greater than 5 within 200 seconds
 collator2: reports block height is greater than 5 within 200 seconds
 
-## perform runtime upgrade
+## perform runtime upgrade (submitted from the second client)
 collator2: parachain 2000 perform upgrade with ./runtime.compact.compressed.wasm within 200 seconds
 
-## test the block height again
-collator1: reports block height is at least 10 within 450 seconds
-collator2: reports block height is at least 10 within 450 seconds
+## after CodeUpdated, require at least 20 more blocks AND every aura
+## authority to have authored one of them (catches single-node authoring
+## and same-slot collisions between mixed client versions).
+collator1: js-script ./scripts/post_upgrade.js with "20" return is equal to 1 within 450 seconds
+collator2: js-script ./scripts/post_upgrade.js with "20" return is equal to 1 within 450 seconds
