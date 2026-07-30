@@ -107,46 +107,6 @@ jobs:
           name: ${{ steps.artifact-name.outputs.name }}
           path: target/${{ matrix.target }}/production/astar-collator
 
-  native-macos:
-    needs: checks-and-tests
-    runs-on: macos-latest
-    steps:
-      - name: Checkout the source code
-        uses: actions/checkout@v5
-        with:
-          submodules: true
-
-      - name: Install deps
-        run: brew install protobuf
-
-      # Temporary dirty fix
-      # https://github.com/actions/runner-images/issues/10511
-      - name: Disk Cleanup
-        run: |
-          xcrun simctl delete all || true
-          sudo rm -rf ~/Library/Developer/CoreSimulator/Caches/* || true
-          sudo rm -rf /Users/runner/Library/Android/sdk || true
-          sudo rm -rf /Applications/Xcode_14.3.1.app || true
-          sudo rm -rf /Applications/Xcode_15.0.1.app || true
-          sudo rm -rf /Applications/Xcode_15.1.app || true
-          sudo rm -rf /Applications/Xcode_15.2.app || true
-          sudo rm -rf /Applications/Xcode_15.3.app || true
-          df -h
-
-      - name: Install & display rust toolchain
-        run: rustup show
-
-      - name: Check targets are installed correctly
-        run: rustup target list --installed
-
-      - name: Build optimized binary
-        run: cargo build --locked --profile production --bin astar-collator
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: astar-macOS-latest-x86_64
-          path: target/production/astar-collator
-
   docker:
     needs: native-linux
     runs-on: ubuntu-latest
@@ -157,17 +117,17 @@ jobs:
           submodules: true
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to DockerHub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Docker meta
         id: docker_meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: staketechnologies/astar-collator
           tags: |
@@ -184,7 +144,7 @@ jobs:
         run: chmod +x astar-collator && cp astar-collator third-party/docker
 
       - name: Build & Push docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: third-party/docker
           platforms: linux/amd64
@@ -193,14 +153,14 @@ jobs:
           push: true
 
   publish-release-draft:
-    needs: [native-linux, native-macos, docker]
+    needs: [native-linux, docker]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Use Node.js 20.x
+      - name: Use Node.js 24.x
         uses: actions/setup-node@v6
         with:
           node-version: 24.x
@@ -241,32 +201,20 @@ jobs:
   upload-binaries:
     needs: publish-release-draft
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        os: ["ubuntu", "macOS"]
-        # arch: ["x86_64", "aarch64"]
-        arch: ["x86_64"]
-        exclude:
-          - os: macOS
-            arch: aarch64
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 1
 
-      - name: Create download folder
-        run: |
-          mkdir -p ${{ matrix.os }}-${{ matrix.arch }}-bin
-
       - name: Download pre-built collator binary
         uses: actions/download-artifact@v7
         with:
-          name: astar-${{ matrix.os }}-latest-${{ matrix.arch }}
-          path: ${{ matrix.os }}-${{ matrix.arch }}-bin
+          name: astar-ubuntu-latest-x86_64
+          path: bin
 
       - name: Make binary executable and tar gzip
         run: |
-          cd ${{ matrix.os }}-${{ matrix.arch }}-bin
+          cd bin
           chmod +x astar-collator
           tar zcvf astar-collator.tar.gz astar-collator
 
@@ -274,11 +222,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          asset_dir="${{ matrix.os }}-${{ matrix.arch }}-bin"
-          asset_name="astar-collator-${RELEASE_TAG}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz"
-
-          mv "$asset_dir/astar-collator.tar.gz" "$asset_dir/$asset_name"
-          gh release upload "$RELEASE_TAG" "$asset_dir/$asset_name"
+          asset_name="astar-collator-${RELEASE_TAG}-ubuntu-x86_64.tar.gz"
+          mv bin/astar-collator.tar.gz "bin/$asset_name"
+          gh release upload "$RELEASE_TAG" "bin/$asset_name"
 
   chain-sync-smoke:
     needs: native-linux
