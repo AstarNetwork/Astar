@@ -2058,6 +2058,11 @@ impl_runtime_apis! {
                     ))
                 }
 
+                fn set_up_complex_asset_transfer(
+                ) -> Option<(Assets, u32, Location, Box<dyn FnOnce()>)> {
+                    XcmBenchmarkHelper::<Runtime>::set_up_complex_asset_transfer()
+                }
+
                 fn get_asset() -> Asset {
                     Asset {
                         id: AssetId(Here.into()),

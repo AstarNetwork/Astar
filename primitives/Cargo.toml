@@ -22,9 +22,11 @@ ethereum-types = { workspace = true }
 fp-evm = { workspace = true }
 
 # Substrate dependencies
+frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-assets = { workspace = true }
+pallet-balances = { workspace = true, optional = true }
 pallet-collective = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-treasury = { workspace = true }
@@ -85,6 +87,8 @@ std = [
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-dispatch/std",
 	"sp-arithmetic/std",
+	"pallet-balances?/std",
+	"frame-benchmarking?/std",
 ]
 runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
@@ -101,6 +105,10 @@ runtime-benchmarks = [
 	"pallet-membership/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
 	"xcm/runtime-benchmarks",
+	"pallet-balances",
+	"pallet-balances/runtime-benchmarks",
+	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
 ]
 try-runtime = [
 	"pallet-contracts/try-runtime",
@@ -113,4 +121,5 @@ try-runtime = [
 	"pallet-collective/try-runtime",
 	"pallet-membership/try-runtime",
 	"pallet-treasury/try-runtime",
+	"pallet-balances?/try-runtime",
 ]
