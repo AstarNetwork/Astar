@@ -12,6 +12,7 @@ workspace = true
 
 [dependencies]
 # third-party dependencies
+hex-literal = { workspace = true }
 log = { workspace = true, optional = true }
 num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
@@ -112,6 +113,7 @@ orml-xtokens = { workspace = true }
 astar-primitives = { workspace = true }
 astar-xcm-benchmarks = { workspace = true, optional = true }
 pallet-collator-selection = { workspace = true }
+contracts-mbm = { workspace = true }
 pallet-collective-proxy = { workspace = true }
 pallet-dapp-staking = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
@@ -181,6 +183,7 @@ std = [
 	"pallet-authorship/std",
 	"pallet-balances/std",
 	"pallet-collator-selection/std",
+	"contracts-mbm/std",
 	"pallet-collective-proxy/std",
 	"pallet-collective/std",
 	"pallet-contracts/std",
@@ -274,6 +277,7 @@ runtime-benchmarks = [
 	"pallet-assets/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"contracts-mbm/runtime-benchmarks",
 	"pallet-collective-proxy/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"pallet-contracts/runtime-benchmarks",
@@ -335,6 +339,7 @@ try-runtime = [
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-collator-selection/try-runtime",
+	"contracts-mbm/try-runtime",
 	"pallet-collective-proxy/try-runtime",
 	"pallet-collective/try-runtime",
 	"pallet-contracts/try-runtime",

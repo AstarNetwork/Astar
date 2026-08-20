@@ -257,6 +257,8 @@ pub struct BaseFilter;
 impl Contains<RuntimeCall> for BaseFilter {
     fn contains(call: &RuntimeCall) -> bool {
         match call {
+            // Wasm (ink!) smart contracts are being decommissioned.
+            RuntimeCall::Contracts(..) => false,
             // Filter permission-less assets creation/destroying.
             // Custom asset's `id` should fit in `u32` as not to mix with service assets.
             RuntimeCall::Assets(method) => match method {
@@ -1426,12 +1428,35 @@ impl pallet_collective_proxy::Config for Runtime {
 
 parameter_types! {
     pub MbmServiceWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
+    pub ContractsCodeDeposit: RuntimeHoldReason =
+        pallet_contracts::HoldReason::CodeUploadDepositReserve.into();
+    pub ContractsStorageDeposit: RuntimeHoldReason =
+        pallet_contracts::HoldReason::StorageDepositReserve.into();
+    /// Foundation controlled account collecting the settled `pallet-contracts` deposits.
+    /// `5GqAb7Rnpn1388DNWJ4macD9p9D7ubqx2zcYejxzEfwc2vfb`
+    pub ContractsDepositEscrow: AccountId = AccountId::from(hex_literal::hex!(
+        "d2d9b801b5fcf7e02dcf0f46218dc235953a911492c14b83ba579fdf48887408"
+    ));
 }
+
+/// Multi-block migrations executed by `pallet-migrations`.
+///
+/// Step one of decommissioning Wasm (ink!) smart contracts: settle every balance
+/// `pallet-contracts` still owns.
+pub type MultiBlockMigrationsList = (
+    contracts_mbm::ReleaseContractsDeposits<
+        Runtime,
+        ContractsCodeDeposit,
+        ContractsStorageDeposit,
+        ContractsDepositEscrow,
+        contracts_mbm::weights::SubstrateWeight<Runtime>,
+    >,
+);
 
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations = ();
+    type Migrations = MultiBlockMigrationsList;
     // Benchmarks need mocked migrations to guarantee that they succeed.
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -1441,6 +1466,11 @@ impl pallet_migrations::Config for Runtime {
     type FailedMigrationHandler = UnfreezeChainOnFailedMigration;
     type MaxServiceWeight = MbmServiceWeight;
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl contracts_mbm::Config for Runtime {
+    type BenchmarkHoldReason = ContractsStorageDeposit;
 }
 
 /// Calls that can bypass the safe-mode pallet.
@@ -1662,6 +1692,10 @@ mod runtime {
     #[runtime::pallet_index(120)]
     pub type MultiBlockMigrations = pallet_migrations;
 
+    #[runtime::pallet_index(250)]
+    #[cfg(feature = "runtime-benchmarks")]
+    pub type ContractsMBM = contracts_mbm;
+
     #[runtime::pallet_index(99)]
     #[cfg(feature = "astar-sudo")]
     pub type Sudo = pallet_sudo + Pallet + Call + Event<T> + Error<T> + Config<T>;
@@ -1789,6 +1823,7 @@ mod benches {
         [pallet_dapp_staking, DappStaking]
         [pallet_inflation, Inflation]
         [pallet_migrations, MultiBlockMigrations]
+        [contracts_mbm, ContractsMBM]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PalletXcmExtrinsicsBenchmark::<Runtime>]

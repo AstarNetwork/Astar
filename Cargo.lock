@@ -774,6 +774,7 @@ dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
  "astar-xcm-benchmarks",
+ "contracts-mbm",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
@@ -1997,6 +1998,23 @@ name = "constant_time_eq"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d52eff69cd5e647efe296129160853a42795992097e8af39800e1060caeea9b"
+
+[[package]]
+name = "contracts-mbm"
+version = "1.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-migrations",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
 
 [[package]]
 name = "convert_case"
@@ -6277,6 +6295,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex",
+ "hex-literal",
  "moonbeam-rpc-primitives-debug",
  "pallet-assets",
  "pallet-aura",
@@ -15160,6 +15179,7 @@ version = "23.0.0"
 dependencies = [
  "astar-primitives",
  "astar-xcm-benchmarks",
+ "contracts-mbm",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
@@ -15180,6 +15200,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
+ "hex-literal",
  "log",
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",
@@ -15277,6 +15298,7 @@ dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
  "astar-xcm-benchmarks",
+ "contracts-mbm",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",

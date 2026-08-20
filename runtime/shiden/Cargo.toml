@@ -116,6 +116,7 @@ frame-try-runtime = { workspace = true, optional = true }
 astar-primitives = { workspace = true }
 astar-xcm-benchmarks = { workspace = true, optional = true }
 pallet-collator-selection = { workspace = true }
+contracts-mbm = { workspace = true }
 pallet-dapp-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapp-staking = { workspace = true }
@@ -219,6 +220,7 @@ std = [
 	"cumulus-pallet-xcmp-queue/std",
 	"cumulus-pallet-xcm/std",
 	"pallet-collator-selection/std",
+	"contracts-mbm/std",
 	"moonbeam-evm-tracer/std",
 	"moonbeam-rpc-primitives-debug/std",
 	"moonbeam-rpc-primitives-txpool/std",
@@ -264,6 +266,7 @@ runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"contracts-mbm/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
@@ -317,6 +320,7 @@ try-runtime = [
 	"pallet-assets/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-collator-selection/try-runtime",
+	"contracts-mbm/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-xcm/try-runtime",
 	"pallet-identity/try-runtime",
