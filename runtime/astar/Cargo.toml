@@ -120,8 +120,8 @@ frame-try-runtime = { workspace = true, optional = true }
 # Astar pallets
 astar-primitives = { workspace = true }
 astar-xcm-benchmarks = { workspace = true, optional = true }
-pallet-collator-selection = { workspace = true }
 contracts-mbm = { workspace = true }
+pallet-collator-selection = { workspace = true }
 pallet-collective-proxy = { workspace = true }
 pallet-dapp-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
