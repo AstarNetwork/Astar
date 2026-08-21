@@ -1433,9 +1433,9 @@ parameter_types! {
     pub ContractsStorageDeposit: RuntimeHoldReason =
         pallet_contracts::HoldReason::StorageDepositReserve.into();
     /// Foundation controlled account collecting the settled `pallet-contracts` deposits.
-    /// `5GqAb7Rnpn1388DNWJ4macD9p9D7ubqx2zcYejxzEfwc2vfb`
+    /// `XPDSbfc3fcoVWEtPsxQXFDvWqnZgQfsxXv6MW8dd7G3GkZt`
     pub ContractsDepositEscrow: AccountId = AccountId::from(hex_literal::hex!(
-        "d2d9b801b5fcf7e02dcf0f46218dc235953a911492c14b83ba579fdf48887408"
+        "400048a4f3672511dfcf2ddfcb34bafb80ee2f28bbec8cbe0283e90573e93474"
     ));
 }
 
