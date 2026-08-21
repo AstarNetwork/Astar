@@ -1,0 +1,58 @@
+[package]
+name = "contracts-mbm"
+version = "1.0.0"
+license = "GPL-3.0-or-later"
+description = "Multi block migrations decommissioning pallet-contracts"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+log = { workspace = true }
+pallet-balances = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+[dev-dependencies]
+# `std` is required explicitly so `cargo test -p contracts-mbm` works standalone, without relying
+# on workspace-wide feature unification.
+pallet-migrations = { workspace = true, features = ["std"] }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"frame-benchmarking?/std",
+	"sp-std/std",
+	"sp-io/std",
+	"log/std",
+	"frame-support/std",
+	"frame-system/std",
+	"sp-runtime/std",
+	"pallet-balances/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-balances/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"pallet-migrations/try-runtime",
+	"frame-system/try-runtime",
+	"sp-runtime/try-runtime",
+	"pallet-balances/try-runtime",
+]
