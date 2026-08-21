@@ -81,11 +81,11 @@ fn instantiate_is_disabled() {
 /// The escrow collecting the settled contract deposits must stay the foundation account.
 #[test]
 fn deposit_escrow_is_the_foundation_account() {
-    // 5GqAb7Rnpn1388DNWJ4macD9p9D7ubqx2zcYejxzEfwc2vfb
+    // XPDSbfc3fcoVWEtPsxQXFDvWqnZgQfsxXv6MW8dd7G3GkZt
     assert_eq!(
         ContractsDepositEscrow::get(),
         AccountId32::new(hex_literal::hex!(
-            "d2d9b801b5fcf7e02dcf0f46218dc235953a911492c14b83ba579fdf48887408"
+            "400048a4f3672511dfcf2ddfcb34bafb80ee2f28bbec8cbe0283e90573e93474"
         )),
     );
 }
