@@ -29,7 +29,7 @@ jobs:
           if taplo --version &> /dev/null; then
             echo "taplo-cli is already installed"
           else
-            cargo install taplo-cli
+            cargo install taplo-cli --locked
           fi
           taplo fmt --check
 
@@ -58,7 +58,7 @@ jobs:
       - name: Clippy
         env:
           SKIP_WASM_BUILD: 1
-        run: cargo clippy --features evm-tracing,try-runtime,runtime-benchmarks -- -D warnings
+        run: cargo clippy --locked --features evm-tracing,try-runtime,runtime-benchmarks -- -D warnings
 
   check-license:
     if: github.event.pull_request.draft == false
