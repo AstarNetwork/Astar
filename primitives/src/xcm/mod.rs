@@ -33,8 +33,7 @@
 use crate::AccountId;
 
 use frame_support::{
-    ensure,
-    traits::{tokens::fungibles, Contains, ContainsPair, Get, ProcessMessageError},
+    traits::{tokens::fungibles, ContainsPair, Get},
     weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
 use sp_runtime::traits::{Bounded, Convert, MaybeEquivalence, Zero};
@@ -42,8 +41,8 @@ use sp_std::marker::PhantomData;
 
 // Polkadot imports
 use xcm::latest::{prelude::*, Weight};
-use xcm_builder::{CreateMatcher, MatchXcm, TakeRevenue};
-use xcm_executor::traits::{MatchesFungibles, Properties, ShouldExecute, WeightTrader};
+use xcm_builder::TakeRevenue;
+use xcm_executor::traits::{MatchesFungibles, WeightTrader};
 
 // ORML imports
 use orml_traits::location::Reserve;
@@ -79,7 +78,7 @@ where
 
 /// Used as weight trader for foreign assets.
 ///
-/// In case foreigin asset is supported as payment asset, XCM execution time
+/// In case foreign asset is supported as payment asset, XCM execution time
 /// on-chain can be paid by the foreign asset, using the configured rate.
 pub struct FixedRateOfForeignAsset<T: ExecutionPaymentRate, R: TakeRevenue> {
     /// Total used weight
@@ -131,26 +130,23 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
                         return Ok(payment);
                     }
 
+                    // This trader tracks a single fee asset.
+                    if let Some((tracked_asset_location, _)) =
+                        &self.asset_location_and_units_per_second
+                    {
+                        if *tracked_asset_location != asset_location {
+                            return Err(XcmError::NotWithdrawable);
+                        }
+                    }
+
                     let unused = payment
                         .checked_sub((asset_location.clone(), amount).into())
                         .map_err(|_| XcmError::TooExpensive)?;
 
                     self.weight = self.weight.saturating_add(weight);
-
-                    // If there are multiple calls to `BuyExecution` but with different assets, we need to be able to handle that.
-                    // Current primitive implementation will just keep total track of consumed asset for the FIRST consumed asset.
-                    // Others will just be ignored when refund is concerned.
-                    if let Some((old_asset_location, _)) =
-                        self.asset_location_and_units_per_second.clone()
-                    {
-                        if old_asset_location == asset_location {
-                            self.consumed = self.consumed.saturating_add(amount);
-                        }
-                    } else {
-                        self.consumed = self.consumed.saturating_add(amount);
-                        self.asset_location_and_units_per_second =
-                            Some((asset_location, units_per_second));
-                    }
+                    self.consumed = self.consumed.saturating_add(amount);
+                    self.asset_location_and_units_per_second =
+                        Some((asset_location, units_per_second));
 
                     Ok(unused)
                 } else {
@@ -168,8 +164,11 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
             self.asset_location_and_units_per_second.clone()
         {
             let weight = weight.min(self.weight);
-            let amount = units_per_second.saturating_mul(weight.ref_time() as u128)
-                / (WEIGHT_REF_TIME_PER_SECOND as u128);
+            // Never hand back more of the asset than was actually taken for it.
+            let amount = units_per_second
+                .saturating_mul(weight.ref_time() as u128)
+                .saturating_div(WEIGHT_REF_TIME_PER_SECOND as u128)
+                .min(self.consumed);
 
             self.weight = self.weight.saturating_sub(weight);
             self.consumed = self.consumed.saturating_sub(amount);
@@ -301,67 +300,5 @@ impl<AbsoluteLocation: Get<Location>> Reserve
         }
 
         Some(reserve_location)
-    }
-}
-
-// Copying the barrier here due to this issue - https://github.com/paritytech/polkadot-sdk/issues/1638
-// The fix was introduced in v1.3.0 via this PR - https://github.com/paritytech/polkadot-sdk/pull/1733
-// Below is the exact same copy from the fix PR.
-
-const MAX_ASSETS_FOR_BUY_EXECUTION: usize = 2;
-
-/// Allows execution from `origin` if it is contained in `T` (i.e. `T::Contains(origin)`) taking
-/// payments into account.
-///
-/// Only allows for `TeleportAsset`, `WithdrawAsset`, `ClaimAsset` and `ReserveAssetDeposit` XCMs
-/// because they are the only ones that place assets in the Holding Register to pay for execution.
-pub struct AllowTopLevelPaidExecutionFrom<T>(PhantomData<T>);
-impl<T: Contains<Location>> ShouldExecute for AllowTopLevelPaidExecutionFrom<T> {
-    fn should_execute<RuntimeCall>(
-        origin: &Location,
-        instructions: &mut [Instruction<RuntimeCall>],
-        max_weight: Weight,
-        _properties: &mut Properties,
-    ) -> Result<(), ProcessMessageError> {
-        log::trace!(
-            target: "xcm::barriers",
-            "AllowTopLevelPaidExecutionFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, properties: {:?}",
-            origin, instructions, max_weight, _properties,
-        );
-
-        ensure!(T::contains(origin), ProcessMessageError::Unsupported);
-        // We will read up to 5 instructions. This allows up to 3 `ClearOrigin` instructions. We
-        // allow for more than one since anything beyond the first is a no-op and it's conceivable
-        // that composition of operations might result in more than one being appended.
-        let end = instructions.len().min(5);
-        instructions[..end]
-            .matcher()
-            .match_next_inst(|inst| match inst {
-                ReceiveTeleportedAsset(..) | ReserveAssetDeposited(..) => Ok(()),
-                WithdrawAsset(ref assets) if assets.len() <= MAX_ASSETS_FOR_BUY_EXECUTION => Ok(()),
-                ClaimAsset { ref assets, .. } if assets.len() <= MAX_ASSETS_FOR_BUY_EXECUTION => {
-                    Ok(())
-                }
-                _ => Err(ProcessMessageError::BadFormat),
-            })?
-            .skip_inst_while(|inst| matches!(inst, ClearOrigin))?
-            .match_next_inst(|inst| match inst {
-                BuyExecution {
-                    weight_limit: Limited(ref mut weight),
-                    ..
-                } if weight.all_gte(max_weight) => {
-                    *weight = max_weight;
-                    Ok(())
-                }
-                BuyExecution {
-                    ref mut weight_limit,
-                    ..
-                } if weight_limit == &Unlimited => {
-                    *weight_limit = Limited(max_weight);
-                    Ok(())
-                }
-                _ => Err(ProcessMessageError::Overweight(max_weight)),
-            })?;
-        Ok(())
     }
 }
