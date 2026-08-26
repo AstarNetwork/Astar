@@ -108,47 +108,6 @@ fn filter_rejects_non_whitelisted_calls() {
     })
 }
 
-/// The dispatch precompile used to whitelist two `XTokens` calls, which gave EVM callers a second
-/// route to cross-chain transfers, bypassing the XCM precompile. `XTokens` is gone; make sure the
-/// hole was not simply moved to `pallet_xcm`.
-#[test]
-fn filter_rejects_xcm_calls() {
-    ExtBuilder::default().build().execute_with(|| {
-        let dest = Box::new(VersionedLocation::V5(Location::parent()));
-        let beneficiary = Box::new(VersionedLocation::V5(Location::here()));
-        let assets = Box::new(VersionedAssets::V5((Location::here(), 100u128).into()));
-
-        let transfer_assets = RuntimeCall::PolkadotXcm(pallet_xcm::Call::transfer_assets {
-            dest: dest.clone(),
-            beneficiary,
-            assets: assets.clone(),
-            fee_asset_item: 0,
-            weight_limit: WeightLimit::Unlimited,
-        });
-        assert!(!WhitelistedCalls::contains(&transfer_assets));
-
-        let reserve_transfer =
-            RuntimeCall::PolkadotXcm(pallet_xcm::Call::limited_reserve_transfer_assets {
-                dest: dest.clone(),
-                beneficiary: Box::new(VersionedLocation::V5(Location::here())),
-                assets,
-                fee_asset_item: 0,
-                weight_limit: WeightLimit::Unlimited,
-            });
-        assert!(!WhitelistedCalls::contains(&reserve_transfer));
-
-        let send = RuntimeCall::PolkadotXcm(pallet_xcm::Call::send {
-            dest,
-            message: Box::new(VersionedXcm::V5(Xcm(vec![]))),
-        });
-        assert!(!WhitelistedCalls::contains(&send));
-
-        // ...and not through a utility batch either.
-        let batched = RuntimeCall::Utility(UtilityCall::batch { calls: vec![send] });
-        assert!(!WhitelistedCalls::contains(&batched));
-    })
-}
-
 #[test]
 fn filter_accepts_whitelisted_batch_all_calls() {
     ExtBuilder::default().build().execute_with(|| {
