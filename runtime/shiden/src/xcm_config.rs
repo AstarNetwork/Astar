@@ -355,12 +355,3 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type PriceForSiblingDelivery = NoPriceForMessageDelivery<ParaId>;
     type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
 }
-
-/// Convert `AssetId` to optional `Location`. The impl is a wrapper
-/// on `ShidenAssetLocationIdConverter`.
-pub struct AssetIdConvert;
-impl Convert<AssetId, Option<Location>> for AssetIdConvert {
-    fn convert(asset_id: AssetId) -> Option<Location> {
-        ShidenAssetLocationIdConverter::convert_back(&asset_id)
-    }
-}
