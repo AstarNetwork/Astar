@@ -100,7 +100,6 @@ xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 xcm-runtime-apis = { workspace = true }
 
-
 # benchmarking
 array-bytes = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
