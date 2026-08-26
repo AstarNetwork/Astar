@@ -2,20 +2,30 @@
 //
 // Argument: "<minBlocksAfterUpgrade>"
 //
-// Passes (returns 1) iff, since the block that emitted `system.CodeUpdated`:
+// Waits for `minBlocksAfterUpgrade` blocks to be produced after the block that
+// emitted `system.CodeUpdated` (zombienet runs a js-script only once, so the
+// waiting has to happen in here), then passes (returns 1) iff:
 //   * at least `minBlocksAfterUpgrade` blocks have been produced,
 //   * every registered aura authority has authored at least one of those
 //     blocks (so single-node authoring after the upgrade fails the check),
 //   * aura slots are strictly increasing across the post-upgrade range.
 //
 // Anything else returns 0.
+
+// Leave a margin below the 450s zndsl timeout so we can report a real failure
+// instead of being killed mid-wait.
+const WAIT_TIMEOUT_MS = 400_000;
+const POLL_INTERVAL_MS = 3_000;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function run(nodeName, networkInfo, args) {
     const { wsUri, userDefinedTypes } = networkInfo.nodesByName[nodeName];
     const api = await zombie.connect(wsUri, userDefinedTypes);
 
     const minBlocks = Number(args[0]);
 
-    const head = (await api.rpc.chain.getHeader()).number.toNumber();
+    let head = (await api.rpc.chain.getHeader()).number.toNumber();
 
     // Walk back to the CodeUpdated block (bounded lookback).
     let upgradeAt = null;
@@ -33,9 +43,20 @@ async function run(nodeName, networkInfo, args) {
         return 0;
     }
 
-    if (head - upgradeAt < minBlocks) {
-        console.log(`WAIT only ${head - upgradeAt} blocks since CodeUpdated at #${upgradeAt}`);
-        return 0;
+    // Wait for enough blocks on top of the upgrade before judging authorship.
+    const deadline = Date.now() + WAIT_TIMEOUT_MS;
+    while (head - upgradeAt < minBlocks) {
+        if (Date.now() >= deadline) {
+            console.log(
+                `FAIL only ${head - upgradeAt}/${minBlocks} blocks since CodeUpdated at #${upgradeAt}`
+            );
+            return 0;
+        }
+        console.log(
+            `WAIT ${head - upgradeAt}/${minBlocks} blocks since CodeUpdated at #${upgradeAt}`
+        );
+        await sleep(POLL_INTERVAL_MS);
+        head = (await api.rpc.chain.getHeader()).number.toNumber();
     }
 
     const authorities = await api.query.aura.authorities();
