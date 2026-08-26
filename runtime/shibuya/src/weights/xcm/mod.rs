@@ -69,8 +69,8 @@ where
             .saturating_mul(assets.inner().into_iter().count() as u64)
     }
 
-    fn reserve_asset_deposited(_assets: &Assets) -> XCMWeight {
-        XcmFungibleWeight::<Runtime>::reserve_asset_deposited()
+    fn reserve_asset_deposited(assets: &Assets) -> XCMWeight {
+        assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::reserve_asset_deposited())
     }
     fn receive_teleported_asset(assets: &Assets) -> XCMWeight {
         assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::receive_teleported_asset())
@@ -133,14 +133,15 @@ where
         Weight::MAX
     }
     fn initiate_reserve_withdraw(
-        _assets: &AssetFilter,
+        assets: &AssetFilter,
         _reserve: &Location,
         _xcm: &Xcm<()>,
     ) -> XCMWeight {
-        // This is not correct. initiate reserve withdraw does not to that many db reads
-        // the only thing it does based on number of assets is a take from a local variable
-        //assets.weigh_multi_assets(XcmGeneric::<Runtime>::initiate_reserve_withdraw())
-        XcmFungibleWeight::<Runtime>::initiate_reserve_withdraw()
+        // The executor reanchors and re-encodes every matched asset, so this is linear in the
+        // number of assets taken out of holding.
+        // The base weight is a floor: a filter that matches nothing still builds and sends a message.
+        let base = XcmFungibleWeight::<Runtime>::initiate_reserve_withdraw();
+        assets.weigh_multi_assets_filter(base).max(base)
     }
     fn initiate_teleport(_assets: &AssetFilter, _dest: &Location, _xcm: &Xcm<()>) -> XCMWeight {
         XcmFungibleWeight::<Runtime>::initiate_teleport()

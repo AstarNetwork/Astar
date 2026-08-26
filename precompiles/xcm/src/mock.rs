@@ -40,12 +40,12 @@ use sp_core::{ConstU32, DecodeWithMemTracking, H160};
 use sp_runtime::{traits::IdentityLookup, BuildStorage};
 use sp_std::cell::RefCell;
 
-use astar_primitives::xcm::{AbsoluteAndRelativeReserveProvider, AllowTopLevelPaidExecutionFrom};
+use astar_primitives::xcm::AbsoluteAndRelativeReserveProvider;
 use orml_xcm_support::DisabledParachainFee;
 use xcm::prelude::XcmVersion;
 use xcm_builder::{
-    test_utils::TransactAsset, AllowKnownQueryResponses, AllowSubscriptionsFrom, FixedWeightBounds,
-    SignedToAccountId32, TakeWeightCredit,
+    test_utils::TransactAsset, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    AllowTopLevelPaidExecutionFrom, FixedWeightBounds, SignedToAccountId32, TakeWeightCredit,
 };
 use xcm_executor::XcmExecutor;
 

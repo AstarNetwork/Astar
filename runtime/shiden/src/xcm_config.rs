@@ -40,10 +40,11 @@ use parachains_common::{
 use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
-    ConvertedConcreteId, DescribeAllTerminal, DescribeFamily, EnsureXcmOrigin,
-    FrameTransactionalProcessor, FungibleAdapter, FungiblesAdapter, HashedDescription, IsConcrete,
-    NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId,
+    DescribeAllTerminal, DescribeFamily, EnsureXcmOrigin, FrameTransactionalProcessor,
+    FungibleAdapter, FungiblesAdapter, HashedDescription, IsConcrete, NoChecking,
+    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
     SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, UsingComponents,
     WeightInfoBounds, WithComputedOrigin,
@@ -58,8 +59,8 @@ use orml_xcm_support::DisabledParachainFee;
 
 // Astar imports
 use astar_primitives::xcm::{
-    AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, AllowTopLevelPaidExecutionFrom,
-    FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
+    AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, FixedRateOfForeignAsset,
+    ReserveAssetFilter, XcmFungibleFeeHandler,
 };
 
 parameter_types! {

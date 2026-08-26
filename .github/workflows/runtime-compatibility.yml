@@ -204,7 +204,7 @@ jobs:
         if: matrix.chain == 'astar'
         working-directory: runtime-src
         run: |
-          cargo build --release -p astar-collator --features astar-sudo
+          cargo build --release --locked -p astar-collator --features astar-sudo
 
       - name: Generate spec from matching runtime, patch sudo key and WASM
         if: matrix.chain == 'astar'
