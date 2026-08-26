@@ -744,7 +744,6 @@ dependencies = [
  "impl-trait-for-tuples",
  "log",
  "once_cell",
- "orml-traits",
  "pallet-assets",
  "pallet-balances",
  "pallet-collective",
@@ -801,8 +800,6 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "num_enum",
- "orml-xcm-support",
- "orml-xtokens",
  "pallet-assets",
  "pallet-aura",
  "pallet-authorship",
@@ -8604,77 +8601,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "orml-traits"
-version = "1.5.0"
-source = "git+https://github.com/AstarNetwork/open-runtime-module-library?branch=stable2512#99b8ce55b4f2d06673b8405f66bee967745aae7a"
-dependencies = [
- "frame-support",
- "impl-trait-for-tuples",
- "num-traits",
- "orml-utilities",
- "parity-scale-codec",
- "paste",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "staging-xcm",
-]
-
-[[package]]
-name = "orml-utilities"
-version = "1.5.0"
-source = "git+https://github.com/AstarNetwork/open-runtime-module-library?branch=stable2512#99b8ce55b4f2d06673b8405f66bee967745aae7a"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "orml-xcm-support"
-version = "1.5.0"
-source = "git+https://github.com/AstarNetwork/open-runtime-module-library?branch=stable2512#99b8ce55b4f2d06673b8405f66bee967745aae7a"
-dependencies = [
- "frame-support",
- "orml-traits",
- "parity-scale-codec",
- "sp-runtime",
- "sp-std",
- "staging-xcm",
- "staging-xcm-executor",
-]
-
-[[package]]
-name = "orml-xtokens"
-version = "1.5.0"
-source = "git+https://github.com/AstarNetwork/open-runtime-module-library?branch=stable2512#99b8ce55b4f2d06673b8405f66bee967745aae7a"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "orml-traits",
- "orml-xcm-support",
- "pallet-xcm",
- "parachains-common",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "staging-xcm",
- "staging-xcm-executor",
-]
-
-[[package]]
 name = "pallet-asset-conversion"
 version = "27.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2512#ba6a0d23259cdc3108f70997a6847e7bc5b28794"
@@ -9488,9 +9414,6 @@ dependencies = [
  "log",
  "num_enum",
  "once_cell",
- "orml-traits",
- "orml-xcm-support",
- "orml-xtokens",
  "pallet-assets",
  "pallet-balances",
  "pallet-evm",
@@ -15206,8 +15129,6 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "num_enum",
- "orml-xcm-support",
- "orml-xtokens",
  "pallet-assets",
  "pallet-aura",
  "pallet-authorship",
@@ -15325,8 +15246,6 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "num_enum",
- "orml-xcm-support",
- "orml-xtokens",
  "pallet-assets",
  "pallet-aura",
  "pallet-authorship",
@@ -19419,9 +19338,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "orml-traits",
- "orml-xcm-support",
- "orml-xtokens",
  "pallet-assets",
  "pallet-balances",
  "pallet-contracts",

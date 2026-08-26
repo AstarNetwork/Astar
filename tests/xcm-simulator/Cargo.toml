@@ -56,9 +56,6 @@ xcm-executor = { workspace = true }
 xcm-simulator = { workspace = true }
 
 # ORML
-orml-traits = { workspace = true }
-orml-xcm-support = { workspace = true }
-orml-xtokens = { workspace = true }
 
 [features]
 default = ["std"]
@@ -82,9 +79,6 @@ std = [
 	"pallet-proxy/std",
 	"pallet-utility/std",
 	"pallet-message-queue/std",
-	"orml-xtokens/std",
-	"orml-traits/std",
-	"orml-xcm-support/std",
 	"pallet-dapp-staking/std",
 	"parachains-common/std",
 ]
@@ -99,7 +93,6 @@ runtime-benchmarks = [
 	"xcm-executor/runtime-benchmarks",
 	"polkadot-runtime-parachains/runtime-benchmarks",
 	"polkadot-parachain/runtime-benchmarks",
-	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
 	"pallet-dapp-staking/runtime-benchmarks",

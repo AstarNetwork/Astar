@@ -299,12 +299,6 @@ xcm-runtime-apis = { git = "https://github.com/paritytech/polkadot-sdk", branch 
 polkadot-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
 
-# ORML
-# (wasm)
-orml-xtokens = { git = "https://github.com/AstarNetwork/open-runtime-module-library", branch = "stable2512", default-features = false }
-orml-traits = { git = "https://github.com/AstarNetwork/open-runtime-module-library", branch = "stable2512", default-features = false }
-orml-xcm-support = { git = "https://github.com/AstarNetwork/open-runtime-module-library", branch = "stable2512", default-features = false }
-
 # Astar pallets & modules
 # (wasm)
 pallet-collator-selection = { path = "./pallets/collator-selection", default-features = false }

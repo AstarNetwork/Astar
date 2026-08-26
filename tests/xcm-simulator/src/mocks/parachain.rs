@@ -38,7 +38,7 @@ use frame_system::{
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_runtime::{
-    traits::{AccountIdConversion, Convert, IdentityLookup, MaybeEquivalence},
+    traits::{AccountIdConversion, Convert, IdentityLookup},
     AccountId32, Perbill, RuntimeDebug,
 };
 use sp_std::prelude::*;
@@ -53,17 +53,17 @@ use xcm_builder::{
     NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
     SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, WithComputedOrigin,
+    WithUniqueTopic,
 };
 
-use orml_xcm_support::DisabledParachainFee;
 use sp_core::DecodeWithMemTracking;
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use astar_primitives::{
     dapp_staking::{AccountCheck, CycleConfiguration, SmartContract, StakingRewardHandler},
     xcm::{
-        AbsoluteAndRelativeReserveProvider, AssetLocationIdConverter, FixedRateOfForeignAsset,
-        ReserveAssetFilter, XcmFungibleFeeHandler,
+        AssetLocationIdConverter, FixedRateOfForeignAsset, ReserveAssetFilter,
+        XcmFungibleFeeHandler,
     },
 };
 
@@ -406,7 +406,7 @@ parameter_types! {
     pub NativePerSecond: (XcmAssetId, u128, u128) = (AssetId(ShidenLocation::get()), 1_000_000_000_000, 1024 * 1024);
 }
 
-pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
+pub type XcmRouter = WithUniqueTopic<super::ParachainXcmRouter<MsgQueue>>;
 
 pub struct ParentOrParentsPlurality;
 impl Contains<Location> for ParentOrParentsPlurality {
@@ -514,57 +514,6 @@ impl pallet_xcm::Config for Runtime {
     type RemoteLockConsumerIdentifier = ();
     type AdminOrigin = EnsureRoot<AccountId>;
     type AuthorizedAliasConsideration = Disabled;
-}
-
-/// Convert `AccountId` to `Location`.
-pub struct AccountIdToLocation;
-impl Convert<AccountId, Location> for AccountIdToLocation {
-    fn convert(account: AccountId) -> Location {
-        Junction::AccountId32 {
-            network: None,
-            id: account.into(),
-        }
-        .into()
-    }
-}
-
-parameter_types! {
-    /// The absolute location in perspective of the whole network.
-    pub ShidenLocationAbsolute: Location = Location {
-        parents: 1,
-        interior: Parachain(MsgQueue::parachain_id().into()).into()
-    };
-    /// Max asset types for one cross-chain transfer. `2` covers all current use cases.
-    /// Can be updated with extra test cases in the future if needed.
-    pub const MaxAssetsForTransfer: usize = 2;
-}
-
-/// Convert `AssetId` to optional `Location`. The impl is a wrapper
-/// on `ShidenAssetLocationIdConverter`.
-pub struct AssetIdConvert;
-impl Convert<AssetId, Option<Location>> for AssetIdConvert {
-    fn convert(asset_id: AssetId) -> Option<Location> {
-        ShidenAssetLocationIdConverter::convert_back(&asset_id)
-    }
-}
-
-impl orml_xtokens::Config for Runtime {
-    type Balance = Balance;
-    type CurrencyId = AssetId;
-    type CurrencyIdConvert = AssetIdConvert;
-    type AccountIdToLocation = AccountIdToLocation;
-    type SelfLocation = ShidenLocation;
-    type XcmExecutor = XcmExecutor<XcmConfig>;
-    type Weigher = Weigher;
-    type BaseXcmWeight = UnitWeightCost;
-    type UniversalLocation = UniversalLocation;
-    type MaxAssetsForTransfer = MaxAssetsForTransfer;
-    // Default impl. Refer to `orml-xtokens` docs for more details.
-    type MinXcmFee = DisabledParachainFee;
-    type LocationsFilter = Everything;
-    type ReserveProvider = AbsoluteAndRelativeReserveProvider<ShidenLocationAbsolute>;
-    type RateLimiter = ();
-    type RateLimiterId = ();
 }
 
 pub struct DummyCycleConfiguration;
@@ -675,6 +624,5 @@ construct_runtime!(
         Randomness: pallet_insecure_randomness_collective_flip,
         Timestamp: pallet_timestamp,
         Contracts: pallet_contracts,
-        Xtokens: orml_xtokens,
     }
 );

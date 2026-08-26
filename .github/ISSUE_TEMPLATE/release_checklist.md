@@ -10,7 +10,7 @@ assignees: ''
 <!---
 All the preparation specific for this release, for example
 - [x] Test batch precompile in Astar & Shiden
-- [x] Test xtokens in Astar
+- [x] Test the XCM precompile in Astar
 -->
 
 

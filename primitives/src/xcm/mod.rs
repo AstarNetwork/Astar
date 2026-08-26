@@ -26,26 +26,24 @@
 //! - `FixedRateOfForeignAsset` - weight trader for execution payment in foreign asset
 //! - `ReserveAssetFilter` - used to check whether asset/origin are a valid reserve location
 //! - `XcmFungibleFeeHandler` - used to handle XCM fee execution fees
+//! - `split_location_into_chain_part_and_beneficiary` - splits a combined `Location` into
+//!   the destination chain part and the beneficiary part, as required by `pallet_xcm`
+//! - `resolve_transfer_type` - picks the reserve model `pallet_xcm` should use for a transfer
 //!
 //! Please refer to implementation below for more info.
 //!
-
-use crate::AccountId;
 
 use frame_support::{
     traits::{tokens::fungibles, ContainsPair, Get},
     weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
-use sp_runtime::traits::{Bounded, Convert, MaybeEquivalence, Zero};
+use sp_runtime::traits::{Bounded, MaybeEquivalence, Zero};
 use sp_std::marker::PhantomData;
 
 // Polkadot imports
 use xcm::latest::{prelude::*, Weight};
 use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{MatchesFungibles, WeightTrader};
-
-// ORML imports
-use orml_traits::location::Reserve;
+use xcm_executor::traits::{MatchesFungibles, TransferType, WeightTrader, XcmAssetTransfers};
 
 use pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 
@@ -258,47 +256,68 @@ impl<
     }
 }
 
-/// Convert `AccountId` to `Location`.
-pub struct AccountIdToMultiLocation;
-impl Convert<AccountId, Location> for AccountIdToMultiLocation {
-    fn convert(account: AccountId) -> Location {
-        AccountId32 {
-            network: None,
-            id: account.into(),
+/// Splits a combined `Location` into its chain part and its beneficiary part.
+///
+/// Junctions are popped off the tail until a chain identifier (`Parachain`/`GlobalConsensus`)
+/// is reached; whatever was popped becomes the beneficiary, relative to the chain part.
+///
+/// A location with no chain identifier is only valid when it has exactly one parent, in which
+/// case the chain part is the relay chain. Returns `None` for anything else.
+pub fn split_location_into_chain_part_and_beneficiary(
+    mut location: Location,
+) -> Option<(Location, Location)> {
+    let mut beneficiary_junctions = Junctions::Here;
+
+    while let Some(junction) = location.last() {
+        if matches!(
+            junction,
+            Junction::Parachain(_) | Junction::GlobalConsensus(_)
+        ) {
+            return Some((location, beneficiary_junctions.into_location()));
         }
-        .into()
+
+        let (prefix, maybe_last) = location.split_last_interior();
+        location = prefix;
+        if let Some(junction) = maybe_last {
+            beneficiary_junctions.push_front(junction).ok()?;
+        }
+    }
+
+    // No chain identifier found: only the relay chain qualifies.
+    if location.parent_count() == 1 {
+        Some((Location::parent(), beneficiary_junctions.into_location()))
+    } else {
+        None
     }
 }
 
-/// `Asset` reserve location provider.
-/// Converts self absolute location to relative location.
-pub struct AbsoluteAndRelativeReserveProvider<AbsoluteLocation>(PhantomData<AbsoluteLocation>);
-impl<AbsoluteLocation: Get<Location>> Reserve
-    for AbsoluteAndRelativeReserveProvider<AbsoluteLocation>
-{
-    fn reserve(asset: &Asset) -> Option<Location> {
-        // Local/native assets (parents==0, no Parachain junction) → Here.
-        // Parent relay chain, sibling or child parachains → their chain prefix.
-        let reserve_location = {
-            let AssetId(location) = &asset.id;
-            match (location.parents, location.first_interior()) {
-                (1, Some(Parachain(id))) => Some(Location::new(1, [Parachain(*id)])),
-                (1, _) => Some(Location::parent()),
-                (0, Some(Parachain(id))) => Some(Location::new(0, [Parachain(*id)])),
-                (0, _) => Some(Location::here()), // local asset, no chain prefix
-                _ => None,
-            }
-        }?;
-
-        if reserve_location == AbsoluteLocation::get() {
-            return Some(Location::here());
-        }
-
-        let is_relay_token = reserve_location.contains_parents_only(1);
-        if is_relay_token {
-            return Some(Location::new(1, [Parachain(ASSET_HUB_PARA_ID)]));
-        }
-
-        Some(reserve_location)
+/// Resolves which reserve model `pallet_xcm` should use to move `asset` to `dest`.
+///
+/// Defers to the XCM executor's own determination, which is driven by the runtime's
+/// [`ReserveAssetFilter`] and teleport filter - the same logic `pallet_xcm::transfer_assets` runs
+/// internally. One case the executor cannot resolve on its own: the relay-native token (`DOT`,
+/// `KSM`, ...) is identified by the bare parent location, but its trusted reserve is Asset Hub
+/// rather than the relay chain. For any destination other than Asset Hub itself the executor gives
+/// up, so we name Asset Hub as a remote reserve explicitly.
+///
+/// This mirrors the routing that `orml-xtokens` derived from its `AbsoluteAndRelativeReserveProvider`,
+/// so EVM callers see the same behaviour after the pallet's removal.
+///
+/// Returns `None` when no reserve can be determined - the caller should reject the transfer.
+pub fn resolve_transfer_type<XcmExecutor: XcmAssetTransfers>(
+    asset: &Asset,
+    dest: &Location,
+) -> Option<TransferType> {
+    if let Ok(transfer_type) = XcmExecutor::determine_for(asset, dest) {
+        return Some(transfer_type);
     }
+
+    let AssetId(location) = &asset.id;
+    if location == &Location::parent() {
+        return Some(TransferType::RemoteReserve(
+            Location::new(1, [Parachain(ASSET_HUB_PARA_ID)]).into(),
+        ));
+    }
+
+    None
 }

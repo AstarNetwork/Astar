@@ -1239,8 +1239,6 @@ mod runtime {
     // skip 53 - cumulus_pallet_dmp_queue previously
     #[runtime::pallet_index(54)]
     pub type XcAssetConfig = pallet_xc_asset_config;
-    #[runtime::pallet_index(55)]
-    pub type XTokens = orml_xtokens;
     #[runtime::pallet_index(56)]
     pub type MessageQueue = pallet_message_queue;
 
@@ -1314,7 +1312,13 @@ parameter_types! {
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = ();
+pub type Unreleased = (
+    frame_support::migrations::RemovePallet<XTokensPalletName, RocksDbWeight>,
+);
+
+parameter_types! {
+    pub const XTokensPalletName: &'static str = "XTokens";
+}
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
