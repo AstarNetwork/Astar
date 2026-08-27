@@ -193,12 +193,13 @@ jobs:
             runtime-src/target
           key: astar-sudo-build-${{ steps.fetch-spec-version.outputs.spec_version }}
 
-      - name: Install protobuf compiler
+      - name: Install build dependencies
         if: matrix.chain == 'astar'
         run: |
           sudo apt-get update
-          sudo apt-get install -y protobuf-compiler
+          sudo apt-get install -y protobuf-compiler clang libclang-dev llvm
           protoc --version
+          llvm-config --version
 
       - name: Build astar-runtime (sudo feature)
         if: matrix.chain == 'astar'
