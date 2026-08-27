@@ -15,7 +15,7 @@
 // Leave a margin below the 450s zndsl timeout so we can report a real failure
 // instead of being killed mid-wait.
 const WAIT_TIMEOUT_MS = 400_000;
-const POLL_INTERVAL_MS = 3_000;
+const POLL_INTERVAL_MS = 6_000;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
