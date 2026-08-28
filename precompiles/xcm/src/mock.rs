@@ -40,8 +40,6 @@ use sp_core::{ConstU32, DecodeWithMemTracking, H160};
 use sp_runtime::{traits::IdentityLookup, BuildStorage};
 use sp_std::cell::RefCell;
 
-use astar_primitives::xcm::AbsoluteAndRelativeReserveProvider;
-use orml_xcm_support::DisabledParachainFee;
 use xcm::prelude::XcmVersion;
 use xcm_builder::{
     test_utils::TransactAsset, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -53,7 +51,6 @@ pub type AccountId = TestAccount;
 pub type AssetId = u128;
 pub type Balance = u128;
 pub type Block = frame_system::mocking::MockBlock<Runtime>;
-pub type CurrencyId = u128;
 
 /// Multilocations for assetId
 const PARENT: Location = Location::parent();
@@ -164,32 +161,6 @@ impl AddressToAssetId<AssetId> for Runtime {
     }
 }
 
-pub struct CurrencyIdToMultiLocation;
-
-impl sp_runtime::traits::Convert<CurrencyId, Option<Location>> for CurrencyIdToMultiLocation {
-    fn convert(currency: CurrencyId) -> Option<Location> {
-        match currency {
-            1u128 => Some(PARENT),
-            2u128 => Some((*PARACHAIN).clone()),
-            3u128 => Some((*GENERAL_INDEX).clone()),
-            4u128 => Some((*LOCAL_ASSET).clone()),
-            _ => None,
-        }
-    }
-}
-
-/// Convert `AccountId` to `Location`.
-pub struct AccountIdToLocation;
-impl sp_runtime::traits::Convert<AccountId, Location> for AccountIdToLocation {
-    fn convert(account: AccountId) -> Location {
-        AccountId32 {
-            network: None,
-            id: account.into(),
-        }
-        .into()
-    }
-}
-
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub const SS58Prefix: u8 = 42;
@@ -282,22 +253,40 @@ impl pallet_assets::Config for Runtime {
     type AssetIdParameter = AssetId;
 }
 
+/// The mock's asset registry: maps local asset ids to the locations they are registered at.
+///
+/// - `1` - the relay token, `(1, Here)`. Its trusted reserve is Asset Hub, not the relay.
+/// - `2` - a sibling parachain's native token, `(1, Parachain(10))`.
+/// - `3` - an asset held by a sibling parachain, `(1, Parachain(10), GeneralIndex(20))`.
+/// - `4` - a local asset, `(0, GeneralIndex(20))`.
 pub struct AssetIdConverter<AssetId>(PhantomData<AssetId>);
 impl<AssetId> sp_runtime::traits::MaybeEquivalence<Location, AssetId> for AssetIdConverter<AssetId>
 where
     AssetId: Clone + Eq + From<u8>,
 {
     fn convert(a: &Location) -> Option<AssetId> {
-        if a.eq(&Location::parent()) {
+        if a == &PARENT {
             Some(AssetId::from(1u8))
+        } else if a == &*PARACHAIN {
+            Some(AssetId::from(2u8))
+        } else if a == &*GENERAL_INDEX {
+            Some(AssetId::from(3u8))
+        } else if a == &*LOCAL_ASSET {
+            Some(AssetId::from(4u8))
         } else {
             None
         }
     }
 
     fn convert_back(b: &AssetId) -> Option<Location> {
-        if b.eq(&AssetId::from(1u8)) {
-            Some(Location::parent())
+        if b == &AssetId::from(1u8) {
+            Some(PARENT)
+        } else if b == &AssetId::from(2u8) {
+            Some((*PARACHAIN).clone())
+        } else if b == &AssetId::from(3u8) {
+            Some((*GENERAL_INDEX).clone())
+        } else if b == &AssetId::from(4u8) {
+            Some((*LOCAL_ASSET).clone())
         } else {
             None
         }
@@ -381,7 +370,7 @@ impl xcm_executor::Config for XcmConfig {
     type XcmSender = StoringRouter;
     type AssetTransactor = LocalAssetTransactor;
     type OriginConverter = ();
-    type IsReserve = Everything;
+    type IsReserve = astar_primitives::xcm::ReserveAssetFilter;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = Barrier;
@@ -411,12 +400,6 @@ impl xcm_executor::Config for XcmConfig {
 
 parameter_types! {
     pub static AdvertisedXcmVersion: XcmVersion = 3;
-    pub const MaxAssetsForTransfer: usize = 2;
-    pub const SelfLocation: Location = Here.into_location();
-    pub SelfLocationAbsolute: Location = Location {
-        parents: 1,
-        interior: Parachain(123).into()
-    };
 }
 
 pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, AnyNetwork>;
@@ -486,25 +469,6 @@ impl pallet_xcm::Config for Runtime {
     type AuthorizedAliasConsideration = Disabled;
 }
 
-impl orml_xtokens::Config for Runtime {
-    type Balance = Balance;
-    type CurrencyId = AssetId;
-    type CurrencyIdConvert = CurrencyIdToMultiLocation;
-    type AccountIdToLocation = AccountIdToLocation;
-    type SelfLocation = SelfLocation;
-    type XcmExecutor = XcmExecutor<XcmConfig>;
-    type Weigher = FixedWeightBounds<BaseXcmWeight, RuntimeCall, MaxInstructions>;
-    type BaseXcmWeight = UnitWeightCost;
-    type UniversalLocation = UniversalLocation;
-    type MaxAssetsForTransfer = MaxAssetsForTransfer;
-    // Default impl. Refer to `orml-xtokens` docs for more details.
-    type MinXcmFee = DisabledParachainFee;
-    type LocationsFilter = Everything;
-    type ReserveProvider = AbsoluteAndRelativeReserveProvider<SelfLocationAbsolute>;
-    type RateLimiter = ();
-    type RateLimiterId = ();
-}
-
 // Configure a mock runtime to test the pallet.
 construct_runtime!(
     pub enum Runtime
@@ -515,7 +479,6 @@ construct_runtime!(
         Evm: pallet_evm,
         Timestamp: pallet_timestamp,
         XcmPallet: pallet_xcm,
-        Xtokens: orml_xtokens,
     }
 );
 
@@ -532,11 +495,4 @@ impl ExtBuilder {
         ext.execute_with(|| System::set_block_number(1));
         ext
     }
-}
-
-pub(crate) fn events() -> Vec<RuntimeEvent> {
-    System::events()
-        .into_iter()
-        .map(|r| r.event)
-        .collect::<Vec<_>>()
 }

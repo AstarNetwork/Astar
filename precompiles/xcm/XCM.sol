@@ -1,7 +1,11 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title XCM interface.
+ * @title XCM interface (v1).
+ *
+ * @dev Only `assets_withdraw(address[],uint256[],bytes32,bool,uint256,uint256)` is still
+ * operational. Every other method in this interface is DEPRECATED: the selector stays registered
+ * so the ABI is unchanged, but calling it always reverts.
  */
 interface XCM {
 
@@ -39,6 +43,8 @@ interface XCM {
      * How method check that assets list is valid:
      * - all assets resolved to multi-location (on runtime level)
      * - all assets has corresponded amount (lenght of assets list matched to amount list)
+     *
+     * @custom:deprecated ALWAYS REVERTS. Use the `bytes32` overload of `assets_withdraw`.
      */
     function assets_withdraw(
         address[] calldata asset_id,
@@ -57,6 +63,9 @@ interface XCM {
      * @param call - encoded call data (must be decodable by remote chain)
      * @param transact_weight - max weight that the encoded call is allowed to consume in the destination chain
      * @return bool confirmation whether the XCM message sent.
+     *
+     * @custom:deprecated ALWAYS REVERTS. It was already unreachable - the runtimes' `SendXcmOrigin`
+     * rejects signed origins, so this could only ever revert.
      */
     function remote_transact(
         uint256 parachain_id,
@@ -79,6 +88,8 @@ interface XCM {
      * How method check that assets list is valid:
      * - all assets resolved to multi-location (on runtime level)
      * - all assets has corresponded amount (lenght of assets list matched to amount list)
+     *
+     * @custom:deprecated ALWAYS REVERTS. Use the `bytes32` overload of `assets_withdraw`.
      */
     function assets_reserve_transfer(
         address[] calldata asset_id,
@@ -101,6 +112,8 @@ interface XCM {
      * How method check that assets list is valid:
      * - all assets resolved to multi-location (on runtime level)
      * - all assets has corresponded amount (lenght of assets list matched to amount list)
+     *
+     * @custom:deprecated ALWAYS REVERTS. Use the `bytes32` overload of `assets_withdraw`.
      */
     function assets_reserve_transfer(
         address[] calldata asset_id,
@@ -110,5 +123,5 @@ interface XCM {
         uint256   parachain_id,
         uint256   fee_index
     ) external returns (bool);
-    
+
 }

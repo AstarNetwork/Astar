@@ -42,7 +42,6 @@ xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 
 # ORML dependencies
-orml-traits = { workspace = true }
 
 pallet-contracts = { workspace = true }
 
@@ -78,7 +77,6 @@ std = [
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
-	"orml-traits/std",
 	"pallet-xc-asset-config/std",
 	"fp-evm/std",
 	"pallet-assets/std",

@@ -33,9 +33,6 @@ fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
 # Polkadot
-orml-traits = { workspace = true }
-orml-xcm-support = { workspace = true }
-orml-xtokens = { workspace = true }
 xcm = { workspace = true }
 xcm-executor = { workspace = true }
 
@@ -71,9 +68,6 @@ std = [
 	"sp-io/std",
 	"xcm/std",
 	"xcm-executor/std",
-	"orml-xtokens/std",
-	"orml-xcm-support/std",
-	"orml-traits/std",
 	"astar-primitives/std",
 	"log/std",
 	"num_enum/std",
@@ -85,7 +79,6 @@ runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"orml-xtokens/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
 	"pallet-evm-precompile-assets-erc20/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",

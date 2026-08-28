@@ -3,7 +3,14 @@ pragma solidity ^0.8.0;
 
 
 /**
- * @title XCM interface.
+ * @title XCM interface (v2).
+ *
+ * @dev Both this file and `XCM.sol` document the SAME precompile, registered at `0x...5004` on
+ * Astar, Shiden and Shibuya alike - there is no per-network split.
+ *
+ * Only `transfer(address,uint256,(uint8,bytes[]),(uint64,uint64))` is still operational. Every
+ * other method in this interface is DEPRECATED: the selector stays registered so the ABI is
+ * unchanged, but calling it always reverts.
  */
 interface XCM {
     // A multilocation is defined by its number of parents and the encoded junctions (interior)
@@ -53,6 +60,7 @@ interface XCM {
     /// @param destination The Multilocation to which we want to send the tokens
     /// @param weight The weight we want to buy in the destination chain, to set the
     /// weightlimit to Unlimited, you should use the value 0 for ref_time
+    /// @custom:deprecated ALWAYS REVERTS. Use `transfer`; the destination charges fees from the transferred asset.
     function transfer_with_fee(
         address currencyAddress,
         uint256 amount,
@@ -70,6 +78,7 @@ interface XCM {
     /// @param destination The Multilocation to which we want to send the tokens
     /// @param weight The weight we want to buy in the destination chain, to set the
     /// weightlimit to Unlimited, you should use the value 0 for ref_time
+    /// @custom:deprecated ALWAYS REVERTS. Use `transfer` with the asset's XC20 address.
     function transfer_multiasset(
         Multilocation memory asset,
         uint256 amount,
@@ -87,6 +96,7 @@ interface XCM {
     /// @param destination The Multilocation to which we want to send the tokens
     /// @param weight The weight we want to buy in the destination chain, to set the
     /// weightlimit to Unlimited, you should use the value 0 for ref_time
+    /// @custom:deprecated ALWAYS REVERTS. Use `transfer` with the asset's XC20 address.
     function transfer_multiasset_with_fee(
         Multilocation memory asset,
         uint256 amount,
@@ -103,6 +113,7 @@ interface XCM {
     /// @param destination The Multilocation to which we want to send the tokens
     /// @param weight The weight we want to buy in the destination chain, to set the
     /// weightlimit to Unlimited, you should use the value 0 for ref_time
+    /// @custom:deprecated ALWAYS REVERTS. Use `assets_withdraw` from `XCM.sol` for multi-asset transfers.
     function transfer_multi_currencies(
         Currency[] memory currencies,
         uint32 feeItem,
@@ -118,6 +129,7 @@ interface XCM {
     /// @param destination The Multilocation to which we want to send the tokens
     /// @param weight The weight we want to buy in the destination chain, to set the
     /// weightlimit to Unlimited, you should use the value 0 for ref_time
+    /// @custom:deprecated ALWAYS REVERTS. Use `assets_withdraw` from `XCM.sol` for multi-asset transfers.
     function transfer_multi_assets(
         MultiAsset[] memory assets,
         uint32 feeItem,
@@ -128,7 +140,9 @@ interface XCM {
     /**
      * @param destination - Multilocation of destination chain where to send this call
      * @param xcm_call - encoded xcm call you want to send to destination
-     **/
+     *
+     * @custom:deprecated ALWAYS REVERTS. It was already unreachable - the runtimes' `SendXcmOrigin` rejects signed origins.
+     */
     function send_xcm(
         Multilocation memory destination,
         bytes memory xcm_call
