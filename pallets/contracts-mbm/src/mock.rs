@@ -22,11 +22,9 @@ use frame_support::{
     construct_runtime, derive_impl,
     migrations::MultiStepMigrator,
     parameter_types,
-    traits::{ConstU64, OnFinalize, OnInitialize, VariantCount},
+    traits::{OnFinalize, OnInitialize},
     weights::Weight,
 };
-use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
-use scale_info::TypeInfo;
 use sp_runtime::BuildStorage;
 
 type Block = frame_system::mocking::MockBlock<Runtime>;
@@ -34,89 +32,54 @@ type Block = frame_system::mocking::MockBlock<Runtime>;
 construct_runtime!(
     pub struct Runtime {
         System: frame_system,
-        Balances: pallet_balances,
         MultiBlockMigrations: pallet_migrations,
         ContractsMBM: crate,
     }
 );
 
-impl crate::Config for Runtime {
-    type BenchmarkHoldReason = StorageDeposit;
-}
-
-/// Stands in for the runtime's `RuntimeHoldReason`. Written by hand rather than composed by
-/// `construct_runtime!` so the mock does not have to pull in `pallet-contracts` - the migration is
-/// generic over the reason, and the runtimes' real wiring is covered in `tests/integration`.
-#[derive(
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Debug,
-    Encode,
-    Decode,
-    DecodeWithMemTracking,
-    MaxEncodedLen,
-    TypeInfo,
-)]
-pub enum HoldReason {
-    /// Stands in for `pallet_contracts::HoldReason::CodeUploadDepositReserve`.
-    CodeUploadDepositReserve,
-    /// Stands in for `pallet_contracts::HoldReason::StorageDepositReserve`.
-    StorageDepositReserve,
-    /// A hold owned by some other pallet, which must be left alone.
-    Unrelated,
-}
-
-impl VariantCount for HoldReason {
-    const VARIANT_COUNT: u32 = 3;
-}
+impl crate::Config for Runtime {}
 
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Runtime {
-    type AccountData = pallet_balances::AccountData<u64>;
     type Block = Block;
     type MultiBlockMigrator = MultiBlockMigrations;
 }
 
-#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
-impl pallet_balances::Config for Runtime {
-    type AccountStore = System;
-    type RuntimeHoldReason = HoldReason;
-    type ExistentialDeposit = ConstU64<1>;
+#[cfg(not(feature = "runtime-benchmarks"))]
+mod migrations {
+    use super::{ContractsPalletName, Runtime};
+
+    pub type Weights = crate::weights::SubstrateWeight<Runtime>;
+    pub type Purge = crate::PurgeContractsChildTries<Runtime, ContractsPalletName, Weights>;
+    pub type Remove = crate::RemovePalletStepped<ContractsPalletName, Weights>;
 }
+#[cfg(not(feature = "runtime-benchmarks"))]
+pub use migrations::{Purge, Remove};
 
 #[derive_impl(pallet_migrations::config_preludes::TestDefaultConfig)]
 impl pallet_migrations::Config for Runtime {
+    /// Mirrors the runtimes: the child tries must be purged before the prefix holding their
+    /// `trie_id`s is wiped.
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations = (
-        crate::ReleaseContractsDeposits<
-            Runtime,
-            CodeDeposit,
-            StorageDeposit,
-            EscrowAccount,
-            crate::weights::SubstrateWeight<Runtime>,
-        >,
-    );
+    type Migrations = (migrations::Purge, migrations::Remove);
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
     type MigrationStatusHandler = ();
     type MaxServiceWeight = MaxServiceWeight;
 }
 
-pub const ESCROW: u64 = 9_999;
-
 parameter_types! {
-    pub const CodeDeposit: HoldReason = HoldReason::CodeUploadDepositReserve;
-    pub const StorageDeposit: HoldReason = HoldReason::StorageDepositReserve;
-    pub const EscrowAccount: u64 = ESCROW;
-    /// Mutable so a test can squeeze the budget and force the migration across several blocks.
-    pub static MaxServiceWeight: Weight = Weight::from_parts(2_000_000_000, 1_000_000);
+    /// Name of the pallet these migrations retire, matching the runtimes.
+    pub const ContractsPalletName: &'static str = "Contracts";
+    /// Mutable so a test can squeeze the budget and force a migration across several blocks.
+    pub static MaxServiceWeight: Weight = Weight::from_parts(50_000_000_000, 1_000_000);
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
+    // Makes the migrations' own logs visible with
+    // `RUST_LOG=mbm::contracts=debug cargo test -p contracts-mbm -- --nocapture`.
+    sp_tracing::try_init_simple();
+
     let storage = frame_system::GenesisConfig::<Runtime>::default()
         .build_storage()
         .unwrap();

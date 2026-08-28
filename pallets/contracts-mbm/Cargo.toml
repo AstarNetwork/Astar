@@ -16,7 +16,6 @@ frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 log = { workspace = true }
-pallet-balances = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sp-io = { workspace = true }
@@ -27,6 +26,8 @@ sp-std = { workspace = true }
 # `std` is required explicitly so `cargo test -p contracts-mbm` works standalone, without relying
 # on workspace-wide feature unification.
 pallet-migrations = { workspace = true, features = ["std"] }
+# Surfaces the migrations' own logs under `RUST_LOG` when running the tests.
+sp-tracing = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]
@@ -40,13 +41,11 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"sp-runtime/std",
-	"pallet-balances/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"pallet-balances/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
@@ -54,5 +53,4 @@ try-runtime = [
 	"pallet-migrations/try-runtime",
 	"frame-system/try-runtime",
 	"sp-runtime/try-runtime",
-	"pallet-balances/try-runtime",
 ]

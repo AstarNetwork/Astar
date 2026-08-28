@@ -7,7 +7,6 @@ members = [
 	"runtime/shibuya",
 	"tests/xcm-simulator",
 	"tests/integration",
-	"tests/utils",
 	"pallets/*",
 	"precompiles/*",
 	"primitives",
@@ -186,12 +185,9 @@ frame-metadata-hash-extension = { git = "https://github.com/paritytech/polkadot-
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512", default-features = false }
 pallet-aura = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512", default-features = false }
 pallet-authorship = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512", default-features = false }
-pallet-contracts = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512", default-features = false }
-pallet-contracts-uapi = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512", default-features = false }
 pallet-identity = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512", default-features = false }
 pallet-multisig = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512", default-features = false }
 pallet-migrations = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512", default-features = false }
-pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512", default-features = false }
 pallet-session = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512", default-features = false, features = ["historical"] }
 pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512", default-features = false }
@@ -322,7 +318,6 @@ pallet-treasury = { path = "./vendor/treasury", default-features = false }
 dapp-staking-runtime-api = { path = "./pallets/dapp-staking/rpc/runtime-api", default-features = false }
 
 astar-primitives = { path = "./primitives", default-features = false }
-astar-test-utils = { path = "./tests/utils", default-features = false }
 
 pallet-evm-precompile-assets-erc20 = { path = "./precompiles/assets-erc20", default-features = false }
 pallet-evm-precompile-sr25519 = { path = "./precompiles/sr25519", default-features = false }

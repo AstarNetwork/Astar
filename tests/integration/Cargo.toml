@@ -32,7 +32,6 @@ pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-collective = { workspace = true }
-pallet-contracts = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-proxy = { workspace = true }
@@ -62,8 +61,8 @@ pallet-inflation = { workspace = true }
 precompile-utils = { workspace = true }
 
 astar-primitives = { workspace = true }
+contracts-mbm = { workspace = true }
 astar-runtime = { workspace = true, optional = true }
-astar-test-utils = { workspace = true }
 shibuya-runtime = { workspace = true, optional = true }
 shiden-runtime = { workspace = true, optional = true }
 
@@ -80,7 +79,7 @@ std = [
 	"shibuya-runtime/std",
 	"shiden-runtime/std",
 	"astar-primitives/std",
-	"astar-test-utils/std",
+	"contracts-mbm/std",
 	"pallet-collective-proxy/std",
 	"ethereum?/std",
 	"fp-evm/std",
@@ -94,7 +93,6 @@ std = [
 	"sp-trie/std",
 	"pallet-balances/std",
 	"pallet-collator-selection/std",
-	"pallet-contracts/std",
 	"cumulus-primitives-parachain-inherent/std",
 	"cumulus-primitives-core/std",
 	"cumulus-pallet-parachain-system/std",

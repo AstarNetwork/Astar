@@ -40,7 +40,7 @@ use frame_support::{
         fungible::{Balanced, Credit, HoldConsideration},
         AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, Contains,
         EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InsideBoth, InstanceFilter,
-        LinearStoragePrice, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
+        LinearStoragePrice, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -51,7 +51,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureNever, EnsureRoot, EnsureSigned, EnsureWithSuccess,
+    EnsureRoot, EnsureSigned, EnsureWithSuccess,
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
@@ -70,7 +70,7 @@ use sp_runtime::{
     generic, impl_opaque_keys,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-        DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto, Zero,
+        DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
@@ -143,14 +143,6 @@ pub const STORAGE_BYTE_FEE: Balance = 20 * MICROASTR;
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
     items as Balance * 100 * MILLIASTR + (bytes as Balance) * STORAGE_BYTE_FEE
-}
-
-/// Charge fee for stored bytes and items as part of `pallet-contracts`.
-///
-/// The slight difference to general `deposit` function is because there is fixed bound on how large the DB
-/// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
-pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
-    items as Balance * 4 * MILLIASTR + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
 /// Change this to adjust the block time.
@@ -257,8 +249,6 @@ pub struct BaseFilter;
 impl Contains<RuntimeCall> for BaseFilter {
     fn contains(call: &RuntimeCall) -> bool {
         match call {
-            // Wasm (ink!) smart contracts are being decommissioned.
-            RuntimeCall::Contracts(..) => false,
             // Filter permission-less assets creation/destroying.
             // Custom asset's `id` should fit in `u32` as not to mix with service assets.
             RuntimeCall::Assets(method) => match method {
@@ -433,11 +423,12 @@ impl pallet_dapp_staking::BenchmarkHelper<SmartContract<AccountId>, AccountId>
     for DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>
 {
     fn get_smart_contract(id: u32) -> SmartContract<AccountId> {
+        // Wasm smart contracts are no longer supported, only EVM ones can be registered.
         let id_bytes = id.to_le_bytes();
-        let mut account = [0u8; 32];
-        account[..id_bytes.len()].copy_from_slice(&id_bytes);
+        let mut address = [0u8; 20];
+        address[..id_bytes.len()].copy_from_slice(&id_bytes);
 
-        SmartContract::Wasm(AccountId::from(account))
+        SmartContract::Evm(H160::from(address))
     }
 
     fn set_balance(account: &AccountId, amount: Balance) {
@@ -738,66 +729,6 @@ impl pallet_vesting::Config for Runtime {
     // `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
     // highest number of schedules that encodes less than 2^10.
     const MAX_VESTING_SCHEDULES: u32 = 28;
-}
-
-parameter_types! {
-    pub const DepositPerItem: Balance = contracts_deposit(1, 0);
-    pub const DepositPerByte: Balance = contracts_deposit(0, 1);
-    // Fallback value if storage deposit limit not set by the user
-    pub const DefaultDepositLimit: Balance = contracts_deposit(16, 16 * 1024);
-    pub const MaxDelegateDependencies: u32 = 32;
-    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(10);
-    pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
-}
-
-/// Codes using the randomness functionality cannot be uploaded. Neither can contracts
-/// be instantiated from existing codes that use this deprecated functionality.
-///
-/// But since some `Randomness` config type is still required for `pallet-contracts`, we provide this dummy type.
-pub struct DummyDeprecatedRandomness;
-impl Randomness<Hash, BlockNumber> for DummyDeprecatedRandomness {
-    fn random(_: &[u8]) -> (Hash, BlockNumber) {
-        (Default::default(), Zero::zero())
-    }
-}
-
-impl pallet_contracts::Config for Runtime {
-    type Time = Timestamp;
-    type Randomness = DummyDeprecatedRandomness;
-    type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type RuntimeHoldReason = RuntimeHoldReason;
-    /// The safest default is to allow no calls at all.
-    ///
-    /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
-    /// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
-    /// change because that would break already deployed contracts. The `Call` structure itself
-    /// is not allowed to change the indices of existing pallets, too.
-    type CallFilter = Nothing;
-    type DepositPerItem = DepositPerItem;
-    type DepositPerByte = DepositPerByte;
-    type DefaultDepositLimit = DefaultDepositLimit;
-    type CallStack = [pallet_contracts::Frame<Self>; 5];
-    type WeightPrice = pallet_transaction_payment::Pallet<Self>;
-    type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = ();
-    type Schedule = Schedule;
-    type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
-    type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
-    type MaxStorageKeyLen = ConstU32<128>;
-    type UnsafeUnstableInterface = ConstBool<false>;
-    type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
-    type MaxDelegateDependencies = MaxDelegateDependencies;
-    type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
-    type Debug = ();
-    type Environment = ();
-    type Migrations = ();
-    type Xcm = ();
-    type UploadOrigin = EnsureNever<<Self as frame_system::Config>::AccountId>;
-    type InstantiateOrigin = EnsureNever<<Self as frame_system::Config>::AccountId>;
-    type ApiVersion = ();
-    type MaxTransientStorageSize = ConstU32<{ 1 * 1024 * 1024 }>;
 }
 
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
@@ -1428,30 +1359,30 @@ impl pallet_collective_proxy::Config for Runtime {
 
 parameter_types! {
     pub MbmServiceWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
-    pub ContractsCodeDeposit: RuntimeHoldReason =
-        pallet_contracts::HoldReason::CodeUploadDepositReserve.into();
-    pub ContractsStorageDeposit: RuntimeHoldReason =
-        pallet_contracts::HoldReason::StorageDepositReserve.into();
-    /// Foundation controlled account collecting the settled `pallet-contracts` deposits.
-    /// `XPDSbfc3fcoVWEtPsxQXFDvWqnZgQfsxXv6MW8dd7G3GkZt`
-    pub ContractsDepositEscrow: AccountId = AccountId::from(hex_literal::hex!(
-        "400048a4f3672511dfcf2ddfcb34bafb80ee2f28bbec8cbe0283e90573e93474"
-    ));
+    /// Storage prefix of the decommissioned `pallet-contracts`.
+    pub const ContractsPalletName: &'static str = "Contracts";
 }
+
+/// Benchmarked weights backing the contract decommission migrations.
+type ContractsMbmWeights = contracts_mbm::weights::SubstrateWeight<Runtime>;
 
 /// Multi-block migrations executed by `pallet-migrations`.
 ///
-/// Step one of decommissioning Wasm (ink!) smart contracts: settle every balance
-/// `pallet-contracts` still owns.
+/// Step two of decommissioning Wasm (ink!) smart contracts: `pallet-contracts` is gone, so the
+/// storage it left behind is purged over multiple blocks. The purge also hands back the consumer
+/// reference the pallet took on every live contract account - without it those accounts could
+/// never be reaped. Registered dApps pointing at Wasm contracts are expected to have been
+/// unregistered from dApp staking by governance beforehand.
 pub type MultiBlockMigrationsList = (
-    contracts_mbm::ReleaseContractsDeposits<
-        Runtime,
-        ContractsCodeDeposit,
-        ContractsStorageDeposit,
-        ContractsDepositEscrow,
-        contracts_mbm::weights::SubstrateWeight<Runtime>,
-    >,
+    // Must come first: it needs the `trie_id`s stored under the `Contracts` prefix.
+    contracts_mbm::PurgeContractsChildTries<Runtime, ContractsPalletName, ContractsMbmWeights>,
+    contracts_mbm::RemovePalletStepped<ContractsPalletName, ContractsMbmWeights>,
 );
+
+// Carries no storage and no calls, it only exists so the migrations above can be
+// benchmarked. Deliberately not part of the production runtime.
+#[cfg(feature = "runtime-benchmarks")]
+impl contracts_mbm::Config for Runtime {}
 
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -1466,11 +1397,6 @@ impl pallet_migrations::Config for Runtime {
     type FailedMigrationHandler = UnfreezeChainOnFailedMigration;
     type MaxServiceWeight = MbmServiceWeight;
     type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
-}
-
-#[cfg(feature = "runtime-benchmarks")]
-impl contracts_mbm::Config for Runtime {
-    type BenchmarkHoldReason = ContractsStorageDeposit;
 }
 
 /// Calls that can bypass the safe-mode pallet.
@@ -1657,8 +1583,7 @@ mod runtime {
     #[runtime::pallet_index(63)]
     pub type DynamicEvmBaseFee = pallet_dynamic_evm_base_fee;
 
-    #[runtime::pallet_index(70)]
-    pub type Contracts = pallet_contracts;
+    // skip 70 - pallet_contracts previously
 
     #[runtime::pallet_index(84)]
     pub type Preimage = pallet_preimage;
@@ -1746,11 +1671,6 @@ pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
-
-type EventRecord = frame_system::EventRecord<
-    <Runtime as frame_system::Config>::RuntimeEvent,
-    <Runtime as frame_system::Config>::Hash,
->;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
     type SignedInfo = H160;
@@ -2247,70 +2167,6 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash, EventRecord> for Runtime {
-        fn call(
-            origin: AccountId,
-            dest: AccountId,
-            value: Balance,
-            gas_limit: Option<Weight>,
-            storage_deposit_limit: Option<Balance>,
-            input_data: Vec<u8>,
-        ) -> pallet_contracts::ContractExecResult<Balance, EventRecord> {
-            let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
-            Contracts::bare_call(
-                origin,
-                dest,
-                value,
-                gas_limit,
-                storage_deposit_limit,
-                input_data,
-                pallet_contracts::DebugInfo::UnsafeDebug,
-                pallet_contracts::CollectEvents::UnsafeCollect,
-                pallet_contracts::Determinism::Enforced,
-            )
-        }
-
-        fn instantiate(
-            origin: AccountId,
-            value: Balance,
-            gas_limit: Option<Weight>,
-            storage_deposit_limit: Option<Balance>,
-            code: pallet_contracts::Code<Hash>,
-            data: Vec<u8>,
-            salt: Vec<u8>,
-        ) -> pallet_contracts::ContractInstantiateResult<AccountId, Balance, EventRecord> {
-            let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
-            Contracts::bare_instantiate(
-                origin,
-                value,
-                gas_limit,
-                storage_deposit_limit,
-                code,
-                data,
-                salt,
-                pallet_contracts::DebugInfo::UnsafeDebug,
-                pallet_contracts::CollectEvents::UnsafeCollect,
-            )
-        }
-
-        fn upload_code(
-            origin: AccountId,
-            code: Vec<u8>,
-            storage_deposit_limit: Option<Balance>,
-            determinism: pallet_contracts::Determinism,
-        ) -> pallet_contracts::CodeUploadResult<Hash, Balance>
-        {
-            Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
-        }
-
-        fn get_storage(
-            address: AccountId,
-            key: Vec<u8>,
-        ) -> pallet_contracts::GetStorageResult {
-            Contracts::get_storage(address, key)
-        }
-    }
-
     impl dapp_staking_runtime_api::DappStakingApi<Block> for Runtime {
         fn periods_per_cycle() -> PeriodNumber {
             InflationCycleConfig::periods_per_cycle()
@@ -2790,7 +2646,6 @@ impl_runtime_apis! {
                 let is_transactional = false;
                 let validate = true;
                 let without_base_extrinsic_weight = true;
-
 
                 // Estimated encoded transaction size must be based on the heaviest transaction
                 // type (EIP1559Transaction) to be compatible with all transaction types.

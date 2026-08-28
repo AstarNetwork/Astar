@@ -168,7 +168,6 @@ impl SafeCallFilter {
     pub fn allow_base_call(call: &RuntimeCall) -> bool {
         match call {
             RuntimeCall::System(..)
-            | RuntimeCall::Contracts(..)
             | RuntimeCall::Identity(..)
             | RuntimeCall::Balances(..)
             | RuntimeCall::Vesting(..)

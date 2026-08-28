@@ -311,7 +311,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "paste",
- "rustc_version 0.4.1",
+ "rustc_version",
  "zeroize",
 ]
 
@@ -748,7 +748,6 @@ dependencies = [
  "pallet-assets",
  "pallet-balances",
  "pallet-collective",
- "pallet-contracts",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-dispatch",
@@ -810,7 +809,6 @@ dependencies = [
  "pallet-collator-selection 4.0.0",
  "pallet-collective",
  "pallet-collective-proxy",
- "pallet-contracts",
  "pallet-dapp-staking",
  "pallet-democracy",
  "pallet-dynamic-evm-base-fee",
@@ -882,19 +880,6 @@ dependencies = [
  "staging-xcm-executor",
  "substrate-wasm-builder",
  "xcm-runtime-apis",
-]
-
-[[package]]
-name = "astar-test-utils"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-contracts",
- "pallet-contracts-uapi",
- "parity-scale-codec",
- "scale-info",
- "sp-runtime",
 ]
 
 [[package]]
@@ -1070,7 +1055,7 @@ checksum = "b6d7b9decdf35d8908a7e3ef02f64c5e9b1695e230154c0e8de3969142d9b94c"
 dependencies = [
  "futures 0.3.32",
  "pharos",
- "rustc_version 0.4.1",
+ "rustc_version",
 ]
 
 [[package]]
@@ -2007,13 +1992,13 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-balances",
  "pallet-migrations",
  "parity-scale-codec",
  "scale-info",
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "sp-tracing",
 ]
 
 [[package]]
@@ -3051,7 +3036,7 @@ dependencies = [
  "curve25519-dalek-derive",
  "digest 0.10.7",
  "fiat-crypto",
- "rustc_version 0.4.1",
+ "rustc_version",
  "subtle 2.6.1",
  "zeroize",
 ]
@@ -3367,7 +3352,7 @@ dependencies = [
  "convert_case 0.4.0",
  "proc-macro2",
  "quote",
- "rustc_version 0.4.1",
+ "rustc_version",
  "syn 2.0.117",
 ]
 
@@ -3410,7 +3395,7 @@ dependencies = [
  "convert_case 0.10.0",
  "proc-macro2",
  "quote",
- "rustc_version 0.4.1",
+ "rustc_version",
  "syn 2.0.117",
  "unicode-xid",
 ]
@@ -6245,12 +6230,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "indexmap-nostd"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e04e2fd2b8188ea827b32ef11de88377086d690286ab35747ef7f9bf3ccb590"
-
-[[package]]
 name = "inout"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6283,7 +6262,7 @@ version = "0.1.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
- "astar-test-utils",
+ "contracts-mbm",
  "cumulus-pallet-parachain-system",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
@@ -6303,7 +6282,6 @@ dependencies = [
  "pallet-collator-selection 4.0.0",
  "pallet-collective",
  "pallet-collective-proxy",
- "pallet-contracts",
  "pallet-dapp-staking",
  "pallet-democracy",
  "pallet-ethereum",
@@ -8336,17 +8314,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf97ec579c3c42f953ef76dbf8d55ac91fb219dde70e49aa4a6b7d74e9919050"
 
 [[package]]
-name = "num-derive"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed3955f1a9c7c0c15e092f9c887db08b1fc683305fdf6eb6684f22555355e202"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
 name = "num-format"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9022,58 +8989,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-contracts"
-version = "45.0.1"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2512#ba6a0d23259cdc3108f70997a6847e7bc5b28794"
-dependencies = [
- "environmental",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "log",
- "pallet-balances",
- "pallet-contracts-proc-macro",
- "pallet-contracts-uapi",
- "parity-scale-codec",
- "paste",
- "rand 0.8.5",
- "rand_pcg 0.3.1",
- "scale-info",
- "serde",
- "smallvec",
- "sp-api",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "staging-xcm",
- "staging-xcm-builder",
- "wasm-instrument",
- "wasmi 0.32.3",
-]
-
-[[package]]
-name = "pallet-contracts-proc-macro"
-version = "23.0.3"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2512#ba6a0d23259cdc3108f70997a6847e7bc5b28794"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "pallet-contracts-uapi"
-version = "14.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2512#ba6a0d23259cdc3108f70997a6847e7bc5b28794"
-dependencies = [
- "bitflags 1.3.2",
- "parity-scale-codec",
- "paste",
- "scale-info",
-]
-
-[[package]]
 name = "pallet-conviction-voting"
 version = "45.0.3"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2512#ba6a0d23259cdc3108f70997a6847e7bc5b28794"
@@ -9617,17 +9532,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
-]
-
-[[package]]
-name = "pallet-insecure-randomness-collective-flip"
-version = "33.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2512#ba6a0d23259cdc3108f70997a6847e7bc5b28794"
-dependencies = [
- "parity-scale-codec",
- "polkadot-sdk-frame",
- "safe-mix",
- "scale-info",
 ]
 
 [[package]]
@@ -10710,7 +10614,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e9567389417feee6ce15dd6527a8a1ecac205ef62c2932bcf3d9f6fc5b78b414"
 dependencies = [
  "futures 0.3.32",
- "rustc_version 0.4.1",
+ "rustc_version",
 ]
 
 [[package]]
@@ -13190,15 +13094,6 @@ checksum = "3e75f6a532d0fd9f7f13144f392b6ad56a32696bfcd9c78f797f16bbb6f072d6"
 
 [[package]]
 name = "rustc_version"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
-dependencies = [
- "semver 0.9.0",
-]
-
-[[package]]
-name = "rustc_version"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
@@ -13354,15 +13249,6 @@ name = "ryu"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f"
-
-[[package]]
-name = "safe-mix"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d3d055a2582e6b00ed7a31c1524040aa391092bf636328350813f3a0605215c"
-dependencies = [
- "rustc_version 0.2.3",
-]
 
 [[package]]
 name = "safe_arch"
@@ -14972,15 +14858,6 @@ dependencies = [
 
 [[package]]
 name = "semver"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
-dependencies = [
- "semver-parser",
-]
-
-[[package]]
-name = "semver"
 version = "1.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d767eb0aabc880b29956c35734170f26ed551a859dbd361d140cdbeca61ab1e2"
@@ -15215,7 +15092,6 @@ dependencies = [
  "pallet-collator-selection 4.0.0",
  "pallet-collective",
  "pallet-collective-proxy",
- "pallet-contracts",
  "pallet-dapp-staking",
  "pallet-democracy",
  "pallet-dynamic-evm-base-fee",
@@ -15237,7 +15113,6 @@ dependencies = [
  "pallet-evm-precompile-xcm",
  "pallet-identity",
  "pallet-inflation",
- "pallet-insecure-randomness-collective-flip",
  "pallet-membership",
  "pallet-message-queue",
  "pallet-migrations",
@@ -15332,7 +15207,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection 4.0.0",
- "pallet-contracts",
  "pallet-dapp-staking",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
@@ -15352,7 +15226,6 @@ dependencies = [
  "pallet-evm-precompile-xcm",
  "pallet-identity",
  "pallet-inflation",
- "pallet-insecure-randomness-collective-flip",
  "pallet-membership",
  "pallet-message-queue",
  "pallet-migrations",
@@ -15618,7 +15491,7 @@ dependencies = [
  "smallvec",
  "soketto",
  "twox-hash 2.1.2",
- "wasmi 0.40.0",
+ "wasmi",
  "x25519-dalek",
  "zeroize",
 ]
@@ -15677,7 +15550,7 @@ dependencies = [
  "curve25519-dalek",
  "rand_core 0.6.4",
  "ring 0.17.14",
- "rustc_version 0.4.1",
+ "rustc_version",
  "sha2 0.10.9",
  "subtle 2.6.1",
 ]
@@ -16740,17 +16613,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "string-interner"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c6a0d765f5807e98a091107bae0a56ea3799f66a5de47b2c84c94a39c09974e"
-dependencies = [
- "cfg-if",
- "hashbrown 0.14.5",
- "serde",
 ]
 
 [[package]]
@@ -18272,23 +18134,6 @@ dependencies = [
 
 [[package]]
 name = "wasmi"
-version = "0.32.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50386c99b9c32bd2ed71a55b6dd4040af2580530fae8bdb9a6576571a80d0cca"
-dependencies = [
- "arrayvec 0.7.6",
- "multi-stash",
- "num-derive",
- "num-traits",
- "smallvec",
- "spin 0.9.8",
- "wasmi_collections 0.32.3",
- "wasmi_core 0.32.3",
- "wasmparser-nostd",
-]
-
-[[package]]
-name = "wasmi"
 version = "0.40.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a19af97fcb96045dd1d6b4d23e2b4abdbbe81723dbc5c9f016eb52145b320063"
@@ -18297,21 +18142,10 @@ dependencies = [
  "multi-stash",
  "smallvec",
  "spin 0.9.8",
- "wasmi_collections 0.40.0",
- "wasmi_core 0.40.0",
+ "wasmi_collections",
+ "wasmi_core",
  "wasmi_ir",
  "wasmparser 0.221.3",
-]
-
-[[package]]
-name = "wasmi_collections"
-version = "0.32.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c128c039340ffd50d4195c3f8ce31aac357f06804cfc494c8b9508d4b30dca4"
-dependencies = [
- "ahash 0.8.12",
- "hashbrown 0.14.5",
- "string-interner",
 ]
 
 [[package]]
@@ -18319,18 +18153,6 @@ name = "wasmi_collections"
 version = "0.40.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e80d6b275b1c922021939d561574bf376613493ae2b61c6963b15db0e8813562"
-
-[[package]]
-name = "wasmi_core"
-version = "0.32.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a23b3a7f6c8c3ceeec6b83531ee61f0013c56e51cbf2b14b0f213548b23a4b41"
-dependencies = [
- "downcast-rs",
- "libm",
- "num-traits",
- "paste",
-]
 
 [[package]]
 name = "wasmi_core"
@@ -18348,7 +18170,7 @@ version = "0.40.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e431a14c186db59212a88516788bd68ed51f87aa1e08d1df742522867b5289a"
 dependencies = [
- "wasmi_core 0.40.0",
+ "wasmi_core",
 ]
 
 [[package]]
@@ -18371,15 +18193,6 @@ dependencies = [
  "indexmap",
  "semver 1.0.27",
  "serde",
-]
-
-[[package]]
-name = "wasmparser-nostd"
-version = "0.100.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5a015fe95f3504a94bb1462c717aae75253e39b9dd6c3fb1062c934535c64aa"
-dependencies = [
- "indexmap-nostd",
 ]
 
 [[package]]
@@ -19299,7 +19112,7 @@ dependencies = [
  "js-sys",
  "log",
  "pharos",
- "rustc_version 0.4.1",
+ "rustc_version",
  "send_wrapper 0.6.0",
  "thiserror 2.0.17",
  "wasm-bindgen",
@@ -19414,7 +19227,6 @@ version = "0.1.0"
 dependencies = [
  "assert_matches",
  "astar-primitives",
- "astar-test-utils",
  "cumulus-pallet-xcm",
  "frame-support",
  "frame-system",
@@ -19424,9 +19236,7 @@ dependencies = [
  "orml-xtokens",
  "pallet-assets",
  "pallet-balances",
- "pallet-contracts",
  "pallet-dapp-staking",
- "pallet-insecure-randomness-collective-flip",
  "pallet-message-queue",
  "pallet-proxy",
  "pallet-timestamp",

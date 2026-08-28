@@ -260,11 +260,11 @@ fn full_period_transition_recalculation_and_reward_distribution() {
         let base_id = NextDAppId::<Runtime>::get();
         let contracts: Vec<_> = (0u8..16)
             .map(|i| {
-                let c = AccountId32::new([20 + i; 32]);
+                let c = H160::repeat_byte(20 + i);
                 assert_ok!(DappStaking::register(
                     RuntimeOrigin::root(),
                     ALICE,
-                    SmartContract::Wasm(c.clone())
+                    SmartContract::Evm(c)
                 ));
                 c
             })
@@ -322,7 +322,7 @@ fn full_period_transition_recalculation_and_reward_distribution() {
         for (i, &s) in stakes.iter().enumerate() {
             assert_ok!(DappStaking::stake(
                 RuntimeOrigin::signed(stakers[i % 2].clone()),
-                SmartContract::Wasm(contracts[i].clone()),
+                SmartContract::Evm(contracts[i]),
                 s,
             ));
         }
@@ -401,7 +401,7 @@ fn full_period_transition_recalculation_and_reward_distribution() {
 
         // ── 7. Claim rewards BEFORE recalculation ──
         let claim_and_check = |idx: usize, exp_tier: u8, exp_rank: u8| {
-            let sc = SmartContract::Wasm(contracts[idx].clone());
+            let sc = SmartContract::Evm(contracts[idx]);
             assert_ok!(DappStaking::claim_dapp_reward(
                 RuntimeOrigin::signed(ALICE.clone()),
                 sc.clone(),
@@ -432,7 +432,7 @@ fn full_period_transition_recalculation_and_reward_distribution() {
         assert_noop!(
             DappStaking::claim_dapp_reward(
                 RuntimeOrigin::signed(ALICE.clone()),
-                SmartContract::Wasm(contracts[15].clone()),
+                SmartContract::Evm(contracts[15]),
                 assigned_era,
             ),
             pallet_dapp_staking::Error::<Runtime>::NoClaimableRewards

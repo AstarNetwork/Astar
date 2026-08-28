@@ -53,7 +53,6 @@ pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
-pallet-contracts = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
@@ -65,7 +64,6 @@ pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-identity = { workspace = true }
-pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-message-queue = { workspace = true }
 pallet-migrations = { workspace = true }
@@ -170,7 +168,6 @@ std = [
 	"pallet-aura/std",
 	"pallet-assets/std",
 	"pallet-balances/std",
-	"pallet-contracts/std",
 	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
@@ -184,6 +181,7 @@ std = [
 	"pallet-evm-precompile-modexp/std",
 	"xcm-runtime-apis/std",
 	"pallet-evm-precompile-sha3fips/std",
+	"contracts-mbm/std",
 	"pallet-dapp-staking/std",
 	"dapp-staking-runtime-api/std",
 	"pallet-inflation/std",
@@ -196,7 +194,6 @@ std = [
 	"pallet-multisig/std",
 	"pallet-migrations/std",
 	"pallet-membership/std",
-	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-session/std",
 	"pallet-utility/std",
 	"pallet-proxy/std",
@@ -253,6 +250,7 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
+	"contracts-mbm/runtime-benchmarks",
 	"pallet-dapp-staking/runtime-benchmarks",
 	"pallet-inflation/runtime-benchmarks",
 	"pallet-session/runtime-benchmarks",
@@ -275,7 +273,6 @@ runtime-benchmarks = [
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
-	"pallet-contracts/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
 	"pallet-evm-precompile-assets-erc20/runtime-benchmarks",
 	"pallet-evm-precompile-dapp-staking/runtime-benchmarks",
@@ -308,6 +305,7 @@ try-runtime = [
 	"pallet-aura/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-membership/try-runtime",
+	"contracts-mbm/try-runtime",
 	"pallet-dapp-staking/try-runtime",
 	"pallet-inflation/try-runtime",
 	"pallet-sudo/try-runtime",
@@ -327,8 +325,6 @@ try-runtime = [
 	"pallet-multisig/try-runtime",
 	"pallet-migrations/try-runtime",
 	"pallet-proxy/try-runtime",
-	"pallet-insecure-randomness-collective-flip/try-runtime",
-	"pallet-contracts/try-runtime",
 	"cumulus-pallet-aura-ext/try-runtime",
 	"cumulus-pallet-parachain-system/try-runtime",
 	"cumulus-pallet-xcm/try-runtime",

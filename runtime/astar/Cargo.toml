@@ -53,7 +53,6 @@ pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-collective = { workspace = true }
-pallet-contracts = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-ethereum = { workspace = true }
@@ -186,7 +185,6 @@ std = [
 	"contracts-mbm/std",
 	"pallet-collective-proxy/std",
 	"pallet-collective/std",
-	"pallet-contracts/std",
 	"pallet-dapp-staking/std",
 	"pallet-democracy/std",
 	"pallet-dynamic-evm-base-fee/std",
@@ -278,7 +276,6 @@ runtime-benchmarks = [
 	"contracts-mbm/runtime-benchmarks",
 	"pallet-collective-proxy/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
-	"pallet-contracts/runtime-benchmarks",
 	"pallet-dapp-staking/runtime-benchmarks",
 	"pallet-democracy/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
@@ -340,7 +337,6 @@ try-runtime = [
 	"contracts-mbm/try-runtime",
 	"pallet-collective-proxy/try-runtime",
 	"pallet-collective/try-runtime",
-	"pallet-contracts/try-runtime",
 	"pallet-dapp-staking/try-runtime",
 	"pallet-democracy/try-runtime",
 	"pallet-dynamic-evm-base-fee/try-runtime",

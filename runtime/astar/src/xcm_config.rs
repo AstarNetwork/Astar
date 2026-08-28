@@ -161,7 +161,6 @@ impl Contains<Location> for ParentOrParentsPlurality {
 pub struct SafeCallFilter;
 impl SafeCallFilter {
     // 1. RuntimeCall::EVM(..) & RuntimeCall::Ethereum(..) have to be prohibited since we cannot measure PoV size properly
-    // 2. RuntimeCall::Contracts(..) can be allowed, but it hasn't been tested properly yet.
 
     /// Checks whether the base (non-composite) call is allowed to be executed via `Transact` XCM instruction.
     pub fn allow_base_call(call: &RuntimeCall) -> bool {
