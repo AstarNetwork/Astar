@@ -61,117 +61,115 @@
 <a href=#61 id=61 data-nosnippet>61</a>            }
 <a href=#62 id=62 data-nosnippet>62</a>            RuntimeCall::DappStaking(<span class="kw">_</span>) =&gt; <span class="bool-val">true</span>,
 <a href=#63 id=63 data-nosnippet>63</a>            RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) =&gt; <span class="bool-val">true</span>,
-<a href=#64 id=64 data-nosnippet>64</a>            RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiasset_with_fee { .. }) =&gt; <span class="bool-val">true</span>,
-<a href=#65 id=65 data-nosnippet>65</a>            RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiasset { .. }) =&gt; <span class="bool-val">true</span>,
-<a href=#66 id=66 data-nosnippet>66</a>            <span class="comment">// Governance related calls
-<a href=#67 id=67 data-nosnippet>67</a>            </span>RuntimeCall::Democracy(<span class="kw">_</span>)
-<a href=#68 id=68 data-nosnippet>68</a>            | RuntimeCall::Treasury(<span class="kw">_</span>)
-<a href=#69 id=69 data-nosnippet>69</a>            | RuntimeCall::CommunityTreasury(<span class="kw">_</span>)
-<a href=#70 id=70 data-nosnippet>70</a>            | RuntimeCall::Preimage(<span class="kw">_</span>) =&gt; <span class="bool-val">true</span>,
-<a href=#71 id=71 data-nosnippet>71</a>            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
-<a href=#72 id=72 data-nosnippet>72</a>        }
-<a href=#73 id=73 data-nosnippet>73</a>    }
-<a href=#74 id=74 data-nosnippet>74</a>}
-<a href=#75 id=75 data-nosnippet>75</a>
-<a href=#76 id=76 data-nosnippet>76</a><span class="doccomment">/// Filter that only allows whitelisted runtime call to pass through dispatch-lockdrop precompile
-<a href=#77 id=77 data-nosnippet>77</a></span><span class="kw">pub struct </span>WhitelistedLockdropCalls;
-<a href=#78 id=78 data-nosnippet>78</a>
-<a href=#79 id=79 data-nosnippet>79</a><span class="kw">impl </span>Contains&lt;RuntimeCall&gt; <span class="kw">for </span>WhitelistedLockdropCalls {
-<a href=#80 id=80 data-nosnippet>80</a>    <span class="kw">fn </span>contains(t: <span class="kw-2">&amp;</span>RuntimeCall) -&gt; bool {
-<a href=#81 id=81 data-nosnippet>81</a>        <span class="kw">match </span>t {
-<a href=#82 id=82 data-nosnippet>82</a>            RuntimeCall::Utility(pallet_utility::Call::batch { calls })
-<a href=#83 id=83 data-nosnippet>83</a>            | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) =&gt; calls
-<a href=#84 id=84 data-nosnippet>84</a>                .iter()
-<a href=#85 id=85 data-nosnippet>85</a>                .all(|call| WhitelistedLockdropCalls::contains(call)),
-<a href=#86 id=86 data-nosnippet>86</a>            RuntimeCall::DappStaking(pallet_dapp_staking::Call::unbond_and_unstake { .. }) =&gt; <span class="bool-val">true</span>,
-<a href=#87 id=87 data-nosnippet>87</a>            RuntimeCall::DappStaking(pallet_dapp_staking::Call::withdraw_unbonded { .. }) =&gt; <span class="bool-val">true</span>,
-<a href=#88 id=88 data-nosnippet>88</a>            RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) =&gt; <span class="bool-val">true</span>,
-<a href=#89 id=89 data-nosnippet>89</a>            RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) =&gt; <span class="bool-val">true</span>,
-<a href=#90 id=90 data-nosnippet>90</a>            RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. }) =&gt; <span class="bool-val">true</span>,
-<a href=#91 id=91 data-nosnippet>91</a>            RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) =&gt; <span class="bool-val">true</span>,
-<a href=#92 id=92 data-nosnippet>92</a>            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
-<a href=#93 id=93 data-nosnippet>93</a>        }
-<a href=#94 id=94 data-nosnippet>94</a>    }
-<a href=#95 id=95 data-nosnippet>95</a>}
-<a href=#96 id=96 data-nosnippet>96</a>
-<a href=#97 id=97 data-nosnippet>97</a><span class="doccomment">/// The PrecompileSet installed in the Astar runtime.
-<a href=#98 id=98 data-nosnippet>98</a></span><span class="attr">#[precompile_utils::precompile_name_from_address]
-<a href=#99 id=99 data-nosnippet>99</a></span><span class="kw">pub type </span>AstarPrecompilesSetAt&lt;R, C&gt; = (
-<a href=#100 id=100 data-nosnippet>100</a>    <span class="comment">// Ethereum precompiles:
-<a href=#101 id=101 data-nosnippet>101</a>    // We allow DELEGATECALL to stay compliant with Ethereum behavior.
-<a href=#102 id=102 data-nosnippet>102</a>    </span>PrecompileAt&lt;AddressU64&lt;<span class="number">1</span>&gt;, ECRecover, EthereumPrecompilesChecks&gt;,
-<a href=#103 id=103 data-nosnippet>103</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">2</span>&gt;, Sha256, EthereumPrecompilesChecks&gt;,
-<a href=#104 id=104 data-nosnippet>104</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">3</span>&gt;, Ripemd160, EthereumPrecompilesChecks&gt;,
-<a href=#105 id=105 data-nosnippet>105</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">4</span>&gt;, Identity, EthereumPrecompilesChecks&gt;,
-<a href=#106 id=106 data-nosnippet>106</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">5</span>&gt;, Modexp, EthereumPrecompilesChecks&gt;,
-<a href=#107 id=107 data-nosnippet>107</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">6</span>&gt;, Bn128Add, EthereumPrecompilesChecks&gt;,
-<a href=#108 id=108 data-nosnippet>108</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">7</span>&gt;, Bn128Mul, EthereumPrecompilesChecks&gt;,
-<a href=#109 id=109 data-nosnippet>109</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">8</span>&gt;, Bn128Pairing, EthereumPrecompilesChecks&gt;,
-<a href=#110 id=110 data-nosnippet>110</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">9</span>&gt;, Blake2F, EthereumPrecompilesChecks&gt;,
-<a href=#111 id=111 data-nosnippet>111</a>    <span class="comment">// Non-Astar specific nor Ethereum precompiles :
-<a href=#112 id=112 data-nosnippet>112</a>    </span>PrecompileAt&lt;
-<a href=#113 id=113 data-nosnippet>113</a>        AddressU64&lt;<span class="number">1024</span>&gt;,
-<a href=#114 id=114 data-nosnippet>114</a>        Sha3FIPS256&lt;Runtime, ()&gt;,
-<a href=#115 id=115 data-nosnippet>115</a>        (CallableByContract, CallableByPrecompile),
-<a href=#116 id=116 data-nosnippet>116</a>    &gt;,
-<a href=#117 id=117 data-nosnippet>117</a>    PrecompileAt&lt;
-<a href=#118 id=118 data-nosnippet>118</a>        AddressU64&lt;<span class="number">1025</span>&gt;,
-<a href=#119 id=119 data-nosnippet>119</a>        Dispatch&lt;R, DispatchFilterValidate&lt;RuntimeCall, WhitelistedCalls&gt;&gt;,
-<a href=#120 id=120 data-nosnippet>120</a>        <span class="comment">// Not callable from smart contract nor precompiles, only EOA accounts
-<a href=#121 id=121 data-nosnippet>121</a>        // TODO: test this without the gensis hack for blacklisted
-<a href=#122 id=122 data-nosnippet>122</a>        </span>(),
-<a href=#123 id=123 data-nosnippet>123</a>    &gt;,
-<a href=#124 id=124 data-nosnippet>124</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">1026</span>&gt;, ECRecoverPublicKey, (CallableByContract, CallableByPrecompile)&gt;,
-<a href=#125 id=125 data-nosnippet>125</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">1027</span>&gt;, Ed25519Verify, (CallableByContract, CallableByPrecompile)&gt;,
-<a href=#126 id=126 data-nosnippet>126</a>    <span class="comment">// Astar specific precompiles:
-<a href=#127 id=127 data-nosnippet>127</a>    </span>PrecompileAt&lt;
-<a href=#128 id=128 data-nosnippet>128</a>        AddressU64&lt;<span class="number">20481</span>&gt;,
-<a href=#129 id=129 data-nosnippet>129</a>        DappStakingV3Precompile&lt;R&gt;,
-<a href=#130 id=130 data-nosnippet>130</a>        (CallableByContract, CallableByPrecompile),
-<a href=#131 id=131 data-nosnippet>131</a>    &gt;,
-<a href=#132 id=132 data-nosnippet>132</a>    PrecompileAt&lt;
-<a href=#133 id=133 data-nosnippet>133</a>        AddressU64&lt;<span class="number">20482</span>&gt;,
-<a href=#134 id=134 data-nosnippet>134</a>        Sr25519Precompile&lt;R&gt;,
-<a href=#135 id=135 data-nosnippet>135</a>        (CallableByContract, CallableByPrecompile),
-<a href=#136 id=136 data-nosnippet>136</a>    &gt;,
-<a href=#137 id=137 data-nosnippet>137</a>    PrecompileAt&lt;
-<a href=#138 id=138 data-nosnippet>138</a>        AddressU64&lt;<span class="number">20483</span>&gt;,
-<a href=#139 id=139 data-nosnippet>139</a>        SubstrateEcdsaPrecompile&lt;R&gt;,
-<a href=#140 id=140 data-nosnippet>140</a>        (CallableByContract, CallableByPrecompile),
-<a href=#141 id=141 data-nosnippet>141</a>    &gt;,
-<a href=#142 id=142 data-nosnippet>142</a>    PrecompileAt&lt;
-<a href=#143 id=143 data-nosnippet>143</a>        AddressU64&lt;<span class="number">20484</span>&gt;,
-<a href=#144 id=144 data-nosnippet>144</a>        XcmPrecompile&lt;R, C&gt;,
-<a href=#145 id=145 data-nosnippet>145</a>        (
-<a href=#146 id=146 data-nosnippet>146</a>            SubcallWithMaxNesting&lt;<span class="number">1</span>&gt;,
-<a href=#147 id=147 data-nosnippet>147</a>            CallableByContract,
-<a href=#148 id=148 data-nosnippet>148</a>            CallableByPrecompile,
-<a href=#149 id=149 data-nosnippet>149</a>        ),
-<a href=#150 id=150 data-nosnippet>150</a>    &gt;,
-<a href=#151 id=151 data-nosnippet>151</a>    <span class="comment">// Skipping 20485 and 20486 to make sure all network have consistent
-<a href=#152 id=152 data-nosnippet>152</a>    // precompiles address
-<a href=#153 id=153 data-nosnippet>153</a>    </span>PrecompileAt&lt;
-<a href=#154 id=154 data-nosnippet>154</a>        AddressU64&lt;<span class="number">20487</span>&gt;,
-<a href=#155 id=155 data-nosnippet>155</a>        DispatchLockdrop&lt;
-<a href=#156 id=156 data-nosnippet>156</a>            R,
-<a href=#157 id=157 data-nosnippet>157</a>            DispatchFilterValidate&lt;RuntimeCall, WhitelistedLockdropCalls&gt;,
-<a href=#158 id=158 data-nosnippet>158</a>            ConstU32&lt;<span class="number">8</span>&gt;,
-<a href=#159 id=159 data-nosnippet>159</a>        &gt;,
-<a href=#160 id=160 data-nosnippet>160</a>        <span class="comment">// Not callable from smart contract nor precompiled, only EOA accounts
-<a href=#161 id=161 data-nosnippet>161</a>        </span>(),
-<a href=#162 id=162 data-nosnippet>162</a>    &gt;,
-<a href=#163 id=163 data-nosnippet>163</a>);
-<a href=#164 id=164 data-nosnippet>164</a>
-<a href=#165 id=165 data-nosnippet>165</a><span class="kw">pub type </span>AstarPrecompiles&lt;R, C&gt; = PrecompileSetBuilder&lt;
-<a href=#166 id=166 data-nosnippet>166</a>    R,
-<a href=#167 id=167 data-nosnippet>167</a>    (
-<a href=#168 id=168 data-nosnippet>168</a>        <span class="comment">// Skip precompiles if out of range.
-<a href=#169 id=169 data-nosnippet>169</a>        </span>PrecompilesInRangeInclusive&lt;
-<a href=#170 id=170 data-nosnippet>170</a>            <span class="comment">// We take range as last precompile index, UPDATE this once new prcompile is added
-<a href=#171 id=171 data-nosnippet>171</a>            </span>(AddressU64&lt;<span class="number">1</span>&gt;, AddressU64&lt;<span class="number">20487</span>&gt;),
-<a href=#172 id=172 data-nosnippet>172</a>            AstarPrecompilesSetAt&lt;R, C&gt;,
-<a href=#173 id=173 data-nosnippet>173</a>        &gt;,
-<a href=#174 id=174 data-nosnippet>174</a>        <span class="comment">// Prefixed precompile sets (XC20)
-<a href=#175 id=175 data-nosnippet>175</a>        </span>PrecompileSetStartingWith&lt;AssetPrefix, Erc20AssetsPrecompileSet&lt;R&gt;, CallableByContract&gt;,
-<a href=#176 id=176 data-nosnippet>176</a>    ),
-<a href=#177 id=177 data-nosnippet>177</a>&gt;;</code></pre></div></section></main></body></html>
+<a href=#64 id=64 data-nosnippet>64</a>            <span class="comment">// Governance related calls
+<a href=#65 id=65 data-nosnippet>65</a>            </span>RuntimeCall::Democracy(<span class="kw">_</span>)
+<a href=#66 id=66 data-nosnippet>66</a>            | RuntimeCall::Treasury(<span class="kw">_</span>)
+<a href=#67 id=67 data-nosnippet>67</a>            | RuntimeCall::CommunityTreasury(<span class="kw">_</span>)
+<a href=#68 id=68 data-nosnippet>68</a>            | RuntimeCall::Preimage(<span class="kw">_</span>) =&gt; <span class="bool-val">true</span>,
+<a href=#69 id=69 data-nosnippet>69</a>            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+<a href=#70 id=70 data-nosnippet>70</a>        }
+<a href=#71 id=71 data-nosnippet>71</a>    }
+<a href=#72 id=72 data-nosnippet>72</a>}
+<a href=#73 id=73 data-nosnippet>73</a>
+<a href=#74 id=74 data-nosnippet>74</a><span class="doccomment">/// Filter that only allows whitelisted runtime call to pass through dispatch-lockdrop precompile
+<a href=#75 id=75 data-nosnippet>75</a></span><span class="kw">pub struct </span>WhitelistedLockdropCalls;
+<a href=#76 id=76 data-nosnippet>76</a>
+<a href=#77 id=77 data-nosnippet>77</a><span class="kw">impl </span>Contains&lt;RuntimeCall&gt; <span class="kw">for </span>WhitelistedLockdropCalls {
+<a href=#78 id=78 data-nosnippet>78</a>    <span class="kw">fn </span>contains(t: <span class="kw-2">&amp;</span>RuntimeCall) -&gt; bool {
+<a href=#79 id=79 data-nosnippet>79</a>        <span class="kw">match </span>t {
+<a href=#80 id=80 data-nosnippet>80</a>            RuntimeCall::Utility(pallet_utility::Call::batch { calls })
+<a href=#81 id=81 data-nosnippet>81</a>            | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) =&gt; calls
+<a href=#82 id=82 data-nosnippet>82</a>                .iter()
+<a href=#83 id=83 data-nosnippet>83</a>                .all(|call| WhitelistedLockdropCalls::contains(call)),
+<a href=#84 id=84 data-nosnippet>84</a>            RuntimeCall::DappStaking(pallet_dapp_staking::Call::unbond_and_unstake { .. }) =&gt; <span class="bool-val">true</span>,
+<a href=#85 id=85 data-nosnippet>85</a>            RuntimeCall::DappStaking(pallet_dapp_staking::Call::withdraw_unbonded { .. }) =&gt; <span class="bool-val">true</span>,
+<a href=#86 id=86 data-nosnippet>86</a>            RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) =&gt; <span class="bool-val">true</span>,
+<a href=#87 id=87 data-nosnippet>87</a>            RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) =&gt; <span class="bool-val">true</span>,
+<a href=#88 id=88 data-nosnippet>88</a>            RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. }) =&gt; <span class="bool-val">true</span>,
+<a href=#89 id=89 data-nosnippet>89</a>            RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) =&gt; <span class="bool-val">true</span>,
+<a href=#90 id=90 data-nosnippet>90</a>            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+<a href=#91 id=91 data-nosnippet>91</a>        }
+<a href=#92 id=92 data-nosnippet>92</a>    }
+<a href=#93 id=93 data-nosnippet>93</a>}
+<a href=#94 id=94 data-nosnippet>94</a>
+<a href=#95 id=95 data-nosnippet>95</a><span class="doccomment">/// The PrecompileSet installed in the Astar runtime.
+<a href=#96 id=96 data-nosnippet>96</a></span><span class="attr">#[precompile_utils::precompile_name_from_address]
+<a href=#97 id=97 data-nosnippet>97</a></span><span class="kw">pub type </span>AstarPrecompilesSetAt&lt;R, C&gt; = (
+<a href=#98 id=98 data-nosnippet>98</a>    <span class="comment">// Ethereum precompiles:
+<a href=#99 id=99 data-nosnippet>99</a>    // We allow DELEGATECALL to stay compliant with Ethereum behavior.
+<a href=#100 id=100 data-nosnippet>100</a>    </span>PrecompileAt&lt;AddressU64&lt;<span class="number">1</span>&gt;, ECRecover, EthereumPrecompilesChecks&gt;,
+<a href=#101 id=101 data-nosnippet>101</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">2</span>&gt;, Sha256, EthereumPrecompilesChecks&gt;,
+<a href=#102 id=102 data-nosnippet>102</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">3</span>&gt;, Ripemd160, EthereumPrecompilesChecks&gt;,
+<a href=#103 id=103 data-nosnippet>103</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">4</span>&gt;, Identity, EthereumPrecompilesChecks&gt;,
+<a href=#104 id=104 data-nosnippet>104</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">5</span>&gt;, Modexp, EthereumPrecompilesChecks&gt;,
+<a href=#105 id=105 data-nosnippet>105</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">6</span>&gt;, Bn128Add, EthereumPrecompilesChecks&gt;,
+<a href=#106 id=106 data-nosnippet>106</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">7</span>&gt;, Bn128Mul, EthereumPrecompilesChecks&gt;,
+<a href=#107 id=107 data-nosnippet>107</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">8</span>&gt;, Bn128Pairing, EthereumPrecompilesChecks&gt;,
+<a href=#108 id=108 data-nosnippet>108</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">9</span>&gt;, Blake2F, EthereumPrecompilesChecks&gt;,
+<a href=#109 id=109 data-nosnippet>109</a>    <span class="comment">// Non-Astar specific nor Ethereum precompiles :
+<a href=#110 id=110 data-nosnippet>110</a>    </span>PrecompileAt&lt;
+<a href=#111 id=111 data-nosnippet>111</a>        AddressU64&lt;<span class="number">1024</span>&gt;,
+<a href=#112 id=112 data-nosnippet>112</a>        Sha3FIPS256&lt;Runtime, ()&gt;,
+<a href=#113 id=113 data-nosnippet>113</a>        (CallableByContract, CallableByPrecompile),
+<a href=#114 id=114 data-nosnippet>114</a>    &gt;,
+<a href=#115 id=115 data-nosnippet>115</a>    PrecompileAt&lt;
+<a href=#116 id=116 data-nosnippet>116</a>        AddressU64&lt;<span class="number">1025</span>&gt;,
+<a href=#117 id=117 data-nosnippet>117</a>        Dispatch&lt;R, DispatchFilterValidate&lt;RuntimeCall, WhitelistedCalls&gt;&gt;,
+<a href=#118 id=118 data-nosnippet>118</a>        <span class="comment">// Not callable from smart contract nor precompiles, only EOA accounts
+<a href=#119 id=119 data-nosnippet>119</a>        // TODO: test this without the gensis hack for blacklisted
+<a href=#120 id=120 data-nosnippet>120</a>        </span>(),
+<a href=#121 id=121 data-nosnippet>121</a>    &gt;,
+<a href=#122 id=122 data-nosnippet>122</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">1026</span>&gt;, ECRecoverPublicKey, (CallableByContract, CallableByPrecompile)&gt;,
+<a href=#123 id=123 data-nosnippet>123</a>    PrecompileAt&lt;AddressU64&lt;<span class="number">1027</span>&gt;, Ed25519Verify, (CallableByContract, CallableByPrecompile)&gt;,
+<a href=#124 id=124 data-nosnippet>124</a>    <span class="comment">// Astar specific precompiles:
+<a href=#125 id=125 data-nosnippet>125</a>    </span>PrecompileAt&lt;
+<a href=#126 id=126 data-nosnippet>126</a>        AddressU64&lt;<span class="number">20481</span>&gt;,
+<a href=#127 id=127 data-nosnippet>127</a>        DappStakingV3Precompile&lt;R&gt;,
+<a href=#128 id=128 data-nosnippet>128</a>        (CallableByContract, CallableByPrecompile),
+<a href=#129 id=129 data-nosnippet>129</a>    &gt;,
+<a href=#130 id=130 data-nosnippet>130</a>    PrecompileAt&lt;
+<a href=#131 id=131 data-nosnippet>131</a>        AddressU64&lt;<span class="number">20482</span>&gt;,
+<a href=#132 id=132 data-nosnippet>132</a>        Sr25519Precompile&lt;R&gt;,
+<a href=#133 id=133 data-nosnippet>133</a>        (CallableByContract, CallableByPrecompile),
+<a href=#134 id=134 data-nosnippet>134</a>    &gt;,
+<a href=#135 id=135 data-nosnippet>135</a>    PrecompileAt&lt;
+<a href=#136 id=136 data-nosnippet>136</a>        AddressU64&lt;<span class="number">20483</span>&gt;,
+<a href=#137 id=137 data-nosnippet>137</a>        SubstrateEcdsaPrecompile&lt;R&gt;,
+<a href=#138 id=138 data-nosnippet>138</a>        (CallableByContract, CallableByPrecompile),
+<a href=#139 id=139 data-nosnippet>139</a>    &gt;,
+<a href=#140 id=140 data-nosnippet>140</a>    PrecompileAt&lt;
+<a href=#141 id=141 data-nosnippet>141</a>        AddressU64&lt;<span class="number">20484</span>&gt;,
+<a href=#142 id=142 data-nosnippet>142</a>        XcmPrecompile&lt;R, C&gt;,
+<a href=#143 id=143 data-nosnippet>143</a>        (
+<a href=#144 id=144 data-nosnippet>144</a>            SubcallWithMaxNesting&lt;<span class="number">1</span>&gt;,
+<a href=#145 id=145 data-nosnippet>145</a>            CallableByContract,
+<a href=#146 id=146 data-nosnippet>146</a>            CallableByPrecompile,
+<a href=#147 id=147 data-nosnippet>147</a>        ),
+<a href=#148 id=148 data-nosnippet>148</a>    &gt;,
+<a href=#149 id=149 data-nosnippet>149</a>    <span class="comment">// Skipping 20485 and 20486 to make sure all network have consistent
+<a href=#150 id=150 data-nosnippet>150</a>    // precompiles address
+<a href=#151 id=151 data-nosnippet>151</a>    </span>PrecompileAt&lt;
+<a href=#152 id=152 data-nosnippet>152</a>        AddressU64&lt;<span class="number">20487</span>&gt;,
+<a href=#153 id=153 data-nosnippet>153</a>        DispatchLockdrop&lt;
+<a href=#154 id=154 data-nosnippet>154</a>            R,
+<a href=#155 id=155 data-nosnippet>155</a>            DispatchFilterValidate&lt;RuntimeCall, WhitelistedLockdropCalls&gt;,
+<a href=#156 id=156 data-nosnippet>156</a>            ConstU32&lt;<span class="number">8</span>&gt;,
+<a href=#157 id=157 data-nosnippet>157</a>        &gt;,
+<a href=#158 id=158 data-nosnippet>158</a>        <span class="comment">// Not callable from smart contract nor precompiled, only EOA accounts
+<a href=#159 id=159 data-nosnippet>159</a>        </span>(),
+<a href=#160 id=160 data-nosnippet>160</a>    &gt;,
+<a href=#161 id=161 data-nosnippet>161</a>);
+<a href=#162 id=162 data-nosnippet>162</a>
+<a href=#163 id=163 data-nosnippet>163</a><span class="kw">pub type </span>AstarPrecompiles&lt;R, C&gt; = PrecompileSetBuilder&lt;
+<a href=#164 id=164 data-nosnippet>164</a>    R,
+<a href=#165 id=165 data-nosnippet>165</a>    (
+<a href=#166 id=166 data-nosnippet>166</a>        <span class="comment">// Skip precompiles if out of range.
+<a href=#167 id=167 data-nosnippet>167</a>        </span>PrecompilesInRangeInclusive&lt;
+<a href=#168 id=168 data-nosnippet>168</a>            <span class="comment">// We take range as last precompile index, UPDATE this once new prcompile is added
+<a href=#169 id=169 data-nosnippet>169</a>            </span>(AddressU64&lt;<span class="number">1</span>&gt;, AddressU64&lt;<span class="number">20487</span>&gt;),
+<a href=#170 id=170 data-nosnippet>170</a>            AstarPrecompilesSetAt&lt;R, C&gt;,
+<a href=#171 id=171 data-nosnippet>171</a>        &gt;,
+<a href=#172 id=172 data-nosnippet>172</a>        <span class="comment">// Prefixed precompile sets (XC20)
+<a href=#173 id=173 data-nosnippet>173</a>        </span>PrecompileSetStartingWith&lt;AssetPrefix, Erc20AssetsPrecompileSet&lt;R&gt;, CallableByContract&gt;,
+<a href=#174 id=174 data-nosnippet>174</a>    ),
+<a href=#175 id=175 data-nosnippet>175</a>&gt;;</code></pre></div></section></main></body></html>

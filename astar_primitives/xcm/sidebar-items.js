@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["ASSET_HUB_PARA_ID","MAX_ASSETS","XCM_SIZE_LIMIT"],"struct":["AbsoluteAndRelativeReserveProvider","AccountIdToMultiLocation","AssetLocationIdConverter","FixedRateOfForeignAsset","ReserveAssetFilter","XcmFungibleFeeHandler"]};
+window.SIDEBAR_ITEMS = {"constant":["ASSET_HUB_PARA_ID","MAX_ASSETS","XCM_SIZE_LIMIT"],"fn":["resolve_transfer_type","split_location_into_chain_part_and_beneficiary"],"struct":["AssetLocationIdConverter","FixedRateOfForeignAsset","ReserveAssetFilter","XcmFungibleFeeHandler"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["XcmPrecompileCall"],"struct":["Currency","EvmMultiAsset","GetMaxAssets","WeightV2","XcmPrecompile"],"type":["XBalanceOf"]};
+window.SIDEBAR_ITEMS = {"constant":["MAX_ASSETS_FOR_TRANSFER"],"enum":["XcmPrecompileCall"],"struct":["Currency","EvmMultiAsset","WeightV2","XcmPrecompile"],"type":["GetMaxAssets"]};
