@@ -135,6 +135,13 @@ pub trait SmartContractHandle<AccountId> {
     /// Create a new smart contract representation for the specified EVM address.
     fn evm(address: H160) -> Self;
     /// Create a new smart contract representation for the specified Wasm address.
+    ///
+    /// # Deprecated
+    ///
+    /// Wasm (ink!) smart contracts have been decommissioned together with `pallet-contracts`.
+    /// No new Wasm dApp can be registered; this constructor is only kept so that historic
+    /// storage entries remain decodable. It will be removed once dApp staking storage on all
+    /// networks is provably free of `SmartContract::Wasm` entries.
     fn wasm(address: AccountId) -> Self;
 }
 
@@ -156,6 +163,15 @@ pub enum SmartContract<AccountId> {
     /// EVM smart contract instance.
     Evm(H160),
     /// Wasm smart contract instance.
+    ///
+    /// # Deprecated
+    ///
+    /// `pallet-contracts` has been removed from all Astar networks and ink! is discontinued,
+    /// so no new dApp can be registered under this variant.
+    ///
+    /// The variant itself MUST NOT be removed until dApp staking storage (`IntegratedDApps`,
+    /// `StakerInfo`) is provably free of Wasm-keyed entries on Astar, Shiden and Shibuya --
+    /// dropping it earlier would make those entries undecodable and brick the pallet.
     Wasm(AccountId),
 }
 

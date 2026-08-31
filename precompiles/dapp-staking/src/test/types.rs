@@ -30,7 +30,8 @@ fn smart_contract_types_are_ok() {
         assert_eq!(Ok(SmartContractTypes::Evm), index.try_into());
     }
 
-    // Verify Astar WASM smart contract type
+    // Verify Astar WASM smart contract type.
+    // Wasm smart contracts are decommissioned, but the ABI discriminant must stay stable.
     {
         let index: u8 = SmartContractTypes::Wasm.into();
         assert_eq!(index, 1);
@@ -64,7 +65,7 @@ fn decode_smart_contract_is_ok() {
             );
         }
 
-        // Astar WASM smart contract decoding
+        // Astar WASM smart contract decoding is no longer supported
         {
             let address = [0x6E; 32];
             let smart_contract_v2 = SmartContractV2 {
@@ -72,11 +73,9 @@ fn decode_smart_contract_is_ok() {
                 address: address.into(),
             };
 
-            assert_eq!(
-                Ok(<Test as pallet_dapp_staking::Config>::SmartContract::wasm(
-                    address.into()
-                )),
-                DappStakingV3Precompile::<Test>::decode_smart_contract(smart_contract_v2)
+            assert_matches!(
+                DappStakingV3Precompile::<Test>::decode_smart_contract(smart_contract_v2),
+                Err(_)
             );
         }
     });
@@ -85,20 +84,6 @@ fn decode_smart_contract_is_ok() {
 #[test]
 fn decode_smart_contract_fails_when_type_and_address_mismatch() {
     ExternalityBuilder::build().execute_with(|| {
-        // H160 address for Wasm smart contract type
-        {
-            let address = H160::repeat_byte(0xCA);
-            let smart_contract_v2 = SmartContractV2 {
-                contract_type: SmartContractTypes::Wasm,
-                address: address.as_bytes().into(),
-            };
-
-            assert_matches!(
-                DappStakingV3Precompile::<Test>::decode_smart_contract(smart_contract_v2),
-                Err(_)
-            );
-        }
-
         // Native address for EVM smart contract type
         {
             let address = [0x6E; 32];

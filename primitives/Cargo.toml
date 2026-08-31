@@ -43,8 +43,6 @@ xcm-executor = { workspace = true }
 
 # ORML dependencies
 
-pallet-contracts = { workspace = true }
-
 # Frontier dependencies
 pallet-evm = { workspace = true }
 
@@ -81,7 +79,6 @@ std = [
 	"fp-evm/std",
 	"pallet-assets/std",
 	"pallet-evm/std",
-	"pallet-contracts/std",
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-dispatch/std",
 	"sp-arithmetic/std",
@@ -93,7 +90,6 @@ runtime-benchmarks = [
 	"pallet-assets/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"pallet-contracts/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
 	"pallet-evm-precompile-assets-erc20/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
@@ -109,7 +105,6 @@ runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 ]
 try-runtime = [
-	"pallet-contracts/try-runtime",
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
 	"pallet-assets/try-runtime",

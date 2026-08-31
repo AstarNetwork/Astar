@@ -134,11 +134,7 @@ impl pallet_timestamp::Config for Runtime {
     type MinimumPeriod = ConstU64<1>;
 }
 
-impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
-
 /// Constant values used within the runtime.
-pub const MICROSDN: Balance = 1_000_000_000_000;
-pub const MILLISDN: Balance = 1_000 * MICROSDN;
 /// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
 /// This is used to limit the maximal weight of a single extrinsic.
 const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
@@ -173,56 +169,6 @@ parameter_types! {
         .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
         .build_or_panic();
     pub SS58Prefix: u8 = 5;
-}
-
-parameter_types! {
-    pub const DepositPerItem: Balance = MILLISDN / 1_000_000;
-    pub const DepositPerByte: Balance = MILLISDN / 1_000_000;
-    pub const DefaultDepositLimit: Balance = 1000 * MILLISDN;
-    pub const MaxDelegateDependencies: u32 = 32;
-    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(10);
-    pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
-}
-
-impl Convert<Weight, Balance> for Runtime {
-    fn convert(w: Weight) -> Balance {
-        w.ref_time().into()
-    }
-}
-
-pub struct CallFilter;
-impl Contains<RuntimeCall> for CallFilter {
-    fn contains(call: &RuntimeCall) -> bool {
-        match call {
-            // allow pallet_xcm::send()
-            RuntimeCall::PolkadotXcm(pallet_xcm::Call::send { .. }) => true,
-            // no other calls allowed
-            _ => false,
-        }
-    }
-}
-
-#[derive_impl(pallet_contracts::config_preludes::TestDefaultConfig)]
-impl pallet_contracts::Config for Runtime {
-    type Time = Timestamp;
-    type Randomness = Randomness;
-    type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type RuntimeHoldReason = RuntimeHoldReason;
-    /// The safest default is to allow no calls at all.
-    ///
-    /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
-    /// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
-    /// change because that would break already deployed contracts. The `Call` structure itself
-    /// is not allowed to change the indices of existing pallets, too.
-    type CallFilter = CallFilter;
-    type CallStack = [pallet_contracts::Frame<Self>; 5];
-    /// We are not using the pallet_transaction_payment for simplicity
-    type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type Schedule = Schedule;
-    type UploadOrigin = EnsureSigned<AccountId32>;
-    type InstantiateOrigin = EnsureSigned<AccountId32>;
 }
 
 /// The type used to represent the kinds of proxying allowed.
@@ -621,8 +567,6 @@ construct_runtime!(
         DappStaking: pallet_dapp_staking,
         Proxy: pallet_proxy,
         Utility: pallet_utility,
-        Randomness: pallet_insecure_randomness_collective_flip,
         Timestamp: pallet_timestamp,
-        Contracts: pallet_contracts,
     }
 );
