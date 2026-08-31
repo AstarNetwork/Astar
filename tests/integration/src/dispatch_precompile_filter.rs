@@ -26,6 +26,10 @@ use frame_support::{
 };
 use pallet_evm_precompile_dispatch::DispatchValidateT;
 use parity_scale_codec::Compact;
+use xcm::{
+    v5::{Location, WeightLimit, Xcm},
+    VersionedAssets, VersionedLocation, VersionedXcm,
+};
 
 /// Whitelisted Calls are defined in the runtime
 #[test]

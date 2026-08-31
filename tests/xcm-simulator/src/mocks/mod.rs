@@ -20,11 +20,16 @@ pub(crate) mod msg_queue;
 pub(crate) mod parachain;
 pub(crate) mod relay_chain;
 
+use astar_primitives::xcm::{
+    resolve_transfer_type, split_location_into_chain_part_and_beneficiary,
+};
 use frame_support::traits::{IsType, OnFinalize, OnInitialize};
 use sp_runtime::traits::{Bounded, StaticLookup};
 use sp_runtime::{BuildStorage, DispatchResult};
 use xcm::latest::prelude::*;
+use xcm::VersionedXcm;
 use xcm_executor::traits::ConvertLocation;
+use xcm_executor::XcmExecutor;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain, TestExt};
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0xFAu8; 32]);
@@ -86,7 +91,54 @@ pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
 pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
 pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
 pub type ParachainBalances = pallet_balances::Pallet<parachain::Runtime>;
-pub type ParachainXtokens = orml_xtokens::Pallet<parachain::Runtime>;
+
+/// Reserve-transfers a single `asset` to a `destination` that embeds the beneficiary, the way the
+/// XCM precompile does.
+pub fn para_transfer_currency(
+    origin: parachain::RuntimeOrigin,
+    asset_id: parachain::AssetId,
+    amount: parachain::Balance,
+    destination: Location,
+    weight_limit: WeightLimit,
+) -> DispatchResult {
+    let location =
+        <parachain::ShidenAssetLocationIdConverter as sp_runtime::traits::MaybeEquivalence<
+            Location,
+            parachain::AssetId,
+        >>::convert_back(&asset_id)
+        .expect("asset id must be registered");
+
+    para_transfer_asset(origin, (location, amount).into(), destination, weight_limit)
+}
+
+pub fn para_transfer_asset(
+    origin: parachain::RuntimeOrigin,
+    asset: Asset,
+    destination: Location,
+    weight_limit: WeightLimit,
+) -> DispatchResult {
+    let (dest, beneficiary) = split_location_into_chain_part_and_beneficiary(destination)
+        .expect("destination must carry a chain part");
+
+    let transfer_type = resolve_transfer_type::<XcmExecutor<parachain::XcmConfig>>(&asset, &dest)
+        .expect("no reserve could be determined for asset");
+
+    let fees_id = asset.id.clone();
+
+    ParachainPalletXcm::transfer_assets_using_type_and_then(
+        origin,
+        Box::new(dest.into()),
+        Box::new(Assets::from(asset).into()),
+        Box::new(transfer_type.clone()),
+        Box::new(fees_id.into()),
+        Box::new(transfer_type),
+        Box::new(VersionedXcm::from(Xcm(vec![DepositAsset {
+            assets: Wild(AllCounted(1)),
+            beneficiary,
+        }]))),
+        weight_limit,
+    )
+}
 
 pub fn parent_account_id() -> parachain::AccountId {
     let location = (Parent,);

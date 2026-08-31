@@ -46,21 +46,15 @@ use xcm_builder::{
     ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
     SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, UsingComponents,
-    WeightInfoBounds, WithComputedOrigin,
+    WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
 };
 use xcm_executor::{
     traits::{JustTry, WithOriginFilter},
     XcmExecutor,
 };
 
-// ORML imports
-use orml_xcm_support::DisabledParachainFee;
-
 // Astar imports
-use astar_primitives::xcm::{
-    AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, FixedRateOfForeignAsset,
-    ReserveAssetFilter, XcmFungibleFeeHandler,
-};
+use astar_primitives::xcm::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
 
 parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Polkadot);
@@ -301,12 +295,12 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
-pub type XcmRouter = (
+pub type XcmRouter = WithUniqueTopic<(
     // Two routers - use UMP to communicate with the relay chain:
     cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
     // ..and XCMP to communicate with the sibling chains.
     XcmpQueue,
-);
+)>;
 
 pub type Weigher =
     WeightInfoBounds<weights::xcm::XcmWeight<Runtime, RuntimeCall>, RuntimeCall, MaxInstructions>;
@@ -357,44 +351,4 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
     type PriceForSiblingDelivery = NoPriceForMessageDelivery<ParaId>;
     type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
-    /// The absolute location in perspective of the whole network.
-    pub AstarLocationAbsolute: Location = Location {
-        parents: 1,
-        interior: Parachain(ParachainInfo::parachain_id().into()).into()
-
-    };
-    /// Max asset types for one cross-chain transfer. `2` covers all current use cases.
-    /// Can be updated with extra test cases in the future if needed.
-    pub const MaxAssetsForTransfer: usize = 2;
-}
-
-/// Convert `AssetId` to optional `Location`. The impl is a wrapper
-/// on `ShidenAssetLocationIdConverter`.
-pub struct AssetIdConvert;
-impl Convert<AssetId, Option<Location>> for AssetIdConvert {
-    fn convert(asset_id: AssetId) -> Option<Location> {
-        AstarAssetLocationIdConverter::convert_back(&asset_id)
-    }
-}
-
-impl orml_xtokens::Config for Runtime {
-    type Balance = Balance;
-    type CurrencyId = AssetId;
-    type CurrencyIdConvert = AssetIdConvert;
-    type AccountIdToLocation = AccountIdToMultiLocation;
-    type SelfLocation = AstarLocation;
-    type XcmExecutor = XcmExecutor<XcmConfig>;
-    type Weigher = Weigher;
-    type BaseXcmWeight = UnitWeightCost;
-    type UniversalLocation = UniversalLocation;
-    type MaxAssetsForTransfer = MaxAssetsForTransfer;
-    // Default impl. Refer to `orml-xtokens` docs for more details.
-    type MinXcmFee = DisabledParachainFee;
-    type LocationsFilter = Everything;
-    type ReserveProvider = AbsoluteAndRelativeReserveProvider<AstarLocationAbsolute>;
-    type RateLimiter = ();
-    type RateLimiterId = ();
 }

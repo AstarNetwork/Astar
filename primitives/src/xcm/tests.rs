@@ -458,3 +458,159 @@ fn reserve_asset_filter_accepts_asset_hub_as_reserve() {
 
     assert!(ReserveAssetFilter::contains(&multi_asset, &origin));
 }
+
+#[test]
+fn split_location_sibling_parachain_with_account_id_32() {
+    let location = Location::new(
+        1,
+        [
+            Parachain(1000),
+            AccountId32 {
+                network: None,
+                id: [1u8; 32],
+            },
+        ],
+    );
+
+    let (chain, beneficiary) = split_location_into_chain_part_and_beneficiary(location)
+        .expect("Parachain junction must be recognized as the chain part.");
+
+    assert_eq!(chain, Location::new(1, [Parachain(1000)]));
+    assert_eq!(
+        beneficiary,
+        Location::new(
+            0,
+            [AccountId32 {
+                network: None,
+                id: [1u8; 32]
+            }]
+        )
+    );
+}
+
+#[test]
+fn split_location_sibling_parachain_with_account_key_20() {
+    let location = Location::new(
+        1,
+        [
+            Parachain(2000),
+            AccountKey20 {
+                network: None,
+                key: [2u8; 20],
+            },
+        ],
+    );
+
+    let (chain, beneficiary) = split_location_into_chain_part_and_beneficiary(location)
+        .expect("Parachain junction must be recognized as the chain part.");
+
+    assert_eq!(chain, Location::new(1, [Parachain(2000)]));
+    assert_eq!(
+        beneficiary,
+        Location::new(
+            0,
+            [AccountKey20 {
+                network: None,
+                key: [2u8; 20]
+            }]
+        )
+    );
+}
+
+#[test]
+fn split_location_relay_chain_beneficiary() {
+    let location = Location::new(
+        1,
+        [AccountId32 {
+            network: None,
+            id: [3u8; 32],
+        }],
+    );
+
+    let (chain, beneficiary) = split_location_into_chain_part_and_beneficiary(location)
+        .expect("Single parent without chain junction must resolve to the relay chain.");
+
+    assert_eq!(chain, Location::parent());
+    assert_eq!(
+        beneficiary,
+        Location::new(
+            0,
+            [AccountId32 {
+                network: None,
+                id: [3u8; 32]
+            }]
+        )
+    );
+}
+
+#[test]
+fn split_location_keeps_beneficiary_junction_order() {
+    let location = Location::new(
+        1,
+        [
+            Parachain(1000),
+            PalletInstance(50),
+            GeneralIndex(1984),
+            AccountId32 {
+                network: None,
+                id: [4u8; 32],
+            },
+        ],
+    );
+
+    let (chain, beneficiary) = split_location_into_chain_part_and_beneficiary(location)
+        .expect("Parachain junction must be recognized as the chain part.");
+
+    assert_eq!(chain, Location::new(1, [Parachain(1000)]));
+    assert_eq!(
+        beneficiary,
+        Location::new(
+            0,
+            [
+                PalletInstance(50),
+                GeneralIndex(1984),
+                AccountId32 {
+                    network: None,
+                    id: [4u8; 32]
+                }
+            ]
+        )
+    );
+}
+
+#[test]
+fn split_location_chain_part_only_gives_empty_beneficiary() {
+    let (chain, beneficiary) =
+        split_location_into_chain_part_and_beneficiary(Location::new(1, [Parachain(1000)]))
+            .expect("A bare chain location is a valid input.");
+
+    assert_eq!(chain, Location::new(1, [Parachain(1000)]));
+    assert_eq!(beneficiary, Location::here());
+}
+
+#[test]
+fn split_location_without_chain_identifier_reverts() {
+    // Local location - no parent, no chain junction.
+    assert!(
+        split_location_into_chain_part_and_beneficiary(Location::new(
+            0,
+            [AccountId32 {
+                network: None,
+                id: [5u8; 32]
+            }]
+        ))
+        .is_none()
+    );
+
+    // Two parents but no chain junction - cannot be resolved.
+    assert!(
+        split_location_into_chain_part_and_beneficiary(Location::new(
+            2,
+            [AccountId32 {
+                network: None,
+                id: [5u8; 32]
+            }]
+        ))
+        .is_none()
+    );
+}

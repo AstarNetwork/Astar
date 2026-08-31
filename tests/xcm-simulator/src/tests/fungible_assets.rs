@@ -22,7 +22,7 @@ use xcm::prelude::*;
 use xcm_simulator::TestExt;
 
 #[test]
-fn para_to_para_reserve_transfer_and_back_via_xtokens() {
+fn para_to_para_reserve_transfer_and_back_by_asset_location() {
     MockNet::reset();
 
     let sibling_asset_id = 123 as u128;
@@ -56,11 +56,11 @@ fn para_to_para_reserve_transfer_and_back_via_xtokens() {
             ]
             .into(),
         };
-        assert_ok!(ParachainXtokens::transfer_multiasset(
+        assert_ok!(para_transfer_asset(
             parachain::RuntimeOrigin::signed(ALICE),
-            Box::new((Here, withdraw_amount).into()),
-            Box::new(destination.into()),
-            Unlimited
+            (Here, withdraw_amount).into(),
+            destination,
+            Unlimited,
         ));
 
         // Parachain 2 sovereign account should have it's balance increased, while Alice balance should be decreased.
@@ -101,11 +101,11 @@ fn para_to_para_reserve_transfer_and_back_via_xtokens() {
             .into(),
         };
 
-        assert_ok!(ParachainXtokens::transfer_multiasset(
+        assert_ok!(para_transfer_asset(
             parachain::RuntimeOrigin::signed(ALICE),
-            Box::new((para_a_multiloc, remaining).into()),
-            Box::new(destination.into()),
-            Unlimited
+            (para_a_multiloc, remaining).into(),
+            destination,
+            Unlimited,
         ));
     });
 
@@ -154,10 +154,10 @@ fn para_to_para_reserve_transfer_and_back() {
     // Next step is to send some of parachain A native asset to parachain B.
     let withdraw_amount = 567;
     ParaA::execute_with(|| {
-        assert_ok!(ParachainXtokens::transfer_multiasset(
+        assert_ok!(para_transfer_asset(
             parachain::RuntimeOrigin::signed(ALICE),
-            Box::new((Here, withdraw_amount).into()),
-            Box::new((Parent, Parachain(2), alice).into()),
+            (Here, withdraw_amount).into(),
+            (Parent, Parachain(2), alice).into(),
             Unlimited,
         ));
 
@@ -187,11 +187,11 @@ fn para_to_para_reserve_transfer_and_back() {
 
     // send assets back to ParaA
     ParaB::execute_with(|| {
-        assert_ok!(ParachainXtokens::transfer(
+        assert_ok!(para_transfer_currency(
             parachain::RuntimeOrigin::signed(ALICE),
             sibling_asset_id,
             remaining,
-            Box::new((Parent, Parachain(1), alice,).into()),
+            (Parent, Parachain(1), alice,).into(),
             Unlimited
         ));
     });
@@ -274,11 +274,11 @@ fn para_to_para_reserve_transfer_and_back_with_extra_native() {
 
     let send_amount = 123;
     ParaA::execute_with(|| {
-        assert_ok!(ParachainXtokens::transfer(
+        assert_ok!(para_transfer_currency(
             parachain::RuntimeOrigin::signed(ALICE.into()),
             local_asset_id,
             send_amount,
-            Box::new((Parent, Parachain(2), alice).into()),
+            (Parent, Parachain(2), alice).into(),
             Unlimited
         ));
     });
@@ -307,18 +307,18 @@ fn para_to_para_reserve_transfer_and_back_with_extra_native() {
 
     // Sending back Local Asset to Para A with some native asset of Para B
     ParaB::execute_with(|| {
-        assert_ok!(ParachainXtokens::transfer(
+        assert_ok!(para_transfer_currency(
             parachain::RuntimeOrigin::signed(ALICE.into()),
             local_asset_id,
             send_amount,
-            Box::new((Parent, Parachain(1), alice.clone()).into()),
+            (Parent, Parachain(1), alice.clone()).into(),
             Unlimited
         ));
-        assert_ok!(ParachainXtokens::transfer_multiasset(
+        assert_ok!(para_transfer_asset(
             parachain::RuntimeOrigin::signed(ALICE.into()),
-            Box::new((Here, send_amount).into()),
-            Box::new((Parent, Parachain(1), alice.clone()).into()),
-            Unlimited
+            (Here, send_amount).into(),
+            (Parent, Parachain(1), alice.clone()).into(),
+            Unlimited,
         ));
     });
 
@@ -382,21 +382,19 @@ fn para_to_para_reserve_transfer_local_asset() {
 
     let send_amount = 123;
     ParaA::execute_with(|| {
-        assert_ok!(ParachainXtokens::transfer(
+        assert_ok!(para_transfer_currency(
             parachain::RuntimeOrigin::signed(ALICE.into()),
             asset_id,
             send_amount,
-            Box::new(
-                (
-                    Parent,
-                    Parachain(2),
-                    AccountId32 {
-                        network: None,
-                        id: ALICE.into()
-                    }
-                )
-                    .into()
-            ),
+            (
+                Parent,
+                Parachain(2),
+                AccountId32 {
+                    network: None,
+                    id: ALICE.into()
+                }
+            )
+                .into(),
             Unlimited
         ));
     });
@@ -515,13 +513,13 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
         asset_hub_alice_balance_before = parachain::Assets::balance(relay_asset_id, ALICE);
     });
 
-    // Send back to Asset Hub using xtokens
+    // Send back to Asset Hub
     ParaA::execute_with(|| {
-        assert_ok!(ParachainXtokens::transfer(
+        assert_ok!(para_transfer_currency(
             parachain::RuntimeOrigin::signed(ALICE),
             relay_asset_id,
             para_a_alice_expected_balance,
-            Box::new((Parent, Parachain(1000), alice).into()),
+            (Parent, Parachain(1000), alice).into(),
             Unlimited
         ));
     });
@@ -657,17 +655,17 @@ fn send_relay_asset_to_para_b_with_extra_native() {
 
     // send relay asset with some Para A native to ParaB
     ParaA::execute_with(|| {
-        assert_ok!(ParachainXtokens::transfer(
+        assert_ok!(para_transfer_currency(
             parachain::RuntimeOrigin::signed(ALICE.into()),
             relay_asset_id,
             withdraw_amount,
-            Box::new((Parent, Parachain(2), alice).into()),
+            (Parent, Parachain(2), alice).into(),
             Unlimited,
         ));
-        assert_ok!(ParachainXtokens::transfer_multiasset(
+        assert_ok!(para_transfer_asset(
             parachain::RuntimeOrigin::signed(ALICE.into()),
-            Box::new((Here, withdraw_amount).into()),
-            Box::new((Parent, Parachain(2), alice).into()),
+            (Here, withdraw_amount).into(),
+            (Parent, Parachain(2), alice).into(),
             Unlimited,
         ));
     });
@@ -1054,11 +1052,12 @@ fn transfer_relay_token_reserve_from_para_c_to_para_a() {
 
     // Parachain A should receive the tokens, and some portion of it is used for XCM execution fees
     ParaA::execute_with(|| {
-        let four_instructions_execution_cost =
-            (parachain::UnitWeightCost::get() * 4).ref_time() as u128;
+        // Four instructions above, plus the `SetTopic` the router appends.
+        let five_instructions_execution_cost =
+            (parachain::UnitWeightCost::get() * 5).ref_time() as u128;
         assert_eq!(
             parachain::Assets::balance(relay_asset_id, ALICE),
-            to_para_a_amount - four_instructions_execution_cost
+            to_para_a_amount - five_instructions_execution_cost
         );
     });
 }
@@ -1157,11 +1156,11 @@ fn transfer_relay_token_reserve_from_para_a_to_para_b_should_use_asset_hub_as_re
 
     // send relay asset from Para A to Para B should work
     ParaA::execute_with(|| {
-        assert_ok!(ParachainXtokens::transfer(
+        assert_ok!(para_transfer_currency(
             parachain::RuntimeOrigin::signed(ALICE.into()),
             relay_asset_id,
             withdraw_amount,
-            Box::new((Parent, Parachain(2), alice).into()),
+            (Parent, Parachain(2), alice).into(),
             Unlimited,
         ));
     });
