@@ -41,8 +41,6 @@ xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 
-# ORML dependencies
-
 # Frontier dependencies
 pallet-evm = { workspace = true }
 

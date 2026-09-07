@@ -42,6 +42,7 @@ pallet-tx-pause = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-xcm = { workspace = true }
 polkadot-primitives = { workspace = true }
+polkadot-runtime-parachains = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
@@ -124,6 +125,7 @@ std = [
 	"pallet-session/std",
 	"sp-consensus-aura/std",
 	"polkadot-primitives/std",
+	"polkadot-runtime-parachains/std",
 ]
 shibuya = ["shibuya-runtime"]
 shiden = ["shiden-runtime"]

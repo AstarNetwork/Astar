@@ -39,6 +39,17 @@ fn beneficiary_32(byte: u8) -> Location {
     )
 }
 
+/// `AccountKey20` beneficiary, as the precompile builds it from a raw `address`.
+fn beneficiary_key_20(byte: u8) -> Location {
+    Location::new(
+        0,
+        [AccountKey20 {
+            network: None,
+            key: [byte; 20],
+        }],
+    )
+}
+
 /// The single XCM the mock router recorded, panicking if there isn't exactly one.
 fn only_sent_xcm() -> (Location, Xcm<()>) {
     let mut sent = take_sent_xcm();
@@ -312,6 +323,104 @@ mod assets_withdraw {
     }
 }
 
+mod assets_reserve_transfer {
+    use super::*;
+
+    /// Exactly the call `AstarReceiver.xcmTransferNativeAsset` makes: the native token, addressed
+    /// by the zero address, to an `AccountId32` on Bifrost.
+    #[test]
+    fn native_asset_to_sibling_works() {
+        ExtBuilder.build().execute_with(|| {
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    PrecompileCall::assets_reserve_transfer_native_v1 {
+                        assets: vec![Address::from(NATIVE_ADDRESS)].into(),
+                        amounts: vec![42000u64.into()].into(),
+                        recipient_account_id: H256::repeat_byte(0xF1),
+                        is_relay: false,
+                        parachain_id: 2030.into(),
+                        fee_index: 0.into(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_returns(true);
+
+            let (dest, message) = only_sent_xcm();
+            assert_eq!(dest, Location::new(1, [Parachain(2030)]));
+            assert_deposits_to(&message, &beneficiary_32(0xF1));
+        });
+    }
+
+    /// The two selectors agree on XC20 assets - they were the same xtokens dispatch.
+    #[test]
+    fn matches_assets_withdraw_for_xc20() {
+        ExtBuilder.build().execute_with(|| {
+            let xc20 = || PrecompileCall::assets_withdraw_native_v1 {
+                assets: vec![Address::from(Runtime::asset_id_to_address(2u128))].into(),
+                amounts: vec![42000u64.into()].into(),
+                recipient_account_id: H256::repeat_byte(0xF1),
+                is_relay: false,
+                parachain_id: 10.into(),
+                fee_index: 0.into(),
+            };
+
+            precompiles()
+                .prepare_test(TestAccount::Alice, PRECOMPILE_ADDRESS, xc20())
+                .expect_no_logs()
+                .execute_returns(true);
+            let withdrawn = only_sent_xcm();
+
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    PrecompileCall::assets_reserve_transfer_native_v1 {
+                        assets: vec![Address::from(Runtime::asset_id_to_address(2u128))].into(),
+                        amounts: vec![42000u64.into()].into(),
+                        recipient_account_id: H256::repeat_byte(0xF1),
+                        is_relay: false,
+                        parachain_id: 10.into(),
+                        fee_index: 0.into(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_returns(true);
+
+            assert_eq!(withdrawn, only_sent_xcm());
+        });
+    }
+
+    /// ...and they differ on exactly one thing: `assets_withdraw` has never read the zero address
+    /// as the native token, so an uninitialised address stays a revert there rather than becoming
+    /// a native-balance transfer.
+    #[test]
+    fn zero_address_is_native_here_but_not_in_assets_withdraw() {
+        ExtBuilder.build().execute_with(|| {
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    PrecompileCall::assets_withdraw_native_v1 {
+                        assets: vec![Address::from(NATIVE_ADDRESS)].into(),
+                        amounts: vec![42000u64.into()].into(),
+                        recipient_account_id: H256::repeat_byte(0xF1),
+                        is_relay: false,
+                        parachain_id: 2030.into(),
+                        fee_index: 0.into(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_reverts(|output| {
+                    String::from_utf8_lossy(output).contains("Assets resolution failure.")
+                });
+
+            assert!(take_sent_xcm().is_empty());
+        });
+    }
+}
+
 mod transfer {
     use super::*;
 
@@ -515,10 +624,152 @@ mod transfer {
     }
 }
 
-/// The ten selectors that were backed by `orml-xtokens` and saw no traffic on any network.
+/// The six selectors that were backed by `orml-xtokens` and have no pallet-xcm equivalent.
 ///
 /// They stay registered so the precompile's ABI is unchanged, but every one of them must revert
 /// with the shared deprecation notice rather than silently doing something unexpected.
+mod evm_beneficiary {
+    use super::*;
+
+    /// The `address` overloads deposit to an `AccountKey20` on the destination.
+    #[test]
+    fn assets_withdraw_deposits_to_account_key_20() {
+        ExtBuilder.build().execute_with(|| {
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    PrecompileCall::assets_withdraw_evm_v1 {
+                        assets: vec![Address::from(Runtime::asset_id_to_address(2u128))].into(),
+                        amounts: vec![42000u64.into()].into(),
+                        recipient_account_id: Address(H160::repeat_byte(0xDE)),
+                        is_relay: false,
+                        parachain_id: 10.into(),
+                        fee_index: 0.into(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_returns(true);
+
+            let (dest, message) = only_sent_xcm();
+            assert_eq!(dest, Location::new(1, [Parachain(10)]));
+            assert_deposits_to(&message, &beneficiary_key_20(0xDE));
+        });
+    }
+
+    /// `assets_reserve_transfer` is the same alias relationship on the `address` overloads.
+    #[test]
+    fn assets_reserve_transfer_is_an_alias() {
+        ExtBuilder.build().execute_with(|| {
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    PrecompileCall::assets_reserve_transfer_evm_v1 {
+                        assets: vec![Address::from(Runtime::asset_id_to_address(2u128))].into(),
+                        amounts: vec![42000u64.into()].into(),
+                        recipient_account_id: Address(H160::repeat_byte(0xDE)),
+                        is_relay: false,
+                        parachain_id: 10.into(),
+                        fee_index: 0.into(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_returns(true);
+
+            let (dest, message) = only_sent_xcm();
+            assert_eq!(dest, Location::new(1, [Parachain(10)]));
+            assert_deposits_to(&message, &beneficiary_key_20(0xDE));
+        });
+    }
+}
+
+mod remote_transact {
+    use super::*;
+
+    const CALL: [u8; 4] = [0xff, 0xaa, 0x77, 0x00];
+    const TRANSACT_WEIGHT: u64 = 3_000_000_000;
+
+    fn call(is_relay: bool, para_id: u64) -> PrecompileCall {
+        PrecompileCall::remote_transact_v1 {
+            para_id: para_id.into(),
+            is_relay,
+            fee_asset_addr: Address::from(Runtime::asset_id_to_address(2u128)),
+            fee_amount: 367.into(),
+            remote_call: CALL.to_vec().into(),
+            transact_weight: TRANSACT_WEIGHT,
+        }
+    }
+
+    /// The caller is descended into the origin exactly as `pallet_xcm::send` used to do for a
+    /// signed origin, so the account the destination derives does not move.
+    #[test]
+    fn sibling_transact_descends_the_caller() {
+        ExtBuilder.build().execute_with(|| {
+            precompiles()
+                .prepare_test(TestAccount::Alice, PRECOMPILE_ADDRESS, call(false, 10))
+                .expect_no_logs()
+                .execute_returns(true);
+
+            let (dest, message) = only_sent_xcm();
+            assert_eq!(dest, Location::new(1, [Parachain(10)]));
+
+            assert_eq!(
+                message.0.first(),
+                Some(&DescendOrigin(
+                    AccountId32 {
+                        network: Some(NetworkId::Polkadot),
+                        id: [0xAA; 32],
+                    }
+                    .into()
+                )),
+                "the message must open with the caller's `AccountId32`, network included"
+            );
+
+            assert!(
+                matches!(message.0.get(1), Some(WithdrawAsset(_))),
+                "fees are withdrawn on the destination, got {:?}",
+                message.0.get(1)
+            );
+            assert!(
+                matches!(message.0.get(2), Some(BuyExecution { .. })),
+                "execution is bought with them, got {:?}",
+                message.0.get(2)
+            );
+            assert_eq!(
+                message.0.get(3),
+                Some(&Transact {
+                    origin_kind: OriginKind::SovereignAccount,
+                    fallback_max_weight: Some(Weight::from_parts(
+                        TRANSACT_WEIGHT,
+                        DEFAULT_PROOF_SIZE
+                    )),
+                    call: CALL.to_vec().into(),
+                })
+            );
+        });
+    }
+
+    /// UMP is `Root`-only for a reason - the EVM must not be able to reach it at all.
+    #[test]
+    fn relay_destination_reverts() {
+        ExtBuilder.build().execute_with(|| {
+            precompiles()
+                .prepare_test(TestAccount::Alice, PRECOMPILE_ADDRESS, call(true, 0))
+                .expect_no_logs()
+                .execute_reverts(|output| {
+                    String::from_utf8_lossy(output)
+                        .contains("remote_transact to the relay chain is not supported")
+                });
+
+            assert!(
+                take_sent_xcm().is_empty(),
+                "a relay-bound remote_transact must not send any XCM"
+            );
+        });
+    }
+}
+
 mod deprecated {
     use super::*;
 
@@ -551,62 +802,6 @@ mod deprecated {
             take_sent_xcm().is_empty(),
             "a deprecated method must not send any XCM"
         );
-    }
-
-    #[test]
-    fn assets_withdraw_evm_v1_reverts() {
-        ExtBuilder.build().execute_with(|| {
-            assert_deprecated(PrecompileCall::assets_withdraw_evm_v1 {
-                assets: vec![Address::from(Runtime::asset_id_to_address(2u128))].into(),
-                amounts: vec![42000u64.into()].into(),
-                recipient_account_id: Address(H160::repeat_byte(0xDE)),
-                is_relay: false,
-                parachain_id: 10.into(),
-                fee_index: 0.into(),
-            });
-        });
-    }
-
-    #[test]
-    fn remote_transact_v1_reverts() {
-        ExtBuilder.build().execute_with(|| {
-            assert_deprecated(PrecompileCall::remote_transact_v1 {
-                para_id: 0.into(),
-                is_relay: true,
-                fee_asset_addr: Address::from(Runtime::asset_id_to_address(1u128)),
-                fee_amount: 367.into(),
-                remote_call: vec![0xff_u8, 0xaa, 0x77, 0x00].into(),
-                transact_weight: 3_000_000_000u64,
-            });
-        });
-    }
-
-    #[test]
-    fn assets_reserve_transfer_native_v1_reverts() {
-        ExtBuilder.build().execute_with(|| {
-            assert_deprecated(PrecompileCall::assets_reserve_transfer_native_v1 {
-                assets: vec![Address::from(Runtime::asset_id_to_address(2u128))].into(),
-                amounts: vec![42000u64.into()].into(),
-                recipient_account_id: H256::repeat_byte(0xF1),
-                is_relay: false,
-                parachain_id: 10.into(),
-                fee_index: 0.into(),
-            });
-        });
-    }
-
-    #[test]
-    fn assets_reserve_transfer_evm_v1_reverts() {
-        ExtBuilder.build().execute_with(|| {
-            assert_deprecated(PrecompileCall::assets_reserve_transfer_evm_v1 {
-                assets: vec![Address::from(Runtime::asset_id_to_address(2u128))].into(),
-                amounts: vec![42000u64.into()].into(),
-                recipient_account_id: Address(H160::repeat_byte(0xDE)),
-                is_relay: false,
-                parachain_id: 10.into(),
-                fee_index: 0.into(),
-            });
-        });
     }
 
     #[test]

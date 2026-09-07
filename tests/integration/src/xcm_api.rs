@@ -18,7 +18,8 @@
 
 use crate::setup::*;
 
-use cumulus_primitives_core::Unlimited;
+use cumulus_primitives_core::{ParaId, Unlimited};
+use polkadot_runtime_parachains::FeeTracker;
 use sp_runtime::{
     traits::{BlakeTwo256, Hash, Zero},
     DispatchError,
@@ -26,7 +27,7 @@ use sp_runtime::{
 use xcm::{
     v5::{
         prelude::ClearOrigin,
-        Asset as XcmAsset, AssetId as XcmAssetId, Fungibility,
+        validate_send, Asset as XcmAsset, AssetId as XcmAssetId, Assets as XcmAssets, Fungibility,
         Junction::{self, *},
         Junctions::*,
         Location, Parent, Xcm, VERSION as V_5,
@@ -451,4 +452,112 @@ fn xcm_transact_cannot_invoke_pallet_xcm_send_or_execute() {
             })
         );
     });
+}
+
+/// UMP is the only outbound queue that mandatory block finalization has to prove in the candidate
+/// PoV, so it stays closed by access control - `Root` only, see `SendXcmOrigin` - and unpriced.
+#[test]
+fn parent_delivery_is_unpriced() {
+    new_test_ext().execute_with(|| {
+        assert_ok!(PolkadotXcm::force_xcm_version(
+            RuntimeOrigin::root(),
+            Box::new(Parent.into()),
+            V_5
+        ));
+
+        let (_, price) =
+            validate_send::<xcm_config::XcmRouter>(Parent.into(), Xcm(vec![ClearOrigin]))
+                .expect("parent route is available");
+
+        assert_eq!(
+            price,
+            XcmAssets::new(),
+            "UMP must stay unpriced, it is bounded by `SendXcmOrigin` instead"
+        );
+    })
+}
+
+/// XCMP is paginated and never enters the PoV, so it stays open to signed origins and is bounded
+/// by price instead: the delivery fee compounds as the outbound channel congests.
+#[test]
+fn sibling_delivery_fee_grows_exponentially_with_congestion() {
+    new_test_ext().execute_with(|| {
+        let para = ParaId::from(2_030);
+        let dest: Location = (Parent, Parachain(para.into())).into();
+        assert_ok!(PolkadotXcm::force_xcm_version(
+            RuntimeOrigin::root(),
+            Box::new(dest.clone()),
+            V_5
+        ));
+
+        let price_of = |msg: Xcm<()>| -> u128 {
+            let (_, price) = validate_send::<xcm_config::XcmRouter>(dest.clone(), msg)
+                .expect("sibling route is available");
+            let asset = price.inner().first().expect("delivery is priced").clone();
+            assert_eq!(
+                asset.id,
+                XcmAssetId(Here.into()),
+                "delivery fee must be charged in the native token"
+            );
+            match asset.fun {
+                Fungibility::Fungible(amount) => amount,
+                _ => unreachable!("delivery fee is fungible"),
+            }
+        };
+
+        let base = price_of(Xcm(vec![ClearOrigin]));
+        assert!(base > 0, "sibling delivery must not be free");
+        assert!(
+            price_of(Xcm(vec![ClearOrigin; 50])) > base,
+            "delivery fee must grow with message size"
+        );
+
+        // Every congested send multiplies the fee factor by `EXPONENTIAL_FEE_BASE` (1.05), which
+        // is what makes flooding an outbound channel exponentially expensive.
+        let mut previous = base;
+        for _ in 0..10 {
+            <XcmpQueue as FeeTracker>::increase_fee_factor(para, 0);
+            let current = price_of(Xcm(vec![ClearOrigin]));
+            assert!(current > previous, "congestion must raise the delivery fee");
+            previous = current;
+        }
+
+        // 1.05^10 ~= 1.629, i.e. geometric growth rather than a flat per-message fee.
+        assert!(
+            previous > base * 162 / 100 && previous < base * 164 / 100,
+            "expected ~1.63x after 10 congested sends, got {previous} from {base}"
+        );
+    })
+}
+
+/// `query_delivery_fees` answers for siblings now that XCMP is priced. The parent stays unpriced,
+/// so it still returns an error - see `query_delivery_fees_is_ok` above.
+#[test]
+fn query_delivery_fees_for_sibling_is_priced() {
+    new_test_ext().execute_with(|| {
+        let dest: Location = (Parent, Parachain(2_030)).into();
+        assert_ok!(PolkadotXcm::force_xcm_version(
+            RuntimeOrigin::root(),
+            Box::new(dest.clone()),
+            V_5
+        ));
+
+        let message = Xcm::<()>::builder_unsafe()
+            .clear_error()
+            .unsubscribe_version()
+            .build();
+
+        let fees = Runtime::query_delivery_fees(
+            dest.into_versioned(),
+            VersionedXcm::V5(message),
+            VersionedAssetId::V5(XcmAssetId(Here.into())),
+        )
+        .expect("sibling delivery is priced");
+
+        let fees: XcmAssets = fees.try_into().expect("v5 assets");
+        match fees.inner().first().expect("exactly one fee asset").fun {
+            Fungibility::Fungible(amount) => assert!(amount > 0),
+            _ => unreachable!("delivery fee is fungible"),
+        }
+    })
 }

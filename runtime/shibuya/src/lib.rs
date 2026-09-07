@@ -2336,6 +2336,10 @@ impl_runtime_apis! {
             use xcm::latest::prelude::*;
             use xcm_builder::MintLocation;
             use astar_primitives::{benchmarks::XcmBenchmarkHelper, xcm::ASSET_HUB_PARA_ID};
+            use polkadot_runtime_common::xcm_sender::PriceForMessageDelivery;
+            use xcm::{latest::MAX_ITEMS_IN_ASSETS, MAX_INSTRUCTIONS_TO_DECODE};
+            use xcm_executor::traits::FeeManager;
+            use cumulus_primitives_core::ParaId;
             // Needed to run `set_code` and `apply_authorized_upgrade` frame_system benchmarks
             // https://github.com/paritytech/cumulus/pull/2766
             impl frame_system_benchmarking::Config for Runtime {
@@ -2366,17 +2370,50 @@ impl_runtime_apis! {
                     );
 
                     // Open HRMP channel for sibling parachain destinations
-                    if let Some(Parachain(para_id)) = dest.interior().first() {
-                        ParachainSystem::open_outbound_hrmp_channel_for_benchmarks_or_tests(
-                            (*para_id).into()
-                        );
+                    let para_id = match dest.interior().first() {
+                        Some(Parachain(para_id)) => {
+                            let para_id: ParaId = (*para_id).into();
+                            ParachainSystem::open_outbound_hrmp_channel_for_benchmarks_or_tests(para_id);
+                            Some(para_id)
+                        }
+                        _ => None,
+                    };
+
+                    if <xcm_config::XcmConfig as xcm_executor::Config>::FeeManager::is_waived(
+                        Some(origin_ref),
+                        _fee_reason,
+                    ) {
+                        return (None, None);
                     }
 
+                    // Sibling delivery is priced, so an under-funded origin would fail on
+                    // `FeesNotMet` instead of measuring the send. Ask the configured price type
+                    // what the largest decodable message would cost, exactly as polkadot-sdk's
+                    // `ToParachainDeliveryHelper` does, and top the origin up by that plus ED.
+                    let mut max_assets: Vec<Asset> = Vec::new();
+                    for i in 0..MAX_ITEMS_IN_ASSETS {
+                        max_assets.push((GeneralIndex(i as u128), 100u128).into());
+                    }
+                    let worst_case: Xcm<()> =
+                        vec![WithdrawAsset(max_assets.into()); MAX_INSTRUCTIONS_TO_DECODE as usize]
+                            .into();
+                    let fees = xcm_config::PriceForSiblingParachainDelivery::price_for_delivery(
+                        para_id.unwrap_or_default(),
+                        &worst_case,
+                    );
+
                     if let Some(account) = xcm_config::LocationToAccountId::convert_location(origin_ref) {
-                        // Give the account some balance to ensure delivery
-                        let balance = ExistentialDeposit::get() * 1000u128; // Give more than just ED
+                        let account: AccountId = account.into();
+                        // Top up rather than set: earlier setup may already have funded this
+                        // account for the benchmarked extrinsic itself.
                         let _ = <Balances as frame_support::traits::Currency<_>>::
-                            make_free_balance_be(&account.into(), balance);
+                            deposit_creating(&account, ExistentialDeposit::get());
+                        for fee in fees.inner() {
+                            if let Fungible(amount) = fee.fun {
+                                let _ = <Balances as frame_support::traits::Currency<_>>::
+                                    deposit_creating(&account, amount);
+                            }
+                        }
                     }
 
                     (None, None)

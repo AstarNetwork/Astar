@@ -25,11 +25,11 @@ use fp_evm::PrecompileHandle;
 use frame_support::{
     dispatch::{GetDispatchInfo, PostDispatchInfo},
     pallet_prelude::Weight,
-    traits::ConstU32,
+    traits::{ConstU32, Get},
 };
 use sp_runtime::traits::{Dispatchable, MaybeEquivalence};
 
-use pallet_evm::AddressMapping;
+use pallet_evm::{AddressMapping, GasWeightMapping};
 use sp_core::{H160, H256, U256};
 
 use sp_std::marker::PhantomData;
@@ -39,6 +39,7 @@ use xcm::{latest::prelude::*, VersionedAssetId, VersionedAssets, VersionedLocati
 use xcm_executor::traits::TransferType;
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
+use pallet_xcm::WeightInfo as PalletXcmWeightInfo;
 use precompile_utils::prelude::*;
 #[cfg(test)]
 mod mock;
@@ -47,6 +48,9 @@ mod tests;
 
 /// Dummy H160 address representing native currency (e.g. ASTR or SDN)
 const NATIVE_ADDRESS: H160 = H160::zero();
+
+/// Proof size allowance for the `Transact` weight `remote_transact` sends.
+const DEFAULT_PROOF_SIZE: u64 = 1024 * 256;
 
 /// Bound for the SCALE-encoded XCM blob accepted by the (deprecated) `send_xcm`.
 type GetXcmSizeLimit = ConstU32<XCM_SIZE_LIMIT>;
@@ -80,9 +84,14 @@ where
         + GetDispatchInfo,
     C: MaybeEquivalence<Location, <Runtime as pallet_assets::Config>::AssetId>,
     <Runtime as pallet_evm::Config>::AddressMapping: AddressMapping<Runtime::AccountId>,
+    Runtime::AccountId: Into<[u8; 32]>,
 {
     /// Reserve-transfer a list of XC20 assets to an `AccountId32` beneficiary on the relay chain
     /// or on a sibling parachain.
+    ///
+    /// The zero address is rejected here: only `assets_reserve_transfer` has ever read it as the
+    /// native token, and widening this one would turn a caller's uninitialised address from a
+    /// revert into a native-balance transfer.
     #[precompile::public("assets_withdraw(address[],uint256[],bytes32,bool,uint256,uint256)")]
     fn assets_withdraw_native_v1(
         handle: &mut impl PrecompileHandle,
@@ -93,19 +102,238 @@ where
         parachain_id: U256,
         fee_index: U256,
     ) -> EvmResult<bool> {
-        let beneficiary: Location = Junction::AccountId32 {
+        Self::assets_transfer_v1_internal(
+            handle,
+            assets,
+            amounts,
+            Self::beneficiary_32(recipient_account_id),
+            is_relay,
+            parachain_id,
+            fee_index,
+            false,
+        )
+    }
+
+    /// As `assets_withdraw` above, except that the zero address is read as the native token.
+    ///
+    /// Both selectors dispatched the very same `orml-xtokens::transfer_multiassets` call before
+    /// xtokens was removed - the reserve is derived per asset, it is never picked by the caller -
+    /// and this native-address split is the one behavioural difference they have always had.
+    #[precompile::public(
+        "assets_reserve_transfer(address[],uint256[],bytes32,bool,uint256,uint256)"
+    )]
+    fn assets_reserve_transfer_native_v1(
+        handle: &mut impl PrecompileHandle,
+        assets: BoundedVec<Address, GetMaxAssets>,
+        amounts: BoundedVec<U256, GetMaxAssets>,
+        recipient_account_id: H256,
+        is_relay: bool,
+        parachain_id: U256,
+        fee_index: U256,
+    ) -> EvmResult<bool> {
+        Self::assets_transfer_v1_internal(
+            handle,
+            assets,
+            amounts,
+            Self::beneficiary_32(recipient_account_id),
+            is_relay,
+            parachain_id,
+            fee_index,
+            true,
+        )
+    }
+
+    /// `assets_withdraw` with an `AccountKey20` beneficiary, for destinations that map EVM
+    /// addresses to accounts. Substrate-native chains generally do not - prefer the `bytes32`
+    /// overload unless the destination is known to accept `AccountKey20`.
+    #[precompile::public("assets_withdraw(address[],uint256[],address,bool,uint256,uint256)")]
+    fn assets_withdraw_evm_v1(
+        handle: &mut impl PrecompileHandle,
+        assets: BoundedVec<Address, GetMaxAssets>,
+        amounts: BoundedVec<U256, GetMaxAssets>,
+        recipient_account_id: Address,
+        is_relay: bool,
+        parachain_id: U256,
+        fee_index: U256,
+    ) -> EvmResult<bool> {
+        Self::assets_transfer_v1_internal(
+            handle,
+            assets,
+            amounts,
+            Self::beneficiary_key_20(recipient_account_id),
+            is_relay,
+            parachain_id,
+            fee_index,
+            false,
+        )
+    }
+
+    /// As the `address` overload of `assets_withdraw` above, except that the zero address is
+    /// read as the native token.
+    #[precompile::public(
+        "assets_reserve_transfer(address[],uint256[],address,bool,uint256,uint256)"
+    )]
+    fn assets_reserve_transfer_evm_v1(
+        handle: &mut impl PrecompileHandle,
+        assets: BoundedVec<Address, GetMaxAssets>,
+        amounts: BoundedVec<U256, GetMaxAssets>,
+        recipient_account_id: Address,
+        is_relay: bool,
+        parachain_id: U256,
+        fee_index: U256,
+    ) -> EvmResult<bool> {
+        Self::assets_transfer_v1_internal(
+            handle,
+            assets,
+            amounts,
+            Self::beneficiary_key_20(recipient_account_id),
+            is_relay,
+            parachain_id,
+            fee_index,
+            true,
+        )
+    }
+
+    /// Send a `Transact` to a sibling parachain, buying its execution with `fee_asset_addr`.
+    ///
+    /// `pallet_xcm::send` is `Root`-only, so the message is handed to the router directly with
+    /// the caller descended into the origin - byte for byte what the extrinsic used to build for
+    /// a signed origin, so the account the destination derives is unchanged.
+    ///
+    /// The relay chain is not reachable this way, by design: `PendingUpwardMessages` is a single
+    /// value that mandatory `on_finalize` proves in full, so an unmetered UMP queue is the one
+    /// that can push a candidate past `max_pov_size`. Sibling XCMP is paginated, never enters the
+    /// PoV, and is priced on top.
+    #[precompile::public("remote_transact(uint256,bool,address,uint256,bytes,uint64)")]
+    fn remote_transact_v1(
+        handle: &mut impl PrecompileHandle,
+        para_id: U256,
+        is_relay: bool,
+        fee_asset_addr: Address,
+        fee_amount: U256,
+        remote_call: UnboundedBytes,
+        transact_weight: u64,
+    ) -> EvmResult<bool> {
+        if is_relay {
+            return Err(revert(
+                "remote_transact to the relay chain is not supported, use a sibling parachain",
+            ));
+        }
+
+        let para_id: u32 = para_id
+            .try_into()
+            .map_err(|_| revert("error converting para_id, maybe value too large"))?;
+
+        let fee_amount: u128 = fee_amount
+            .try_into()
+            .map_err(|_| revert("error converting fee_amount, maybe value too large"))?;
+
+        let remote_call: Vec<u8> = remote_call.into();
+
+        let dest = Junctions::from(Junction::Parachain(para_id)).into_exterior(1);
+
+        let fee_asset = {
+            let address: H160 = fee_asset_addr.into();
+
+            // Special case where zero address maps to native token by convention.
+            if address == NATIVE_ADDRESS {
+                Location::here()
+            } else {
+                let fee_asset_id = Runtime::address_to_asset_id(address)
+                    .ok_or(revert("Failed to resolve fee asset id from address"))?;
+                C::convert_back(&fee_asset_id).ok_or(revert(
+                    "Failed to resolve fee asset multilocation from local id",
+                ))?
+            }
+        };
+
+        let context = <Runtime as pallet_xcm::Config>::UniversalLocation::get();
+        let fee: Asset = (fee_asset, fee_amount).into();
+        let fee = fee
+            .reanchored(&dest, &context)
+            .map_err(|_| revert("Failed to reanchor fee asset"))?;
+
+        let xcm = Xcm(vec![
+            WithdrawAsset(fee.clone().into()),
+            BuyExecution {
+                fees: fee,
+                weight_limit: WeightLimit::Unlimited,
+            },
+            Transact {
+                origin_kind: OriginKind::SovereignAccount,
+                fallback_max_weight: Some(Weight::from_parts(transact_weight, DEFAULT_PROOF_SIZE)),
+                call: remote_call.into(),
+            },
+        ]);
+
+        // The interior `pallet_xcm::send` derived for a signed origin: `SignedToAccountId32` with
+        // the network this chain lives in, which `UniversalLocation` already carries.
+        let interior = Junction::AccountId32 {
+            network: context.global_consensus().ok(),
+            id: Runtime::AddressMapping::into_account_id(handle.context().caller).into(),
+        };
+
+        log::trace!(target: "xcm-precompile:remote_transact", "dest: {:?}, interior: {:?}, xcm: {:?}", dest, interior, xcm);
+
+        // Nothing is dispatched any more, so meter the send explicitly.
+        handle.record_cost(
+            <Runtime as pallet_evm::Config>::GasWeightMapping::weight_to_gas(
+                <Runtime as pallet_xcm::Config>::WeightInfo::send(),
+            ),
+        )?;
+
+        pallet_xcm::Pallet::<Runtime>::send_xcm(interior, dest, xcm).map_err(|error| {
+            log::trace!(target: "xcm-precompile:remote_transact", "send_xcm failed: {:?}", error);
+            revert("Failed to send xcm")
+        })?;
+
+        Ok(true)
+    }
+
+    /// `AccountId32` beneficiary, as the `bytes32` overloads take it.
+    fn beneficiary_32(recipient_account_id: H256) -> Location {
+        Junction::AccountId32 {
             network: None,
             id: recipient_account_id.into(),
         }
-        .into();
+        .into()
+    }
 
+    /// `AccountKey20` beneficiary, as the `address` overloads take it.
+    fn beneficiary_key_20(recipient_account_id: Address) -> Location {
+        Junction::AccountKey20 {
+            network: None,
+            key: recipient_account_id.0.to_fixed_bytes(),
+        }
+        .into()
+    }
+
+    /// Shared body of the four asset transfer selectors. `native_address` reflects the one
+    /// difference between them: `assets_reserve_transfer` reads the zero address as the native
+    /// token, `assets_withdraw` does not.
+    fn assets_transfer_v1_internal(
+        handle: &mut impl PrecompileHandle,
+        assets: BoundedVec<Address, GetMaxAssets>,
+        amounts: BoundedVec<U256, GetMaxAssets>,
+        beneficiary: Location,
+        is_relay: bool,
+        parachain_id: U256,
+        fee_index: U256,
+        native_address: bool,
+    ) -> EvmResult<bool> {
         // Read arguments and check them
         let assets: Vec<Address> = assets.into();
         let assets = assets
             .iter()
             .cloned()
             .filter_map(|address| {
-                Runtime::address_to_asset_id(address.into()).and_then(|x| C::convert_back(&x))
+                let address: H160 = address.into();
+                // Special case where zero address maps to native token by convention.
+                if native_address && address == NATIVE_ADDRESS {
+                    Some(Location::here())
+                } else {
+                    Runtime::address_to_asset_id(address).and_then(|x| C::convert_back(&x))
+                }
             })
             .collect::<Vec<Location>>();
 
@@ -151,7 +379,7 @@ where
         let (assets_transfer_type, fees_transfer_type, fee_asset_id) =
             Self::resolve_transfer_types(&assets, fee_asset_item, &destination)?;
 
-        log::trace!(target: "xcm-precompile:assets_withdraw", "Processed arguments: assets {:?}, destination: {:?}, beneficiary: {:?}, transfer types: {:?}/{:?}", assets, destination, beneficiary, assets_transfer_type, fees_transfer_type);
+        log::trace!(target: "xcm-precompile:assets_transfer", "Processed arguments: assets {:?}, destination: {:?}, beneficiary: {:?}, transfer types: {:?}/{:?}", assets, destination, beneficiary, assets_transfer_type, fees_transfer_type);
 
         // Build call with origin.
         let origin = Some(Runtime::AddressMapping::into_account_id(
@@ -251,102 +479,6 @@ where
     // ------------------------------------------------------------------------------------------
     // Deprecated methods.
     // ------------------------------------------------------------------------------------------
-
-    /// Deprecated. Use the `bytes32` overload of `assets_withdraw` instead.
-    #[precompile::public("assets_withdraw(address[],uint256[],address,bool,uint256,uint256)")]
-    fn assets_withdraw_evm_v1(
-        handle: &mut impl PrecompileHandle,
-        assets: BoundedVec<Address, GetMaxAssets>,
-        amounts: BoundedVec<U256, GetMaxAssets>,
-        recipient_account_id: Address,
-        is_relay: bool,
-        parachain_id: U256,
-        fee_index: U256,
-    ) -> EvmResult<bool> {
-        let _ = (
-            handle,
-            assets,
-            amounts,
-            recipient_account_id,
-            is_relay,
-            parachain_id,
-            fee_index,
-        );
-        Err(revert(DEPRECATED))
-    }
-
-    /// Deprecated. Was already unreachable: `SendXcmOrigin` rejects signed origins.
-    #[precompile::public("remote_transact(uint256,bool,address,uint256,bytes,uint64)")]
-    fn remote_transact_v1(
-        handle: &mut impl PrecompileHandle,
-        para_id: U256,
-        is_relay: bool,
-        fee_asset_addr: Address,
-        fee_amount: U256,
-        remote_call: UnboundedBytes,
-        transact_weight: u64,
-    ) -> EvmResult<bool> {
-        let _ = (
-            handle,
-            para_id,
-            is_relay,
-            fee_asset_addr,
-            fee_amount,
-            remote_call,
-            transact_weight,
-        );
-        Err(revert(DEPRECATED))
-    }
-
-    /// Deprecated. Use the `bytes32` overload of `assets_withdraw` instead.
-    #[precompile::public(
-        "assets_reserve_transfer(address[],uint256[],bytes32,bool,uint256,uint256)"
-    )]
-    fn assets_reserve_transfer_native_v1(
-        handle: &mut impl PrecompileHandle,
-        assets: BoundedVec<Address, GetMaxAssets>,
-        amounts: BoundedVec<U256, GetMaxAssets>,
-        recipient_account_id: H256,
-        is_relay: bool,
-        parachain_id: U256,
-        fee_index: U256,
-    ) -> EvmResult<bool> {
-        let _ = (
-            handle,
-            assets,
-            amounts,
-            recipient_account_id,
-            is_relay,
-            parachain_id,
-            fee_index,
-        );
-        Err(revert(DEPRECATED))
-    }
-
-    /// Deprecated. Use the `bytes32` overload of `assets_withdraw` instead.
-    #[precompile::public(
-        "assets_reserve_transfer(address[],uint256[],address,bool,uint256,uint256)"
-    )]
-    fn assets_reserve_transfer_evm_v1(
-        handle: &mut impl PrecompileHandle,
-        assets: BoundedVec<Address, GetMaxAssets>,
-        amounts: BoundedVec<U256, GetMaxAssets>,
-        recipient_account_id: Address,
-        is_relay: bool,
-        parachain_id: U256,
-        fee_index: U256,
-    ) -> EvmResult<bool> {
-        let _ = (
-            handle,
-            assets,
-            amounts,
-            recipient_account_id,
-            is_relay,
-            parachain_id,
-            fee_index,
-        );
-        Err(revert(DEPRECATED))
-    }
 
     /// Deprecated. Was already unreachable: `SendXcmOrigin` rejects signed origins.
     #[precompile::public("send_xcm((uint8,bytes[]),bytes)")]

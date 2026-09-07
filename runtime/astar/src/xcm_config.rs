@@ -19,13 +19,13 @@
 use super::{
     AccountId, AllPalletsWithSystem, AssetId, Assets, AstarAssetLocationIdConverter, Balance,
     Balances, DealWithFees, MessageQueue, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
-    RuntimeCall, RuntimeEvent, RuntimeOrigin, TreasuryAccountId, XcAssetConfig, XcmWeightToFee,
-    XcmpQueue,
+    RuntimeCall, RuntimeEvent, RuntimeOrigin, TransactionLengthFeeFactor, TreasuryAccountId,
+    XcAssetConfig, XcmWeightToFee, XcmpQueue, MILLIASTR,
 };
 use crate::weights;
 use frame_support::{
     parameter_types,
-    traits::{ConstU32, Contains, Everything, Nothing},
+    traits::{ConstU32, Contains, Equals, Everything, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -36,7 +36,7 @@ use frame_support::traits::{Disabled, TransformOrigin};
 use parachains_common::{
     message_queue::ParaIdToSibling, xcm_config::ParentRelayOrSiblingParachains,
 };
-use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
+use polkadot_runtime_common::xcm_sender::ExponentialPrice;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -45,7 +45,7 @@ use xcm_builder::{
     ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
     SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, UsingComponents,
-    WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
+    WeightInfoBounds, WithComputedOrigin, WithUniqueTopic, XcmFeeManagerFromComponents,
 };
 use xcm_executor::{
     traits::{JustTry, WithOriginFilter},
@@ -62,6 +62,9 @@ parameter_types! {
     [GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into())].into();
     pub AstarLocation: Location = Here.into_location();
     pub DummyCheckingAccount: AccountId = PolkadotXcm::check_account();
+    /// The local root origin, exempt from delivery fees so that governance and
+    /// runtime-internal sends keep working.
+    pub RootLocation: Location = Here.into_location();
 }
 
 /// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
@@ -274,7 +277,7 @@ impl xcm_executor::Config for XcmConfig {
     type MaxAssetsIntoHolding = ConstU32<64>;
     type AssetLocker = ();
     type AssetExchanger = ();
-    type FeeManager = ();
+    type FeeManager = XcmFeeManagerFromComponents<Equals<RootLocation>, ()>;
     type MessageExporter = ();
     type UniversalAliases = Nothing;
     type CallDispatcher = WithOriginFilter<SafeCallFilter>;
@@ -338,6 +341,24 @@ impl cumulus_pallet_xcm::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
+parameter_types! {
+    /// Asset in which XCM delivery fees are charged: the native token.
+    pub FeeAssetId: xcm::latest::AssetId = xcm::latest::AssetId(AstarLocation::get());
+    /// Flat fee charged per outbound XCMP message, on top of the per-byte fee.
+    pub const BaseDeliveryFee: Balance = MILLIASTR;
+}
+
+/// Price of delivering an XCM message to a sibling parachain.
+///
+/// `BaseDeliveryFee + message_size * TransactionLengthFeeFactor`, multiplied by the congestion
+/// factor `XcmpQueue` raises as the outbound channel fills up. The factor compounds per message,
+/// so flooding a channel gets exponentially more expensive.
+///
+/// Delivery to the parent stays unpriced on purpose: UMP is reachable by `Root` only, see
+/// `SendXcmOrigin`.
+pub type PriceForSiblingParachainDelivery =
+    ExponentialPrice<FeeAssetId, BaseDeliveryFee, TransactionLengthFeeFactor, XcmpQueue>;
+
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type ChannelInfo = ParachainSystem;
@@ -348,6 +369,6 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type MaxPageSize = ConstU32<{ 128 * 1024 }>;
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-    type PriceForSiblingDelivery = NoPriceForMessageDelivery<ParaId>;
+    type PriceForSiblingDelivery = PriceForSiblingParachainDelivery;
     type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
 }
