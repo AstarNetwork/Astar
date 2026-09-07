@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["pallet","weights"],"struct":["ReleaseContractsDeposits"]};
+window.SIDEBAR_ITEMS = {"constant":["CONTRACT_INFO_OF","DELETION_QUEUE","MAX_KEYS_PER_STEP","TRIE_ID_LEN"],"mod":["pallet","weights"],"struct":["PurgeContractsChildTries","RemovePalletStepped"],"type":["MaxKeyLen","TrieId"]};

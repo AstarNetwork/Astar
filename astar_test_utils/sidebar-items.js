@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["call_wasm_contract_method","deploy_wasm_contract","load_wasm_module"]};
