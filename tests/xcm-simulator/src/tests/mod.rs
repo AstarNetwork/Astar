@@ -17,9 +17,6 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 #[cfg(test)]
-mod experimental;
-
-#[cfg(test)]
 mod fungible_assets;
 
 #[cfg(test)]

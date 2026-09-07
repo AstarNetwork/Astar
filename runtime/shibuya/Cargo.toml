@@ -53,7 +53,6 @@ pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-collective = { workspace = true }
-pallet-contracts = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
@@ -66,7 +65,6 @@ pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-identity = { workspace = true }
-pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-message-queue = { workspace = true }
 pallet-migrations = { workspace = true }
@@ -180,7 +178,7 @@ std = [
 	"contracts-mbm/std",
 	"pallet-collective-proxy/std",
 	"pallet-collective/std",
-	"pallet-contracts/std",
+	"contracts-mbm/std",
 	"pallet-dapp-staking/std",
 	"pallet-democracy/std",
 	"pallet-dynamic-evm-base-fee/std",
@@ -202,7 +200,6 @@ std = [
 	"pallet-evm/std",
 	"pallet-identity/std",
 	"pallet-inflation/std",
-	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-membership/std",
 	"pallet-message-queue/std",
 	"pallet-migrations/std",
@@ -273,7 +270,7 @@ runtime-benchmarks = [
 	"contracts-mbm/runtime-benchmarks",
 	"pallet-collective-proxy/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
-	"pallet-contracts/runtime-benchmarks",
+	"contracts-mbm/runtime-benchmarks",
 	"pallet-dapp-staking/runtime-benchmarks",
 	"pallet-democracy/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
@@ -334,7 +331,7 @@ try-runtime = [
 	"contracts-mbm/try-runtime",
 	"pallet-collective-proxy/try-runtime",
 	"pallet-collective/try-runtime",
-	"pallet-contracts/try-runtime",
+	"contracts-mbm/try-runtime",
 	"pallet-dapp-staking/try-runtime",
 	"pallet-democracy/try-runtime",
 	"pallet-dynamic-evm-base-fee/try-runtime",
@@ -343,7 +340,6 @@ try-runtime = [
 	"pallet-evm/try-runtime",
 	"pallet-identity/try-runtime",
 	"pallet-inflation/try-runtime",
-	"pallet-insecure-randomness-collective-flip/try-runtime",
 	"pallet-membership/try-runtime",
 	"pallet-message-queue/try-runtime",
 	"pallet-migrations/try-runtime",

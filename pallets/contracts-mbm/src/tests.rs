@@ -18,138 +18,311 @@
 
 #![cfg(all(test, not(feature = "runtime-benchmarks")))]
 
-use crate::mock::{
-    migrations_in_progress, new_test_ext, run_to_block, AllPalletsWithSystem, Balances, HoldReason,
-    MaxServiceWeight, Runtime, ESCROW,
+use crate::{
+    mock::{
+        migrations_in_progress, new_test_ext, run_to_block, AllPalletsWithSystem, MaxServiceWeight,
+        Purge, Remove, System,
+    },
+    TrieId, CONTRACT_INFO_OF, DELETION_QUEUE, TRIE_ID_LEN,
 };
-use frame_support::traits::{
-    fungible::{Inspect, InspectHold, Mutate, MutateHold},
-    OnRuntimeUpgrade,
+use frame_support::{
+    migrations::{SteppedMigration, SteppedMigrationError},
+    storage::unhashed,
+    traits::OnRuntimeUpgrade,
+    weights::{Weight, WeightMeter},
+    StorageHasher, Twox64Concat,
 };
+use parity_scale_codec::Encode;
+use sp_io::hashing::twox_128;
 
-fn fund_and_hold(who: u64, free: u64, reason: HoldReason, amount: u64) {
-    Balances::set_balance(&who, free);
-    Balances::hold(&reason, &who, amount).expect("can hold");
+fn pallet_prefix() -> Vec<u8> {
+    twox_128(b"Contracts").to_vec()
 }
 
-fn held(who: u64, reason: HoldReason) -> u64 {
-    Balances::balance_on_hold(&reason, &who)
+fn map_prefix(item: &[u8]) -> Vec<u8> {
+    [twox_128(b"Contracts"), twox_128(item)].concat()
+}
+
+fn trie_id(seed: u8) -> Vec<u8> {
+    vec![seed; TRIE_ID_LEN]
+}
+
+/// Mimics a `ContractInfoOf` entry: a `trie_id` followed by the remaining `ContractInfo` fields.
+fn put_contract_info(who: u64, seed: u8) {
+    let key = [
+        map_prefix(CONTRACT_INFO_OF),
+        Twox64Concat::hash(&who.encode()),
+    ]
+    .concat();
+    let mut value = TrieId::try_from(trie_id(seed)).unwrap().encode();
+    value.extend(core::iter::repeat(0xAB).take(96));
+    unhashed::put_raw(&key, &value);
+}
+
+/// Mimics a `DeletionQueue` entry, i.e. the trie of an already terminated contract.
+fn put_deletion_queue(nonce: u32, seed: u8) {
+    let key = [
+        map_prefix(DELETION_QUEUE),
+        Twox64Concat::hash(&nonce.encode()),
+    ]
+    .concat();
+    unhashed::put_raw(&key, &TrieId::try_from(trie_id(seed)).unwrap().encode());
+}
+
+/// Writes an arbitrary key under the pallet prefix, e.g. a `PristineCode` blob.
+fn put_plain_entry(item: &[u8], nonce: u32, value_len: usize) {
+    let key = [map_prefix(item), twox_128(&nonce.to_le_bytes()).to_vec()].concat();
+    unhashed::put_raw(&key, &vec![0xCD; value_len]);
+}
+
+fn populate_child_trie(seed: u8, entries: u32) {
+    for i in 0..entries {
+        sp_io::default_child_storage::set(&trie_id(seed), &i.to_le_bytes(), &[i as u8; 64]);
+    }
+}
+
+fn child_trie_is_empty(seed: u8) -> bool {
+    sp_io::default_child_storage::next_key(&trie_id(seed), &[]).is_none()
+}
+
+fn prefix_is_empty(prefix: &[u8]) -> bool {
+    sp_io::storage::next_key(prefix)
+        .filter(|key| key.starts_with(prefix))
+        .is_none()
+}
+
+/// Registers an account the way `pallet-contracts` leaves a live contract account: a provider for
+/// its existential deposit, plus the consumer reference taken at instantiation.
+fn new_contract_account(who: u64) {
+    System::inc_providers(&who);
+    System::inc_consumers(&who).expect("the account has a provider");
 }
 
 /// Onboards the multi block migrations the way a runtime upgrade does, then runs blocks until
 /// `pallet-migrations` reports it is done. Returns how many blocks that took.
-fn run_migration_to_completion() -> u64 {
+fn run_migrations_to_completion() -> u64 {
     AllPalletsWithSystem::on_runtime_upgrade();
 
-    let start = frame_system::Pallet::<Runtime>::block_number();
+    let start = System::block_number();
     let mut current = start;
     while migrations_in_progress() {
         current += 1;
         run_to_block(current);
-        assert!(current - start < 1_000, "migration did not converge");
+        assert!(current - start < 1_000, "migrations did not converge");
     }
     current - start
 }
 
-#[test]
-fn both_contracts_hold_reasons_are_swept_to_the_escrow() {
-    new_test_ext().execute_with(|| {
-        // A real account holding a code upload deposit.
-        fund_and_hold(1, 1_000, HoldReason::CodeUploadDepositReserve, 400);
-        // A keyless contract account holding a storage deposit on top of its own free balance.
-        fund_and_hold(2, 1_000, HoldReason::StorageDepositReserve, 700);
-
-        run_migration_to_completion();
-
-        assert_eq!(held(1, HoldReason::CodeUploadDepositReserve), 0);
-        assert_eq!(held(2, HoldReason::StorageDepositReserve), 0);
-        assert_eq!(Balances::balance(&ESCROW), 1_100);
-        // Only the deposits move; the free balances stay where they are.
-        assert_eq!(Balances::balance(&1), 600);
-        assert_eq!(Balances::balance(&2), 300);
-    });
+/// Drives a single migration to completion outside `pallet-migrations`, one meter per step.
+fn run_steps<M: SteppedMigration>(limit: Weight) -> u32 {
+    let mut cursor = None;
+    for step in 1..1_000 {
+        let mut meter = WeightMeter::with_limit(limit);
+        match M::step(cursor, &mut meter).expect("migration step succeeds") {
+            Some(next) => cursor = Some(next),
+            None => return step,
+        }
+    }
+    panic!("migration did not converge")
 }
 
 #[test]
-fn holds_of_other_pallets_are_left_alone() {
+fn purge_then_remove_clears_the_whole_pallet() {
     new_test_ext().execute_with(|| {
-        fund_and_hold(3, 1_000, HoldReason::Unrelated, 250);
-
-        run_migration_to_completion();
-
-        assert_eq!(held(3, HoldReason::Unrelated), 250);
-        assert_eq!(Balances::balance(&ESCROW), 0);
-    });
-}
-
-#[test]
-fn settles_every_account_across_several_blocks() {
-    new_test_ext().execute_with(|| {
-        // A budget that only affords a couple of accounts per block, so the migration has to
-        // suspend and resume - which round trips the account cursor through `pallet-migrations`.
-        // Derived from the weights rather than hardcoded, so it survives a regeneration of
-        // `weights.rs` on different hardware. `pallet-migrations` charges its own per block
-        // overhead against the same meter and raises a defensive failure if what is left cannot
-        // afford a single step, so that overhead has to be budgeted for explicitly.
-        let per_account =
-            <crate::weights::SubstrateWeight<Runtime> as crate::WeightInfo>::release_deposit();
-        let migrations_overhead = <() as pallet_migrations::WeightInfo>::progress_mbms_none()
-            .saturating_add(pallet_migrations::Pallet::<Runtime>::exec_migration_max_weight());
-        MaxServiceWeight::set(migrations_overhead.saturating_add(per_account.saturating_mul(3)));
-
-        for who in 10..40u64 {
-            fund_and_hold(who, 1_000, HoldReason::StorageDepositReserve, 100);
+        // A budget tight enough that neither migration can finish within a single block.
+        MaxServiceWeight::set(Weight::from_parts(50_000_000_000, 200_000));
+        // Two live contracts and one already terminated, each with its own child trie, plus the
+        // top level keys (code blobs, ...) the removal has to sweep afterwards.
+        new_contract_account(1);
+        new_contract_account(2);
+        put_contract_info(1, 1);
+        put_contract_info(2, 2);
+        put_deletion_queue(0, 3);
+        for seed in [1, 2, 3] {
+            populate_child_trie(seed, 200);
+        }
+        for i in 0..20 {
+            put_plain_entry(b"PristineCode", i, 8 * 1024);
         }
 
-        let blocks = run_migration_to_completion();
+        let blocks = run_migrations_to_completion();
 
         assert!(
             blocks > 1,
-            "should have needed several blocks, took {blocks}"
+            "should have spanned several blocks, took {blocks}"
         );
-        for who in 10..40u64 {
-            assert_eq!(
-                held(who, HoldReason::StorageDepositReserve),
-                0,
-                "account {who}"
+        for seed in [1, 2, 3] {
+            assert!(
+                child_trie_is_empty(seed),
+                "child trie {seed} still populated"
             );
         }
-        assert_eq!(Balances::balance(&ESCROW), 30 * 100);
+        assert!(prefix_is_empty(&pallet_prefix()));
     });
 }
 
 #[test]
-fn is_a_no_op_when_there_are_no_holds() {
+fn live_contract_accounts_get_their_consumer_ref_back() {
+    // `pallet-contracts` takes a consumer ref at instantiation and only returns it on
+    // `seal_terminate`. `ContractInfoOf` is the last record of which accounts are contracts, so
+    // dropping the pallet without this would leave every one of them unreapable forever.
     new_test_ext().execute_with(|| {
-        run_migration_to_completion();
+        new_contract_account(1);
+        put_contract_info(1, 1);
+        populate_child_trie(1, 10);
+        assert_eq!(System::consumers(&1), 1);
 
-        assert_eq!(Balances::balance(&ESCROW), 0);
+        run_migrations_to_completion();
+
+        assert_eq!(System::consumers(&1), 0);
+        // Only the reference `pallet-contracts` owned is handed back; the account survives.
+        assert_eq!(System::providers(&1), 1);
+    });
+}
+
+#[test]
+fn only_the_contracts_own_consumer_ref_is_handed_back() {
+    new_test_ext().execute_with(|| {
+        new_contract_account(1);
+        // Some other pallet also holds a reference on the same account.
+        System::inc_consumers(&1).expect("the account has a provider");
+        put_contract_info(1, 1);
+
+        run_migrations_to_completion();
+
+        assert_eq!(System::consumers(&1), 1);
+    });
+}
+
+#[test]
+fn terminated_contracts_keep_their_consumer_count() {
+    // `DeletionQueue` entries belong to contracts that already ran `seal_terminate`, which gave
+    // the reference back. Decrementing again would underflow someone else's.
+    new_test_ext().execute_with(|| {
+        new_contract_account(1);
+        put_deletion_queue(0, 3);
+        populate_child_trie(3, 10);
+
+        run_migrations_to_completion();
+
+        assert!(child_trie_is_empty(3));
+        assert_eq!(System::consumers(&1), 1);
+    });
+}
+
+#[test]
+fn purge_drops_entries_without_a_usable_trie_id() {
+    // A 16 byte blob decodes fine as a `BoundedVec<u8, 128>` and a 400 byte one does not decode at
+    // all: both are the signature of a wrong field offset, and neither addresses a child trie.
+    new_test_ext().execute_with(|| {
+        for (nonce, garbage) in [(0u32, vec![0x11u8; 16]), (1, vec![0xFFu8; 400])] {
+            let key = [
+                map_prefix(CONTRACT_INFO_OF),
+                Twox64Concat::hash(&nonce.encode()),
+            ]
+            .concat();
+            unhashed::put_raw(&key, &garbage.encode());
+        }
+
+        run_migrations_to_completion();
+
+        assert!(prefix_is_empty(&map_prefix(CONTRACT_INFO_OF)));
+    });
+}
+
+#[test]
+fn removing_the_pallet_first_would_orphan_the_child_trie() {
+    // Documents *why* the ordering in the runtimes matters: the `trie_id` only lives inside the
+    // pallet prefix, so wiping it first makes the child trie unreachable for good.
+    new_test_ext().execute_with(|| {
+        put_contract_info(1, 1);
+        populate_child_trie(1, 10);
+
+        run_steps::<Remove>(MaxServiceWeight::get());
+
+        assert!(prefix_is_empty(&pallet_prefix()));
+        assert!(
+            !child_trie_is_empty(1),
+            "orphaned child trie - exactly what PurgeContractsChildTries prevents"
+        );
+    });
+}
+
+#[test]
+fn a_step_that_can_afford_nothing_reports_insufficient_weight() {
+    new_test_ext().execute_with(|| {
+        put_contract_info(1, 1);
+        put_plain_entry(b"PristineCode", 0, 1024);
+
+        let tiny = Weight::from_parts(1, 1);
+        for outcome in [
+            Purge::step(None, &mut WeightMeter::with_limit(tiny)),
+            Remove::step(None, &mut WeightMeter::with_limit(tiny)).map(|cursor| cursor.map(|_| ())),
+        ] {
+            assert!(matches!(
+                outcome,
+                Err(SteppedMigrationError::InsufficientWeight { .. })
+            ));
+        }
+
+        // `Err` rolls the step back, so nothing may have been removed.
+        assert!(!prefix_is_empty(&pallet_prefix()));
+    });
+}
+
+#[test]
+fn is_a_no_op_on_empty_storage() {
+    new_test_ext().execute_with(|| {
+        assert_eq!(run_migrations_to_completion(), 1);
         assert!(!migrations_in_progress());
     });
 }
 
+/// The migrations address storage by name rather than through pallet types, so a typo would
+/// silently make them no-ops. These values were read off Astar and Shiden mainnet state, where
+/// the pallet prefix resolves to 781 and 1244 live keys respectively.
+#[test]
+fn storage_prefixes_match_mainnet() {
+    let hex = |bytes: &[u8]| {
+        bytes.iter().fold(String::from("0x"), |mut acc, b| {
+            acc.push_str(&format!("{b:02x}"));
+            acc
+        })
+    };
+
+    assert_eq!(
+        hex(&pallet_prefix()),
+        "0x4342193e496fab7ec59d615ed0dc5530",
+        "Contracts"
+    );
+    assert_eq!(
+        hex(&map_prefix(CONTRACT_INFO_OF)),
+        "0x4342193e496fab7ec59d615ed0dc5530060e99e5378e562537cf3bc983e17b91",
+        "Contracts::ContractInfoOf"
+    );
+    assert_eq!(
+        hex(&map_prefix(DELETION_QUEUE)),
+        "0x4342193e496fab7ec59d615ed0dc553029162111ad19ef145155ee552aef2d11",
+        "Contracts::DeletionQueue"
+    );
+    assert_eq!(
+        hex(&twox_128(b"RandomnessCollectiveFlip")),
+        "0xbd2a529379475088d3e29a918cd47872",
+        "RandomnessCollectiveFlip"
+    );
+}
+
 #[cfg(feature = "try-runtime")]
 #[test]
-fn post_upgrade_catches_a_surviving_hold() {
-    use crate::{
-        mock::{CodeDeposit, EscrowAccount, StorageDeposit},
-        ReleaseContractsDeposits,
-    };
-    use frame_support::migrations::SteppedMigration;
-
-    type Release = ReleaseContractsDeposits<
-        Runtime,
-        CodeDeposit,
-        StorageDeposit,
-        EscrowAccount,
-        crate::weights::SubstrateWeight<Runtime>,
-    >;
-
+fn post_upgrade_catches_an_orphaned_child_trie() {
     new_test_ext().execute_with(|| {
-        fund_and_hold(1, 1_000, HoldReason::StorageDepositReserve, 400);
-        assert!(Release::post_upgrade(Vec::new()).is_err());
+        put_contract_info(1, 1);
+        populate_child_trie(1, 10);
 
-        run_migration_to_completion();
-        assert!(Release::post_upgrade(Vec::new()).is_ok());
+        let state = Purge::pre_upgrade().expect("snapshot succeeds");
+        // Simulates the failure mode: the pointers are gone but the trie was never emptied.
+        run_steps::<Remove>(MaxServiceWeight::get());
+
+        assert!(Purge::post_upgrade(state).is_err());
     });
 }

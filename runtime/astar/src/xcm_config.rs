@@ -29,7 +29,6 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::EnsureRoot;
-use sp_runtime::traits::{Convert, MaybeEquivalence};
 
 // Polkadot imports
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
@@ -155,7 +154,6 @@ impl Contains<Location> for ParentOrParentsPlurality {
 pub struct SafeCallFilter;
 impl SafeCallFilter {
     // 1. RuntimeCall::EVM(..) & RuntimeCall::Ethereum(..) have to be prohibited since we cannot measure PoV size properly
-    // 2. RuntimeCall::Contracts(..) can be allowed, but it hasn't been tested properly yet.
 
     /// Checks whether the base (non-composite) call is allowed to be executed via `Transact` XCM instruction.
     pub fn allow_base_call(call: &RuntimeCall) -> bool {

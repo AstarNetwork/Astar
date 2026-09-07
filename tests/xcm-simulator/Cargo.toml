@@ -22,8 +22,6 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-assets = { workspace = true }
 pallet-balances = { workspace = true }
-pallet-contracts = { workspace = true }
-pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-utility = { workspace = true }
@@ -35,7 +33,6 @@ sp-tracing = { workspace = true }
 
 # Custom Astar inclusions
 astar-primitives = { workspace = true }
-astar-test-utils = { workspace = true }
 pallet-dapp-staking = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 
@@ -70,8 +67,6 @@ std = [
 	"frame-system/std",
 	"pallet-balances/std",
 	"pallet-timestamp/std",
-	"pallet-contracts/std",
-	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-xcm/std",
 	"cumulus-pallet-xcm/std",
 	"pallet-assets/std",
@@ -87,7 +82,6 @@ runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
-	"pallet-contracts/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",

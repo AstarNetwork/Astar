@@ -29,7 +29,6 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::EnsureRoot;
-use sp_runtime::traits::{Convert, MaybeEquivalence};
 
 // Polkadot imports
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
@@ -162,7 +161,6 @@ impl SafeCallFilter {
     pub fn allow_base_call(call: &RuntimeCall) -> bool {
         match call {
             RuntimeCall::System(..)
-            | RuntimeCall::Contracts(..)
             | RuntimeCall::Identity(..)
             | RuntimeCall::Balances(..)
             | RuntimeCall::Vesting(..)

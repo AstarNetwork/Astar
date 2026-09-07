@@ -21,10 +21,16 @@
 //! Multi block migrations decommissioning `pallet-contracts` (ink!/Wasm smart contracts) from the
 //! Astar, Shiden & Shibuya runtimes. Staged over two runtime upgrades:
 //!
-//! 1. [`ReleaseContractsDeposits`] - settles every balance the pallet still holds. Must complete
-//!    before the pallet index is dropped, otherwise those holds become undecodable and the funds
-//!    are frozen for good.
-//! 2. *(next runtime)* purging the contract child tries and the pallet prefix.
+//! 1. *(shipped)* `ReleaseContractsDeposits` - settled every balance the pallet still held. It had
+//!    to complete before the pallet index was dropped, otherwise those holds would have become
+//!    undecodable and the funds frozen for good. Removed here, along with the pallet: without the
+//!    `RuntimeHoldReason::Contracts` variant there is nothing left for it to match on.
+//! 2. [`PurgeContractsChildTries`] then [`RemovePalletStepped`] - purge the contract child tries
+//!    and the leftover pallet prefixes, in that order.
+//!
+//! Both are size aware: every value is measured before it is deleted and charged through
+//! benchmarked, size dependent weights, so a run of large values (`Contracts::PristineCode` blobs,
+//! up to 123 KiB each) cannot produce a PoV oversized block.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -35,8 +41,11 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-mod release;
-pub use release::ReleaseContractsDeposits;
+mod purge;
+pub use purge::{
+    MaxKeyLen, PurgeContractsChildTries, RemovePalletStepped, TrieId, CONTRACT_INFO_OF,
+    DELETION_QUEUE, MAX_KEYS_PER_STEP, TRIE_ID_LEN,
+};
 
 pub mod weights;
 pub use weights::WeightInfo;
@@ -47,8 +56,6 @@ pub(crate) const LOG_TARGET: &str = "mbm::contracts";
 
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::traits::Get;
-
     /// Carries no storage and no calls. It exists only so that the migrations in this crate can
     /// be benchmarked through the standard `benchmark pallet` tooling, and is therefore added to
     /// the runtimes under `runtime-benchmarks` only.
@@ -57,8 +64,5 @@ pub mod pallet {
     pub struct Pallet<T>(_);
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_balances::Config {
-        /// Hold reason the `release_deposit` benchmark places on its sample account.
-        type BenchmarkHoldReason: Get<<Self as pallet_balances::Config>::RuntimeHoldReason>;
-    }
+    pub trait Config: frame_system::Config {}
 }

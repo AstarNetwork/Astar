@@ -251,10 +251,9 @@ fn unstake_is_ok() {
 
         // Register a dApp for staking
         let staker_h160 = ALICE;
-        let smart_contract_address = [0xAF; 32];
-        let smart_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
-            smart_contract_address.into(),
-        );
+        let smart_contract_address = H160::repeat_byte(0xAF);
+        let smart_contract =
+            <Test as pallet_dapp_staking::Config>::SmartContract::evm(smart_contract_address);
         assert_ok!(DappStaking::register(
             RawOrigin::Root.into(),
             AddressMapper::into_account_id(staker_h160),
@@ -274,8 +273,8 @@ fn unstake_is_ok() {
         ));
 
         let smart_contract_v2 = SmartContractV2 {
-            contract_type: SmartContractTypes::Wasm,
-            address: smart_contract_address.into(),
+            contract_type: SmartContractTypes::Evm,
+            address: smart_contract_address.as_bytes().into(),
         };
 
         // Unstake some amount and verify event
@@ -312,14 +311,12 @@ fn move_is_ok() {
 
         // Register a dApp for staking
         let staker_h160 = ALICE;
-        let source_contract_address = [0xAF; 32];
-        let source_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
-            source_contract_address.into(),
-        );
-        let destination_contract_address = [0xB0; 32];
-        let destination_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
-            destination_contract_address.into(),
-        );
+        let source_contract_address = H160::repeat_byte(0xAF);
+        let source_contract =
+            <Test as pallet_dapp_staking::Config>::SmartContract::evm(source_contract_address);
+        let destination_contract_address = H160::repeat_byte(0xB0);
+        let destination_contract =
+            <Test as pallet_dapp_staking::Config>::SmartContract::evm(destination_contract_address);
         assert_ok!(DappStaking::register(
             RawOrigin::Root.into(),
             AddressMapper::into_account_id(staker_h160),
@@ -344,12 +341,12 @@ fn move_is_ok() {
         ));
 
         let source_contract_v2 = SmartContractV2 {
-            contract_type: SmartContractTypes::Wasm,
-            address: source_contract_address.into(),
+            contract_type: SmartContractTypes::Evm,
+            address: source_contract_address.as_bytes().into(),
         };
         let destination_contract_v2 = SmartContractV2 {
-            contract_type: SmartContractTypes::Wasm,
-            address: destination_contract_address.into(),
+            contract_type: SmartContractTypes::Evm,
+            address: destination_contract_address.as_bytes().into(),
         };
 
         // Move some amount from source contract to destination contract and verify event
@@ -388,10 +385,9 @@ fn claim_staker_rewards_is_ok() {
 
         // Register a dApp and stake on it
         let staker_h160 = ALICE;
-        let smart_contract_address = [0xAF; 32];
-        let smart_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
-            smart_contract_address.into(),
-        );
+        let smart_contract_address = H160::repeat_byte(0xAF);
+        let smart_contract =
+            <Test as pallet_dapp_staking::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1234;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
 
@@ -430,10 +426,9 @@ fn claim_bonus_reward_is_ok() {
 
         // Register a dApp and stake on it, loyally
         let staker_h160 = ALICE;
-        let smart_contract_address = [0xAF; 32];
-        let smart_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
-            smart_contract_address.into(),
-        );
+        let smart_contract_address = H160::repeat_byte(0xAF);
+        let smart_contract =
+            <Test as pallet_dapp_staking::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1234;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
 
@@ -441,8 +436,8 @@ fn claim_bonus_reward_is_ok() {
         advance_to_next_period();
 
         let smart_contract_v2 = SmartContractV2 {
-            contract_type: SmartContractTypes::Wasm,
-            address: smart_contract_address.into(),
+            contract_type: SmartContractTypes::Evm,
+            address: smart_contract_address.as_bytes().into(),
         };
 
         // Claim bonus reward and verify event
@@ -474,10 +469,9 @@ fn claim_dapp_reward_is_ok() {
 
         // Register a dApp and stake on it
         let staker_h160 = ALICE;
-        let smart_contract_address = [0xAF; 32];
-        let smart_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
-            smart_contract_address.into(),
-        );
+        let smart_contract_address = H160::repeat_byte(0xAF);
+        let smart_contract =
+            <Test as pallet_dapp_staking::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1234;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
 
@@ -485,8 +479,8 @@ fn claim_dapp_reward_is_ok() {
         advance_to_era(3);
 
         let smart_contract_v2 = SmartContractV2 {
-            contract_type: SmartContractTypes::Wasm,
-            address: smart_contract_address.into(),
+            contract_type: SmartContractTypes::Evm,
+            address: smart_contract_address.as_bytes().into(),
         };
 
         // Claim dApp reward and verify event
@@ -520,10 +514,9 @@ fn unstake_from_unregistered_is_ok() {
 
         // Register a dApp and stake on it
         let staker_h160 = ALICE;
-        let smart_contract_address = [0xAF; 32];
-        let smart_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
-            smart_contract_address.into(),
-        );
+        let smart_contract_address = H160::repeat_byte(0xAF);
+        let smart_contract =
+            <Test as pallet_dapp_staking::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1234;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
 
@@ -534,8 +527,8 @@ fn unstake_from_unregistered_is_ok() {
         ));
 
         let smart_contract_v2 = SmartContractV2 {
-            contract_type: SmartContractTypes::Wasm,
-            address: smart_contract_address.into(),
+            contract_type: SmartContractTypes::Evm,
+            address: smart_contract_address.as_bytes().into(),
         };
 
         // Unstake from the unregistered dApp and verify event
@@ -575,10 +568,9 @@ fn cleanup_expired_entries_is_ok() {
 
         // Register a dApp and stake on it
         let staker_h160 = ALICE;
-        let smart_contract_address = [0xAF; 32];
-        let smart_contract = <Test as pallet_dapp_staking::Config>::SmartContract::wasm(
-            smart_contract_address.into(),
-        );
+        let smart_contract_address = H160::repeat_byte(0xAF);
+        let smart_contract =
+            <Test as pallet_dapp_staking::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1234;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
 

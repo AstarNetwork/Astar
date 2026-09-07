@@ -75,6 +75,10 @@ pub struct SmartContractV2 {
 }
 
 /// Convenience type for smart contract type handling.
+///
+/// NOTE: the `Wasm` discriminant is part of the public Solidity ABI of the v2 interface and must
+/// keep its value even though Wasm (ink!) smart contracts have been decommissioned. Calls using
+/// it now revert, see [`SmartContractV2`] decoding below.
 #[derive(Clone, Debug, Eq, PartialEq, IntoPrimitive, TryFromPrimitive)]
 #[repr(u8)]
 pub(crate) enum SmartContractTypes {
@@ -811,15 +815,12 @@ where
                 let h160_address = H160::from_slice(smart_contract.address.as_bytes());
                 <R as pallet_dapp_staking::Config>::SmartContract::evm(h160_address)
             }
+            // Wasm (ink!) smart contracts have been decommissioned - `pallet-contracts` is gone
+            // and no Wasm dApp can be registered anymore, so reject these up front.
             SmartContractTypes::Wasm => {
-                ensure!(
-                    smart_contract.address.as_bytes().len() == 32,
-                    revert("Invalid address length for Astar WASM smart contract.")
-                );
-                let mut staker_bytes = [0_u8; 32];
-                staker_bytes[..].clone_from_slice(&smart_contract.address.as_bytes());
-
-                <R as pallet_dapp_staking::Config>::SmartContract::wasm(staker_bytes.into())
+                return Err(revert(
+                    "Wasm smart contracts are no longer supported by dApp staking.",
+                ))
             }
         };
 
