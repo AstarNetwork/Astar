@@ -59,19 +59,19 @@ pub const MAX_ASSETS_FOR_TRANSFER: u32 = 2;
 /// Bound for the `BoundedVec` arguments of the asset-list based methods.
 pub type GetMaxAssets = ConstU32<MAX_ASSETS_FOR_TRANSFER>;
 
-/// Proof size allowance for the `Transact` weight `remote_transact` sends.
-const DEFAULT_PROOF_SIZE: u64 = 1024 * 256;
+/// Proof size the `Transact` weight carries when the destination cannot speak XCM v5.
+const DEFAULT_PROOF_SIZE: u64 = 64 * 1024;
+
+/// Bound for the `Transact` call blob `remote_transact` forwards.
+pub const REMOTE_CALL_SIZE_LIMIT: u32 = 64 * 1024;
+
+/// Bound for the `remote_call` argument of `remote_transact`.
+pub type GetRemoteCallSizeLimit = ConstU32<REMOTE_CALL_SIZE_LIMIT>;
 
 /// Revert reason for `send_xcm`.
 const SEND_XCM_UNSUPPORTED: &str =
     "send_xcm is not supported: sending an arbitrary XCM requires Root. \
      Use remote_transact(uint256,bool,address,uint256,bytes,uint64) for a sibling Transact.";
-
-/// Revert reason for the two `*_with_fee` selectors.
-const SEPARATE_FEE_UNSUPPORTED: &str =
-    "a separate fee amount of the same asset is not supported: pallet-xcm merges equal asset ids. \
-     Use transfer(address,uint256,(uint8,bytes[]),(uint64,uint64)) and let the destination charge \
-     fees from the transferred asset.";
 
 /// A precompile that expose XCM related functions.
 pub struct XcmPrecompile<Runtime, C>(PhantomData<(Runtime, C)>);
@@ -96,7 +96,7 @@ where
     // ------------------------------------------------------------------------------------------
     // Asset transfers. Every selector below funnels into `do_transfer`, which dispatches
     // `pallet_xcm::transfer_assets_using_type_and_then` - the reserve is derived per asset rather
-    // than chosen by the caller, as `orml-xtokens` used to do.
+    // than chosen by the caller.
     // ------------------------------------------------------------------------------------------
 
     /// Transfer XC20 assets to an `AccountId32` beneficiary on the relay chain or a sibling.
@@ -255,7 +255,7 @@ where
         weight: WeightV2,
     ) -> EvmResult<bool> {
         let currencies: Vec<Currency> = currencies.into();
-        let assets = currencies
+        let unsorted = currencies
             .into_iter()
             .map(|currency| {
                 Ok((
@@ -267,7 +267,10 @@ where
             })
             .collect::<EvmResult<Vec<Asset>>>()?;
 
-        Self::transfer_to_combined_destination(handle, assets.into(), fee_item, destination, weight)
+        let assets: Assets = unsorted.clone().into();
+        let fee_item = Self::fee_index_after_sort(&unsorted, &assets, fee_item)?;
+
+        Self::transfer_to_combined_destination(handle, assets, fee_item, destination, weight)
     }
 
     /// As `transfer_multi_currencies`, with the assets named by their locations.
@@ -296,6 +299,48 @@ where
         Self::transfer_to_combined_destination(handle, assets, fee_item, destination, weight)
     }
 
+    /// As `transfer`, with the destination's fee named separately.
+    #[precompile::public(
+        "transfer_with_fee(address,uint256,uint256,(uint8,bytes[]),(uint64,uint64))"
+    )]
+    fn transfer_with_fee(
+        handle: &mut impl PrecompileHandle,
+        currency_address: Address,
+        amount_of_tokens: U256,
+        fee: U256,
+        destination: Location,
+        weight: WeightV2,
+    ) -> EvmResult<bool> {
+        Self::transfer(
+            handle,
+            currency_address,
+            Self::total_with_fee(amount_of_tokens, fee)?,
+            destination,
+            weight,
+        )
+    }
+
+    /// As `transfer_with_fee`, with the asset named by its location.
+    #[precompile::public(
+        "transfer_multiasset_with_fee((uint8,bytes[]),uint256,uint256,(uint8,bytes[]),(uint64,uint64))"
+    )]
+    fn transfer_multiasset_with_fee(
+        handle: &mut impl PrecompileHandle,
+        asset_location: Location,
+        amount_of_tokens: U256,
+        fee: U256,
+        destination: Location,
+        weight: WeightV2,
+    ) -> EvmResult<bool> {
+        Self::transfer_multiasset(
+            handle,
+            asset_location,
+            Self::total_with_fee(amount_of_tokens, fee)?,
+            destination,
+            weight,
+        )
+    }
+
     // ------------------------------------------------------------------------------------------
     // Remote execution.
     // ------------------------------------------------------------------------------------------
@@ -312,7 +357,7 @@ where
         is_relay: bool,
         fee_asset_addr: Address,
         fee_amount: U256,
-        remote_call: UnboundedBytes,
+        remote_call: BoundedBytes<GetRemoteCallSizeLimit>,
         transact_weight: u64,
     ) -> EvmResult<bool> {
         if is_relay {
@@ -322,6 +367,8 @@ where
         }
 
         let dest = Self::chain_part(false, para_id)?;
+        let remote_call: Vec<u8> = remote_call.into();
+        let remote_call_len = remote_call.len() as u64;
 
         let fee_asset_addr: H160 = fee_asset_addr.into();
         // Special case where zero address maps to native token by convention.
@@ -350,20 +397,28 @@ where
             Transact {
                 origin_kind: OriginKind::SovereignAccount,
                 fallback_max_weight: Some(Weight::from_parts(transact_weight, DEFAULT_PROOF_SIZE)),
-                call: Vec::<u8>::from(remote_call).into(),
+                call: remote_call.into(),
             },
         ]);
 
         // The interior `pallet_xcm::send` derived for a signed origin: `SignedToAccountId32` with
-        // the network this chain lives in, which `UniversalLocation` already carries.
+        // the network this chain lives in, which `UniversalLocation` already carries. Refuse to
+        // guess it - `network: None` is a different location to the destination, so it would
+        // silently move every caller's derived sovereign account there.
+        let network = context.global_consensus().map_err(|_| {
+            revert(
+                "UniversalLocation carries no global consensus: cannot derive the caller's origin",
+            )
+        })?;
         let interior = Junction::AccountId32 {
-            network: context.global_consensus().ok(),
+            network: Some(network),
             id: Runtime::AddressMapping::into_account_id(handle.context().caller).into(),
         };
 
         log::trace!(target: "xcm-precompile:remote_transact", "dest: {:?}, interior: {:?}, message: {:?}", dest, interior, message);
 
-        let weight = <Runtime as pallet_xcm::Config>::WeightInfo::send();
+        let weight = <Runtime as pallet_xcm::Config>::WeightInfo::send()
+            .saturating_add(Weight::from_parts(0, remote_call_len));
         RuntimeHelper::<Runtime>::record_external_cost(handle, weight, 0)?;
         handle.record_cost(
             <Runtime as pallet_evm::Config>::GasWeightMapping::weight_to_gas(weight),
@@ -391,50 +446,6 @@ where
     ) -> EvmResult<bool> {
         let _ = (handle, dest, xcm_call);
         Err(revert(SEND_XCM_UNSUPPORTED))
-    }
-
-    #[precompile::public(
-        "transfer_with_fee(address,uint256,uint256,(uint8,bytes[]),(uint64,uint64))"
-    )]
-    fn transfer_with_fee(
-        handle: &mut impl PrecompileHandle,
-        currency_address: Address,
-        amount_of_tokens: U256,
-        fee: U256,
-        destination: Location,
-        weight: WeightV2,
-    ) -> EvmResult<bool> {
-        let _ = (
-            handle,
-            currency_address,
-            amount_of_tokens,
-            fee,
-            destination,
-            weight,
-        );
-        Err(revert(SEPARATE_FEE_UNSUPPORTED))
-    }
-
-    #[precompile::public(
-        "transfer_multiasset_with_fee((uint8,bytes[]),uint256,uint256,(uint8,bytes[]),(uint64,uint64))"
-    )]
-    fn transfer_multiasset_with_fee(
-        handle: &mut impl PrecompileHandle,
-        asset_location: Location,
-        amount_of_tokens: U256,
-        fee: U256,
-        destination: Location,
-        weight: WeightV2,
-    ) -> EvmResult<bool> {
-        let _ = (
-            handle,
-            asset_location,
-            amount_of_tokens,
-            fee,
-            destination,
-            weight,
-        );
-        Err(revert(SEPARATE_FEE_UNSUPPORTED))
     }
 
     // ------------------------------------------------------------------------------------------
@@ -509,13 +520,21 @@ where
                 "error splitting destination into chain and beneficiary",
             ))?;
 
-        let weight_limit = if weight.is_zero() {
-            WeightLimit::Unlimited
-        } else {
-            WeightLimit::Limited(weight.get_weight())
-        };
+        // Without one the destination deposits to itself and the assets are trapped there.
+        if beneficiary == Location::here() {
+            return Err(revert(
+                "destination carries no beneficiary: append the recipient junction to it",
+            ));
+        }
 
-        Self::do_transfer(handle, assets, fee_index, dest, beneficiary, weight_limit)
+        Self::do_transfer(
+            handle,
+            assets,
+            fee_index,
+            dest,
+            beneficiary,
+            Self::weight_limit(&weight)?,
+        )
     }
 
     /// Resolve the reserves and hand the transfer to pallet-xcm.
@@ -603,9 +622,61 @@ where
     }
 
     fn amount(amount: U256) -> EvmResult<u128> {
-        amount
+        let amount: u128 = amount
             .try_into()
-            .map_err(|_| revert("error converting amount, maybe value too large"))
+            .map_err(|_| revert("error converting amount, maybe value too large"))?;
+
+        if amount == 0 {
+            return Err(revert("amount must be greater than zero"));
+        }
+
+        Ok(amount)
+    }
+
+    fn total_with_fee(amount_of_tokens: U256, fee: U256) -> EvmResult<U256> {
+        amount_of_tokens
+            .checked_add(fee)
+            .ok_or(revert("error adding fee to amount, maybe value too large"))
+    }
+
+    /// The `WeightLimit` a caller's `(ref_time, proof_size)` pair asks for.
+    ///
+    /// `(0, 0)` is the documented spelling of `Unlimited`. Neither mixed form is reinterpreted:
+    /// `(0, n)` would silently drop the caller's proof-size limit, and `(n, 0)` is weighed as
+    /// overweight by every destination, which strands the assets there instead of here.
+    fn weight_limit(weight: &WeightV2) -> EvmResult<WeightLimit> {
+        match (weight.ref_time, weight.proof_size) {
+            (0, 0) => Ok(WeightLimit::Unlimited),
+            (0, _) => Err(revert(
+                "weight.ref_time is zero but weight.proof_size is not: pass (0, 0) for an \
+                 unlimited weight limit",
+            )),
+            (_, 0) => Err(revert(
+                "weight.proof_size is zero: every destination weighs a message with a non-zero \
+                 proof size, so the transfer would be rejected there as overweight",
+            )),
+            (ref_time, proof_size) => Ok(WeightLimit::Limited(Weight::from_parts(
+                ref_time, proof_size,
+            ))),
+        }
+    }
+
+    /// `fee_item` indexes the list in the order the caller wrote it, but `Assets` sorts and merges
+    /// what it is built from. Map the caller's index onto the sorted list rather than letting it
+    /// slide onto a neighbouring asset.
+    fn fee_index_after_sort(unsorted: &[Asset], sorted: &Assets, fee_item: u32) -> EvmResult<u32> {
+        let fee_asset_id = unsorted
+            .get(fee_item as usize)
+            .ok_or(revert("fee_index is out of bounds of the assets list"))?
+            .id
+            .clone();
+
+        sorted
+            .inner()
+            .iter()
+            .position(|asset| asset.id == fee_asset_id)
+            .map(|index| index as u32)
+            .ok_or(revert("fee_index is out of bounds of the assets list"))
     }
 
     /// `AccountId32` beneficiary, as the `bytes32` overloads take it.
@@ -723,10 +794,6 @@ impl WeightV2 {
 
     pub fn get_weight(&self) -> Weight {
         Weight::from_parts(self.ref_time, self.proof_size)
-    }
-
-    pub fn is_zero(&self) -> bool {
-        self.ref_time == 0u64
     }
 }
 

@@ -23,6 +23,7 @@ use astar_primitives::xcm::ASSET_HUB_PARA_ID;
 use parity_scale_codec::Encode;
 use precompile_utils::testing::*;
 use sp_core::{H160, H256};
+use sp_runtime::traits::TryConvert;
 
 fn precompiles() -> TestPrecompileSet<Runtime> {
     PrecompilesValue::get()
@@ -330,6 +331,19 @@ mod transfer {
         WeightV2::from(3_000_000_000u64, 1024)
     }
 
+    fn destination() -> Location {
+        Location::new(
+            1,
+            [
+                Parachain(10),
+                AccountId32 {
+                    network: None,
+                    id: [1u8; 32],
+                },
+            ],
+        )
+    }
+
     #[test]
     fn sibling_parachain_asset_works() {
         ExtBuilder.build().execute_with(|| {
@@ -522,6 +536,126 @@ mod transfer {
                 .execute_reverts(|output| {
                     output == b"error splitting destination into chain and beneficiary"
                 });
+        });
+    }
+
+    /// A chain and nothing else. The destination would deposit to itself and trap the assets.
+    #[test]
+    fn destination_without_beneficiary_reverts() {
+        ExtBuilder.build().execute_with(|| {
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    PrecompileCall::transfer {
+                        currency_address: Address::from(NATIVE_ADDRESS),
+                        amount_of_tokens: 42000u64.into(),
+                        destination: Location::new(1, [Parachain(10)]),
+                        weight: weight(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_reverts(|output| {
+                    String::from_utf8_lossy(output).contains("destination carries no beneficiary")
+                });
+
+            assert!(take_sent_xcm().is_empty());
+        });
+    }
+
+    /// Nothing moves, yet the message is still built, sent and paid for on both sides.
+    #[test]
+    fn zero_amount_reverts() {
+        ExtBuilder.build().execute_with(|| {
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    PrecompileCall::transfer {
+                        currency_address: Address::from(NATIVE_ADDRESS),
+                        amount_of_tokens: 0u64.into(),
+                        destination: destination(),
+                        weight: weight(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_reverts(|output| {
+                    String::from_utf8_lossy(output).contains("amount must be greater than zero")
+                });
+
+            assert!(take_sent_xcm().is_empty());
+        });
+    }
+
+    /// `(0, 0)` is the documented spelling of `Unlimited`. Neither mixed form is reinterpreted:
+    /// one would drop the caller's proof-size limit, the other is overweight on every destination.
+    #[test]
+    fn mixed_zero_weight_reverts() {
+        ExtBuilder.build().execute_with(|| {
+            for (weight, reason) in [
+                (WeightV2::from(0u64, 1024u64), "weight.ref_time is zero"),
+                (
+                    WeightV2::from(3_000_000_000u64, 0u64),
+                    "weight.proof_size is zero",
+                ),
+            ] {
+                let reason = reason.to_string();
+                precompiles()
+                    .prepare_test(
+                        TestAccount::Alice,
+                        PRECOMPILE_ADDRESS,
+                        PrecompileCall::transfer {
+                            currency_address: Address::from(NATIVE_ADDRESS),
+                            amount_of_tokens: 42000u64.into(),
+                            destination: destination(),
+                            weight,
+                        },
+                    )
+                    .expect_no_logs()
+                    .execute_reverts(move |output| {
+                        String::from_utf8_lossy(output).contains(&reason)
+                    });
+            }
+
+            assert!(take_sent_xcm().is_empty());
+        });
+    }
+
+    /// `transfer_with_fee` folds the fee back into the amount
+    #[test]
+    fn with_fee_matches_a_transfer_of_the_total() {
+        ExtBuilder.build().execute_with(|| {
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    PrecompileCall::transfer {
+                        currency_address: Address::from(Runtime::asset_id_to_address(2u128)),
+                        amount_of_tokens: 42050u64.into(),
+                        destination: destination(),
+                        weight: weight(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_returns(true);
+            let folded = only_sent_xcm();
+
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    PrecompileCall::transfer_with_fee {
+                        currency_address: Address::from(Runtime::asset_id_to_address(2u128)),
+                        amount_of_tokens: 42000u64.into(),
+                        fee: 50u64.into(),
+                        destination: destination(),
+                        weight: weight(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_returns(true);
+
+            assert_eq!(folded, only_sent_xcm());
         });
     }
 }
@@ -855,6 +989,55 @@ mod multi_asset_selectors {
         });
     }
 
+    /// `Assets` sorts what it is built from, so `fee_item` has to be mapped onto the sorted list
+    /// rather than applied to it. Naming the same currency as the fee must mean the same thing either way round.
+    #[test]
+    fn fee_item_follows_the_callers_order() {
+        ExtBuilder.build().execute_with(|| {
+            // Asset 3 lives one junction deeper than asset 2, so it always sorts second.
+            let currency = |id: u128| -> Currency {
+                (
+                    Address::from(Runtime::asset_id_to_address(id)),
+                    U256::from(42000u64),
+                )
+                    .into()
+            };
+            let call = |currencies: Vec<Currency>, fee_item: u32| {
+                PrecompileCall::transfer_multi_currencies {
+                    currencies: currencies.into(),
+                    fee_item,
+                    destination: destination(),
+                    weight: weight(),
+                }
+            };
+
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    call(vec![currency(3), currency(2)], 0),
+                )
+                .expect_no_logs()
+                .execute_returns(true);
+            let named_first = only_sent_xcm();
+
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    call(vec![currency(2), currency(3)], 1),
+                )
+                .expect_no_logs()
+                .execute_returns(true);
+
+            assert_eq!(
+                named_first,
+                only_sent_xcm(),
+                "asset 3 pays the destination's fees in both, so both must build the same message"
+            );
+        });
+    }
+
     /// The list is still capped at `MAX_ASSETS_FOR_TRANSFER`
     #[test]
     fn cannot_insert_more_than_max() {
@@ -938,16 +1121,16 @@ mod remote_transact {
             let (dest, message) = only_sent_xcm();
             assert_eq!(dest, Location::new(1, [Parachain(10)]));
 
+            let expected =
+                <LocalOriginToLocation as TryConvert<RuntimeOrigin, Location>>::try_convert(
+                    RuntimeOrigin::signed(TestAccount::Alice),
+                )
+                .expect("a signed origin converts");
+
             assert_eq!(
                 message.0.first(),
-                Some(&DescendOrigin(
-                    AccountId32 {
-                        network: Some(NetworkId::Polkadot),
-                        id: [0xAA; 32],
-                    }
-                    .into()
-                )),
-                "the message must open with the caller's `AccountId32`, network included"
+                Some(&DescendOrigin(expected.interior)),
+                "the message must open with the origin `pallet_xcm::send` would have descended"
             );
             assert!(matches!(message.0.get(1), Some(WithdrawAsset(_))));
             assert!(matches!(message.0.get(2), Some(BuyExecution { .. })));
@@ -998,16 +1181,55 @@ mod remote_transact {
             );
         });
     }
+
+    /// The blob is capped here, inside the limit the transport enforces: the outbound page it
+    /// lands in is read and written whole, for a weight benchmarked on a fixed-size message.
+    #[test]
+    fn oversized_call_reverts() {
+        ExtBuilder.build().execute_with(|| {
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    PrecompileCall::remote_transact_v1 {
+                        para_id: 10u64.into(),
+                        is_relay: false,
+                        fee_asset_addr: Address::from(Runtime::asset_id_to_address(2u128)),
+                        fee_amount: 367.into(),
+                        remote_call: vec![0x11u8; REMOTE_CALL_SIZE_LIMIT as usize + 1].into(),
+                        transact_weight: TRANSACT_WEIGHT,
+                    },
+                )
+                .expect_no_logs()
+                .execute_reverts(|output| {
+                    let error = String::from_utf8_lossy(output);
+                    error.contains("remoteCall") && error.contains("Value is too large for length")
+                });
+
+            assert!(take_sent_xcm().is_empty());
+        });
+    }
+
+    /// The XCMP router opens no channel on demand, so an unreachable sibling fails closed.
+    #[test]
+    fn unopened_channel_reverts() {
+        ExtBuilder.build().execute_with(|| {
+            close_hrmp_channel(11);
+
+            precompiles()
+                .prepare_test(TestAccount::Alice, PRECOMPILE_ADDRESS, call(false, 11))
+                .expect_no_logs()
+                .execute_reverts(|output| output == b"Failed to send xcm");
+
+            assert!(take_sent_xcm().is_empty());
+        });
+    }
 }
 
-/// The three selectors deprecated. They stay registered so the ABI is
-/// unchanged, but every one of them reverts with a reason naming the replacement.
+/// `send_xcm` stays registered so the ABI is unchanged, but an arbitrary XCM to an arbitrary
+/// destination from a signed origin is exactly what `SendXcmOrigin` was locked to `Root` to stop.
 mod unsupported {
     use super::*;
-
-    fn weight() -> WeightV2 {
-        WeightV2::from(3_000_000_000u64, 1024)
-    }
 
     fn parachain_destination() -> Location {
         Location::new(
@@ -1045,38 +1267,6 @@ mod unsupported {
                     xcm_call: message.encode().into(),
                 },
                 "send_xcm is not supported",
-            );
-        });
-    }
-
-    #[test]
-    fn transfer_with_fee_reverts() {
-        ExtBuilder.build().execute_with(|| {
-            assert_reverts(
-                PrecompileCall::transfer_with_fee {
-                    currency_address: Address::from(Runtime::asset_id_to_address(2u128)),
-                    amount_of_tokens: 42000u64.into(),
-                    fee: 50u64.into(),
-                    destination: parachain_destination(),
-                    weight: weight(),
-                },
-                "a separate fee amount of the same asset is not supported",
-            );
-        });
-    }
-
-    #[test]
-    fn transfer_multiasset_with_fee_reverts() {
-        ExtBuilder.build().execute_with(|| {
-            assert_reverts(
-                PrecompileCall::transfer_multiasset_with_fee {
-                    asset_location: Location::new(1, [Parachain(10)]),
-                    amount_of_tokens: 42000u64.into(),
-                    fee: 50u64.into(),
-                    destination: parachain_destination(),
-                    weight: weight(),
-                },
-                "a separate fee amount of the same asset is not supported",
             );
         });
     }

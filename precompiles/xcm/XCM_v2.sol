@@ -60,9 +60,7 @@ interface XCM {
     /// @param destination The Multilocation to which we want to send the tokens
     /// @param weight The weight we want to buy in the destination chain, to set the
     /// weightlimit to Unlimited, you should use the value 0 for ref_time
-    /// @custom:deprecated ALWAYS REVERTS. pallet-xcm merges equal asset ids, so a separate fee amount
-    /// of the same asset cannot be expressed. Use `transfer` and let the destination charge fees from
-    /// the transferred asset.
+    /// @dev Equivalent to `transfer` with `amount + fee`.
     function transfer_with_fee(
         address currencyAddress,
         uint256 amount,
@@ -98,8 +96,7 @@ interface XCM {
     /// @param destination The Multilocation to which we want to send the tokens
     /// @param weight The weight we want to buy in the destination chain, to set the
     /// weightlimit to Unlimited, you should use the value 0 for ref_time
-    /// @custom:deprecated ALWAYS REVERTS. pallet-xcm merges equal asset ids, so a separate fee amount
-    /// of the same asset cannot be expressed. Use `transfer_multiasset`.
+    /// @dev Equivalent to `transfer_multiasset` with `amount + fee`. See `transfer_with_fee`.
     function transfer_multiasset_with_fee(
         Multilocation memory asset,
         uint256 amount,
@@ -116,7 +113,8 @@ interface XCM {
     /// @param destination The Multilocation to which we want to send the tokens
     /// @param weight The weight we want to buy in the destination chain, to set the
     /// weightlimit to Unlimited, you should use the value 0 for ref_time
-    /// @dev `fee_item` names the asset in the list that pays for execution on the destination.
+    /// @dev `fee_item` names the asset in the list that pays for execution on the destination,
+    /// indexed in the order the currencies are passed in.
     function transfer_multi_currencies(
         Currency[] memory currencies,
         uint32 feeItem,
