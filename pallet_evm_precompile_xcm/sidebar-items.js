@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["MAX_ASSETS_FOR_TRANSFER"],"enum":["XcmPrecompileCall"],"struct":["Currency","EvmMultiAsset","WeightV2","XcmPrecompile"],"type":["GetMaxAssets"]};
+window.SIDEBAR_ITEMS = {"constant":["MAX_ASSETS_FOR_TRANSFER","REMOTE_CALL_SIZE_LIMIT"],"enum":["XcmPrecompileCall"],"struct":["Currency","EvmMultiAsset","WeightV2","XcmPrecompile"],"type":["GetMaxAssets","GetRemoteCallSizeLimit"]};
