@@ -59,8 +59,8 @@ pub const MAX_ASSETS_FOR_TRANSFER: u32 = 2;
 /// Bound for the `BoundedVec` arguments of the asset-list based methods.
 pub type GetMaxAssets = ConstU32<MAX_ASSETS_FOR_TRANSFER>;
 
-/// Proof size the `Transact` weight carries when the destination cannot speak XCM v5.
-const DEFAULT_PROOF_SIZE: u64 = 64 * 1024;
+/// Default proof_size of 256KB
+const DEFAULT_PROOF_SIZE: u64 = 1024 * 256;
 
 /// Bound for the `Transact` call blob `remote_transact` forwards.
 pub const REMOTE_CALL_SIZE_LIMIT: u32 = 64 * 1024;

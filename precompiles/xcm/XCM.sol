@@ -68,7 +68,8 @@ interface XCM {
      *
      * @dev Sibling parachains only: passing `is_relay = true` reverts. The relay-bound queue is
      * proven in full by every block, so it stays reachable by `Root` alone. `call` is capped at
-     * 64 KiB, inside the limit the XCMP transport enforces.
+     * 64 KiB, inside the limit the XCMP transport enforces. `transact_weight` sets the call's
+     * ref_time only; its proof size is fixed at 256 KiB, and XCM v5 destinations ignore both.
      */
     function remote_transact(
         uint256 parachain_id,
