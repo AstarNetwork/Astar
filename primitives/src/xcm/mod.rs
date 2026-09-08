@@ -300,9 +300,6 @@ pub fn split_location_into_chain_part_and_beneficiary(
 /// rather than the relay chain. For any destination other than Asset Hub itself the executor gives
 /// up, so we name Asset Hub as a remote reserve explicitly.
 ///
-/// This mirrors the routing that `orml-xtokens` derived from its `AbsoluteAndRelativeReserveProvider`,
-/// so EVM callers see the same behaviour after the pallet's removal.
-///
 /// Returns `None` when no reserve can be determined - the caller should reject the transfer.
 pub fn resolve_transfer_type<XcmExecutor: XcmAssetTransfers>(
     asset: &Asset,

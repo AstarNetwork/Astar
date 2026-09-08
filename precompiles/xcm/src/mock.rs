@@ -40,10 +40,11 @@ use sp_core::{ConstU32, DecodeWithMemTracking, H160};
 use sp_runtime::{traits::IdentityLookup, BuildStorage};
 use sp_std::cell::RefCell;
 
-use xcm::prelude::XcmVersion;
+use xcm::VersionedXcm;
 use xcm_builder::{
     test_utils::TransactAsset, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, FixedWeightBounds, SignedToAccountId32, TakeWeightCredit,
+    WithComputedOrigin,
 };
 use xcm_executor::XcmExecutor;
 
@@ -330,8 +331,10 @@ impl pallet_evm::Config for Runtime {
 
 parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Polkadot);
-    pub const AnyNetwork: Option<NetworkId> = None;
     pub UniversalLocation: InteriorLocation = [GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(123)].into();
+    /// Mirrors `min(HRMP max_message_size, cumulus_pallet_xcmp_queue::Config::MaxPageSize)`: the
+    /// transport refuses anything larger, and it does so after the caller has paid for it.
+    pub const MaxOutboundMessageSize: u32 = 100 * 1024;
     pub Ancestry: Location = Here.into();
     pub UnitWeightCost: u64 = 1_000;
     pub const MaxAssetsIntoHolding: u32 = 64;
@@ -344,9 +347,15 @@ parameter_types! {
 
 pub type Barrier = (
     TakeWeightCredit,
-    AllowTopLevelPaidExecutionFrom<Everything>,
     AllowKnownQueryResponses<XcmPallet>,
-    AllowSubscriptionsFrom<Everything>,
+    WithComputedOrigin<
+        (
+            AllowTopLevelPaidExecutionFrom<Everything>,
+            AllowSubscriptionsFrom<Everything>,
+        ),
+        UniversalLocation,
+        ConstU32<8>,
+    >,
 );
 
 pub struct LocalAssetTransactor;
@@ -398,11 +407,16 @@ impl xcm_executor::Config for XcmConfig {
     type XcmEventEmitter = ();
 }
 
-parameter_types! {
-    pub static AdvertisedXcmVersion: XcmVersion = 3;
+pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;
+
+thread_local! {
+    /// Sibling parachains with no open HRMP channel, for which `send_fragment` returns `NoChannel`.
+    pub static CLOSED_HRMP_CHANNELS: RefCell<Vec<u32>> = RefCell::new(Vec::new());
 }
 
-pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, AnyNetwork>;
+pub(crate) fn close_hrmp_channel(para_id: u32) {
+    CLOSED_HRMP_CHANNELS.with(|c| c.borrow_mut().push(para_id));
+}
 
 thread_local! {
     pub static SENT_XCM: RefCell<Vec<(Location, Xcm<()>)>> = RefCell::new(Vec::new());
@@ -428,10 +442,27 @@ impl SendXcm for StoringRouter {
         destination: &mut Option<Location>,
         message: &mut Option<Xcm<()>>,
     ) -> SendResult<(Location, Xcm<()>)> {
-        Ok((
-            (destination.take().unwrap(), message.take().unwrap()),
-            Assets::new().into(),
-        ))
+        let dest = destination.take().ok_or(SendError::MissingArgument)?;
+
+        match dest.unpack() {
+            (1, []) => {}
+            (1, [Parachain(para_id)]) => {
+                if CLOSED_HRMP_CHANNELS.with(|c| c.borrow().contains(para_id)) {
+                    return Err(SendError::Transport("NoChannel"));
+                }
+            }
+            _ => {
+                *destination = Some(dest);
+                return Err(SendError::NotApplicable);
+            }
+        }
+
+        let msg = message.take().ok_or(SendError::MissingArgument)?;
+        if VersionedXcm::V5(msg.clone()).encode().len() > MaxOutboundMessageSize::get() as usize {
+            return Err(SendError::ExceedsMaxMessageSize);
+        }
+
+        Ok(((dest, msg), Assets::new().into()))
     }
 
     fn deliver(pair: Self::Ticket) -> Result<XcmHash, SendError> {
@@ -443,12 +474,12 @@ impl SendXcm for StoringRouter {
 
 impl pallet_xcm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type SendXcmOrigin = xcm_builder::EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+    type SendXcmOrigin = xcm_builder::EnsureXcmOrigin<RuntimeOrigin, ()>;
     type XcmRouter = StoringRouter;
     type ExecuteXcmOrigin = xcm_builder::EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
-    type XcmExecuteFilter = Everything;
+    type XcmExecuteFilter = Nothing;
     type XcmExecutor = XcmExecutor<XcmConfig>;
-    type XcmTeleportFilter = Everything;
+    type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Everything;
     type Weigher = FixedWeightBounds<BaseXcmWeight, RuntimeCall, MaxInstructions>;
     type UniversalLocation = UniversalLocation;
@@ -456,12 +487,12 @@ impl pallet_xcm::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 
-    type AdvertisedXcmVersion = AdvertisedXcmVersion;
+    type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
     type TrustedLockers = ();
     type SovereignAccountOf = ();
     type Currency = Balances;
     type CurrencyMatcher = ();
-    type MaxLockers = frame_support::traits::ConstU32<8>;
+    type MaxLockers = ConstU32<0>;
     type MaxRemoteLockConsumers = ConstU32<0>;
     type RemoteLockConsumerIdentifier = ();
     type WeightInfo = pallet_xcm::TestWeightInfo;
