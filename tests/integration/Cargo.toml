@@ -62,7 +62,6 @@ precompile-utils = { workspace = true }
 
 astar-primitives = { workspace = true }
 astar-runtime = { workspace = true, optional = true }
-contracts-mbm = { workspace = true }
 shibuya-runtime = { workspace = true, optional = true }
 shiden-runtime = { workspace = true, optional = true }
 
@@ -79,7 +78,6 @@ std = [
 	"shibuya-runtime/std",
 	"shiden-runtime/std",
 	"astar-primitives/std",
-	"contracts-mbm/std",
 	"pallet-collective-proxy/std",
 	"ethereum?/std",
 	"fp-evm/std",
