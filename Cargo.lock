@@ -772,7 +772,6 @@ dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
  "astar-xcm-benchmarks",
- "contracts-mbm",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
@@ -1980,23 +1979,6 @@ name = "constant_time_eq"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d52eff69cd5e647efe296129160853a42795992097e8af39800e1060caeea9b"
-
-[[package]]
-name = "contracts-mbm"
-version = "1.0.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-migrations",
- "parity-scale-codec",
- "scale-info",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "sp-tracing",
-]
 
 [[package]]
 name = "convert_case"
@@ -3235,28 +3217,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef552e6f588e446098f6ba40d89ac146c8c7b64aade83c051ee00bb5d2bc18d"
 dependencies = [
  "uuid 1.19.0",
-]
-
-[[package]]
-name = "democracy-mbm"
-version = "1.0.0"
-dependencies = [
- "astar-primitives",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-balances",
- "pallet-democracy",
- "pallet-migrations",
- "pallet-preimage",
- "pallet-scheduler",
- "parity-scale-codec",
- "scale-info",
- "sp-arithmetic",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -6259,7 +6219,6 @@ version = "0.1.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
- "contracts-mbm",
  "cumulus-pallet-parachain-system",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
@@ -14979,7 +14938,6 @@ version = "25.0.0"
 dependencies = [
  "astar-primitives",
  "astar-xcm-benchmarks",
- "contracts-mbm",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
@@ -15094,7 +15052,6 @@ dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
  "astar-xcm-benchmarks",
- "contracts-mbm",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
@@ -17779,27 +17736,6 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
-
-[[package]]
-name = "vesting-mbm"
-version = "1.0.0"
-dependencies = [
- "astar-primitives",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-balances",
- "pallet-migrations",
- "pallet-vesting",
- "parity-scale-codec",
- "scale-info",
- "serde_json",
- "sp-arithmetic",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
 
 [[package]]
 name = "void"

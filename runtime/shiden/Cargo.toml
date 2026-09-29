@@ -109,7 +109,6 @@ frame-try-runtime = { workspace = true, optional = true }
 # Astar pallets
 astar-primitives = { workspace = true }
 astar-xcm-benchmarks = { workspace = true, optional = true }
-contracts-mbm = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-dapp-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
@@ -177,7 +176,6 @@ std = [
 	"pallet-evm-precompile-modexp/std",
 	"xcm-runtime-apis/std",
 	"pallet-evm-precompile-sha3fips/std",
-	"contracts-mbm/std",
 	"pallet-dapp-staking/std",
 	"dapp-staking-runtime-api/std",
 	"pallet-inflation/std",
@@ -213,7 +211,6 @@ std = [
 	"cumulus-pallet-xcmp-queue/std",
 	"cumulus-pallet-xcm/std",
 	"pallet-collator-selection/std",
-	"contracts-mbm/std",
 	"moonbeam-evm-tracer/std",
 	"moonbeam-rpc-primitives-debug/std",
 	"moonbeam-rpc-primitives-txpool/std",
@@ -244,7 +241,6 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
-	"contracts-mbm/runtime-benchmarks",
 	"pallet-dapp-staking/runtime-benchmarks",
 	"pallet-inflation/runtime-benchmarks",
 	"pallet-session/runtime-benchmarks",
@@ -258,7 +254,6 @@ runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
-	"contracts-mbm/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
@@ -298,7 +293,6 @@ try-runtime = [
 	"pallet-aura/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-membership/try-runtime",
-	"contracts-mbm/try-runtime",
 	"pallet-dapp-staking/try-runtime",
 	"pallet-inflation/try-runtime",
 	"pallet-sudo/try-runtime",
@@ -311,7 +305,6 @@ try-runtime = [
 	"pallet-assets/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-collator-selection/try-runtime",
-	"contracts-mbm/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-xcm/try-runtime",
 	"pallet-identity/try-runtime",

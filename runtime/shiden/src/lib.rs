@@ -1062,38 +1062,12 @@ impl pallet_proxy::Config for Runtime {
 
 parameter_types! {
     pub MbmServiceWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
-    /// Storage prefix of the decommissioned `pallet-contracts`.
-    pub const ContractsPalletName: &'static str = "Contracts";
-    /// Storage prefix of the decommissioned `pallet-insecure-randomness-collective-flip`.
-    pub const RandomnessPalletName: &'static str = "RandomnessCollectiveFlip";
 }
-
-/// Benchmarked weights backing the contract decommission migrations.
-type ContractsMbmWeights = contracts_mbm::weights::SubstrateWeight<Runtime>;
-
-/// Multi-block migrations executed by `pallet-migrations`.
-///
-/// Step two of decommissioning Wasm (ink!) smart contracts: `pallet-contracts` is gone, so the
-/// storage it left behind is purged over multiple blocks. The purge also hands back the consumer
-/// reference the pallet took on every live contract account - without it those accounts could
-/// never be reaped. Registered dApps pointing at Wasm contracts are expected to have been
-/// unregistered from dApp staking by governance beforehand.
-pub type MultiBlockMigrationsList = (
-    // Must come first: it needs the `trie_id`s stored under the `Contracts` prefix.
-    contracts_mbm::PurgeContractsChildTries<Runtime, ContractsPalletName, ContractsMbmWeights>,
-    contracts_mbm::RemovePalletStepped<ContractsPalletName, ContractsMbmWeights>,
-    contracts_mbm::RemovePalletStepped<RandomnessPalletName, ContractsMbmWeights>,
-);
-
-// Carries no storage and no calls, it only exists so the migrations above can be
-// benchmarked. Deliberately not part of the production runtime.
-#[cfg(feature = "runtime-benchmarks")]
-impl contracts_mbm::Config for Runtime {}
 
 impl pallet_migrations::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type Migrations = MultiBlockMigrationsList;
+    type Migrations = ();
     // Benchmarks need mocked migrations to guarantee that they succeed.
     #[cfg(feature = "runtime-benchmarks")]
     type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
@@ -1196,9 +1170,7 @@ mod runtime {
     #[runtime::pallet_index(120)]
     pub type MultiBlockMigrations = pallet_migrations;
 
-    #[runtime::pallet_index(250)]
-    #[cfg(feature = "runtime-benchmarks")]
-    pub type ContractsMBM = contracts_mbm;
+    // skip 250 - MBM pallets previously
 }
 
 /// Block type as expected by this runtime.
@@ -1248,11 +1220,7 @@ parameter_types! {
 pub type Migrations = (Unreleased, Permanent);
 
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (frame_support::migrations::RemovePallet<XTokensPalletName, RocksDbWeight>,);
-
-parameter_types! {
-    pub const XTokensPalletName: &'static str = "XTokens";
-}
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
@@ -1328,7 +1296,6 @@ mod benches {
         [pallet_dapp_staking, DappStaking]
         [pallet_inflation, Inflation]
         [pallet_migrations, MultiBlockMigrations]
-        [contracts_mbm, ContractsMBM]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PalletXcmExtrinsicsBenchmark::<Runtime>]
