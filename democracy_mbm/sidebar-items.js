@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["MigrationStep"],"mod":["pallet","versioned_migrations","weights"],"struct":["DemocracyMigrationSaveMigrationBlock","DemocracyMigrationV1ToV2","MigrationState"]};
