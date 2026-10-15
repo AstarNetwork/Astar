@@ -1976,9 +1976,9 @@ exponential-backoff@^3.1.1:
   integrity sha512-ZgEeZXj30q+I0EN+CbSSpIyPaJ5HVQD18Z1m+u1FXbAeT94mr1zw50q4q6jiiC447Nl/YTcIYSAftiGqetwXCA==
 
 fast-copy@^4.0.0:
-  version "4.0.3"
-  resolved "https://registry.yarnpkg.com/fast-copy/-/fast-copy-4.0.3.tgz#935adef81c26276dcbe8892347af307b5090206a"
-  integrity sha512-58apWr0GUiDFM8+3afrO6eYwJBn9ZAhDOzG3L+/9llab/haCARS2UIfffmOurYLwbgDRs8n0rfr6qAAPEAuAQw==
+  version "4.1.2"
+  resolved "https://registry.yarnpkg.com/fast-copy/-/fast-copy-4.1.2.tgz#9119c178a5f2aa568074cf21cd6823068fbfea15"
+  integrity sha512-DUHggaYcouhy5I1LacDJ+JDSqGlumVJP2EAi5Nwt1pWPeLpSvIjkrY+x4fsoI1/+GlTyq+DM9zdgWCFSfqNODA==
 
 fast-safe-stringify@^2.1.1:
   version "2.1.1"
