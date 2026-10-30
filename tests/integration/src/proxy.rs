@@ -230,7 +230,7 @@ fn test_set_keys_pass_for_non_transfer_proxy() {
             0
         ));
 
-        // The proxied call is dispatched as ALICE, so the proof is for ALICE.
+        // The proxied call runs as ALICE.
         let (keys, proof) = session_keys_with_proof(&ALICE, &[7u8; 32]);
         let set_keys_call = Box::new(RuntimeCall::Session(SessionCall::set_keys { keys, proof }));
 

@@ -598,7 +598,7 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Assets::Metadata` (r:1 w:0)
 	/// Proof: `Assets::Metadata` (`max_values`: None, `max_size`: Some(152), added: 2627, mode: `MaxEncodedLen`)
-	/// Not benchmarked on Astar yet: SDK reference time (#11037), proof size from Astar's `Metadata` bound.
+	/// Not benchmarked yet: SDK reference time, proof size from Astar's `Metadata` bound.
 	fn get_metadata() -> Weight {
 		// Proof Size summary in bytes:
 		//  Estimated: `3617`

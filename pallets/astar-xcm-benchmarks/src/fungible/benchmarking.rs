@@ -64,7 +64,7 @@ mod benchmarks {
             topic: None,
         };
 
-        // Deposits now consume a credit: mint the asset first, then deposit it.
+        // `deposit_asset` consumes a credit, so mint one first.
         let holdings = <AssetTransactorOf<T>>::mint_asset(&asset_to_deposit, &context).unwrap();
         <AssetTransactorOf<T>>::deposit_asset(holdings, &sender_location, Some(&context)).unwrap();
 
@@ -105,7 +105,7 @@ mod benchmarks {
             topic: None,
         };
 
-        // Deposits now consume a credit: mint the asset first, then deposit it.
+        // `deposit_asset` consumes a credit, so mint one first.
         let holdings = <AssetTransactorOf<T>>::mint_asset(&asset_to_deposit, &context).unwrap();
         <AssetTransactorOf<T>>::deposit_asset(holdings, &sender_location, Some(&context)).unwrap();
         assert!(T::TransactAsset::balance(&dest_account).is_zero());

@@ -76,7 +76,7 @@ fn execution_fee(weight: Weight, units_per_second: u128) -> u128 {
     units_per_second * (weight.ref_time() as u128) / (WEIGHT_REF_TIME_PER_SECOND as u128)
 }
 
-/// Amount of the fee asset the trader has taken so far (its revenue on drop)
+/// Amount the trader has taken so far
 fn taken<T: ExecutionPaymentRate, R: TakeRevenue>(trader: &FixedRateOfForeignAsset<T, R>) -> u128 {
     trader
         .taken
@@ -309,7 +309,7 @@ fn fixed_rate_of_foreign_asset_buy_execution_fails() {
     // sanity check, should be more for UT to make sense
     assert!(expected_execution_fee > total_payment);
 
-    // Expect failure because we lack the required funds, with the payment handed back whole
+    // Not enough funds: the payment must come back whole
     let (unspent, error) = fixed_rate_trader
         .buy_weight(weight, asset_to_holding(payment_multi_asset.clone()), &ctx)
         .unwrap_err();

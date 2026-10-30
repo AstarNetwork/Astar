@@ -245,8 +245,7 @@ impl<
     > TakeRevenue for XcmFungibleFeeHandler<AccountId, Matcher, Assets, FeeDestination>
 {
     fn take_revenue(mut revenue: AssetsInHolding) {
-        // The revenue holds credits withdrawn from the payer: resolve them into the fee
-        // destination. A credit that is not resolved is dropped, which burns it.
+        // Move the payer's credits to the fee destination; an unresolved credit is burned.
         for (id, imbalance) in core::mem::take(&mut revenue.fungible) {
             let asset = Asset {
                 id,

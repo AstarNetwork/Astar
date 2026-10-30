@@ -501,7 +501,7 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
             parachain::Assets::balance(relay_asset_id, ALICE),
             para_a_alice_expected_balance
         );
-        // The fee was moved to the treasury, not burned and re-minted: supply is what was sent.
+        // Fee goes to the treasury and supply equals the amount sent.
         assert_eq!(
             parachain::Assets::balance(relay_asset_id, parachain::TreasuryAccountId::get()),
             five_instructions_execution_cost
@@ -1231,12 +1231,7 @@ fn relay_as_reserve_is_deactivate() {
     ParaA::execute_with(|| assert_eq!(parachain::Assets::balance(relay_asset_id, ALICE), 0))
 }
 
-// Since polkadot-sdk stable2603 (#10384) the XCM holding register carries real token credits:
-// a credit that is dropped is burned. The tests below check that foreign-asset fees, trapped
-// assets and refunds move tokens without creating or destroying any (total supply unchanged).
-
-/// Registers the relay token (DOT-like) on ParaA as a fee asset priced at 1 unit per unit of
-/// ref-time weight, and gives Alice `amount` of it.
+/// Registers the relay token on ParaA as a fee asset (1 unit per ref-time unit) and funds Alice.
 fn setup_relay_asset_on_para_a(asset_id: u128, amount: u128) {
     ParaA::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
@@ -1257,7 +1252,7 @@ fn setup_relay_asset_on_para_a(asset_id: u128, amount: u128) {
     });
 }
 
-// A sibling chain's own asset (USDT-like, reserve on the sender) paying the fee on arrival.
+// Sibling chain's own asset paying the fee on arrival.
 #[test]
 fn para_to_para_local_asset_fee_goes_to_treasury() {
     MockNet::reset();
@@ -1336,8 +1331,7 @@ fn para_to_para_local_asset_fee_goes_to_treasury() {
     });
 }
 
-// Trapping withdrawn foreign assets must not burn them, and claiming them back must not
-// mint extra: total supply stays the same through both.
+// Trap and claim must leave total supply unchanged.
 #[test]
 fn foreign_asset_trap_and_claim_keeps_total_supply() {
     MockNet::reset();
@@ -1388,8 +1382,7 @@ fn foreign_asset_trap_and_claim_keeps_total_supply() {
     });
 }
 
-// `RefundSurplus` hands unused fee back from what the foreign-asset trader took; the treasury
-// only keeps the fee for the weight actually used.
+// The treasury only keeps the fee for the weight actually used.
 #[test]
 fn foreign_asset_refund_surplus_returns_unused_fee() {
     MockNet::reset();

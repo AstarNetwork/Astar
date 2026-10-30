@@ -101,8 +101,7 @@ where
             }
         }
 
-        // Expand with native asset. Holding tracks imbalances, so the benchmark uses mock
-        // credits (as pallet-xcm-benchmarks documents), not real minted assets.
+        // Expand with native asset; holding takes credits, so use mock ones.
         let mut holding = AssetsInHolding::new();
         for asset in assets.into_iter().chain(core::iter::once(Asset {
             id: AssetId(Location::here()),

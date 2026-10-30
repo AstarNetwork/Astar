@@ -332,8 +332,7 @@ pub fn expect_events(e: Vec<RuntimeEvent>) {
     assert_eq!(last_events(e.len()), e);
 }
 
-/// Session keys whose Aura key is derived from `seed` (32 bytes), with the ownership proof
-/// that `pallet_session::set_keys` requires for `owner`
+/// Session keys derived from `seed`, with a valid `set_keys` ownership proof for `owner`
 pub fn session_keys_with_proof(owner: &AccountId32, seed: &[u8]) -> (SessionKeys, Vec<u8>) {
     let mut pair = sr25519::Pair::from_seed_slice(seed).unwrap();
     let proof = pair.generate_proof_of_possession(&owner.encode()).encode();
