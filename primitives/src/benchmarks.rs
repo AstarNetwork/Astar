@@ -112,6 +112,29 @@ where
         holding
     }
 
+    /// Registers `location` as a sufficient asset with `asset_id`, unless it is already mapped.
+    pub fn register_foreign_asset(location: Location, asset_id: u128) {
+        if pallet_xc_asset_config::AssetLocationToId::<T>::contains_key(
+            location.clone().into_versioned(),
+        ) {
+            return;
+        }
+        assert_ok!(pallet_assets::Pallet::<T>::force_create(
+            RawOrigin::Root.into(),
+            asset_id.into(),
+            Address::Id([0u8; 32].into()).into(),
+            true,
+            1u128.into()
+        ));
+        assert_ok!(
+            pallet_xc_asset_config::Pallet::<T>::register_asset_location(
+                RawOrigin::Root.into(),
+                Box::new(location.into_versioned()),
+                asset_id.into(),
+            )
+        );
+    }
+
     /// Set up a *worst-case* complex asset transfer for the `pallet_xcm`
     /// `transfer_assets` benchmark, whose weight is reused verbatim by
     /// `transfer_assets_using_type_and_then`

@@ -1,4 +1,0 @@
-
-
-# chopsticks state cache (see runtime-upgrade.test.ts)
-db-*.sqlite*

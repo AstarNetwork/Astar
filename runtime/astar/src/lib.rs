@@ -2383,6 +2383,12 @@ impl_runtime_apis! {
 
             impl pallet_transaction_payment::BenchmarkConfig for Runtime {}
 
+            impl cumulus_pallet_session_benchmarking::Config for Runtime {
+                fn generate_session_keys_and_proof(owner: Self::AccountId) -> (Self::Keys, Vec<u8>) {
+                    let keys = SessionKeys::generate(&owner.encode(), None);
+                    (keys.keys, keys.proof.encode())
+                }
+            }
 
             // Needed to run `set_code` and `apply_authorized_upgrade` frame_system benchmarks
             // https://github.com/paritytech/cumulus/pull/2766
@@ -2458,6 +2464,8 @@ impl_runtime_apis! {
                 }
                 fn claimable_asset()
                     -> Result<(Location, Location, Assets), BenchmarkError> {
+                    // Claiming mints the asset, so it must be registered.
+                    XcmBenchmarkHelper::<Runtime>::register_foreign_asset(Location::parent(), 2001);
                     let origin = Location::parent();
                     let assets: Assets = (AssetId(Location::parent()), 1_000u128)
                         .into();
@@ -2493,7 +2501,15 @@ impl_runtime_apis! {
                 pub AssetHubLocation: Location = Location::new(1, [Parachain(AssetHubParaId::get())]);
                 pub TrustedReserveLocation: Location = AssetHubLocation::get();
                 pub TrustedReserveAsset: Asset = Asset { id: AssetId(TrustedReserveLocation::get()), fun: Fungible(1_000_000) };
-                pub TrustedReserve: Option<(Location, Asset)> = Some((TrustedReserveLocation::get(), TrustedReserveAsset::get()));
+            }
+
+            // `ReserveAssetDeposited` mints the asset, so it must be registered.
+            pub struct TrustedReserve;
+            impl frame_support::traits::Get<Option<(Location, Asset)>> for TrustedReserve {
+                fn get() -> Option<(Location, Asset)> {
+                    XcmBenchmarkHelper::<Runtime>::register_foreign_asset(TrustedReserveLocation::get(), 2002);
+                    Some((TrustedReserveLocation::get(), TrustedReserveAsset::get()))
+                }
             }
 
             impl pallet_xcm_benchmarks::fungible::Config for Runtime {

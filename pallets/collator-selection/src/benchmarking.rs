@@ -31,8 +31,8 @@ use frame_support::{
 };
 use frame_system::{pallet_prelude::BlockNumberFor, EventRecord, RawOrigin};
 use pallet_authorship::EventHandler;
+use cumulus_pallet_session_benchmarking as session_benchmarking;
 use pallet_session::{self as session, SessionManager};
-use parity_scale_codec::Decode;
 use sp_std::prelude::*;
 
 pub type BalanceOf<T> =
@@ -59,35 +59,22 @@ fn create_funded_user<T: Config>(
     user
 }
 
-fn keys<T: Config + session::Config>(c: u32) -> <T as session::Config>::Keys {
-    use rand::{RngCore, SeedableRng};
-
-    let keys = {
-        let mut keys = [0u8; 128];
-
-        if c > 0 {
-            let mut rng = rand::rngs::StdRng::seed_from_u64(c as u64);
-            rng.fill_bytes(&mut keys);
-        }
-
-        keys
-    };
-
-    Decode::decode(&mut &keys[..]).unwrap()
+fn validator<T: Config + session_benchmarking::Config>(
+    c: u32,
+) -> (T::AccountId, <T as session::Config>::Keys, Vec<u8>) {
+    let validator = create_funded_user::<T>("candidate", c, 1000);
+    let (keys, proof) = T::generate_session_keys_and_proof(validator.clone());
+    (validator, keys, proof)
 }
 
-fn validator<T: Config + session::Config>(c: u32) -> (T::AccountId, <T as session::Config>::Keys) {
-    (create_funded_user::<T>("candidate", c, 1000), keys::<T>(c))
-}
-
-fn register_validators<T: Config + session::Config>(count: u32) -> Vec<T::AccountId> {
+fn register_validators<T: Config + session_benchmarking::Config>(count: u32) -> Vec<T::AccountId> {
     let validators = (0..count).map(|c| validator::<T>(c)).collect::<Vec<_>>();
 
-    for (who, keys) in validators.clone() {
-        <session::Pallet<T>>::set_keys(RawOrigin::Signed(who).into(), keys, Vec::new()).unwrap();
+    for (who, keys, proof) in validators.clone() {
+        <session::Pallet<T>>::set_keys(RawOrigin::Signed(who).into(), keys, proof).unwrap();
     }
 
-    validators.into_iter().map(|(who, _)| who).collect()
+    validators.into_iter().map(|(who, _, _)| who).collect()
 }
 
 fn register_candidates<T: Config>(count: u32) {
@@ -112,7 +99,7 @@ fn register_candidates<T: Config>(count: u32) {
 }
 
 benchmarks! {
-    where_clause { where T: pallet_authorship::Config + session::Config }
+    where_clause { where T: pallet_authorship::Config + session_benchmarking::Config }
 
     set_invulnerables {
         let b in 1 .. T::MaxInvulnerables::get();
@@ -207,10 +194,11 @@ benchmarks! {
         let bond: BalanceOf<T> = <T as pallet::Config>::Currency::minimum_balance() * 2u32.into();
         <T as pallet::Config>::Currency::make_free_balance_be(&caller, bond);
 
+        let (keys, proof) = T::generate_session_keys_and_proof(caller.clone());
         <session::Pallet<T>>::set_keys(
             RawOrigin::Signed(caller.clone()).into(),
-            keys::<T>(1),
-            Vec::new()
+            keys,
+            proof
         ).unwrap();
 
     }: _(RawOrigin::Signed(caller.clone()))
@@ -226,10 +214,11 @@ benchmarks! {
         let bond: BalanceOf<T> = <T as pallet::Config>::Currency::minimum_balance() * 2u32.into();
         <T as pallet::Config>::Currency::make_free_balance_be(&caller, bond);
 
+        let (keys, proof) = T::generate_session_keys_and_proof(caller.clone());
         <session::Pallet<T>>::set_keys(
             RawOrigin::Signed(caller.clone()).into(),
-            keys::<T>(1),
-            Vec::new()
+            keys,
+            proof
         ).unwrap();
 
         <CollatorSelection<T>>::apply_for_candidacy(
@@ -257,10 +246,11 @@ benchmarks! {
         let bond: BalanceOf<T> = <T as pallet::Config>::Currency::minimum_balance() * 2u32.into();
         <T as pallet::Config>::Currency::make_free_balance_be(&caller, bond);
 
+        let (keys, proof) = T::generate_session_keys_and_proof(caller.clone());
         <session::Pallet<T>>::set_keys(
             RawOrigin::Signed(caller.clone()).into(),
-            keys::<T>(c + 1),
-            Vec::new()
+            keys,
+            proof
         ).unwrap();
 
         <CollatorSelection<T>>::apply_for_candidacy(

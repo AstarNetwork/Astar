@@ -155,6 +155,15 @@ impl pallet_session::Config for Test {
     type KeyDeposit = ();
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+impl cumulus_pallet_session_benchmarking::Config for Test {
+    fn generate_session_keys_and_proof(owner: Self::AccountId) -> (Self::Keys, Vec<u8>) {
+        use parity_scale_codec::Encode;
+        let keys = MockSessionKeys::generate(&owner.encode(), None);
+        (keys.keys, keys.proof.encode())
+    }
+}
+
 ord_parameter_types! {
     pub const RootAccount: u64 = 777;
 }
