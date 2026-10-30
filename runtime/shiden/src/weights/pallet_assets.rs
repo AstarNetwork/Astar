@@ -602,6 +602,16 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for SubstrateWeight<T> {
 			.saturating_add(Weight::from_parts(0, 3625))
 			.saturating_add(T::DbWeight::get().reads(1))
 	}
+	/// Storage: `Assets::Metadata` (r:1 w:0)
+	/// Proof: `Assets::Metadata` (`max_values`: None, `max_size`: Some(152), added: 2627, mode: `MaxEncodedLen`)
+	/// Not benchmarked on Astar yet: SDK reference time (#11037), proof size from Astar's `Metadata` bound.
+	fn get_metadata() -> Weight {
+		// Proof Size summary in bytes:
+		//  Estimated: `3617`
+		Weight::from_parts(10_699_000, 0)
+			.saturating_add(Weight::from_parts(0, 3617))
+			.saturating_add(T::DbWeight::get().reads(1))
+	}
 	/// Storage: `Assets::Asset` (r:1 w:0)
 	/// Proof: `Assets::Asset` (`max_values`: None, `max_size`: Some(222), added: 2697, mode: `MaxEncodedLen`)
 	/// Storage: `Assets::Reserves` (r:0 w:1)

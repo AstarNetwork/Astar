@@ -244,7 +244,12 @@ const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
     pub RuntimeBlockLength: BlockLength =
-        BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+        BlockLength::builder()
+        .max_length(5 * 1024 * 1024)
+        .modify_max_length_for_class(DispatchClass::Normal, |max| {
+            *max = NORMAL_DISPATCH_RATIO * (5 * 1024 * 1024)
+        })
+        .build();
     pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
         .base_block(BlockExecutionWeight::get())
         .for_class(DispatchClass::all(), |weights| {
@@ -1869,8 +1874,11 @@ impl_runtime_apis! {
     }
 
     impl sp_session::SessionKeys<Block> for Runtime {
-        fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
-            SessionKeys::generate(seed)
+        fn generate_session_keys(
+            owner: Vec<u8>,
+            seed: Option<Vec<u8>>,
+        ) -> sp_session::OpaqueGeneratedSessionKeys {
+            SessionKeys::generate(&owner, seed).into()
         }
 
         fn decode_session_keys(
@@ -1889,6 +1897,12 @@ impl_runtime_apis! {
     impl cumulus_primitives_core::RelayParentOffsetApi<Block> for Runtime {
         fn relay_parent_offset() -> u32 {
             RelayParentOffset::get()
+        }
+    }
+
+    impl cumulus_primitives_core::KeyToIncludeInRelayProof<Block> for Runtime {
+        fn keys_to_prove() -> cumulus_primitives_core::RelayProofRequest {
+            Default::default()
         }
     }
 
@@ -1932,6 +1946,7 @@ impl_runtime_apis! {
             estimate: bool,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
             authorization_list: Option<AuthorizationList>,
+            state_override: fp_evm::StateOverride,
         ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -1994,6 +2009,7 @@ impl_runtime_apis! {
                 validate,
                 weight_limit,
                 proof_size_base_cost,
+                state_override,
                 config
                     .as_ref()
                     .unwrap_or_else(|| <Runtime as pallet_evm::Config>::config()),
@@ -2303,6 +2319,8 @@ impl_runtime_apis! {
             use xcm::latest::prelude::*;
             use xcm_builder::MintLocation;
             use astar_primitives::{benchmarks::XcmBenchmarkHelper, xcm::ASSET_HUB_PARA_ID};
+            impl pallet_transaction_payment::BenchmarkConfig for Runtime {}
+
             // Needed to run `set_code` and `apply_authorized_upgrade` frame_system benchmarks
             // https://github.com/paritytech/cumulus/pull/2766
             impl frame_system_benchmarking::Config for Runtime {
@@ -2415,7 +2433,7 @@ impl_runtime_apis! {
 
                     Ok(asset_hub)
                 }
-                fn worst_case_holding(_depositable_count: u32) -> Assets {
+                fn worst_case_holding(_depositable_count: u32) -> xcm_executor::AssetsInHolding {
                    XcmBenchmarkHelper::<Runtime>::worst_case_holding()
                 }
             }
@@ -2579,9 +2597,6 @@ impl_runtime_apis! {
         > {
             use moonbeam_evm_tracer::tracer::EvmTracer;
 
-            let mut config = <Runtime as pallet_evm::Config>::config().clone();
-            config.estimate = true;
-
             // We need to follow the order when replaying the transactions.
             // Block initialize happens first then apply_extrinsic.
             Executive::initialize_block(header);
@@ -2680,6 +2695,7 @@ impl_runtime_apis! {
                     validate,
                     weight_limit,
                     proof_size_base_cost,
+                    None,
                     <Runtime as pallet_evm::Config>::config(),
                 );
             });

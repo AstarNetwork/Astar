@@ -360,7 +360,11 @@ pub type Barrier = (
 
 pub struct LocalAssetTransactor;
 impl TransactAsset for LocalAssetTransactor {
-    fn deposit_asset(_what: &Asset, _who: &Location, _context: Option<&XcmContext>) -> XcmResult {
+    fn deposit_asset(
+        _what: xcm_executor::AssetsInHolding,
+        _who: &Location,
+        _context: Option<&XcmContext>,
+    ) -> Result<(), (xcm_executor::AssetsInHolding, XcmError)> {
         Ok(())
     }
 
@@ -369,7 +373,7 @@ impl TransactAsset for LocalAssetTransactor {
         _who: &Location,
         _maybe_context: Option<&XcmContext>,
     ) -> Result<xcm_executor::AssetsInHolding, XcmError> {
-        Ok(Assets::new().into())
+        Ok(xcm_executor::AssetsInHolding::new())
     }
 }
 
@@ -389,7 +393,6 @@ impl xcm_executor::Config for XcmConfig {
     type AssetTrap = XcmPallet;
     type AssetLocker = ();
     type AssetExchanger = ();
-    type AssetClaims = XcmPallet;
     type SubscriptionService = XcmPallet;
     type PalletInstancesInfo = AllPalletsWithSystem;
     type MaxAssetsIntoHolding = MaxAssetsIntoHolding;

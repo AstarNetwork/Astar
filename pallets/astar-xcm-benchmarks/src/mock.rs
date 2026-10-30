@@ -200,7 +200,6 @@ impl xcm_executor::Config for XcmConfig {
     type AssetTrap = ();
     type AssetLocker = ();
     type AssetExchanger = ();
-    type AssetClaims = ();
     type SubscriptionService = ();
     type PalletInstancesInfo = AllPalletsWithSystem;
     type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
@@ -232,12 +231,11 @@ impl pallet_xcm_benchmarks::Config for Test {
 
         Ok(valid_destination)
     }
-    fn worst_case_holding(_depositable_count: u32) -> Assets {
-        let assets: Vec<Asset> = vec![Asset {
+    fn worst_case_holding(_depositable_count: u32) -> xcm_executor::AssetsInHolding {
+        xcm_executor::test_helpers::mock_asset_to_holding(Asset {
             id: AssetId(Location::parent()),
             fun: Fungible(u128::MAX),
-        }];
-        assets.into()
+        })
     }
 }
 

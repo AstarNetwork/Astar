@@ -666,7 +666,7 @@ fn start_aura_consensus(
     collator_peer_id: PeerId,
     additional_config: AdditionalConfig,
 ) -> Result<(), sc_service::Error> {
-    let mut proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
+    let mut proposer_factory = sc_basic_authorship::ProposerFactory::new(
         task_manager.spawn_handle(),
         client.clone(),
         transaction_pool,

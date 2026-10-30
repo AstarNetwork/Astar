@@ -149,7 +149,12 @@ const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
 
 parameter_types! {
     pub RuntimeBlockLength: BlockLength =
-        BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+        BlockLength::builder()
+        .max_length(5 * 1024 * 1024)
+        .modify_max_length_for_class(DispatchClass::Normal, |max| {
+            *max = NORMAL_DISPATCH_RATIO * (5 * 1024 * 1024)
+        })
+        .build();
     pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
         .base_block(BlockExecutionWeight::get())
         .for_class(DispatchClass::all(), |weights| {
@@ -407,7 +412,6 @@ impl xcm_executor::Config for XcmConfig {
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
-    type AssetClaims = PolkadotXcm;
     type SubscriptionService = PolkadotXcm;
 
     type PalletInstancesInfo = AllPalletsWithSystem;
