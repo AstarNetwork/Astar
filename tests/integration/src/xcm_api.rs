@@ -270,7 +270,7 @@ fn dry_run_xcm_is_ok() {
 
         assert_eq!(
             result.emitted_events[0],
-            RuntimeEvent::Balances(pallet_balances::Event::Burned {
+            RuntimeEvent::Balances(pallet_balances::Event::Withdraw {
                 who: ALICE.into(),
                 amount: transfer_amount
             }),

@@ -24,6 +24,7 @@ pub use frame_support::{
     weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use parity_scale_codec::Encode;
+use sp_core::proof_of_possession::ProofOfPossessionGenerator;
 pub use sp_core::{sr25519, Get, Pair, H160};
 pub use sp_runtime::{AccountId32, Digest, DigestItem, MultiAddress};
 
@@ -329,6 +330,19 @@ fn last_events(n: usize) -> Vec<RuntimeEvent> {
 
 pub fn expect_events(e: Vec<RuntimeEvent>) {
     assert_eq!(last_events(e.len()), e);
+}
+
+/// Session keys whose Aura key is derived from `seed` (32 bytes), with the ownership proof
+/// that `pallet_session::set_keys` requires for `owner`
+pub fn session_keys_with_proof(owner: &AccountId32, seed: &[u8]) -> (SessionKeys, Vec<u8>) {
+    let mut pair = sr25519::Pair::from_seed_slice(seed).unwrap();
+    let proof = pair.generate_proof_of_possession(&owner.encode()).encode();
+    (
+        SessionKeys {
+            aura: pair.public().into(),
+        },
+        proof,
+    )
 }
 
 /// Initialize `env_logger` for tests. It will enable logging like `DEBUG`
