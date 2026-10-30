@@ -70,7 +70,7 @@ use sp_runtime::{
         DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill,
 };
 use xcm::{
     v5::{AssetId as XcmAssetId, Location as XcmLocation},
@@ -937,7 +937,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     Encode,
     Decode,
     DecodeWithMemTracking,
-    RuntimeDebug,
+    Debug,
     MaxEncodedLen,
     scale_info::TypeInfo,
 )]

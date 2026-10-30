@@ -102,10 +102,7 @@ pub mod pallet {
         dispatch::{DispatchClass, DispatchResultWithPostInfo},
         ensure,
         pallet_prelude::*,
-        sp_runtime::{
-            traits::{AccountIdConversion, CheckedSub, Saturating, Zero},
-            RuntimeDebug,
-        },
+        sp_runtime::traits::{AccountIdConversion, CheckedSub, Saturating, Zero},
         traits::{
             Currency, EnsureOrigin, ExistenceRequirement::KeepAlive, ReservableCurrency,
             ValidatorRegistration, ValidatorSet,
@@ -203,7 +200,7 @@ pub mod pallet {
     }
 
     /// Basic information about a collation candidate.
-    #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
+    #[derive(PartialEq, Eq, Clone, Encode, Decode, Debug, scale_info::TypeInfo)]
     pub struct CandidateInfo<AccountId, Balance> {
         /// Account identifier.
         pub who: AccountId,

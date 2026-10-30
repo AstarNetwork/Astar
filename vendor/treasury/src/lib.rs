@@ -65,7 +65,7 @@ use scale_info::TypeInfo;
 
 use sp_runtime::{
     traits::{AccountIdConversion, Saturating, StaticLookup, Zero},
-    Permill, RuntimeDebug,
+    Permill,
 };
 
 use frame_support::{
@@ -118,7 +118,7 @@ pub type ProposalIndex = u32;
 
 /// A spending proposal.
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Encode, Decode, Clone, PartialEq, Eq, MaxEncodedLen, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, MaxEncodedLen, Debug, TypeInfo)]
 pub struct Proposal<AccountId, Balance> {
     /// The account proposing it.
     proposer: AccountId,
