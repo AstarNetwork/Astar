@@ -34,7 +34,10 @@
 //!
 
 use frame_support::{
-    traits::{tokens::fungibles, ContainsPair, Get},
+    traits::{
+        tokens::{fungibles, imbalance::UnsafeManualAccounting},
+        ContainsPair, Get,
+    },
     weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
 use sp_runtime::traits::{Bounded, MaybeEquivalence, Zero};
@@ -43,7 +46,10 @@ use sp_std::marker::PhantomData;
 // Polkadot imports
 use xcm::latest::{prelude::*, Weight};
 use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{MatchesFungibles, TransferType, WeightTrader, XcmAssetTransfers};
+use xcm_executor::{
+    traits::{MatchesFungibles, TransferType, WeightTrader, XcmAssetTransfers},
+    AssetsInHolding,
+};
 
 use pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 
@@ -81,8 +87,8 @@ where
 pub struct FixedRateOfForeignAsset<T: ExecutionPaymentRate, R: TakeRevenue> {
     /// Total used weight
     weight: Weight,
-    /// Total consumed assets
-    consumed: u128,
+    /// Assets taken from the payment so far, handed to `R` on drop
+    taken: AssetsInHolding,
     /// Asset Id (as Location) and units per second for payment
     asset_location_and_units_per_second: Option<(Location, u128)>,
     _pd: PhantomData<(T, R)>,
@@ -92,7 +98,7 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
     fn new() -> Self {
         Self {
             weight: Weight::zero(),
-            consumed: 0,
+            taken: AssetsInHolding::new(),
             asset_location_and_units_per_second: None,
             _pd: PhantomData,
         }
@@ -101,9 +107,9 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
     fn buy_weight(
         &mut self,
         weight: Weight,
-        payment: xcm_executor::AssetsInHolding,
+        mut payment: AssetsInHolding,
         _: &XcmContext,
-    ) -> Result<xcm_executor::AssetsInHolding, XcmError> {
+    ) -> Result<AssetsInHolding, (AssetsInHolding, XcmError)> {
         log::trace!(
             target: "xcm::weight",
             "FixedRateOfForeignAsset::buy_weight weight: {:?}, payment: {:?}",
@@ -111,85 +117,96 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
         );
 
         // Atm in pallet, we only support one asset so this should work
-        let payment_asset = payment
-            .fungible_assets_iter()
-            .next()
-            .ok_or(XcmError::TooExpensive)?;
+        let Some(Asset {
+            id: AssetId(asset_location),
+            fun: Fungibility::Fungible(_),
+        }) = payment.fungible_assets_iter().next()
+        else {
+            return Err((payment, XcmError::TooExpensive));
+        };
 
-        match payment_asset {
-            Asset {
-                id: AssetId(asset_location),
-                fun: Fungibility::Fungible(_),
-            } => {
-                if let Some(units_per_second) = T::get_units_per_second(asset_location.clone()) {
-                    let amount = units_per_second.saturating_mul(weight.ref_time() as u128) // TODO: change this to u64?
-                        / (WEIGHT_REF_TIME_PER_SECOND as u128);
-                    if amount == 0 {
-                        return Ok(payment);
-                    }
+        let Some(units_per_second) = T::get_units_per_second(asset_location.clone()) else {
+            return Err((payment, XcmError::TooExpensive));
+        };
 
-                    // This trader tracks a single fee asset.
-                    if let Some((tracked_asset_location, _)) =
-                        &self.asset_location_and_units_per_second
-                    {
-                        if *tracked_asset_location != asset_location {
-                            return Err(XcmError::NotWithdrawable);
-                        }
-                    }
+        let amount = execution_fee(weight, units_per_second);
+        if amount == 0 {
+            return Ok(payment);
+        }
 
-                    let unused = payment
-                        .checked_sub((asset_location.clone(), amount).into())
-                        .map_err(|_| XcmError::TooExpensive)?;
-
-                    self.weight = self.weight.saturating_add(weight);
-                    self.consumed = self.consumed.saturating_add(amount);
-                    self.asset_location_and_units_per_second =
-                        Some((asset_location, units_per_second));
-
-                    Ok(unused)
-                } else {
-                    Err(XcmError::TooExpensive)
-                }
+        // This trader tracks a single fee asset.
+        if let Some((tracked_asset_location, _)) = &self.asset_location_and_units_per_second {
+            if *tracked_asset_location != asset_location {
+                return Err((payment, XcmError::NotWithdrawable));
             }
-            _ => Err(XcmError::TooExpensive),
+        }
+
+        let to_charge: Asset = (asset_location.clone(), amount).into();
+        let Ok(taken) = payment.try_take(to_charge.into()) else {
+            return Err((payment, XcmError::TooExpensive));
+        };
+
+        self.weight = self.weight.saturating_add(weight);
+        self.taken.subsume_assets(taken);
+        self.asset_location_and_units_per_second = Some((asset_location, units_per_second));
+
+        Ok(payment)
+    }
+
+    fn refund_weight(&mut self, weight: Weight, context: &XcmContext) -> Option<AssetsInHolding> {
+        log::trace!(target: "xcm::weight", "FixedRateOfForeignAsset::refund_weight weight: {:?}", weight);
+
+        let (asset_location, _) = self.asset_location_and_units_per_second.clone()?;
+        let weight = weight.min(self.weight);
+        let quote = self
+            .quote_weight(weight, AssetId(asset_location), context)
+            .ok()?;
+
+        self.weight = self.weight.saturating_sub(weight);
+        // Never hand back more of the asset than was actually taken for it.
+        let refunded = self.taken.saturating_take(quote.into());
+
+        if refunded.is_empty() {
+            None
+        } else {
+            Some(refunded)
         }
     }
 
-    fn refund_weight(&mut self, weight: Weight, _: &XcmContext) -> Option<Asset> {
-        log::trace!(target: "xcm::weight", "FixedRateOfForeignAsset::refund_weight weight: {:?}", weight);
+    fn quote_weight(
+        &mut self,
+        weight: Weight,
+        given: AssetId,
+        _: &XcmContext,
+    ) -> Result<Asset, XcmError> {
+        log::trace!(
+            target: "xcm::weight",
+            "FixedRateOfForeignAsset::quote_weight weight: {:?}, given: {:?}",
+            weight, given,
+        );
 
-        if let Some((asset_location, units_per_second)) =
-            self.asset_location_and_units_per_second.clone()
-        {
-            let weight = weight.min(self.weight);
-            // Never hand back more of the asset than was actually taken for it.
-            let amount = units_per_second
-                .saturating_mul(weight.ref_time() as u128)
-                .saturating_div(WEIGHT_REF_TIME_PER_SECOND as u128)
-                .min(self.consumed);
-
-            self.weight = self.weight.saturating_sub(weight);
-            self.consumed = self.consumed.saturating_sub(amount);
-
-            if amount > 0 {
-                Some((asset_location, amount).into())
-            } else {
-                None
-            }
-        } else {
-            None
+        if weight.is_zero() {
+            return Err(XcmError::NoDeal);
         }
+        let units_per_second =
+            T::get_units_per_second(given.0.clone()).ok_or(XcmError::NotHoldingFees)?;
+
+        Ok((given, execution_fee(weight, units_per_second)).into())
     }
 }
 
 impl<T: ExecutionPaymentRate, R: TakeRevenue> Drop for FixedRateOfForeignAsset<T, R> {
     fn drop(&mut self) {
-        if let Some((asset_location, _)) = self.asset_location_and_units_per_second.clone() {
-            if self.consumed > 0 {
-                R::take_revenue((asset_location, self.consumed).into());
-            }
+        if !self.taken.is_empty() {
+            R::take_revenue(core::mem::replace(&mut self.taken, AssetsInHolding::new()));
         }
     }
+}
+
+/// Fee for `weight` at the given rate, in the smallest unit of the fee asset.
+fn execution_fee(weight: Weight, units_per_second: u128) -> u128 {
+    units_per_second.saturating_mul(weight.ref_time() as u128)
+        / (WEIGHT_REF_TIME_PER_SECOND as u128)
 }
 
 /// Used to determine whether the cross-chain asset is coming from a trusted reserve or not
@@ -221,21 +238,32 @@ pub struct XcmFungibleFeeHandler<AccountId, Matcher, Assets, FeeDestination>(
 );
 impl<
         AccountId: Eq,
-        Assets: fungibles::Mutate<AccountId>,
+        Assets: fungibles::Inspect<AccountId, AssetId: 'static, Balance: 'static>
+            + fungibles::Balanced<AccountId, OnDropCredit: 'static, OnDropDebt: 'static>,
         Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
         FeeDestination: Get<AccountId>,
     > TakeRevenue for XcmFungibleFeeHandler<AccountId, Matcher, Assets, FeeDestination>
 {
-    fn take_revenue(revenue: Asset) {
-        match Matcher::matches_fungibles(&revenue) {
-            Ok((asset_id, amount)) => {
-                if amount > Zero::zero() {
-                    if let Err(error) =
-                        Assets::mint_into(asset_id.clone(), &FeeDestination::get(), amount)
-                    {
+    fn take_revenue(mut revenue: AssetsInHolding) {
+        // The revenue holds credits withdrawn from the payer: resolve them into the fee
+        // destination. A credit that is not resolved is dropped, which burns it.
+        for (id, imbalance) in core::mem::take(&mut revenue.fungible) {
+            let asset = Asset {
+                id,
+                fun: Fungibility::Fungible(imbalance.amount()),
+            };
+            match Matcher::matches_fungibles(&asset) {
+                Ok((asset_id, amount)) => {
+                    if amount.is_zero() {
+                        continue;
+                    }
+                    let mut credit = fungibles::Credit::<AccountId, Assets>::zero(asset_id.clone());
+                    credit.saturating_subsume(imbalance);
+                    if let Err(unspent) = Assets::resolve(&FeeDestination::get(), credit) {
                         log::error!(
                             target: "xcm::weight",
-                            "XcmFeeHandler::take_revenue failed when minting asset: {:?}", error,
+                            "XcmFeeHandler::take_revenue failed to deposit {:?} of asset Id {:?}, it has been burned.",
+                            unspent.peek(), asset_id,
                         );
                     } else {
                         log::trace!(
@@ -245,12 +273,12 @@ impl<
                         );
                     }
                 }
-            }
-            Err(_) => {
-                log::error!(
-                    target: "xcm::weight",
-                    "XcmFeeHandler:take_revenue failed to match fungible asset, it has been burned."
-                );
+                Err(_) => {
+                    log::error!(
+                        target: "xcm::weight",
+                        "XcmFeeHandler:take_revenue failed to match fungible asset, it has been burned."
+                    );
+                }
             }
         }
     }

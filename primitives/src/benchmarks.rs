@@ -22,6 +22,7 @@ use frame_support::{assert_ok, dispatch::RawOrigin, traits::IsType};
 use sp_runtime::traits::StaticLookup;
 use sp_std::{boxed::Box, vec::Vec};
 use xcm::prelude::*;
+use xcm_executor::{test_helpers::mock_asset_to_holding, AssetsInHolding};
 /// Benchmark helper for `pallet-assets`.
 pub struct AssetsBenchmarkHelper;
 
@@ -48,7 +49,7 @@ where
 {
     /// Get the worst case holding for xcm benchmarks
     /// Scenario: Max allowed fungible assets (pallet_assets)
-    pub fn worst_case_holding() -> Assets {
+    pub fn worst_case_holding() -> AssetsInHolding {
         // Max number of assets - relay asset & native asset
         let fungibles = MAX_ASSETS - 2;
         let fungibles_amount: u128 = 1_000_000_000_000_000_000_000_000;
@@ -100,16 +101,16 @@ where
             }
         }
 
-        // Expand with native asset
-        assets
-            .into_iter()
-            .chain(core::iter::once(Asset {
-                id: AssetId(Location::here()),
-                fun: Fungible(fungibles_amount),
-            }))
-            .rev()
-            .collect::<Vec<Asset>>()
-            .into()
+        // Expand with native asset. Holding tracks imbalances, so the benchmark uses mock
+        // credits (as pallet-xcm-benchmarks documents), not real minted assets.
+        let mut holding = AssetsInHolding::new();
+        for asset in assets.into_iter().chain(core::iter::once(Asset {
+            id: AssetId(Location::here()),
+            fun: Fungible(fungibles_amount),
+        })) {
+            holding.subsume_assets(mock_asset_to_holding(asset));
+        }
+        holding
     }
 
     /// Set up a *worst-case* complex asset transfer for the `pallet_xcm`
