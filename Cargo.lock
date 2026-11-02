@@ -955,6 +955,7 @@ dependencies = [
  "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
+ "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-aura",
@@ -8989,6 +8990,7 @@ dependencies = [
 name = "pallet-collator-selection"
 version = "4.0.0"
 dependencies = [
+ "cumulus-pallet-session-benchmarking",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -8999,7 +9001,6 @@ dependencies = [
  "pallet-session",
  "pallet-timestamp",
  "parity-scale-codec",
- "rand 0.8.5",
  "scale-info",
  "serde",
  "sp-consensus-aura",
@@ -15208,6 +15209,7 @@ dependencies = [
  "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
+ "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-aura",
@@ -15322,6 +15324,7 @@ dependencies = [
  "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
+ "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-aura",

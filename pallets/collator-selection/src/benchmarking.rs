@@ -21,6 +21,7 @@ use super::*;
 
 #[allow(unused)]
 use crate::Pallet as CollatorSelection;
+use cumulus_pallet_session_benchmarking as session_benchmarking;
 use frame_benchmarking::{
     account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller,
     BenchmarkError,
@@ -31,7 +32,6 @@ use frame_support::{
 };
 use frame_system::{pallet_prelude::BlockNumberFor, EventRecord, RawOrigin};
 use pallet_authorship::EventHandler;
-use cumulus_pallet_session_benchmarking as session_benchmarking;
 use pallet_session::{self as session, SessionManager};
 use sp_std::prelude::*;
 
