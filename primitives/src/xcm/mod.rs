@@ -34,10 +34,7 @@
 //!
 
 use frame_support::{
-    traits::{
-        tokens::{fungibles, imbalance::UnsafeManualAccounting},
-        ContainsPair, Get,
-    },
+    traits::{ContainsPair, Get},
     weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
 use sp_runtime::traits::{Bounded, MaybeEquivalence, Zero};
@@ -47,7 +44,7 @@ use sp_std::marker::PhantomData;
 use xcm::latest::{prelude::*, Weight};
 use xcm_builder::TakeRevenue;
 use xcm_executor::{
-    traits::{MatchesFungibles, TransferType, WeightTrader, XcmAssetTransfers},
+    traits::{TransactAsset, TransferType, WeightTrader, XcmAssetTransfers},
     AssetsInHolding,
 };
 
@@ -228,56 +225,30 @@ impl ContainsPair<Asset, Location> for ReserveAssetFilter {
     }
 }
 
-/// Used to deposit XCM fees into a destination account.
+/// Used to deposit XCM fees into a destination location.
 ///
 /// Only handles fungible assets for now.
+/// `AssetTransactor` routes each credit to the pallet that issued it.
 /// If for any reason taking of the fee fails, it will be burned and and error trace will be printed.
 ///
-pub struct XcmFungibleFeeHandler<AccountId, Matcher, Assets, FeeDestination>(
-    sp_std::marker::PhantomData<(AccountId, Matcher, Assets, FeeDestination)>,
+pub struct XcmFungibleFeeHandler<AssetTransactor, FeeDestination>(
+    sp_std::marker::PhantomData<(AssetTransactor, FeeDestination)>,
 );
-impl<
-        AccountId: Eq,
-        Assets: fungibles::Inspect<AccountId, AssetId: 'static, Balance: 'static>
-            + fungibles::Balanced<AccountId, OnDropCredit: 'static, OnDropDebt: 'static>,
-        Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
-        FeeDestination: Get<AccountId>,
-    > TakeRevenue for XcmFungibleFeeHandler<AccountId, Matcher, Assets, FeeDestination>
+impl<AssetTransactor: TransactAsset, FeeDestination: Get<Location>> TakeRevenue
+    for XcmFungibleFeeHandler<AssetTransactor, FeeDestination>
 {
-    fn take_revenue(mut revenue: AssetsInHolding) {
-        // Move the payer's credits to the fee destination; an unresolved credit is burned.
-        for (id, imbalance) in core::mem::take(&mut revenue.fungible) {
-            let asset = Asset {
-                id,
-                fun: Fungibility::Fungible(imbalance.amount()),
-            };
-            match Matcher::matches_fungibles(&asset) {
-                Ok((asset_id, amount)) => {
-                    if amount.is_zero() {
-                        continue;
-                    }
-                    let mut credit = fungibles::Credit::<AccountId, Assets>::zero(asset_id.clone());
-                    credit.saturating_subsume(imbalance);
-                    if let Err(unspent) = Assets::resolve(&FeeDestination::get(), credit) {
-                        log::error!(
-                            target: "xcm::weight",
-                            "XcmFeeHandler::take_revenue failed to deposit {:?} of asset Id {:?}, it has been burned.",
-                            unspent.peek(), asset_id,
-                        );
-                    } else {
-                        log::trace!(
-                            target: "xcm::weight",
-                            "XcmFeeHandler::take_revenue took {:?} of asset Id {:?}",
-                            amount, asset_id,
-                        );
-                    }
-                }
-                Err(_) => {
-                    log::error!(
-                        target: "xcm::weight",
-                        "XcmFeeHandler:take_revenue failed to match fungible asset, it has been burned."
-                    );
-                }
+    fn take_revenue(revenue: AssetsInHolding) {
+        let destination = FeeDestination::get();
+        for (id, credit) in revenue.fungible.into_iter() {
+            let fee = AssetsInHolding::new_from_fungible_credit(id, credit);
+            log::trace!(target: "xcm::weight", "XcmFeeHandler::take_revenue depositing {:?}", fee);
+            // An undeposited credit is dropped here, which burns it.
+            if let Err((unspent, error)) = AssetTransactor::deposit_asset(fee, &destination, None) {
+                log::error!(
+                    target: "xcm::weight",
+                    "XcmFeeHandler::take_revenue failed to deposit {:?}: {:?}, it has been burned.",
+                    unspent, error,
+                );
             }
         }
     }

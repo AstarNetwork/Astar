@@ -254,6 +254,7 @@ impl pallet_proxy::Config for Runtime {
 parameter_types! {
     pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
     pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
+    pub TreasuryLocation: Location = Junction::AccountId32 { network: None, id: TreasuryAccountId::get().into() }.into();
 }
 
 impl pallet_xc_asset_config::Config for Runtime {
@@ -386,12 +387,7 @@ pub type XcmBarrier = TrailingSetTopicAsId<(
 )>;
 
 // Used to handle XCM fee deposit into treasury account
-pub type ShidenXcmFungibleFeeHandler = XcmFungibleFeeHandler<
-    AccountId,
-    ConvertedConcreteId<AssetId, Balance, ShidenAssetLocationIdConverter, JustTry>,
-    Assets,
-    TreasuryAccountId,
->;
+pub type ShidenXcmFungibleFeeHandler = XcmFungibleFeeHandler<AssetTransactors, TreasuryLocation>;
 
 pub type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 
