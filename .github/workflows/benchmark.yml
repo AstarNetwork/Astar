@@ -110,16 +110,23 @@ jobs:
         rustup +stable target add wasm32-unknown-unknown
         rustup +stable component add rust-src
 
-    # TODO: Should be moved below the `rustup show` once the defined toolchain works.
-    # TODO: --rev must match the polkadot-sdk commit pinned for sp-storage in Cargo.lock. Could be removed after uplift.
-    - name: Install frame-omni bencher tool
-      run: cargo +stable install --git https://github.com/paritytech/polkadot-sdk --rev 510fed173e7459a3b030cdf20f1021236b367253 frame-omni-bencher --profile=production --locked
-
     - name: Checkout the source code
       uses: actions/checkout@v5
       with:
         ref: ${{ steps.get_branch_sha.outputs.sha }}
         submodules: true
+
+    # TODO: Should be moved below the `rustup show` once the defined toolchain works.
+    # Builds the bencher from the polkadot-sdk commit resolved in the checked-out Cargo.lock.
+    - name: Install frame-omni bencher tool
+      run: |
+        SDK_REV=$(grep -A2 '^name = "sp-storage"$' Cargo.lock | grep -oE 'paritytech/polkadot-sdk[^#"]*#[0-9a-f]{40}' | sed 's/.*#//' | sort -u)
+        if [ "$(echo "$SDK_REV" | wc -w)" -ne 1 ]; then
+          echo "::error::expected one polkadot-sdk commit for sp-storage in Cargo.lock, got: '$SDK_REV'"
+          exit 1
+        fi
+        echo "Installing frame-omni-bencher from polkadot-sdk@$SDK_REV"
+        cargo +stable install --git https://github.com/paritytech/polkadot-sdk --rev "$SDK_REV" frame-omni-bencher --profile=production --locked
 
     - name: Install & display rust toolchain
       run: rustup show
