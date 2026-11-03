@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/dapp-staking/src/types.rs`."><title>types.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1a91846b.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_dapp_staking" data-themes="" data-resource-suffix="" data-rustdoc-version="1.88.0 (6b00bc388 2025-06-23)" data-channel="1.88.0" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-4e99c027.js"></script><script defer src="../../static.files/src-script-63605ae7.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">pallet_dapp_staking/</div>types.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// This file is part of Astar.
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/dapp-staking/src/types.rs`."><title>types.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_dapp_staking" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0 (254b59607 2026-01-19)" data-channel="1.93.0" data-search-js="search-9e2438ea.js" data-stringdex-js="stringdex-a3946164.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-a410ff4d.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">pallet_dapp_staking/</div>types.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// This file is part of Astar.
 <a href=#2 id=2 data-nosnippet>2</a>
 <a href=#3 id=3 data-nosnippet>3</a>// Copyright (C) Stake Technologies Pte.Ltd.
 <a href=#4 id=4 data-nosnippet>4</a>// SPDX-License-Identifier: GPL-3.0-or-later
@@ -412,7 +412,7 @@
 <a href=#412 id=412 data-nosnippet>412</a>    Encode,
 <a href=#413 id=413 data-nosnippet>413</a>    Decode,
 <a href=#414 id=414 data-nosnippet>414</a>    MaxEncodedLen,
-<a href=#415 id=415 data-nosnippet>415</a>    RuntimeDebugNoBound,
+<a href=#415 id=415 data-nosnippet>415</a>    DebugNoBound,
 <a href=#416 id=416 data-nosnippet>416</a>    PartialEqNoBound,
 <a href=#417 id=417 data-nosnippet>417</a>    DefaultNoBound,
 <a href=#418 id=418 data-nosnippet>418</a>    EqNoBound,
@@ -606,21 +606,21 @@
 <a href=#606 id=606 data-nosnippet>606</a>        <span class="kw">if </span>!<span class="self">self</span>.staked.is_empty() {
 <a href=#607 id=607 data-nosnippet>607</a>            <span class="comment">// In case entry for the current era exists, it must match the era exactly.
 <a href=#608 id=608 data-nosnippet>608</a>            // No other scenario is possible since stake/unstake is not allowed without claiming rewards first.
-<a href=#609 id=609 data-nosnippet>609</a>            </span><span class="kw">if </span><span class="self">self</span>.staked.era != current_era {
+<a href=#609 id=609 data-nosnippet>609</a>            </span><span class="kw">if </span><span class="self">self</span>.staked.<span class="macro">era !</span>= current_era {
 <a href=#610 id=610 data-nosnippet>610</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(AccountLedgerError::InvalidEra);
 <a href=#611 id=611 data-nosnippet>611</a>            }
-<a href=#612 id=612 data-nosnippet>612</a>            <span class="kw">if </span><span class="self">self</span>.staked.period != current_period_info.number {
+<a href=#612 id=612 data-nosnippet>612</a>            <span class="kw">if </span><span class="self">self</span>.staked.<span class="macro">period !</span>= current_period_info.number {
 <a href=#613 id=613 data-nosnippet>613</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(AccountLedgerError::InvalidPeriod);
 <a href=#614 id=614 data-nosnippet>614</a>            }
 <a href=#615 id=615 data-nosnippet>615</a>            <span class="comment">// In case only the 'future' entry exists, then the future era must either be the current or the next era.
 <a href=#616 id=616 data-nosnippet>616</a>            // 'Next era' covers the simple scenario where stake is only valid from the next era.
 <a href=#617 id=617 data-nosnippet>617</a>            // 'Current era' covers the scenario where stake was made in previous era, and we've moved to the next era.
 <a href=#618 id=618 data-nosnippet>618</a>        </span>} <span class="kw">else if let </span><span class="prelude-val">Some</span>(stake_amount) = <span class="self">self</span>.staked_future {
-<a href=#619 id=619 data-nosnippet>619</a>            <span class="kw">if </span>stake_amount.era != current_era.saturating_add(<span class="number">1</span>) &amp;&amp; stake_amount.era != current_era
+<a href=#619 id=619 data-nosnippet>619</a>            <span class="kw">if </span>stake_amount.<span class="macro">era !</span>= current_era.saturating_add(<span class="number">1</span>) &amp;&amp; stake_amount.<span class="macro">era !</span>= current_era
 <a href=#620 id=620 data-nosnippet>620</a>            {
 <a href=#621 id=621 data-nosnippet>621</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(AccountLedgerError::InvalidEra);
 <a href=#622 id=622 data-nosnippet>622</a>            }
-<a href=#623 id=623 data-nosnippet>623</a>            <span class="kw">if </span>stake_amount.period != current_period_info.number {
+<a href=#623 id=623 data-nosnippet>623</a>            <span class="kw">if </span>stake_amount.<span class="macro">period !</span>= current_period_info.number {
 <a href=#624 id=624 data-nosnippet>624</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(AccountLedgerError::InvalidPeriod);
 <a href=#625 id=625 data-nosnippet>625</a>            }
 <a href=#626 id=626 data-nosnippet>626</a>        }
@@ -1202,7 +1202,7 @@
 <a href=#1202 id=1202 data-nosnippet>1202</a>
 <a href=#1203 id=1203 data-nosnippet>1203</a>        <span class="comment">// 2. Update bonus status accordingly.
 <a href=#1204 id=1204 data-nosnippet>1204</a>        // In case voting subperiod has passed, and the 'voting' stake amount was reduced, we need to reduce the bonus eligibility counter.
-<a href=#1205 id=1205 data-nosnippet>1205</a>        </span><span class="kw">if </span>subperiod != Subperiod::Voting &amp;&amp; <span class="self">self</span>.staked.voting &lt; staked_snapshot.voting {
+<a href=#1205 id=1205 data-nosnippet>1205</a>        </span><span class="kw">if </span><span class="macro">subperiod !</span>= Subperiod::Voting &amp;&amp; <span class="self">self</span>.staked.voting &lt; staked_snapshot.voting {
 <a href=#1206 id=1206 data-nosnippet>1206</a>            <span class="self">self</span>.bonus_status = <span class="self">self</span>.bonus_status.saturating_sub(<span class="number">1</span>);
 <a href=#1207 id=1207 data-nosnippet>1207</a>        }
 <a href=#1208 id=1208 data-nosnippet>1208</a>
@@ -1317,7 +1317,7 @@
 <a href=#1317 id=1317 data-nosnippet>1317</a>/// **NOTE:** The 'future' entry term is only valid in the era when `stake` is called. It's possible contract stake isn't changed in consecutive eras,
 <a href=#1318 id=1318 data-nosnippet>1318</a>/// so we might end up in a situation where era is `N + 10` but `staked` entry refers to era `N` and `staked_future` entry refers to era `N+1`.
 <a href=#1319 id=1319 data-nosnippet>1319</a>/// This is still valid since these values are expected to be updated lazily.
-<a href=#1320 id=1320 data-nosnippet>1320</a></span><span class="attr">#[derive(Encode, Decode, MaxEncodedLen, RuntimeDebug, PartialEq, Eq, Clone, TypeInfo, Default)]
+<a href=#1320 id=1320 data-nosnippet>1320</a></span><span class="attr">#[derive(Encode, Decode, MaxEncodedLen, Debug, PartialEq, Eq, Clone, TypeInfo, Default)]
 <a href=#1321 id=1321 data-nosnippet>1321</a></span><span class="kw">pub struct </span>ContractStakeAmount {
 <a href=#1322 id=1322 data-nosnippet>1322</a>    <span class="doccomment">/// Staked amount in the 'current' era.
 <a href=#1323 id=1323 data-nosnippet>1323</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) staked: StakeAmount,
@@ -1541,7 +1541,7 @@
 <a href=#1541 id=1541 data-nosnippet>1541</a>    Encode,
 <a href=#1542 id=1542 data-nosnippet>1542</a>    Decode,
 <a href=#1543 id=1543 data-nosnippet>1543</a>    MaxEncodedLen,
-<a href=#1544 id=1544 data-nosnippet>1544</a>    RuntimeDebugNoBound,
+<a href=#1544 id=1544 data-nosnippet>1544</a>    DebugNoBound,
 <a href=#1545 id=1545 data-nosnippet>1545</a>    PartialEqNoBound,
 <a href=#1546 id=1546 data-nosnippet>1546</a>    DefaultNoBound,
 <a href=#1547 id=1547 data-nosnippet>1547</a>    EqNoBound,
@@ -1610,7 +1610,7 @@
 <a href=#1610 id=1610 data-nosnippet>1610</a>                </span>.map_err(|<span class="kw">_</span>| EraRewardSpanError::NoCapacity)
 <a href=#1611 id=1611 data-nosnippet>1611</a>        } <span class="kw">else </span>{
 <a href=#1612 id=1612 data-nosnippet>1612</a>            <span class="comment">// Defensive check to ensure next era rewards refers to era after the last one in the span.
-<a href=#1613 id=1613 data-nosnippet>1613</a>            </span><span class="kw">if </span>era != <span class="self">self</span>.last_era.saturating_add(<span class="number">1</span>) {
+<a href=#1613 id=1613 data-nosnippet>1613</a>            </span><span class="kw">if </span><span class="macro">era !</span>= <span class="self">self</span>.last_era.saturating_add(<span class="number">1</span>) {
 <a href=#1614 id=1614 data-nosnippet>1614</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(EraRewardSpanError::InvalidEra);
 <a href=#1615 id=1615 data-nosnippet>1615</a>            }
 <a href=#1616 id=1616 data-nosnippet>1616</a>
@@ -1670,7 +1670,7 @@
 <a href=#1670 id=1670 data-nosnippet>1670</a>    Decode,
 <a href=#1671 id=1671 data-nosnippet>1671</a>    DecodeWithMemTracking,
 <a href=#1672 id=1672 data-nosnippet>1672</a>    MaxEncodedLen,
-<a href=#1673 id=1673 data-nosnippet>1673</a>    RuntimeDebugNoBound,
+<a href=#1673 id=1673 data-nosnippet>1673</a>    DebugNoBound,
 <a href=#1674 id=1674 data-nosnippet>1674</a>    PartialEqNoBound,
 <a href=#1675 id=1675 data-nosnippet>1675</a>    DefaultNoBound,
 <a href=#1676 id=1676 data-nosnippet>1676</a>    EqNoBound,
@@ -1757,7 +1757,7 @@
 <a href=#1757 id=1757 data-nosnippet>1757</a>    Encode,
 <a href=#1758 id=1758 data-nosnippet>1758</a>    Decode,
 <a href=#1759 id=1759 data-nosnippet>1759</a>    MaxEncodedLen,
-<a href=#1760 id=1760 data-nosnippet>1760</a>    RuntimeDebugNoBound,
+<a href=#1760 id=1760 data-nosnippet>1760</a>    DebugNoBound,
 <a href=#1761 id=1761 data-nosnippet>1761</a>    PartialEqNoBound,
 <a href=#1762 id=1762 data-nosnippet>1762</a>    DefaultNoBound,
 <a href=#1763 id=1763 data-nosnippet>1763</a>    EqNoBound,
@@ -1850,7 +1850,7 @@
 <a href=#1850 id=1850 data-nosnippet>1850</a>    Encode,
 <a href=#1851 id=1851 data-nosnippet>1851</a>    Decode,
 <a href=#1852 id=1852 data-nosnippet>1852</a>    MaxEncodedLen,
-<a href=#1853 id=1853 data-nosnippet>1853</a>    RuntimeDebugNoBound,
+<a href=#1853 id=1853 data-nosnippet>1853</a>    DebugNoBound,
 <a href=#1854 id=1854 data-nosnippet>1854</a>    PartialEqNoBound,
 <a href=#1855 id=1855 data-nosnippet>1855</a>    DefaultNoBound,
 <a href=#1856 id=1856 data-nosnippet>1856</a>    EqNoBound,
@@ -1942,7 +1942,8 @@
 <a href=#1942 id=1942 data-nosnippet>1942</a><span class="kw">impl </span>CleanupMarker {
 <a href=#1943 id=1943 data-nosnippet>1943</a>    <span class="doccomment">/// Used to check whether there are any pending cleanups, according to marker values.
 <a href=#1944 id=1944 data-nosnippet>1944</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>has_pending_cleanups(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-<a href=#1945 id=1945 data-nosnippet>1945</a>        <span class="self">self</span>.era_reward_index != <span class="self">self</span>.oldest_valid_era
-<a href=#1946 id=1946 data-nosnippet>1946</a>            || <span class="self">self</span>.dapp_tiers_index != <span class="self">self</span>.oldest_valid_era
+<a href=#1945 id=1945 data-nosnippet>1945</a>        <span class="self">self</span>.<span class="macro">era_reward_index !</span>= <span class="self">self</span>.oldest_valid_era
+<a href=#1946 id=1946 data-nosnippet>1946</a>            || <span class="self">self</span>.<span class="macro">dapp_tiers_index !</span>= <span class="self">self</span>.oldest_valid_era
 <a href=#1947 id=1947 data-nosnippet>1947</a>    }
-<a href=#1948 id=1948 data-nosnippet>1948</a>}</code></pre></div></section></main></body></html>
+<a href=#1948 id=1948 data-nosnippet>1948</a>}
+</code></pre></div></section></main></body></html>

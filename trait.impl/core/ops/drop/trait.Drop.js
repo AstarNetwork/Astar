@@ -1,5 +1,5 @@
 (function() {
-    var implementors = Object.fromEntries([["astar_primitives",[["impl&lt;T: ExecutionPaymentRate, R: TakeRevenue&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.88.0/core/ops/drop/trait.Drop.html\" title=\"trait core::ops::drop::Drop\">Drop</a> for <a class=\"struct\" href=\"astar_primitives/xcm/struct.FixedRateOfForeignAsset.html\" title=\"struct astar_primitives::xcm::FixedRateOfForeignAsset\">FixedRateOfForeignAsset</a>&lt;T, R&gt;"]]]]);
+    var implementors = Object.fromEntries([["astar_primitives",[["impl&lt;T: ExecutionPaymentRate, R: TakeRevenue&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.93.0/core/ops/drop/trait.Drop.html\" title=\"trait core::ops::drop::Drop\">Drop</a> for <a class=\"struct\" href=\"astar_primitives/xcm/struct.FixedRateOfForeignAsset.html\" title=\"struct astar_primitives::xcm::FixedRateOfForeignAsset\">FixedRateOfForeignAsset</a>&lt;T, R&gt;"]]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {

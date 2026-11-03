@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/dapp-staking/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1a91846b.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_dapp_staking" data-themes="" data-resource-suffix="" data-rustdoc-version="1.88.0 (6b00bc388 2025-06-23)" data-channel="1.88.0" data-search-js="search-f7877310.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-4e99c027.js"></script><script defer src="../../static.files/src-script-63605ae7.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-7ef8a74a.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">pallet_dapp_staking/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// This file is part of Astar.
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/dapp-staking/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_dapp_staking" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0 (254b59607 2026-01-19)" data-channel="1.93.0" data-search-js="search-9e2438ea.js" data-stringdex-js="stringdex-a3946164.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-a410ff4d.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">pallet_dapp_staking/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// This file is part of Astar.
 <a href=#2 id=2 data-nosnippet>2</a>
 <a href=#3 id=3 data-nosnippet>3</a>// Copyright (C) Stake Technologies Pte.Ltd.
 <a href=#4 id=4 data-nosnippet>4</a>// SPDX-License-Identifier: GPL-3.0-or-later
@@ -620,8 +620,8 @@
 <a href=#620 id=620 data-nosnippet>620</a>            StaticTierParams::&lt;T&gt;::put(tier_params);
 <a href=#621 id=621 data-nosnippet>621</a>            TierConfig::&lt;T&gt;::put(tier_config.clone());
 <a href=#622 id=622 data-nosnippet>622</a>
-<a href=#623 id=623 data-nosnippet>623</a>            <span class="kw">if </span><span class="self">self</span>.safeguard.is_some() {
-<a href=#624 id=624 data-nosnippet>624</a>                Safeguard::&lt;T&gt;::put(<span class="self">self</span>.safeguard.unwrap());
+<a href=#623 id=623 data-nosnippet>623</a>            <span class="kw">if let </span><span class="prelude-val">Some</span>(safeguard) = <span class="self">self</span>.safeguard {
+<a href=#624 id=624 data-nosnippet>624</a>                Safeguard::&lt;T&gt;::put(safeguard);
 <a href=#625 id=625 data-nosnippet>625</a>            }
 <a href=#626 id=626 data-nosnippet>626</a>        }
 <a href=#627 id=627 data-nosnippet>627</a>    }
@@ -2605,34 +2605,34 @@
 <a href=#2605 id=2605 data-nosnippet>2605</a>            <span class="kw">let </span>tier_config = TierConfig::&lt;T&gt;::get();
 <a href=#2606 id=2606 data-nosnippet>2606</a>
 <a href=#2607 id=2607 data-nosnippet>2607</a>            <span class="comment">// Invariant 1
-<a href=#2608 id=2608 data-nosnippet>2608</a>            </span><span class="kw">if </span>nb_tiers != tier_params.slot_distribution.len() <span class="kw">as </span>u32 {
+<a href=#2608 id=2608 data-nosnippet>2608</a>            </span><span class="kw">if </span><span class="macro">nb_tiers !</span>= tier_params.slot_distribution.len() <span class="kw">as </span>u32 {
 <a href=#2609 id=2609 data-nosnippet>2609</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(
 <a href=#2610 id=2610 data-nosnippet>2610</a>                    <span class="string">"Number of tiers is incorrect in slot_distribution in StaticTierParams."</span>.into(),
 <a href=#2611 id=2611 data-nosnippet>2611</a>                );
 <a href=#2612 id=2612 data-nosnippet>2612</a>            }
-<a href=#2613 id=2613 data-nosnippet>2613</a>            <span class="kw">if </span>nb_tiers != tier_params.reward_portion.len() <span class="kw">as </span>u32 {
+<a href=#2613 id=2613 data-nosnippet>2613</a>            <span class="kw">if </span><span class="macro">nb_tiers !</span>= tier_params.reward_portion.len() <span class="kw">as </span>u32 {
 <a href=#2614 id=2614 data-nosnippet>2614</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(
 <a href=#2615 id=2615 data-nosnippet>2615</a>                    <span class="string">"Number of tiers is incorrect in reward_portion in StaticTierParams."</span>.into(),
 <a href=#2616 id=2616 data-nosnippet>2616</a>                );
 <a href=#2617 id=2617 data-nosnippet>2617</a>            }
-<a href=#2618 id=2618 data-nosnippet>2618</a>            <span class="kw">if </span>nb_tiers != tier_params.tier_thresholds.len() <span class="kw">as </span>u32 {
+<a href=#2618 id=2618 data-nosnippet>2618</a>            <span class="kw">if </span><span class="macro">nb_tiers !</span>= tier_params.tier_thresholds.len() <span class="kw">as </span>u32 {
 <a href=#2619 id=2619 data-nosnippet>2619</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(
 <a href=#2620 id=2620 data-nosnippet>2620</a>                    <span class="string">"Number of tiers is incorrect in tier_thresholds in StaticTierParams."</span>.into(),
 <a href=#2621 id=2621 data-nosnippet>2621</a>                );
 <a href=#2622 id=2622 data-nosnippet>2622</a>            }
 <a href=#2623 id=2623 data-nosnippet>2623</a>
 <a href=#2624 id=2624 data-nosnippet>2624</a>            <span class="comment">// Invariant 2
-<a href=#2625 id=2625 data-nosnippet>2625</a>            </span><span class="kw">if </span>nb_tiers != tier_config.slots_per_tier.len() <span class="kw">as </span>u32 {
+<a href=#2625 id=2625 data-nosnippet>2625</a>            </span><span class="kw">if </span><span class="macro">nb_tiers !</span>= tier_config.slots_per_tier.len() <span class="kw">as </span>u32 {
 <a href=#2626 id=2626 data-nosnippet>2626</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(
 <a href=#2627 id=2627 data-nosnippet>2627</a>                    <span class="string">"Number of tiers is incorrect in slots_per_tier in StaticTierParams."</span>.into(),
 <a href=#2628 id=2628 data-nosnippet>2628</a>                );
 <a href=#2629 id=2629 data-nosnippet>2629</a>            }
-<a href=#2630 id=2630 data-nosnippet>2630</a>            <span class="kw">if </span>nb_tiers != tier_config.reward_portion.len() <span class="kw">as </span>u32 {
+<a href=#2630 id=2630 data-nosnippet>2630</a>            <span class="kw">if </span><span class="macro">nb_tiers !</span>= tier_config.reward_portion.len() <span class="kw">as </span>u32 {
 <a href=#2631 id=2631 data-nosnippet>2631</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(
 <a href=#2632 id=2632 data-nosnippet>2632</a>                    <span class="string">"Number of tiers is incorrect in reward_portion in StaticTierParams."</span>.into(),
 <a href=#2633 id=2633 data-nosnippet>2633</a>                );
 <a href=#2634 id=2634 data-nosnippet>2634</a>            }
-<a href=#2635 id=2635 data-nosnippet>2635</a>            <span class="kw">if </span>nb_tiers != tier_config.tier_thresholds.len() <span class="kw">as </span>u32 {
+<a href=#2635 id=2635 data-nosnippet>2635</a>            <span class="kw">if </span><span class="macro">nb_tiers !</span>= tier_config.tier_thresholds.len() <span class="kw">as </span>u32 {
 <a href=#2636 id=2636 data-nosnippet>2636</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(
 <a href=#2637 id=2637 data-nosnippet>2637</a>                    <span class="string">"Number of tiers is incorrect in tier_thresholds in StaticTierParams."</span>.into(),
 <a href=#2638 id=2638 data-nosnippet>2638</a>                );
@@ -2694,19 +2694,19 @@
 <a href=#2694 id=2694 data-nosnippet>2694</a>            }
 <a href=#2695 id=2695 data-nosnippet>2695</a>
 <a href=#2696 id=2696 data-nosnippet>2696</a>            <span class="comment">// Invariant 1
-<a href=#2697 id=2697 data-nosnippet>2697</a>            </span><span class="kw">if </span>ledger_total_stake != next_era_total_stake {
+<a href=#2697 id=2697 data-nosnippet>2697</a>            </span><span class="kw">if </span><span class="macro">ledger_total_stake !</span>= next_era_total_stake {
 <a href=#2698 id=2698 data-nosnippet>2698</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(
 <a href=#2699 id=2699 data-nosnippet>2699</a>                    <span class="string">"Mismatch between Ledger total staked amounts and CurrentEraInfo total."</span>.into(),
 <a href=#2700 id=2700 data-nosnippet>2700</a>                );
 <a href=#2701 id=2701 data-nosnippet>2701</a>            }
 <a href=#2702 id=2702 data-nosnippet>2702</a>
-<a href=#2703 id=2703 data-nosnippet>2703</a>            <span class="kw">if </span>ledger_total_locked != current_era_info.total_locked {
+<a href=#2703 id=2703 data-nosnippet>2703</a>            <span class="kw">if </span><span class="macro">ledger_total_locked !</span>= current_era_info.total_locked {
 <a href=#2704 id=2704 data-nosnippet>2704</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(
 <a href=#2705 id=2705 data-nosnippet>2705</a>                    <span class="string">"Mismatch between Ledger total locked amounts and CurrentEraInfo total."</span>.into(),
 <a href=#2706 id=2706 data-nosnippet>2706</a>                );
 <a href=#2707 id=2707 data-nosnippet>2707</a>            }
 <a href=#2708 id=2708 data-nosnippet>2708</a>
-<a href=#2709 id=2709 data-nosnippet>2709</a>            <span class="kw">if </span>ledger_total_unlocking != current_era_info.unlocking {
+<a href=#2709 id=2709 data-nosnippet>2709</a>            <span class="kw">if </span><span class="macro">ledger_total_unlocking !</span>= current_era_info.unlocking {
 <a href=#2710 id=2710 data-nosnippet>2710</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(
 <a href=#2711 id=2711 data-nosnippet>2711</a>                    <span class="string">"Mismatch between Ledger total unlocked amounts and CurrentEraInfo total."
 <a href=#2712 id=2712 data-nosnippet>2712</a>                        </span>.into(),
@@ -2822,4 +2822,5 @@
 <a href=#2822 id=2822 data-nosnippet>2822</a>            <span class="self">Self</span>::set_maintenance_mode(<span class="bool-val">false</span>);
 <a href=#2823 id=2823 data-nosnippet>2823</a>        }
 <a href=#2824 id=2824 data-nosnippet>2824</a>    }
-<a href=#2825 id=2825 data-nosnippet>2825</a>}</code></pre></div></section></main></body></html>
+<a href=#2825 id=2825 data-nosnippet>2825</a>}
+</code></pre></div></section></main></body></html>
