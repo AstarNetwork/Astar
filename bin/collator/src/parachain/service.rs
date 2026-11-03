@@ -150,6 +150,7 @@ pub fn new_partial(
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
             executor,
             true,
+            Default::default(),
         )?;
     let client = Arc::new(client);
 
@@ -305,6 +306,7 @@ where
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
+            spawn_essential_handle: task_manager.spawn_essential_handle(),
             import_queue,
             relay_chain_interface: relay_chain_interface.clone(),
             sybil_resistance_level: cumulus_client_service::CollatorSybilResistance::Resistant,
@@ -664,7 +666,7 @@ fn start_aura_consensus(
     collator_peer_id: PeerId,
     additional_config: AdditionalConfig,
 ) -> Result<(), sc_service::Error> {
-    let mut proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
+    let mut proposer_factory = sc_basic_authorship::ProposerFactory::new(
         task_manager.spawn_handle(),
         client.clone(),
         transaction_pool,

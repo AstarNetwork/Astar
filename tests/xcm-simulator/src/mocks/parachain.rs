@@ -39,7 +39,7 @@ use frame_system::{
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_runtime::{
     traits::{AccountIdConversion, Convert, IdentityLookup},
-    AccountId32, Perbill, RuntimeDebug,
+    AccountId32, Perbill,
 };
 use sp_std::prelude::*;
 
@@ -149,7 +149,12 @@ const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
 
 parameter_types! {
     pub RuntimeBlockLength: BlockLength =
-        BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+        BlockLength::builder()
+        .max_length(5 * 1024 * 1024)
+        .modify_max_length_for_class(DispatchClass::Normal, |max| {
+            *max = NORMAL_DISPATCH_RATIO * (5 * 1024 * 1024)
+        })
+        .build();
     pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
         .base_block(BlockExecutionWeight::get())
         .for_class(DispatchClass::all(), |weights| {
@@ -182,7 +187,7 @@ parameter_types! {
     Encode,
     Decode,
     DecodeWithMemTracking,
-    RuntimeDebug,
+    Debug,
     MaxEncodedLen,
     scale_info::TypeInfo,
 )]
@@ -249,6 +254,7 @@ impl pallet_proxy::Config for Runtime {
 parameter_types! {
     pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
     pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
+    pub TreasuryLocation: Location = Junction::AccountId32 { network: None, id: TreasuryAccountId::get().into() }.into();
 }
 
 impl pallet_xc_asset_config::Config for Runtime {
@@ -381,12 +387,7 @@ pub type XcmBarrier = TrailingSetTopicAsId<(
 )>;
 
 // Used to handle XCM fee deposit into treasury account
-pub type ShidenXcmFungibleFeeHandler = XcmFungibleFeeHandler<
-    AccountId,
-    ConvertedConcreteId<AssetId, Balance, ShidenAssetLocationIdConverter, JustTry>,
-    Assets,
-    TreasuryAccountId,
->;
+pub type ShidenXcmFungibleFeeHandler = XcmFungibleFeeHandler<AssetTransactors, TreasuryLocation>;
 
 pub type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 
@@ -407,7 +408,6 @@ impl xcm_executor::Config for XcmConfig {
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
-    type AssetClaims = PolkadotXcm;
     type SubscriptionService = PolkadotXcm;
 
     type PalletInstancesInfo = AllPalletsWithSystem;

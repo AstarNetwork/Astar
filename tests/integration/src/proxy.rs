@@ -19,7 +19,6 @@
 use crate::setup::*;
 use astar_primitives::dapp_staking::SmartContractHandle;
 use pallet_dapp_staking::ForcingType;
-use parity_scale_codec::Decode;
 
 #[test]
 fn test_utility_call_pass_for_any() {
@@ -231,11 +230,9 @@ fn test_set_keys_pass_for_non_transfer_proxy() {
             0
         ));
 
-        let keys = [0u8; 128];
-        let set_keys_call = Box::new(RuntimeCall::Session(SessionCall::set_keys {
-            keys: Decode::decode(&mut &keys[..]).unwrap(),
-            proof: Vec::new(),
-        }));
+        // The proxied call runs as ALICE.
+        let (keys, proof) = session_keys_with_proof(&ALICE, &[7u8; 32]);
+        let set_keys_call = Box::new(RuntimeCall::Session(SessionCall::set_keys { keys, proof }));
 
         assert_ok!(Proxy::proxy(
             RuntimeOrigin::signed(BOB),

@@ -20,6 +20,7 @@ use super::*;
 use frame_support::assert_ok;
 use once_cell::unsync::Lazy;
 use sp_runtime::traits::{MaybeEquivalence, Zero};
+use xcm_executor::test_helpers::mock_asset_to_holding as asset_to_holding;
 
 type AssetId = u128;
 
@@ -73,6 +74,18 @@ impl ExecutionPaymentRate for ExecutionPayment {
 /// Execution fee for the specified weight, using provided `units_per_second`
 fn execution_fee(weight: Weight, units_per_second: u128) -> u128 {
     units_per_second * (weight.ref_time() as u128) / (WEIGHT_REF_TIME_PER_SECOND as u128)
+}
+
+/// Amount the trader has taken so far
+fn taken<T: ExecutionPaymentRate, R: TakeRevenue>(trader: &FixedRateOfForeignAsset<T, R>) -> u128 {
+    trader
+        .taken
+        .fungible_assets_iter()
+        .map(|asset| match asset.fun {
+            Fungibility::Fungible(amount) => amount,
+            _ => 0,
+        })
+        .sum()
 }
 
 #[test]
@@ -147,7 +160,8 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
     assert!(expected_execution_fee > 0); // sanity check
 
     // 1. Buy weight and expect it to be successful
-    let result = fixed_rate_trader.buy_weight(weight, payment_multi_asset.clone().into(), &ctx);
+    let result =
+        fixed_rate_trader.buy_weight(weight, asset_to_holding(payment_multi_asset.clone()), &ctx);
     if let Ok(assets) = result {
         // We expect only one unused payment asset and specific amount
         assert_eq!(assets.len(), 1);
@@ -155,7 +169,7 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
             &Asset::from((PARENT, total_payment - expected_execution_fee)).into()
         ));
 
-        assert_eq!(fixed_rate_trader.consumed, expected_execution_fee);
+        assert_eq!(taken(&fixed_rate_trader), expected_execution_fee);
         assert_eq!(fixed_rate_trader.weight, weight);
         assert_eq!(
             fixed_rate_trader.asset_location_and_units_per_second,
@@ -169,7 +183,7 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
     }
 
     // 2. Buy more weight, using the same trader and asset type. Verify it works as expected.
-    let (old_weight, old_consumed) = (fixed_rate_trader.weight, fixed_rate_trader.consumed);
+    let (old_weight, old_consumed) = (fixed_rate_trader.weight, taken(&fixed_rate_trader));
 
     let weight: Weight = Weight::from_parts(3_500_000_000, 0);
     let expected_execution_fee = execution_fee(
@@ -178,7 +192,8 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
     );
     assert!(expected_execution_fee > 0); // sanity check
 
-    let result = fixed_rate_trader.buy_weight(weight, payment_multi_asset.clone().into(), &ctx);
+    let result =
+        fixed_rate_trader.buy_weight(weight, asset_to_holding(payment_multi_asset.clone()), &ctx);
     if let Ok(assets) = result {
         // We expect only one unused payment asset and specific amount
         assert_eq!(assets.len(), 1);
@@ -187,7 +202,7 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
         ));
 
         assert_eq!(
-            fixed_rate_trader.consumed,
+            taken(&fixed_rate_trader),
             expected_execution_fee + old_consumed
         );
         assert_eq!(fixed_rate_trader.weight, weight + old_weight);
@@ -203,7 +218,7 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
     }
 
     // 3. Buying with a *different* asset on the same trader instance must be rejected.
-    let (old_weight, old_consumed) = (fixed_rate_trader.weight, fixed_rate_trader.consumed);
+    let (old_weight, old_consumed) = (fixed_rate_trader.weight, taken(&fixed_rate_trader));
 
     // Note that the concrete asset type differs now from previous buys
     let total_payment = 20_000;
@@ -220,13 +235,15 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
     assert!(expected_execution_fee > 0); // sanity check
 
     assert_eq!(
-        fixed_rate_trader.buy_weight(weight, payment_multi_asset.into(), &ctx),
+        fixed_rate_trader
+            .buy_weight(weight, asset_to_holding(payment_multi_asset), &ctx)
+            .map_err(|(_, error)| error),
         Err(XcmError::NotWithdrawable)
     );
 
     // Trader state must be untouched by the rejected buy.
     assert_eq!(fixed_rate_trader.weight, old_weight);
-    assert_eq!(fixed_rate_trader.consumed, old_consumed);
+    assert_eq!(taken(&fixed_rate_trader), old_consumed);
     assert_eq!(
         fixed_rate_trader.asset_location_and_units_per_second,
         Some((
@@ -253,16 +270,16 @@ fn fixed_rate_of_foreign_asset_refund_is_capped_by_what_was_paid() {
         ExecutionPayment::get_units_per_second(PARENT).unwrap(),
     );
     assert!(paid > 0); // sanity check
-    assert_ok!(fixed_rate_trader.buy_weight(weight, Asset::from((PARENT, paid)).into(), &ctx));
-    assert_eq!(fixed_rate_trader.consumed, paid);
+    assert_ok!(fixed_rate_trader.buy_weight(weight, asset_to_holding((PARENT, paid).into()), &ctx));
+    assert_eq!(taken(&fixed_rate_trader), paid);
 
     // Ask to refund far more weight than was ever bought.
     let refund = fixed_rate_trader
         .refund_weight(Weight::from_parts(u64::MAX, u64::MAX), &ctx)
         .expect("something was bought, so something is refundable");
 
-    assert_eq!(refund, (PARENT, paid).into());
-    assert!(fixed_rate_trader.consumed.is_zero());
+    assert_eq!(refund, asset_to_holding((PARENT, paid).into()));
+    assert!(taken(&fixed_rate_trader) == 0);
     assert!(fixed_rate_trader.weight.is_zero());
 }
 
@@ -292,11 +309,13 @@ fn fixed_rate_of_foreign_asset_buy_execution_fails() {
     // sanity check, should be more for UT to make sense
     assert!(expected_execution_fee > total_payment);
 
-    // Expect failure because we lack the required funds
-    assert_eq!(
-        fixed_rate_trader.buy_weight(weight, payment_multi_asset.clone().into(), &ctx),
-        Err(XcmError::TooExpensive)
-    );
+    // Not enough funds: the payment must come back whole
+    let (unspent, error) = fixed_rate_trader
+        .buy_weight(weight, asset_to_holding(payment_multi_asset.clone()), &ctx)
+        .unwrap_err();
+    assert_eq!(error, XcmError::TooExpensive);
+    assert_eq!(unspent, asset_to_holding(payment_multi_asset.clone()));
+    assert_eq!(taken(&fixed_rate_trader), 0);
 
     // Try to pay with unsupported funds, expect failure
     let payment_multi_asset = Asset {
@@ -304,8 +323,44 @@ fn fixed_rate_of_foreign_asset_buy_execution_fails() {
         fun: Fungibility::Fungible(total_payment),
     };
     assert_eq!(
-        fixed_rate_trader.buy_weight(Weight::zero(), payment_multi_asset.clone().into(), &ctx),
+        fixed_rate_trader
+            .buy_weight(
+                Weight::zero(),
+                asset_to_holding(payment_multi_asset.clone()),
+                &ctx
+            )
+            .map_err(|(_, error)| error),
         Err(XcmError::TooExpensive)
+    );
+}
+
+#[test]
+fn fixed_rate_of_foreign_asset_quote_matches_buy() {
+    let mut fixed_rate_trader = FixedRateOfForeignAsset::<ExecutionPayment, ()>::new();
+    let ctx = XcmContext {
+        origin: Some(Location::here()),
+        message_id: XcmHash::default(),
+        topic: None,
+    };
+    let weight: Weight = Weight::from_parts(1_000_000_000, 0);
+
+    assert_eq!(
+        fixed_rate_trader.quote_weight(weight, xcm::latest::AssetId(PARENT), &ctx),
+        Ok(Asset::from((
+            PARENT,
+            execution_fee(
+                weight,
+                ExecutionPayment::get_units_per_second(PARENT).unwrap()
+            )
+        )))
+    );
+    assert_eq!(
+        fixed_rate_trader.quote_weight(weight, xcm::latest::AssetId(Location::here()), &ctx),
+        Err(XcmError::NotHoldingFees)
+    );
+    assert_eq!(
+        fixed_rate_trader.quote_weight(Weight::zero(), xcm::latest::AssetId(PARENT), &ctx),
+        Err(XcmError::NoDeal)
     );
 }
 
@@ -333,30 +388,40 @@ fn fixed_rate_of_foreign_asset_refund_is_ok() {
         ExecutionPayment::get_units_per_second(PARENT).unwrap(),
     );
     assert!(expected_execution_fee > 0); // sanity check
-    assert_ok!(fixed_rate_trader.buy_weight(weight, payment_multi_asset.clone().into(), &ctx));
+    assert_ok!(fixed_rate_trader.buy_weight(
+        weight,
+        asset_to_holding(payment_multi_asset.clone()),
+        &ctx
+    ));
 
     // Refund quarter and expect it to pass
     let weight_to_refund = weight / 4;
     let assets_to_refund = expected_execution_fee / 4;
-    let (old_weight, old_consumed) = (fixed_rate_trader.weight, fixed_rate_trader.consumed);
+    let (old_weight, old_consumed) = (fixed_rate_trader.weight, taken(&fixed_rate_trader));
 
     let result = fixed_rate_trader.refund_weight(weight_to_refund, &ctx);
     if let Some(asset_location) = result {
-        assert_eq!(asset_location, (PARENT, assets_to_refund).into());
+        assert_eq!(
+            asset_location,
+            asset_to_holding((PARENT, assets_to_refund).into())
+        );
 
         assert_eq!(fixed_rate_trader.weight, old_weight - weight_to_refund);
-        assert_eq!(fixed_rate_trader.consumed, old_consumed - assets_to_refund);
+        assert_eq!(taken(&fixed_rate_trader), old_consumed - assets_to_refund);
     }
 
     // Refund more than remains and expect it to pass (saturated)
-    let assets_to_refund = fixed_rate_trader.consumed;
+    let assets_to_refund = taken(&fixed_rate_trader);
 
     let result = fixed_rate_trader.refund_weight(weight + Weight::from_parts(10000, 0), &ctx);
     if let Some(asset_location) = result {
-        assert_eq!(asset_location, (PARENT, assets_to_refund).into());
+        assert_eq!(
+            asset_location,
+            asset_to_holding((PARENT, assets_to_refund).into())
+        );
 
         assert!(fixed_rate_trader.weight.is_zero());
-        assert!(fixed_rate_trader.consumed.is_zero());
+        assert!(taken(&fixed_rate_trader) == 0);
     }
 }
 

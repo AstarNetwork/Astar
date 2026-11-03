@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2026-03-23 (Y/M/D)
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 54.0.0
+//! DATE: 2026-11-02 (Y/M/D)
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
 //!
 //! SHORT-NAME: `extrinsic`, LONG-NAME: `ExtrinsicBase`, RUNTIME: `astar`
@@ -43,17 +43,17 @@ parameter_types! {
     /// Calculated by multiplying the *Average* with `1.0` and adding `0`.
     ///
     /// Stats nanoseconds:
-    ///   Min, Max: 93_438, 96_137
-    ///   Average:  94_252
-    ///   Median:   94_063
-    ///   Std-Dev:  620.6
+    ///   Min, Max: 93_892, 95_733
+    ///   Average:  94_498
+    ///   Median:   94_511
+    ///   Std-Dev:  372.59
     ///
     /// Percentiles nanoseconds:
-    ///   99th: 96_137
-    ///   95th: 95_682
-    ///   75th: 94_505
+    ///   99th: 95_733
+    ///   95th: 95_232
+    ///   75th: 94_720
     pub const ExtrinsicBaseWeight: Weight =
-        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(94_252), 166);
+        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(94_498), 166);
 }
 
 #[cfg(test)]

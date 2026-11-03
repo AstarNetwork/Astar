@@ -31,16 +31,11 @@ fn add_candidates(count: u32) {
         let who = AccountId32::new([i.saturated_into::<u8>(); 32]);
         Balances::make_free_balance_be(&who, INITIAL_AMOUNT);
 
-        assert_ok!(RuntimeCall::Session(pallet_session::Call::set_keys {
-            keys: SessionKeys {
-                aura: sr25519::Pair::from_seed_slice(who.encode().as_slice())
-                    .unwrap()
-                    .public()
-                    .into()
-            },
-            proof: vec![]
-        })
-        .dispatch(RuntimeOrigin::signed(who.clone())));
+        let (keys, proof) = session_keys_with_proof(&who, who.encode().as_slice());
+        assert_ok!(
+            RuntimeCall::Session(pallet_session::Call::set_keys { keys, proof })
+                .dispatch(RuntimeOrigin::signed(who.clone()))
+        );
 
         assert_ok!(RuntimeCall::CollatorSelection(
             pallet_collator_selection::Call::apply_for_candidacy {}

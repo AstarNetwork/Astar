@@ -412,7 +412,7 @@ pub struct UnlockingChunk {
     Encode,
     Decode,
     MaxEncodedLen,
-    RuntimeDebugNoBound,
+    DebugNoBound,
     PartialEqNoBound,
     DefaultNoBound,
     EqNoBound,
@@ -1317,7 +1317,7 @@ impl SingularStakingInfo {
 /// **NOTE:** The 'future' entry term is only valid in the era when `stake` is called. It's possible contract stake isn't changed in consecutive eras,
 /// so we might end up in a situation where era is `N + 10` but `staked` entry refers to era `N` and `staked_future` entry refers to era `N+1`.
 /// This is still valid since these values are expected to be updated lazily.
-#[derive(Encode, Decode, MaxEncodedLen, RuntimeDebug, PartialEq, Eq, Clone, TypeInfo, Default)]
+#[derive(Encode, Decode, MaxEncodedLen, Debug, PartialEq, Eq, Clone, TypeInfo, Default)]
 pub struct ContractStakeAmount {
     /// Staked amount in the 'current' era.
     pub(crate) staked: StakeAmount,
@@ -1541,7 +1541,7 @@ pub enum EraRewardSpanError {
     Encode,
     Decode,
     MaxEncodedLen,
-    RuntimeDebugNoBound,
+    DebugNoBound,
     PartialEqNoBound,
     DefaultNoBound,
     EqNoBound,
@@ -1670,7 +1670,7 @@ impl TierThreshold {
     Decode,
     DecodeWithMemTracking,
     MaxEncodedLen,
-    RuntimeDebugNoBound,
+    DebugNoBound,
     PartialEqNoBound,
     DefaultNoBound,
     EqNoBound,
@@ -1757,7 +1757,7 @@ impl<NT: Get<u32>> TierParameters<NT> {
     Encode,
     Decode,
     MaxEncodedLen,
-    RuntimeDebugNoBound,
+    DebugNoBound,
     PartialEqNoBound,
     DefaultNoBound,
     EqNoBound,
@@ -1850,7 +1850,7 @@ impl<NT: Get<u32>> TiersConfiguration<NT> {
     Encode,
     Decode,
     MaxEncodedLen,
-    RuntimeDebugNoBound,
+    DebugNoBound,
     PartialEqNoBound,
     DefaultNoBound,
     EqNoBound,

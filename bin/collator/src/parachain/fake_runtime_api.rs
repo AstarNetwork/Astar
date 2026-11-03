@@ -79,6 +79,12 @@ impl_runtime_apis! {
         }
     }
 
+    impl cumulus_primitives_core::KeyToIncludeInRelayProof<Block> for Runtime {
+        fn keys_to_prove() -> cumulus_primitives_core::RelayProofRequest {
+            unimplemented!()
+        }
+    }
+
     impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
         fn slot_duration() -> sp_consensus_aura::SlotDuration {
             unimplemented!()
@@ -120,7 +126,7 @@ impl_runtime_apis! {
     }
 
     impl sp_session::SessionKeys<Block> for Runtime {
-        fn generate_session_keys(_seed: Option<Vec<u8>>) -> Vec<u8> {
+        fn generate_session_keys(_owner: Vec<u8>, _seed: Option<Vec<u8>>) -> sp_session::OpaqueGeneratedSessionKeys {
             unimplemented!()
         }
 
@@ -184,6 +190,7 @@ impl_runtime_apis! {
             _estimate: bool,
             _access_list: Option<Vec<(H160, Vec<H256>)>>,
             _authorization_list: Option<AuthorizationList>,
+            _state_override: fp_evm::StateOverride,
         ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
             unimplemented!()
         }

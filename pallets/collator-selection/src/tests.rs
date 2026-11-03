@@ -25,6 +25,7 @@ use frame_support::{
     traits::{Currency, OnInitialize},
 };
 use pallet_balances::Error as BalancesError;
+use parity_scale_codec::Encode;
 use sp_runtime::testing::UintAuthorityId;
 use sp_runtime::{traits::BadOrigin, BuildStorage};
 
@@ -294,13 +295,14 @@ fn cannot_apply_for_candidacy_if_poor() {
         assert_eq!(Balances::free_balance(&3), 100);
         Balances::make_free_balance_be(&33, ExistentialDeposit::get());
 
-        assert_ok!(Session::set_keys(
-            RuntimeOrigin::signed(33),
-            MockSessionKeys {
-                aura: UintAuthorityId(33)
-            },
-            vec![]
-        ));
+        let mut keys = MockSessionKeys {
+            aura: UintAuthorityId(33),
+        };
+        let proof = keys
+            .create_ownership_proof(&33u64.encode())
+            .unwrap()
+            .encode();
+        assert_ok!(Session::set_keys(RuntimeOrigin::signed(33), keys, proof));
 
         // works
         register_candidate_helper(3);

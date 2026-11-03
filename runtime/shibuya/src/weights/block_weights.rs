@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2026-03-23 (Y/M/D)
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 54.0.0
+//! DATE: 2026-11-03 (Y/M/D)
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
 //!
 //! SHORT-NAME: `block`, LONG-NAME: `BlockExecution`, RUNTIME: `shibuya`
@@ -43,17 +43,17 @@ parameter_types! {
     /// Calculated by multiplying the *Average* with `1.0` and adding `0`.
     ///
     /// Stats nanoseconds:
-    ///   Min, Max: 688_005, 1_419_497
-    ///   Average:  795_704
-    ///   Median:   691_772
-    ///   Std-Dev:  234521.96
+    ///   Min, Max: 672_033, 780_283
+    ///   Average:  716_917
+    ///   Median:   713_204
+    ///   Std-Dev:  27150.83
     ///
     /// Percentiles nanoseconds:
-    ///   99th: 1_419_497
-    ///   95th: 1_366_293
-    ///   75th: 695_862
+    ///   99th: 780_283
+    ///   95th: 774_863
+    ///   75th: 717_310
     pub const BlockExecutionWeight: Weight =
-        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(795_704), 6_360);
+        Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(716_917), 5_947);
 }
 
 #[cfg(test)]

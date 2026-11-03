@@ -20,7 +20,7 @@ use super::{Balance, BlockNumber};
 
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 
-use frame_support::pallet_prelude::{RuntimeDebug, Weight};
+use frame_support::pallet_prelude::Weight;
 use sp_arithmetic::ArithmeticError;
 use sp_core::{DecodeWithMemTracking, H160};
 use sp_runtime::traits::Zero;
@@ -154,7 +154,7 @@ pub trait SmartContractHandle<AccountId> {
     Encode,
     Decode,
     DecodeWithMemTracking,
-    RuntimeDebug,
+    Debug,
     MaxEncodedLen,
     Hash,
     scale_info::TypeInfo,

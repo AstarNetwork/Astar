@@ -422,6 +422,7 @@ pub fn new_partial(
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
             executor,
             true,
+            Default::default(),
         )?;
     let client = Arc::new(client);
     let telemetry = telemetry.map(|(worker, telemetry)| {
@@ -502,6 +503,7 @@ where
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
+            spawn_essential_handle: task_manager.spawn_essential_handle(),
             import_queue,
             block_announce_validator_builder: None,
             warp_sync_config: None,

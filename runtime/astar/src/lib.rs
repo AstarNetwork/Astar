@@ -73,7 +73,7 @@ use sp_runtime::{
         DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill,
 };
 use xcm::{
     v5::{AssetId as XcmAssetId, Location as XcmLocation},
@@ -223,7 +223,12 @@ const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
     pub RuntimeBlockLength: BlockLength =
-        BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+        BlockLength::builder()
+        .max_length(5 * 1024 * 1024)
+        .modify_max_length_for_class(DispatchClass::Normal, |max| {
+            *max = NORMAL_DISPATCH_RATIO * (5 * 1024 * 1024)
+        })
+        .build();
     pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
         .base_block(BlockExecutionWeight::get())
         .for_class(DispatchClass::all(), |weights| {
@@ -994,7 +999,7 @@ impl pallet_message_queue::Config for Runtime {
     Encode,
     Decode,
     DecodeWithMemTracking,
-    RuntimeDebug,
+    Debug,
     MaxEncodedLen,
     scale_info::TypeInfo,
 )]
@@ -1859,8 +1864,11 @@ impl_runtime_apis! {
     }
 
     impl sp_session::SessionKeys<Block> for Runtime {
-        fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
-            SessionKeys::generate(seed)
+        fn generate_session_keys(
+            owner: Vec<u8>,
+            seed: Option<Vec<u8>>,
+        ) -> sp_session::OpaqueGeneratedSessionKeys {
+            SessionKeys::generate(&owner, seed).into()
         }
 
         fn decode_session_keys(
@@ -1879,6 +1887,12 @@ impl_runtime_apis! {
     impl cumulus_primitives_core::RelayParentOffsetApi<Block> for Runtime {
         fn relay_parent_offset() -> u32 {
             RelayParentOffset::get()
+        }
+    }
+
+    impl cumulus_primitives_core::KeyToIncludeInRelayProof<Block> for Runtime {
+        fn keys_to_prove() -> cumulus_primitives_core::RelayProofRequest {
+            Default::default()
         }
     }
 
@@ -1922,6 +1936,7 @@ impl_runtime_apis! {
             estimate: bool,
             access_list: Option<Vec<(H160, Vec<H256>)>>,
             authorization_list: Option<AuthorizationList>,
+            state_override: fp_evm::StateOverride,
         ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -1984,6 +1999,7 @@ impl_runtime_apis! {
                 validate,
                 weight_limit,
                 proof_size_base_cost,
+                state_override,
                 config
                     .as_ref()
                     .unwrap_or_else(|| <Runtime as pallet_evm::Config>::config()),
@@ -2365,6 +2381,15 @@ impl_runtime_apis! {
                 }
             }
 
+            impl pallet_transaction_payment::BenchmarkConfig for Runtime {}
+
+            impl cumulus_pallet_session_benchmarking::Config for Runtime {
+                fn generate_session_keys_and_proof(owner: Self::AccountId) -> (Self::Keys, Vec<u8>) {
+                    let keys = SessionKeys::generate(&owner.encode(), None);
+                    (keys.keys, keys.proof.encode())
+                }
+            }
+
             // Needed to run `set_code` and `apply_authorized_upgrade` frame_system benchmarks
             // https://github.com/paritytech/cumulus/pull/2766
             impl frame_system_benchmarking::Config for Runtime {
@@ -2406,7 +2431,7 @@ impl_runtime_apis! {
 
                     Ok(asset_hub)
                 }
-                fn worst_case_holding(_depositable_count: u32) -> Assets {
+                fn worst_case_holding(_depositable_count: u32) -> xcm_executor::AssetsInHolding {
                    XcmBenchmarkHelper::<Runtime>::worst_case_holding()
                 }
             }
@@ -2439,6 +2464,8 @@ impl_runtime_apis! {
                 }
                 fn claimable_asset()
                     -> Result<(Location, Location, Assets), BenchmarkError> {
+                    // Claiming mints the asset, so it must be registered.
+                    XcmBenchmarkHelper::<Runtime>::register_foreign_asset(Location::parent(), 2001);
                     let origin = Location::parent();
                     let assets: Assets = (AssetId(Location::parent()), 1_000u128)
                         .into();
@@ -2474,7 +2501,15 @@ impl_runtime_apis! {
                 pub AssetHubLocation: Location = Location::new(1, [Parachain(AssetHubParaId::get())]);
                 pub TrustedReserveLocation: Location = AssetHubLocation::get();
                 pub TrustedReserveAsset: Asset = Asset { id: AssetId(TrustedReserveLocation::get()), fun: Fungible(1_000_000) };
-                pub TrustedReserve: Option<(Location, Asset)> = Some((TrustedReserveLocation::get(), TrustedReserveAsset::get()));
+            }
+
+            // `ReserveAssetDeposited` mints the asset, so it must be registered.
+            pub struct TrustedReserve;
+            impl frame_support::traits::Get<Option<(Location, Asset)>> for TrustedReserve {
+                fn get() -> Option<(Location, Asset)> {
+                    XcmBenchmarkHelper::<Runtime>::register_foreign_asset(TrustedReserveLocation::get(), 2002);
+                    Some((TrustedReserveLocation::get(), TrustedReserveAsset::get()))
+                }
             }
 
             impl pallet_xcm_benchmarks::fungible::Config for Runtime {
@@ -2669,6 +2704,7 @@ impl_runtime_apis! {
                     validate,
                     weight_limit,
                     proof_size_base_cost,
+                    None,
                     <Runtime as pallet_evm::Config>::config(),
                 );
             });

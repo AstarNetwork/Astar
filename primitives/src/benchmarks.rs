@@ -22,6 +22,7 @@ use frame_support::{assert_ok, dispatch::RawOrigin, traits::IsType};
 use sp_runtime::traits::StaticLookup;
 use sp_std::{boxed::Box, vec::Vec};
 use xcm::prelude::*;
+use xcm_executor::{test_helpers::mock_asset_to_holding, AssetsInHolding};
 /// Benchmark helper for `pallet-assets`.
 pub struct AssetsBenchmarkHelper;
 
@@ -48,7 +49,7 @@ where
 {
     /// Get the worst case holding for xcm benchmarks
     /// Scenario: Max allowed fungible assets (pallet_assets)
-    pub fn worst_case_holding() -> Assets {
+    pub fn worst_case_holding() -> AssetsInHolding {
         // Max number of assets - relay asset & native asset
         let fungibles = MAX_ASSETS - 2;
         let fungibles_amount: u128 = 1_000_000_000_000_000_000_000_000;
@@ -100,16 +101,38 @@ where
             }
         }
 
-        // Expand with native asset
-        assets
-            .into_iter()
-            .chain(core::iter::once(Asset {
-                id: AssetId(Location::here()),
-                fun: Fungible(fungibles_amount),
-            }))
-            .rev()
-            .collect::<Vec<Asset>>()
-            .into()
+        // Expand with native asset; holding takes credits, so use mock ones.
+        let mut holding = AssetsInHolding::new();
+        for asset in assets.into_iter().chain(core::iter::once(Asset {
+            id: AssetId(Location::here()),
+            fun: Fungible(fungibles_amount),
+        })) {
+            holding.subsume_assets(mock_asset_to_holding(asset));
+        }
+        holding
+    }
+
+    /// Registers `location` as a sufficient asset with `asset_id`, unless it is already mapped.
+    pub fn register_foreign_asset(location: Location, asset_id: u128) {
+        if pallet_xc_asset_config::AssetLocationToId::<T>::contains_key(
+            location.clone().into_versioned(),
+        ) {
+            return;
+        }
+        assert_ok!(pallet_assets::Pallet::<T>::force_create(
+            RawOrigin::Root.into(),
+            asset_id.into(),
+            Address::Id([0u8; 32].into()).into(),
+            true,
+            1u128.into()
+        ));
+        assert_ok!(
+            pallet_xc_asset_config::Pallet::<T>::register_asset_location(
+                RawOrigin::Root.into(),
+                Box::new(location.into_versioned()),
+                asset_id.into(),
+            )
+        );
     }
 
     /// Set up a *worst-case* complex asset transfer for the `pallet_xcm`

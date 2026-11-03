@@ -620,8 +620,8 @@ pub mod pallet {
             StaticTierParams::<T>::put(tier_params);
             TierConfig::<T>::put(tier_config.clone());
 
-            if self.safeguard.is_some() {
-                Safeguard::<T>::put(self.safeguard.unwrap());
+            if let Some(safeguard) = self.safeguard {
+                Safeguard::<T>::put(safeguard);
             }
         }
     }

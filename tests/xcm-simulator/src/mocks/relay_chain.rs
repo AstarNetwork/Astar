@@ -119,7 +119,6 @@ impl xcm_executor::Config for XcmConfig {
     type Trader = FixedRateOfFungible<KsmPerSecond, ()>;
     type ResponseHandler = ();
     type AssetTrap = ();
-    type AssetClaims = ();
     type SubscriptionService = ();
 
     type PalletInstancesInfo = AllPalletsWithSystem;

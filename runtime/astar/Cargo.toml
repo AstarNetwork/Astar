@@ -106,6 +106,7 @@ xcm-runtime-apis = { workspace = true }
 
 # benchmarking
 array-bytes = { workspace = true }
+cumulus-pallet-session-benchmarking = { workspace = true, optional = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-system-benchmarking = { workspace = true, optional = true }
 
@@ -146,6 +147,7 @@ std = [
 	"astar-xcm-benchmarks?/std",
 	"cumulus-pallet-aura-ext/std",
 	"cumulus-pallet-parachain-system/std",
+	"cumulus-pallet-session-benchmarking?/std",
 	"cumulus-pallet-xcm/std",
 	"cumulus-pallet-xcmp-queue/std",
 	"pallet-safe-mode/std",
@@ -251,6 +253,7 @@ runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
 	"astar-xcm-benchmarks/runtime-benchmarks",
 	"cumulus-pallet-parachain-system/runtime-benchmarks",
+	"cumulus-pallet-session-benchmarking/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"cumulus-primitives-core/runtime-benchmarks",
 	"cumulus-primitives-utility/runtime-benchmarks",

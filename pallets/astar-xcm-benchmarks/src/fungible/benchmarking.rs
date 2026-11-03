@@ -58,16 +58,15 @@ mod benchmarks {
         let dest_location = T::valid_destination()?;
         let dest_account = T::AccountIdConverter::convert_location(&dest_location).unwrap();
 
-        <AssetTransactorOf<T>>::deposit_asset(
-            &asset_to_deposit,
-            &sender_location,
-            Some(&XcmContext {
-                origin: Some(sender_location.clone()),
-                message_id: [0; 32],
-                topic: None,
-            }),
-        )
-        .unwrap();
+        let context = XcmContext {
+            origin: Some(sender_location.clone()),
+            message_id: [0; 32],
+            topic: None,
+        };
+
+        // `deposit_asset` consumes a credit, so mint one first.
+        let holdings = <AssetTransactorOf<T>>::mint_asset(&asset_to_deposit, &context).unwrap();
+        <AssetTransactorOf<T>>::deposit_asset(holdings, &sender_location, Some(&context)).unwrap();
 
         let mut executor = new_executor::<T>(sender_location);
         let instruction = Instruction::TransferAsset {
@@ -100,16 +99,15 @@ mod benchmarks {
             take_minimum_balance::<T>(asset_to_deposit.clone()).unwrap();
         let assets: Assets = vec![asset_to_send].into();
 
-        <AssetTransactorOf<T>>::deposit_asset(
-            &asset_to_deposit,
-            &sender_location,
-            Some(&XcmContext {
-                origin: Some(sender_location.clone()),
-                message_id: [0; 32],
-                topic: None,
-            }),
-        )
-        .unwrap();
+        let context = XcmContext {
+            origin: Some(sender_location.clone()),
+            message_id: [0; 32],
+            topic: None,
+        };
+
+        // `deposit_asset` consumes a credit, so mint one first.
+        let holdings = <AssetTransactorOf<T>>::mint_asset(&asset_to_deposit, &context).unwrap();
+        <AssetTransactorOf<T>>::deposit_asset(holdings, &sender_location, Some(&context)).unwrap();
         assert!(T::TransactAsset::balance(&dest_account).is_zero());
 
         let mut executor = new_executor::<T>(sender_location);

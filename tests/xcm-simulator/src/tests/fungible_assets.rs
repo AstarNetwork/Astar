@@ -501,6 +501,15 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
             parachain::Assets::balance(relay_asset_id, ALICE),
             para_a_alice_expected_balance
         );
+        // Fee goes to the treasury and supply equals the amount sent.
+        assert_eq!(
+            parachain::Assets::balance(relay_asset_id, parachain::TreasuryAccountId::get()),
+            five_instructions_execution_cost
+        );
+        assert_eq!(
+            parachain::Assets::total_supply(relay_asset_id),
+            withdraw_amount
+        );
     });
 
     //
@@ -1220,4 +1229,207 @@ fn relay_as_reserve_is_deactivate() {
 
     // Ensure Alice never got any tokens
     ParaA::execute_with(|| assert_eq!(parachain::Assets::balance(relay_asset_id, ALICE), 0))
+}
+
+/// Registers the relay token on ParaA as a fee asset (1 unit per ref-time unit) and funds Alice.
+fn setup_relay_asset_on_para_a(asset_id: u128, amount: u128) {
+    ParaA::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            asset_id,
+            (Parent,),
+            parent_account_id(),
+            Some(true),
+            Some(1),
+            Some(1_000_000_000_000)
+        ));
+        assert_ok!(ParachainAssets::mint(
+            parachain::RuntimeOrigin::signed(parent_account_id()),
+            asset_id,
+            ALICE.into(),
+            amount
+        ));
+    });
+}
+
+// Sibling chain's own asset paying the fee on arrival.
+#[test]
+fn para_to_para_local_asset_fee_goes_to_treasury() {
+    MockNet::reset();
+
+    let asset_id = 123;
+    let local_asset: Location = (PalletInstance(4u8), GeneralIndex(asset_id)).into();
+    let para_a_local_asset = local_asset
+        .clone()
+        .pushed_front_with_interior(Parachain(1))
+        .unwrap()
+        .prepended_with(Parent)
+        .unwrap();
+
+    ParaA::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            asset_id,
+            local_asset,
+            ALICE.into(),
+            Some(true),
+            Some(1),
+            Some(0)
+        ));
+        assert_ok!(ParachainAssets::mint(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            asset_id,
+            ALICE.into(),
+            300000000000000
+        ));
+    });
+
+    ParaB::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            asset_id,
+            para_a_local_asset,
+            sibling_para_account_id(1),
+            Some(true),
+            Some(1),
+            // 1 unit per unit of ref-time weight
+            Some(1_000_000_000_000)
+        ));
+    });
+
+    let send_amount = 1_000;
+    ParaA::execute_with(|| {
+        assert_ok!(para_transfer_currency(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            asset_id,
+            send_amount,
+            (
+                Parent,
+                Parachain(2),
+                AccountId32 {
+                    network: None,
+                    id: ALICE.into()
+                }
+            )
+                .into(),
+            Unlimited
+        ));
+    });
+
+    // ReserveAssetDeposited, ClearOrigin, BuyExecution, DepositAsset, SetTopic
+    let fee = (parachain::UnitWeightCost::get() * 5).ref_time() as u128;
+    ParaB::execute_with(|| {
+        assert_eq!(
+            ParachainAssets::balance(asset_id, &ALICE.into()),
+            send_amount - fee
+        );
+        assert_eq!(
+            ParachainAssets::balance(asset_id, parachain::TreasuryAccountId::get()),
+            fee
+        );
+        assert_eq!(ParachainAssets::total_supply(asset_id), send_amount);
+    });
+}
+
+// Trap and claim must leave total supply unchanged.
+#[test]
+fn foreign_asset_trap_and_claim_keeps_total_supply() {
+    MockNet::reset();
+
+    let asset_id = 123;
+    let initial = 1_000;
+    let trapped = 400;
+    setup_relay_asset_on_para_a(asset_id, initial);
+
+    let bob = AccountId32 {
+        network: None,
+        id: BOB.into(),
+    };
+
+    ParaA::execute_with(|| {
+        // Nothing deposits the withdrawn assets, so they get trapped.
+        let xcm = Xcm(vec![WithdrawAsset((Parent, trapped).into())]);
+        assert_ok!(ParachainPalletXcm::execute(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            Box::new(VersionedXcm::V5(xcm)),
+            Weight::from_parts(100_000_000_000, 1024 * 1024)
+        ));
+
+        assert_eq!(ParachainAssets::balance(asset_id, ALICE), initial - trapped);
+        assert_eq!(ParachainAssets::total_supply(asset_id), initial);
+    });
+
+    ParaA::execute_with(|| {
+        let xcm = Xcm(vec![
+            ClaimAsset {
+                assets: (Parent, trapped).into(),
+                ticket: Here.into(),
+            },
+            DepositAsset {
+                assets: All.into(),
+                beneficiary: bob.into(),
+            },
+        ]);
+        assert_ok!(ParachainPalletXcm::execute(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            Box::new(VersionedXcm::V5(xcm)),
+            Weight::from_parts(100_000_000_000, 1024 * 1024)
+        ));
+
+        assert_eq!(ParachainAssets::balance(asset_id, BOB), trapped);
+        assert_eq!(ParachainAssets::balance(asset_id, ALICE), initial - trapped);
+        assert_eq!(ParachainAssets::total_supply(asset_id), initial);
+    });
+}
+
+// The treasury only keeps the fee for the weight actually used.
+#[test]
+fn foreign_asset_refund_surplus_returns_unused_fee() {
+    MockNet::reset();
+
+    let asset_id = 123;
+    let initial = 1_000;
+    let withdrawn = 100;
+    setup_relay_asset_on_para_a(asset_id, initial);
+
+    let alice = AccountId32 {
+        network: None,
+        id: ALICE.into(),
+    };
+    let unit = parachain::UnitWeightCost::get();
+    // The error handler is weighed when set and becomes surplus once it is replaced.
+    let unused_handler = Xcm(vec![ClearOrigin, ClearOrigin]);
+    let surplus = (unit * 2).ref_time() as u128;
+    // 6 instructions, plus the 2 nested in the first error handler.
+    let bought = (unit * 8).ref_time() as u128;
+
+    ParaA::execute_with(|| {
+        let xcm = Xcm(vec![
+            WithdrawAsset((Parent, withdrawn).into()),
+            BuyExecution {
+                fees: (Parent, withdrawn).into(),
+                weight_limit: Limited(unit * 8),
+            },
+            SetErrorHandler(unused_handler),
+            SetErrorHandler(Xcm(vec![])),
+            RefundSurplus,
+            DepositAsset {
+                assets: All.into(),
+                beneficiary: alice.into(),
+            },
+        ]);
+        assert_ok!(ParachainPalletXcm::execute(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            Box::new(VersionedXcm::V5(xcm)),
+            Weight::from_parts(100_000_000_000, 1024 * 1024)
+        ));
+
+        let fee = bought - surplus;
+        assert_eq!(ParachainAssets::balance(asset_id, ALICE), initial - fee);
+        assert_eq!(
+            ParachainAssets::balance(asset_id, parachain::TreasuryAccountId::get()),
+            fee
+        );
+        assert_eq!(ParachainAssets::total_supply(asset_id), initial);
+    });
 }

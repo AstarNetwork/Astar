@@ -131,6 +131,7 @@ moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
 
 # benchmarking
+cumulus-pallet-session-benchmarking = { workspace = true, optional = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-system-benchmarking = { workspace = true, optional = true }
 
@@ -147,6 +148,7 @@ std = [
 	"astar-xcm-benchmarks?/std",
 	"cumulus-pallet-aura-ext/std",
 	"cumulus-pallet-parachain-system/std",
+	"cumulus-pallet-session-benchmarking?/std",
 	"cumulus-pallet-xcm/std",
 	"cumulus-pallet-xcmp-queue/std",
 	"cumulus-primitives-aura/std",
@@ -253,6 +255,7 @@ runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
 	"astar-xcm-benchmarks/runtime-benchmarks",
 	"cumulus-pallet-parachain-system/runtime-benchmarks",
+	"cumulus-pallet-session-benchmarking/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"cumulus-primitives-core/runtime-benchmarks",
 	"cumulus-primitives-utility/runtime-benchmarks",

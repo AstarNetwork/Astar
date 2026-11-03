@@ -63,6 +63,7 @@ parameter_types! {
     [GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into())].into();
     pub const ShidenLocation: Location = Here.into_location();
     pub DummyCheckingAccount: AccountId = PolkadotXcm::check_account();
+    pub TreasuryLocation: Location = Junction::AccountId32 { network: None, id: TreasuryAccountId::get().into() }.into();
 }
 
 /// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
@@ -245,12 +246,7 @@ pub type XcmBarrier = TrailingSetTopicAsId<(
 )>;
 
 // Used to handle XCM fee deposit into treasury account
-pub type ShidenXcmFungibleFeeHandler = XcmFungibleFeeHandler<
-    AccountId,
-    ConvertedConcreteId<AssetId, Balance, ShidenAssetLocationIdConverter, JustTry>,
-    Assets,
-    TreasuryAccountId,
->;
+pub type ShidenXcmFungibleFeeHandler = XcmFungibleFeeHandler<AssetTransactors, TreasuryLocation>;
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
@@ -269,7 +265,6 @@ impl xcm_executor::Config for XcmConfig {
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
-    type AssetClaims = PolkadotXcm;
     type SubscriptionService = PolkadotXcm;
 
     type PalletInstancesInfo = AllPalletsWithSystem;
