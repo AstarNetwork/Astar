@@ -164,8 +164,8 @@ where
     fn clear_error() -> XCMWeight {
         XcmGeneric::<Runtime>::clear_error()
     }
-    fn claim_asset(_assets: &Assets, _ticket: &Location) -> XCMWeight {
-        XcmGeneric::<Runtime>::claim_asset()
+    fn claim_asset(assets: &Assets, _ticket: &Location) -> XCMWeight {
+        assets.weigh_multi_assets(XcmGeneric::<Runtime>::claim_asset())
     }
     fn trap(_code: &u64) -> XCMWeight {
         XcmGeneric::<Runtime>::trap()

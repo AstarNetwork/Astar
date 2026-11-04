@@ -45,6 +45,9 @@ mod governance;
 mod xcm_api;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
+mod xcm_rollback;
+
+#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod fees;
 
 #[cfg(any(feature = "shibuya", feature = "astar"))]
