@@ -32,7 +32,7 @@ collator_names = sys.argv[6:]
 
 
 def inspect(uri: str) -> dict:
-    """Return {'ss58': ..., 'public_hex': ...} for a Substrate URI."""
+    """Return {'ss58': ...} for a Substrate URI."""
     out = subprocess.check_output(
         [collator_bin, "key", "inspect", "--scheme", "sr25519", "--output-type", "json", uri],
         text=True,
@@ -40,10 +40,7 @@ def inspect(uri: str) -> dict:
     j = json.loads(out)
     # subkey/collator output field names vary slightly; accept both.
     ss58 = j.get("ss58Address") or j["ss58_address"]
-    pub = j.get("publicKey") or j["public_key"]
-    if not pub.startswith("0x"):
-        pub = "0x" + pub
-    return {"ss58": ss58, "public_hex": pub}
+    return {"ss58": ss58}
 
 
 # Zombienet derives node keys from "//<CapitalizedName>".
@@ -68,7 +65,7 @@ cfg = runtime_genesis[key]
 cfg.setdefault("sudo", {})["key"] = sudo_ss58
 
 cfg.setdefault("session", {})["keys"] = [
-    [c["ss58"], c["ss58"], {"aura": c["public_hex"]}] for _, c in collators
+    [c["ss58"], c["ss58"], {"aura": c["ss58"]}] for _, c in collators
 ]
 
 cfg.setdefault("collatorSelection", {})
