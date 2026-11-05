@@ -72,15 +72,17 @@ $ ./target/release/astar-collator \
   --collator
 ```
 
-Now, you can obtain the node's session key by sending the following RPC payload.
+Now, you can obtain the node's session keys and their ownership proof by sending the following RPC payload. The owner is the public key of the account that will register the keys.
 
 ```bash
-# send `rotate_keys` request
-$ curl -H 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_rotateKeys", "id":1 }' localhost:9933
+# send `author_rotateKeysWithOwner` request
+$ curl -H 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_rotateKeysWithOwner", "params":["<account public key in hex>"], "id":1 }' localhost:9944
 
-# should return a long string of hex, which is your session key
-{"jsonrpc":"2.0","result":"<session key in hex>","id":1}
+# should return your session keys and the proof that you own them
+{"jsonrpc":"2.0","result":{"keys":"<session keys in hex>","proof":"<proof in hex>"},"id":1}
 ```
+
+Then submit `session.setKeys(keys, proof)` from that same account, since the proof is only valid for it.
 
 After this step, you should have a validator node online with a session key for your node.
 For key management and validator rewards, consult our [validator guide online](https://docs.astar.network/build/validator-guide/configure-node).
