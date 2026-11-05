@@ -91,66 +91,6 @@ fn withdraw_and_deposit_to_bob(held: Location) -> Outcome {
     ])
 }
 
-// Only Astar still carries the migration in `Unreleased`; remove together with it.
-#[cfg(feature = "astar")]
-mod asset_traps_migration {
-    use super::*;
-    use frame_support::traits::OnRuntimeUpgrade;
-    use xcm::v5::Instruction::ClaimAsset;
-
-    // Nothing deposits the withdrawn asset, so it ends up trapped.
-    fn trap_native(amount: u128) -> Outcome {
-        execute_as_alice(vec![WithdrawAsset(
-            XcmAsset::from((Location::here(), amount)).into(),
-        )])
-    }
-
-    fn claim_native_to_bob(amount: u128) -> Outcome {
-        execute_as_alice(vec![
-            ClaimAsset {
-                assets: XcmAsset::from((Location::here(), amount)).into(),
-                ticket: Location::here(),
-            },
-            DepositAsset {
-                assets: AssetFilter::Wild(WildAsset::AllCounted(1)),
-                beneficiary: account_location(BOB),
-            },
-        ])
-    }
-
-    #[test]
-    fn unreleased_migration_resets_asset_traps() {
-        let mut ext = new_test_ext();
-        let bob_balance = ext.execute_with(|| {
-            let bob_balance = Balances::free_balance(&BOB);
-
-            // Trapped twice, so one claim shows a trap is claimable before the migration.
-            assert!(matches!(trap_native(AMOUNT), Outcome::Complete { .. }));
-            assert!(matches!(trap_native(AMOUNT), Outcome::Complete { .. }));
-            assert!(matches!(
-                claim_native_to_bob(AMOUNT),
-                Outcome::Complete { .. }
-            ));
-            assert_eq!(Balances::free_balance(&BOB), bob_balance + AMOUNT);
-
-            bob_balance
-        });
-
-        // An upgrade finds traps in committed storage, not in the overlay.
-        ext.commit_all().unwrap();
-
-        ext.execute_with(|| {
-            <Unreleased as OnRuntimeUpgrade>::on_runtime_upgrade();
-
-            assert!(matches!(
-                claim_native_to_bob(AMOUNT),
-                Outcome::Incomplete { .. }
-            ));
-            assert_eq!(Balances::free_balance(&BOB), bob_balance + AMOUNT);
-        });
-    }
-}
-
 #[test]
 fn failed_multi_asset_withdraw_keeps_native_issuance() {
     new_test_ext().execute_with(|| {
