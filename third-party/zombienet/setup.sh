@@ -32,3 +32,4 @@ while ps $SETUP_PID > /dev/null ; do
     sleep 1
 done
 chmod +x polkadot polkadot-execute-worker polkadot-prepare-worker
+./polkadot --version
