@@ -87,6 +87,31 @@ Then submit `session.setKeys(keys, proof)` from that same account, since the pro
 After this step, you should have a validator node online with a session key for your node.
 For key management and validator rewards, consult our [validator guide online](https://docs.astar.network/build/validator-guide/configure-node).
 
+## Running an EVM Tracing Node
+
+The on-chain runtime doesn't include the tracing API, so `debug_*` and `trace_*` calls need a tracing build of the runtime for each `spec_version` you want to trace. Every `runtime-*` release publishes these builds in `evm-tracing-artifacts-<tag>.tar.gz`.
+
+```bash
+# copy the tracing runtime into the overrides directory (example: Shibuya, spec 2600)
+$ wget https://github.com/AstarNetwork/Astar/releases/download/runtime-2600/evm-tracing-artifacts-runtime-2600.tar.gz
+$ tar -xzf evm-tracing-artifacts-runtime-2600.tar.gz
+$ cp evm-tracing-artifacts/shibuya*.wasm <path to overrides>/
+
+# start an archive node with tracing enabled
+$ ./target/release/astar-collator \
+  --chain shibuya \
+  --base-path <path to save blocks> \
+  --state-pruning archive \
+  --blocks-pruning archive \
+  --enable-evm-rpc \
+  --ethapi=debug,trace,txpool \
+  --wasm-runtime-overrides <path to overrides>
+```
+
+- Overrides are only read at startup. Add the tracing runtime of a new release and restart the node before that release is enacted.
+- Keep one file per `spec_version`, since duplicates are rejected.
+- A block can only be traced if the overrides directory has a tracing runtime for its spec. To backfill history, repeat the first step for each older release you need, and test on a block that contains a transaction.
+
 ## Versioning
 
 ### Historical Versioning (Up to `v5.44.0`)
