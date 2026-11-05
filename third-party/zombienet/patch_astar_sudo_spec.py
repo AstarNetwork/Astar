@@ -8,10 +8,12 @@ Patch an Astar plain chain-spec so it can be driven by zombienet from a raw file
      these names, and once we hand zombienet a raw spec it can no longer inject
      them itself. Without this rewrite the collators are unauthorised to author
      and the chain never produces a block.
+  4. Set the para ID to the one zombienet registers on the relay, which it can't
+     patch into a raw spec's genesis either. On a mismatch no block is produced.
 
 Usage:
     patch_astar_sudo_spec.py <plain_in> <wasm> <patched_out> \\
-        <sudo_ss58> <collator_binary> <collator_name>...
+        <sudo_ss58> <collator_binary> <para_id> <collator_name>...
 """
 
 import json
@@ -19,7 +21,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-if len(sys.argv) < 7:
+if len(sys.argv) < 8:
     print(__doc__, file=sys.stderr)
     sys.exit(2)
 
@@ -28,7 +30,8 @@ wasm_path = Path(sys.argv[2])
 out_path = Path(sys.argv[3])
 sudo_ss58 = sys.argv[4]
 collator_bin = sys.argv[5]
-collator_names = sys.argv[6:]
+para_id = int(sys.argv[6])
+collator_names = sys.argv[7:]
 
 
 def inspect(uri: str) -> dict:
@@ -63,6 +66,9 @@ else:
 cfg = runtime_genesis[key]
 
 cfg.setdefault("sudo", {})["key"] = sudo_ss58
+
+cfg.setdefault("parachainInfo", {})["parachainId"] = para_id
+spec["para_id"] = para_id
 
 cfg.setdefault("session", {})["keys"] = [
     [c["ss58"], c["ss58"], {"aura": c["ss58"]}] for _, c in collators

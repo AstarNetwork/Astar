@@ -18,3 +18,6 @@ collator2: parachain 2000 perform upgrade with ./runtime.compact.compressed.wasm
 ## and same-slot collisions between mixed client versions).
 collator1: js-script ./scripts/post_upgrade.js with "20" return is equal to 1 within 450 seconds
 collator2: js-script ./scripts/post_upgrade.js with "20" return is equal to 1 within 450 seconds
+
+## on the upgraded runtime, session keys register only with a valid ownership proof
+collator2: js-script ./scripts/rotate_session_keys.js return is equal to 1 within 200 seconds

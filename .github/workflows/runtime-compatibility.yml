@@ -67,6 +67,7 @@ jobs:
     # Only run if workflow_run was successful OR if manually triggered
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
@@ -218,14 +219,15 @@ jobs:
           # 1. Generate plain spec
           "$TMP_COLLATOR" build-spec --chain astar-dev > astar-plain.json
 
-          # 2. Patch sudo key, WASM, and (crucially, since the spec is raw)
-          #    session keys + invulnerables for zombienet's collator names.
+          # 2. Patch sudo key, WASM, and (crucially, since the spec is raw) para ID,
+          #    session keys + invulnerables to match smoke_runtime_upgrade.toml.
           python3 patch_astar_sudo_spec.py \
             astar-plain.json \
             "$SUDO_WASM" \
             astar-patched.json \
             "$ALICE" \
             "$TMP_COLLATOR" \
+            2000 \
             collator1 collator2
 
           # 3. Convert patched spec -> raw spec
@@ -239,6 +241,8 @@ jobs:
       # ── Run the actual compatibility test ─────────────────────────────────────
       - name: Run compatibility test
         working-directory: ${{ env.ZOMBIENET_DIR }}
+        # zombienet's "perform upgrade" waits forever if the chain stops producing blocks
+        timeout-minutes: 40
         run: |
           if [ "${{ matrix.chain }}" = "astar" ]; then
             export CHAIN="./astar-raw.json"
