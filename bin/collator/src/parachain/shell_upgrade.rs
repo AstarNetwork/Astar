@@ -18,18 +18,21 @@
 
 //! Utility for the upgrade from shell to a parachain runtime that implements Aura.
 use astar_primitives::*;
-use cumulus_primitives_core::relay_chain::PersistedValidationData;
-use cumulus_primitives_core::RelayParentOffsetApi;
+use cumulus_primitives_core::relay_chain::{self, PersistedValidationData};
+use cumulus_primitives_core::{ParaId, RelayParentOffsetApi};
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use fc_rpc::pending::ConsensusDataProvider;
-use sc_client_api::{AuxStore, UsageProvider};
+use parity_scale_codec::{Decode, Encode};
+use sc_client_api::{AuxStore, Backend, StorageProvider, UsageProvider};
 use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams};
 use sp_api::{ApiExt, ProvideRuntimeApi};
+use sp_blockchain::HeaderBackend;
 use sp_consensus_aura::{
     digests::CompatibleDigestItem,
     sr25519::{AuthorityId as AuraId, AuthoritySignature},
     AuraApi,
 };
+use sp_core::{hashing::twox_128, storage::StorageKey};
 use sp_inherents::{CreateInherentDataProviders, Error, InherentData};
 use sp_runtime::{
     traits::{Block as BlockT, Header as HeaderT},
@@ -122,33 +125,61 @@ where
     }
 }
 
+/// Relay chain slot duration, used to mock a relay slot matching the pending block's para slot.
+const RELAY_CHAIN_SLOT_DURATION_MILLIS: u64 = 6000;
+
 /// Shiden genesis did not start with AuraApi, therefore this implementation makes sure to return
 /// inherent data after AuraApi becomes available.
 /// This is currently required by EVM RPC.
-pub struct PendingCrateInherentDataProvider<B, C> {
+pub struct PendingCrateInherentDataProvider<B, C, BE> {
     client: Arc<C>,
-    phantom_data: PhantomData<B>,
+    para_id: ParaId,
+    phantom_data: PhantomData<fn() -> (B, BE)>,
 }
 
-impl<B, C> PendingCrateInherentDataProvider<B, C>
-where
-    B: BlockT,
-    C: AuxStore + ProvideRuntimeApi<B> + UsageProvider<B> + Send + Sync,
-    C::Api: AuraApi<B, AuraId>,
-{
-    pub fn new(client: Arc<C>) -> Self {
+impl<B, C, BE> PendingCrateInherentDataProvider<B, C, BE> {
+    pub fn new(client: Arc<C>, para_id: ParaId) -> Self {
         Self {
             client,
+            para_id,
             phantom_data: Default::default(),
         }
     }
 }
 
-#[async_trait::async_trait]
-impl<B, C> CreateInherentDataProviders<B, ()> for PendingCrateInherentDataProvider<B, C>
+impl<B, C, BE> PendingCrateInherentDataProvider<B, C, BE>
 where
     B: BlockT,
-    C: AuxStore + ProvideRuntimeApi<B> + UsageProvider<B> + Send + Sync,
+    BE: Backend<B>,
+    C: StorageProvider<B, BE>,
+{
+    /// Reads `ParachainSystem::LastDmqMqcHead` at `parent`, so the mocked DMQ head matches it.
+    fn last_dmq_mqc_head(
+        &self,
+        parent: B::Hash,
+    ) -> Result<relay_chain::Hash, Box<dyn std::error::Error + Send + Sync>> {
+        let key = [twox_128(b"ParachainSystem"), twox_128(b"LastDmqMqcHead")].concat();
+        Ok(self
+            .client
+            .storage(parent, &StorageKey(key))?
+            .map(|data| relay_chain::Hash::decode(&mut &data.0[..]))
+            .transpose()?
+            .unwrap_or_default())
+    }
+}
+
+#[async_trait::async_trait]
+impl<B, C, BE> CreateInherentDataProviders<B, ()> for PendingCrateInherentDataProvider<B, C, BE>
+where
+    B: BlockT,
+    BE: Backend<B>,
+    C: AuxStore
+        + ProvideRuntimeApi<B>
+        + UsageProvider<B>
+        + HeaderBackend<B>
+        + StorageProvider<B, BE>
+        + Send
+        + Sync,
     C::Api: AuraApi<B, AuraId> + RelayParentOffsetApi<B>,
 {
     type InherentDataProviders = (
@@ -181,9 +212,17 @@ where
                 *timestamp,
                 slot_duration,
             );
-        // Create a dummy parachain inherent data provider which is required to pass
-        // the checks by the para chain system. We use dummy values because in the 'pending context'
-        // neither do we have access to the real values nor do we need them.
+        // Mock relay state that passes the parachain-system and aura-ext checks on top of `parent`.
+        let sproof_builder = RelayStateSproofBuilder {
+            para_id: self.para_id,
+            current_slot: (next_slot / RELAY_CHAIN_SLOT_DURATION_MILLIS).into(),
+            included_para_head: self
+                .client
+                .header(parent)?
+                .map(|header| header.encode().into()),
+            dmq_mqc_head: Some(self.last_dmq_mqc_head(parent)?),
+            ..Default::default()
+        };
         let (relay_parent_storage_root, relay_chain_state, relay_parent_descendants) = if self
             .client
             .runtime_api()
@@ -195,9 +234,9 @@ where
                 .runtime_api()
                 .relay_parent_offset(parent)
                 .expect("API present, call should succeed; qed");
-            RelayStateSproofBuilder::default().into_state_root_proof_and_descendants(offset.into())
+            sproof_builder.into_state_root_proof_and_descendants(offset.into())
         } else {
-            let (root, proof) = RelayStateSproofBuilder::default().into_state_root_and_proof();
+            let (root, proof) = sproof_builder.into_state_root_and_proof();
             (root, proof, Default::default())
         };
         let vfp = PersistedValidationData {
