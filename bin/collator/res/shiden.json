@@ -4,9 +4,7 @@
   "chainType": "Live",
   "bootNodes": [
     "/ip4/148.113.1.228/tcp/30333/ws/p2p/12D3KooWKtNdFaBpFfBpdRYbjksQHA9rp8DPP2fcqBhPreoMB6Kj",
-    "/ip4/51.89.41.58/tcp/30333/ws/p2p/12D3KooWJwbUzXmA46QA71UkzgVnvSd9Nx4HhY48HLCwWcHYiC9d",
-    "/dns/bootnode-01.shiden.astar.network/tcp/443/wss/p2p/12D3KooWKtNdFaBpFfBpdRYbjksQHA9rp8DPP2fcqBhPreoMB6Kj",
-    "/dns/bootnode-02.shiden.astar.network/tcp/443/wss/p2p/12D3KooWJwbUzXmA46QA71UkzgVnvSd9Nx4HhY48HLCwWcHYiC9d"
+    "/dns/bootnode-01.shiden.astar.network/tcp/443/wss/p2p/12D3KooWKtNdFaBpFfBpdRYbjksQHA9rp8DPP2fcqBhPreoMB6Kj"
   ],
   "telemetryEndpoints": null,
   "protocolId": "shiden",
