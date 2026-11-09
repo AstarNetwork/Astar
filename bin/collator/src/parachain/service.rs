@@ -473,6 +473,7 @@ where
                 subscription,
                 pubsub_notification_sinks.clone(),
                 rpc_config.clone(),
+                para_id,
             )
             .map_err(Into::into)
         })

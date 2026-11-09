@@ -197,6 +197,7 @@ pub fn create_full<C, P, BE>(
         >,
     >,
     tracing_config: EvmTracingConfig,
+    para_id: ParaId,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
@@ -228,7 +229,12 @@ where
     let client = Arc::clone(&deps.client);
     let graph = Arc::clone(&deps.graph);
 
-    let mut io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)?;
+    let mut io = create_full_rpc(
+        deps,
+        subscription_task_executor,
+        pubsub_notification_sinks,
+        para_id,
+    )?;
 
     if tracing_config.enable_txpool {
         io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
@@ -379,6 +385,7 @@ fn create_full_rpc<C, P, BE>(
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
+    para_id: ParaId,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
@@ -409,7 +416,7 @@ where
         deps,
         subscription_task_executor,
         pubsub_notification_sinks,
-        crate::parachain::PendingCrateInherentDataProvider::new,
+        |client| crate::parachain::PendingCrateInherentDataProvider::new(client, para_id),
     )
 }
 
