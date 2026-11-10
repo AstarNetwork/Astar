@@ -858,7 +858,6 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
  "polkadot-cli",
- "polkadot-core-primitives",
  "polkadot-parachain-primitives",
  "polkadot-primitives",
  "polkadot-runtime-common",

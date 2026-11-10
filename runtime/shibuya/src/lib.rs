@@ -1650,19 +1650,8 @@ pub type Executive = frame_executive::Executive<
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
-parameter_types! {
-    pub const PolkadotXcmPalletName: &'static str = "PolkadotXcm";
-    pub const AssetTrapsStorageName: &'static str = "AssetTraps";
-}
-
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (
-    frame_support::migrations::RemoveStorage<
-        PolkadotXcmPalletName,
-        AssetTrapsStorageName,
-        RocksDbWeight,
-    >,
-);
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);
