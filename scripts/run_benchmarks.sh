@@ -194,6 +194,7 @@ done
 
 if [ $ERR_RC -ne 0 ]; then
     echo "[-] Benchmarks failed: $ERR_FILES"
+    exit "$ERR_RC"
 else
     echo "[+] All benchmarks passed."
 fi
