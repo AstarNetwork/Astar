@@ -14139,7 +14139,7 @@ dependencies = [
 [[package]]
 name = "sc-network-sync"
 version = "0.55.1"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2603#ed30dfeb9818b48373a7aa69f6c6195677f9bad3"
+source = "git+https://github.com/AstarNetwork/polkadot-sdk?rev=3b81a4b8f394d7fa92c449cbf1c7bf4c8c30e569#3b81a4b8f394d7fa92c449cbf1c7bf4c8c30e569"
 dependencies = [
  "array-bytes 6.2.3",
  "async-channel 1.9.0",
