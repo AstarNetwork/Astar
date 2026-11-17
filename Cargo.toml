@@ -339,3 +339,7 @@ moonbeam-rpc-core-debug = { path = "./vendor/rpc-core/debug" }
 # Build deps
 substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2603" }
 substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2603" }
+
+# Tip sync stall fix on top of stable2603, drop once the upstream branch carries it.
+[patch."https://github.com/paritytech/polkadot-sdk"]
+sc-network-sync = { git = "https://github.com/AstarNetwork/polkadot-sdk", rev = "3b81a4b8f394d7fa92c449cbf1c7bf4c8c30e569" }
