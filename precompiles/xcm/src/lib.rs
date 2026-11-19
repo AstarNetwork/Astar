@@ -495,10 +495,12 @@ where
         let fee_index: u32 = fee_index
             .try_into()
             .map_err(|_| revert("error converting fee_index, maybe value too large"))?;
+        let sorted: Assets = assets.clone().into();
+        let fee_index = Self::fee_index_after_sort(&assets, &sorted, fee_index)?;
 
         Self::do_transfer(
             handle,
-            assets.into(),
+            sorted,
             fee_index,
             Self::chain_part(is_relay, parachain_id)?,
             beneficiary,

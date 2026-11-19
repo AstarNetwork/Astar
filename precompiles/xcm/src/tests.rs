@@ -131,6 +131,42 @@ mod assets_withdraw {
         });
     }
 
+    /// `fee_index` names the fee asset in the caller's order
+    #[test]
+    fn v1_fee_index_follows_the_callers_order() {
+        ExtBuilder.build().execute_with(|| {
+            // Asset 3 lives one junction deeper than asset 2, so it always sorts second.
+            let call = |ids: [u128; 2], fee_index: u32| PrecompileCall::assets_withdraw_native_v1 {
+                assets: ids
+                    .map(|id| Address::from(Runtime::asset_id_to_address(id)))
+                    .to_vec()
+                    .into(),
+                amounts: vec![42000u64.into(); 2].into(),
+                recipient_account_id: H256::repeat_byte(0xF1),
+                is_relay: false,
+                parachain_id: 10.into(),
+                fee_index: fee_index.into(),
+            };
+
+            precompiles()
+                .prepare_test(TestAccount::Alice, PRECOMPILE_ADDRESS, call([3, 2], 0))
+                .expect_no_logs()
+                .execute_returns(true);
+            let named_first = only_sent_xcm();
+
+            precompiles()
+                .prepare_test(TestAccount::Alice, PRECOMPILE_ADDRESS, call([2, 3], 1))
+                .expect_no_logs()
+                .execute_returns(true);
+
+            assert_eq!(
+                named_first,
+                only_sent_xcm(),
+                "asset 3 pays the destination's fees in both, so both must build the same message"
+            );
+        });
+    }
+
     #[test]
     fn sanity_checks_for_parameters() {
         ExtBuilder.build().execute_with(|| {
