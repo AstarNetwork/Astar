@@ -492,7 +492,7 @@ where
                 backend,
                 blocking_permits,
                 cache: LRUCacheByteLimited::new(
-                    "trace-filter-blocks-cache",
+                    "trace_filter_blocks_cache",
                     cache_size_bytes,
                     prometheus,
                 ),

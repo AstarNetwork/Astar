@@ -176,7 +176,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: Cow::Borrowed("shiden"),
     impl_name: Cow::Borrowed("shiden"),
     authoring_version: 1,
-    spec_version: 2600,
+    spec_version: 2601,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -1224,19 +1224,8 @@ parameter_types! {
 /// __NOTE:__ THE ORDER IS IMPORTANT.
 pub type Migrations = (Unreleased, Permanent);
 
-parameter_types! {
-    pub const PolkadotXcmPalletName: &'static str = "PolkadotXcm";
-    pub const AssetTrapsStorageName: &'static str = "AssetTraps";
-}
-
 /// Unreleased migrations. Add new ones here:
-pub type Unreleased = (
-    frame_support::migrations::RemoveStorage<
-        PolkadotXcmPalletName,
-        AssetTrapsStorageName,
-        RocksDbWeight,
-    >,
-);
+pub type Unreleased = ();
 
 /// Migrations/checks that do not need to be versioned and can run on every upgrade.
 pub type Permanent = (pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,);

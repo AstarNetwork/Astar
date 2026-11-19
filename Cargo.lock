@@ -858,7 +858,6 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
  "polkadot-cli",
- "polkadot-core-primitives",
  "polkadot-parachain-primitives",
  "polkadot-primitives",
  "polkadot-runtime-common",
@@ -948,7 +947,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "26.0.0"
+version = "26.0.1"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -15203,7 +15202,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "26.0.0"
+version = "26.0.1"
 dependencies = [
  "astar-primitives",
  "astar-xcm-benchmarks",
@@ -15317,7 +15316,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "26.0.0"
+version = "26.0.1"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
