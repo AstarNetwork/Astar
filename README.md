@@ -72,18 +72,45 @@ $ ./target/release/astar-collator \
   --collator
 ```
 
-Now, you can obtain the node's session key by sending the following RPC payload.
+Now, you can obtain the node's session keys and their ownership proof by sending the following RPC payload. The owner is the public key of the account that will register the keys.
 
 ```bash
-# send `rotate_keys` request
-$ curl -H 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_rotateKeys", "id":1 }' localhost:9933
+# send `author_rotateKeysWithOwner` request
+$ curl -H 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_rotateKeysWithOwner", "params":["<account public key in hex>"], "id":1 }' localhost:9944
 
-# should return a long string of hex, which is your session key
-{"jsonrpc":"2.0","result":"<session key in hex>","id":1}
+# should return your session keys and the proof that you own them
+{"jsonrpc":"2.0","result":{"keys":"<session keys in hex>","proof":"<proof in hex>"},"id":1}
 ```
+
+Then submit `session.setKeys(keys, proof)` from that same account, since the proof is only valid for it.
 
 After this step, you should have a validator node online with a session key for your node.
 For key management and validator rewards, consult our [validator guide online](https://docs.astar.network/build/validator-guide/configure-node).
+
+## Running an EVM Tracing Node
+
+The on-chain runtime doesn't include the tracing API, so `debug_*` and `trace_*` calls need a tracing build of the runtime for each `spec_version` you want to trace. Every `runtime-*` release publishes these builds in `evm-tracing-artifacts-<tag>.tar.gz`.
+
+```bash
+# copy the tracing runtime into the overrides directory (example: Shibuya, spec 2600)
+$ wget https://github.com/AstarNetwork/Astar/releases/download/runtime-2600/evm-tracing-artifacts-runtime-2600.tar.gz
+$ tar -xzf evm-tracing-artifacts-runtime-2600.tar.gz
+$ cp evm-tracing-artifacts/shibuya*.wasm <path to overrides>/
+
+# start an archive node with tracing enabled
+$ ./target/release/astar-collator \
+  --chain shibuya \
+  --base-path <path to save blocks> \
+  --state-pruning archive \
+  --blocks-pruning archive \
+  --enable-evm-rpc \
+  --ethapi=debug,trace,txpool \
+  --wasm-runtime-overrides <path to overrides>
+```
+
+- Overrides are only read at startup. Add the tracing runtime of a new release and restart the node before that release is enacted.
+- Keep one file per `spec_version`, since duplicates are rejected.
+- A block can only be traced if the overrides directory has a tracing runtime for its spec. To backfill history, repeat the first step for each older release you need, and test on a block that contains a transaction.
 
 ## Versioning
 
